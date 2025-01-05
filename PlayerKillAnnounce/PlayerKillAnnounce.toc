@@ -1,0 +1,6 @@
+## Interface: 11505
+## Title: Player Kill Announce
+## Author: Severussnipe, Hkfarmer <Redridge Police>
+## Notes: Announces player kills in party chat.
+## SavedVariables: PlayerKillAnnounceDB
+PlayerKillAnnounce.lua
