@@ -39,7 +39,8 @@ local function HandleCombatLogEvent()
             -- Announce the kill to party chat
             if EnableKillAnnounce then
                 local killMessage = string.gsub(KillAnnounceMessage, "Enemyplayername", destName)
-                SendChatMessage(killMessage, "WHISPER", nil, "Severussnipe")
+                SendChatMessage(killMessage, "PARTY")
+                -- SendChatMessage(killMessage, "WHISPER", nil, "Severussnipe")
             end
         end
     end
