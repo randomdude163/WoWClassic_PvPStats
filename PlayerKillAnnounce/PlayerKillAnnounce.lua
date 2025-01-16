@@ -4,10 +4,9 @@
 PlayerKillMessageDefault = "Enemyplayername killed!"
 ------------------------------------------------------------------------
 
-local PlayerKillAnnounceDB = PlayerKillAnnounceDB or {}
 local playerKillAnnounceFrame = CreateFrame("Frame", "PlayerKillAnnounceFrame", UIParent)
-local EnableKillAnnounce = PlayerKillAnnounceDB.EnableKillAnnounce or true
-local KillAnnounceMessage = PlayerKillAnnounceDB.KillAnnounceMessage or PlayerKillMessageDefault
+local EnableKillAnnounce = true
+local KillAnnounceMessage = PlayerKillMessageDefault
 
 local CHAT_MESSAGE_R = 1.0
 local CHAT_MESSAGE_G = 1.0
@@ -17,15 +16,21 @@ local CHAT_MESSAGE_B = 0.74
 local function SaveSettings()
     PlayerKillAnnounceDB.EnableKillAnnounce = EnableKillAnnounce
     PlayerKillAnnounceDB.KillAnnounceMessage = KillAnnounceMessage
+    -- print("Settings saved: EnableKillAnnounce =", EnableKillAnnounce, "KillAnnounceMessage =", KillAnnounceMessage)
 end
 
 
 local function LoadSettings()
-    if PlayerKillAnnounceDB.EnableKillAnnounce ~= nil then
-        EnableKillAnnounce = PlayerKillAnnounceDB.EnableKillAnnounce
-    end
-    if PlayerKillAnnounceDB.KillAnnounceMessage ~= nil then
-        KillAnnounceMessage = PlayerKillAnnounceDB.KillAnnounceMessage
+    if PlayerKillAnnounceDB then
+        if PlayerKillAnnounceDB.EnableKillAnnounce ~= nil then
+            EnableKillAnnounce = PlayerKillAnnounceDB.EnableKillAnnounce
+        end
+        if PlayerKillAnnounceDB.KillAnnounceMessage ~= nil then
+            KillAnnounceMessage = PlayerKillAnnounceDB.KillAnnounceMessage
+        end
+        -- print("Settings loaded: EnableKillAnnounce =", EnableKillAnnounce, "KillAnnounceMessage =", KillAnnounceMessage)
+    else
+        -- print("PlayerKillAnnounceDB is nil")
     end
 end
 
@@ -50,6 +55,8 @@ end
 local function OnEvent(self, event, ...)
     if event == "PLAYER_ENTERING_WORLD" then
         LoadSettings()
+    elseif event == "PLAYER_LOGOUT" then
+        SaveSettings()
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
         HandleCombatLogEvent()
     end
@@ -58,6 +65,7 @@ end
 
 local function RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    playerKillAnnounceFrame:RegisterEvent("PLAYER_LOGOUT")
     playerKillAnnounceFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     playerKillAnnounceFrame:SetScript("OnEvent", OnEvent)
 end
@@ -96,6 +104,7 @@ end
 
 local function HandleSetMessageCommand(message)
     KillAnnounceMessage = message
+    -- print("Setting KillAnnounceMessage to:", KillAnnounceMessage)
     SaveSettings()
     DEFAULT_CHAT_FRAME:AddMessage("Kill announce message set to: " .. KillAnnounceMessage, CHAT_MESSAGE_R, CHAT_MESSAGE_G,
         CHAT_MESSAGE_B)
