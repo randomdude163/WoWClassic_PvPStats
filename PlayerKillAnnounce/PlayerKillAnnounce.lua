@@ -42,7 +42,7 @@ local function HandleCombatLogEvent()
         if bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER and
             bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE then
             -- Announce the kill to party chat
-            if EnableKillAnnounce then
+            if EnableKillAnnounce and IsInGroup() then
                 local killMessage = string.gsub(KillAnnounceMessage, "Enemyplayername", destName)
                 SendChatMessage(killMessage, "PARTY")
                 -- SendChatMessage(killMessage, "WHISPER", nil, "Severussnipe")
