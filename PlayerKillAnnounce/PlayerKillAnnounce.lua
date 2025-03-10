@@ -9,7 +9,7 @@ local EnableKillAnnounce = true
 local KillAnnounceMessage = PlayerKillMessageDefault
 local KillCounts = {}
 local killStatsFrame = nil
-local KILLS_FRAME_WIDTH = 450  -- Increased from 400 to accommodate wider columns
+local KILLS_FRAME_WIDTH = 800  -- Increased from 700 to 800 for better column display
 local KILLS_FRAME_HEIGHT = 500
 local searchText = ""
 local searchBox = nil
@@ -26,7 +26,7 @@ local CHAT_MESSAGE_B = 0.74
 local PlayerInfoCache = {}
 
 -- Function to update player info cache
-local function UpdatePlayerInfoCache(name, guid, level, class)
+local function UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild)
     if not name then return end
 
     PlayerInfoCache[name] = PlayerInfoCache[name] or {}
@@ -44,8 +44,17 @@ local function UpdatePlayerInfoCache(name, guid, level, class)
         PlayerInfoCache[name].class = class
     end
 
-    -- For debugging
-    -- print("Updated cache for " .. name .. ": Level " .. (PlayerInfoCache[name].level or "unknown") .. ", Class " .. (PlayerInfoCache[name].class or "unknown"))
+    if race and race ~= "" then
+        PlayerInfoCache[name].race = race
+    end
+
+    if gender and gender ~= nil then
+        PlayerInfoCache[name].gender = gender
+    end
+
+    if guild and guild ~= "" then
+        PlayerInfoCache[name].guild = guild
+    end
 end
 
 -- Function to collect player info from unit
@@ -58,8 +67,13 @@ local function CollectPlayerInfo(unit)
     local guid = UnitGUID(unit)
     local level = UnitLevel(unit)
     local _, englishClass = UnitClass(unit)
+    local _, englishRace = UnitRace(unit)
+    local gender = UnitSex(unit)
 
-    UpdatePlayerInfoCache(name, guid, level, englishClass)
+    -- Get guild information
+    local guildName, _, _ = GetGuildInfo(unit)
+
+    UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName)
 end
 
 -- Event handlers for updating player info cache
@@ -76,24 +90,40 @@ end
 local function GetBestPlayerInfo(name, guid)
     local level = 0
     local class = "Unknown"
+    local race = "Unknown"
+    local gender = 0
+    local guild = ""
 
     -- Check if we have cached info
     if PlayerInfoCache[name] then
         level = PlayerInfoCache[name].level or 0
         class = PlayerInfoCache[name].class or "Unknown"
+        race = PlayerInfoCache[name].race or "Unknown"
+        gender = PlayerInfoCache[name].gender or 0
+        guild = PlayerInfoCache[name].guild or ""
     end
 
     -- If we still don't have valid info, try other methods
-    if level == 0 or class == "Unknown" then
+    if level == 0 or class == "Unknown" or race == "Unknown" then
         -- Check target and mouseover in case it's the same player
         if UnitExists("target") and UnitName("target") == name then
             level = UnitLevel("target") or level
             local _, englishClass = UnitClass("target")
             class = englishClass or class
+            local _, englishRace = UnitRace("target")
+            race = englishRace or race
+            gender = UnitSex("target") or gender
+            local guildName = GetGuildInfo("target")
+            guild = guildName or guild
         elseif UnitExists("mouseover") and UnitName("mouseover") == name then
             level = UnitLevel("mouseover") or level
             local _, englishClass = UnitClass("mouseover")
             class = englishClass or class
+            local _, englishRace = UnitRace("mouseover")
+            race = englishRace or race
+            gender = UnitSex("mouseover") or gender
+            local guildName = GetGuildInfo("mouseover")
+            guild = guildName or guild
         end
 
         -- Last resort - try to get from GUID
@@ -108,7 +138,17 @@ local function GetBestPlayerInfo(name, guid)
     -- Default to level 1 if we still couldn't detect it
     level = level > 0 and level or 1
 
-    return level, class
+    -- Convert gender number to string representation
+    local genderStr = "Unknown"
+    if gender == 1 then
+        genderStr = "Unknown"
+    elseif gender == 2 then
+        genderStr = "Male"
+    elseif gender == 3 then
+        genderStr = "Female"
+    end
+
+    return level, class, race, genderStr, guild
 end
 
 local function SaveSettings()
@@ -181,16 +221,19 @@ local function RefreshKillList()
     -- Clean up all existing entries
     cleanupFontStrings(content)
 
-    -- Column widths - adjusted to include level
+    -- Column widths - increased for better readability
     local colWidths = {
-        name = 85,      -- Player names (max 12 chars)
-        class = 80,     -- Class name
-        level = 40,     -- New column for level
-        kills = 60,     -- Kill count
-        lastKill = 155  -- Slightly reduced to make room for level column
+        name = 100,     -- Player names (increased from 80)
+        class = 80,     -- Class name (increased from 65)
+        race = 80,      -- Race column (increased from 65)
+        gender = 95,    -- Gender column (increased from 55)
+        level = 40,     -- Level column (increased from 30)
+        guild = 150,    -- Guild column (increased from 120)
+        kills = 50,     -- Kill count column (increased from 40)
+        lastKill = 145  -- Last kill time (adjusted to fit in frame)
     }
 
-    -- Create clickable header buttons
+    -- Setup headers code
     -- Name Column Header
     local nameHeaderBtn = CreateFrame("Button", nil, content)
     nameHeaderBtn:SetSize(colWidths.name, 24)
@@ -233,10 +276,52 @@ local function RefreshKillList()
     classHeader:SetWidth(colWidths.class)
     classHeader:SetJustifyH("LEFT")
 
+    -- Race Column Header
+    local raceHeaderBtn = CreateFrame("Button", nil, content)
+    raceHeaderBtn:SetSize(colWidths.race, 24)
+    raceHeaderBtn:SetPoint("TOPLEFT", classHeaderBtn, "TOPRIGHT", 0, 0)
+    raceHeaderBtn:SetScript("OnClick", function()
+        if sortBy == "race" then
+            sortAscending = not sortAscending
+        else
+            sortBy = "race"
+            sortAscending = true -- Default to alphabetical A-Z when first clicking
+        end
+        RefreshKillList()
+    end)
+
+    local raceHeader = raceHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    raceHeader:SetPoint("LEFT", 0, 0)
+    raceHeader:SetTextColor(1, 0.82, 0)
+    raceHeader:SetText("Race" .. (sortBy == "race" and (sortAscending and " ^" or " v") or ""))
+    raceHeader:SetWidth(colWidths.race)
+    raceHeader:SetJustifyH("LEFT")
+
+    -- Gender Column Header
+    local genderHeaderBtn = CreateFrame("Button", nil, content)
+    genderHeaderBtn:SetSize(colWidths.gender, 24)
+    genderHeaderBtn:SetPoint("TOPLEFT", raceHeaderBtn, "TOPRIGHT", 0, 0)
+    genderHeaderBtn:SetScript("OnClick", function()
+        if sortBy == "gender" then
+            sortAscending = not sortAscending
+        else
+            sortBy = "gender"
+            sortAscending = true -- Default to alphabetical A-Z when first clicking
+        end
+        RefreshKillList()
+    end)
+
+    local genderHeader = genderHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    genderHeader:SetPoint("LEFT", 0, 0)
+    genderHeader:SetTextColor(1, 0.82, 0)
+    genderHeader:SetText("Gender" .. (sortBy == "gender" and (sortAscending and " ^" or " v") or ""))
+    genderHeader:SetWidth(colWidths.gender)
+    genderHeader:SetJustifyH("LEFT")
+
     -- Level Column Header
     local levelHeaderBtn = CreateFrame("Button", nil, content)
     levelHeaderBtn:SetSize(colWidths.level, 24)
-    levelHeaderBtn:SetPoint("TOPLEFT", classHeaderBtn, "TOPRIGHT", 0, 0)
+    levelHeaderBtn:SetPoint("TOPLEFT", genderHeaderBtn, "TOPRIGHT", 0, 0)
     levelHeaderBtn:SetScript("OnClick", function()
         if sortBy == "level" then
             sortAscending = not sortAscending
@@ -254,10 +339,31 @@ local function RefreshKillList()
     levelHeader:SetWidth(colWidths.level)
     levelHeader:SetJustifyH("LEFT")
 
+    -- Guild Column Header
+    local guildHeaderBtn = CreateFrame("Button", nil, content)
+    guildHeaderBtn:SetSize(colWidths.guild, 24)
+    guildHeaderBtn:SetPoint("TOPLEFT", levelHeaderBtn, "TOPRIGHT", 0, 0)
+    guildHeaderBtn:SetScript("OnClick", function()
+        if sortBy == "guild" then
+            sortAscending = not sortAscending
+        else
+            sortBy = "guild"
+            sortAscending = true -- Default to alphabetical A-Z when first clicking
+        end
+        RefreshKillList()
+    end)
+
+    local guildHeader = guildHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    guildHeader:SetPoint("LEFT", 0, 0)
+    guildHeader:SetTextColor(1, 0.82, 0)
+    guildHeader:SetText("Guild" .. (sortBy == "guild" and (sortAscending and " ^" or " v") or ""))
+    guildHeader:SetWidth(colWidths.guild)
+    guildHeader:SetJustifyH("LEFT")
+
     -- Kills Column Header
     local killsHeaderBtn = CreateFrame("Button", nil, content)
     killsHeaderBtn:SetSize(colWidths.kills, 24)
-    killsHeaderBtn:SetPoint("TOPLEFT", levelHeaderBtn, "TOPRIGHT", 0, 0)
+    killsHeaderBtn:SetPoint("TOPLEFT", guildHeaderBtn, "TOPRIGHT", 0, 0)
     killsHeaderBtn:SetScript("OnClick", function()
         if sortBy == "kills" then
             sortAscending = not sortAscending
@@ -310,8 +416,17 @@ local function RefreshKillList()
     classHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
     classHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
 
+    raceHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
+    raceHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
+
+    genderHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
+    genderHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
+
     levelHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
     levelHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
+
+    guildHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
+    guildHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
 
     killsHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
     killsHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
@@ -335,7 +450,10 @@ local function RefreshKillList()
                 nameWithLevel = nameWithLevel, -- Store composite key for reference
                 name = name,
                 class = data.class or "Unknown",
+                race = data.race or "Unknown",
+                gender = data.gender or "Unknown",
                 level = tonumber(level) or 0,
+                guild = data.guild or "",
                 kills = data.kills or 0,
                 lastKill = data.lastKill or "Unknown"
             })
@@ -357,11 +475,29 @@ local function RefreshKillList()
             else
                 return a.class > b.class
             end
+        elseif sortBy == "race" then
+            if sortAscending then
+                return a.race < b.race
+            else
+                return a.race > b.race
+            end
+        elseif sortBy == "gender" then
+            if sortAscending then
+                return a.gender < b.gender
+            else
+                return a.gender > b.gender
+            end
         elseif sortBy == "level" then
             if sortAscending then
                 return a.level < b.level
             else
                 return a.level > b.level
+            end
+        elseif sortBy == "guild" then
+            if sortAscending then
+                return a.guild < b.guild
+            else
+                return a.guild > b.guild
             end
         elseif sortBy == "kills" then
             if sortAscending then
@@ -410,16 +546,44 @@ local function RefreshKillList()
             classText:SetTextColor(color.r, color.g, color.b)
         end
 
+        -- Race column
+        local raceText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        raceText:SetPoint("TOPLEFT", classText, "TOPRIGHT", 0, 0)
+
+        -- Convert race to title case
+        local raceName = entry.race
+        if raceName and raceName ~= "Unknown" then
+            raceName = raceName:sub(1,1):upper() .. raceName:sub(2):lower()
+        end
+
+        raceText:SetText(raceName)
+        raceText:SetWidth(colWidths.race)
+        raceText:SetJustifyH("LEFT")
+
+        -- Gender column
+        local genderText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        genderText:SetPoint("TOPLEFT", raceText, "TOPRIGHT", 0, 0)
+        genderText:SetText(entry.gender)
+        genderText:SetWidth(colWidths.gender)
+        genderText:SetJustifyH("LEFT")
+
         -- Level column
         local levelText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        levelText:SetPoint("TOPLEFT", classText, "TOPRIGHT", 0, 0)
+        levelText:SetPoint("TOPLEFT", genderText, "TOPRIGHT", 0, 0)
         levelText:SetText(tostring(entry.level))
         levelText:SetWidth(colWidths.level)
         levelText:SetJustifyH("LEFT")
 
+        -- Guild column
+        local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        guildText:SetPoint("TOPLEFT", levelText, "TOPRIGHT", 0, 0)
+        guildText:SetText(entry.guild)
+        guildText:SetWidth(colWidths.guild)
+        guildText:SetJustifyH("LEFT")
+
         -- Kills column
         local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        killsText:SetPoint("TOPLEFT", levelText, "TOPRIGHT", 0, 0)
+        killsText:SetPoint("TOPLEFT", guildText, "TOPRIGHT", 0, 0)
         killsText:SetText(tostring(entry.kills))
         killsText:SetWidth(colWidths.kills)
         killsText:SetJustifyH("LEFT")
@@ -591,14 +755,12 @@ local function HandleCombatLogEvent()
     -- Collect info about all players we see in the combat log
     if sourceName and bit.band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER then
         -- Try to update our cache with source player info
-        -- (won't set level/class unless we already know it)
-        UpdatePlayerInfoCache(sourceName, sourceGUID, nil, nil)
+        UpdatePlayerInfoCache(sourceName, sourceGUID, nil, nil, nil, nil, nil)
     end
 
     if destName and bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER then
         -- Try to update our cache with destination player info
-        -- (won't set level/class unless we already know it)
-        UpdatePlayerInfoCache(destName, destGUID, nil, nil)
+        UpdatePlayerInfoCache(destName, destGUID, nil, nil, nil, nil, nil)
     end
 
     if combatEvent == "UNIT_DIED" then
@@ -606,7 +768,7 @@ local function HandleCombatLogEvent()
            bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE then
 
             -- Get the best available player info using our cache and other methods
-            local level, englishClass = GetBestPlayerInfo(destName, destGUID)
+            local level, englishClass, race, gender, guild = GetBestPlayerInfo(destName, destGUID)
 
             -- Create composite key with name and level
             local nameWithLevel = destName .. ":" .. level
@@ -616,6 +778,9 @@ local function HandleCombatLogEvent()
                 KillCounts[nameWithLevel] = {
                     kills = 0,
                     class = englishClass,
+                    race = race,
+                    gender = gender,
+                    guild = guild,
                     lastKill = ""
                 }
             end
@@ -623,6 +788,10 @@ local function HandleCombatLogEvent()
             -- Update kill count and timestamp
             KillCounts[nameWithLevel].kills = KillCounts[nameWithLevel].kills + 1
             KillCounts[nameWithLevel].lastKill = date("%Y-%m-%d %H:%M:%S")
+            -- Make sure we always have the latest info for race, gender and guild
+            if race ~= "Unknown" then KillCounts[nameWithLevel].race = race end
+            if gender ~= "Unknown" then KillCounts[nameWithLevel].gender = gender end
+            if guild ~= "" then KillCounts[nameWithLevel].guild = guild end
 
             -- Announce the kill to party chat
             if EnableKillAnnounce and IsInGroup() then
@@ -634,7 +803,7 @@ local function HandleCombatLogEvent()
             SaveSettings()
 
             -- Debug message for local confirmation
-            print("Killed: " .. destName .. " (Level " .. level .. ", " .. englishClass .. ") - Total kills: " .. KillCounts[nameWithLevel].kills)
+            print("Killed: " .. destName .. " (Level " .. level .. ", " .. englishClass .. ", " .. race .. ") - Total kills: " .. KillCounts[nameWithLevel].kills)
         end
     end
 end
