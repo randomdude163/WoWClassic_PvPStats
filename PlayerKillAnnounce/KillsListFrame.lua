@@ -251,6 +251,7 @@ local function RefreshKillList()
     for nameWithLevel, data in pairs(PKA_KillCounts) do
         -- Extract the player name and level from the composite key
         local name, level = strsplit(":", nameWithLevel)
+        local levelNum = tonumber(level) or 0
         local nameLower = name:lower()
 
         -- Only add entries that match the search text
@@ -261,10 +262,11 @@ local function RefreshKillList()
                 class = data.class or "Unknown",
                 race = data.race or "Unknown",
                 gender = data.gender or "Unknown",
-                level = tonumber(level) or 0,
+                level = levelNum,  -- This could be -1 for unknown levels
                 guild = data.guild or "",
                 kills = data.kills or 0,
-                lastKill = data.lastKill or "Unknown"
+                lastKill = data.lastKill or "Unknown",
+                unknownLevel = data.unknownLevel or (levelNum == -1)  -- Flag for unknown level
             })
         end
     end
@@ -272,7 +274,23 @@ local function RefreshKillList()
     -- Sort according to selected column and direction
     table.sort(sortedEntries, function(a, b)
         -- Handle different sorting columns
-        if sortBy == "name" then
+        if sortBy == "level" then
+            -- When sorting by level, treat -1 (unknown level) as a high level value
+            if a.level == -1 and b.level ~= -1 then
+                -- Unknown level should be considered higher than any known level
+                return not sortAscending
+            elseif a.level ~= -1 and b.level == -1 then
+                -- Known levels are lower than unknown levels
+                return sortAscending
+            else
+                -- Regular comparison (both known or both unknown)
+                if sortAscending then
+                    return a.level < b.level
+                else
+                    return a.level > b.level
+                end
+            end
+        elseif sortBy == "name" then
             if sortAscending then
                 return a.name < b.name
             else
@@ -295,12 +313,6 @@ local function RefreshKillList()
                 return a.gender < b.gender
             else
                 return a.gender > b.gender
-            end
-        elseif sortBy == "level" then
-            if sortAscending then
-                return a.level < b.level
-            else
-                return a.level > b.level
             end
         elseif sortBy == "guild" then
             if sortAscending then
@@ -379,7 +391,8 @@ local function RefreshKillList()
         -- Level column
         local levelText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         levelText:SetPoint("TOPLEFT", genderText, "TOPRIGHT", 0, 0)
-        levelText:SetText(tostring(entry.level))
+        -- Show ?? for unknown level (-1)
+        levelText:SetText(entry.level == -1 and "??" or tostring(entry.level))
         levelText:SetWidth(colWidths.level)
         levelText:SetJustifyH("LEFT")
 

@@ -101,8 +101,10 @@ function PKA_GetPlayerInfo(name, guid)
         end
     end
 
-    -- Default to level 1 if we still couldn't detect it
-    level = level > 0 and level or 1
+    -- Handle unknown level players - use -1 instead of defaulting to level 1
+    if level == 0 then
+        level = -1  -- Use -1 to represent unknown level (will show as "??")
+    end
 
     -- Convert gender number to string representation
     local genderStr = "Unknown"

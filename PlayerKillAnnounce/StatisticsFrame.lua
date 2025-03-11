@@ -1,12 +1,13 @@
 local statsFrame = nil
 local STATS_FRAME_WIDTH = 850
-local STATS_FRAME_HEIGHT = 700  -- Increased height to accommodate all charts without scrolling
+local STATS_FRAME_HEIGHT = 650  -- Increased from 700 to 750
 local CHART_WIDTH = 380    -- Reduced width to avoid overlapping
 local BAR_HEIGHT = 16      -- Reduced height to fit more bars
 local BAR_SPACING = 3      -- Reduced spacing to fit more bars
 local TEXT_OFFSET = 5
 local GUILD_LIST_WIDTH = 350  -- Narrower guild list
 local CHART_PADDING = 40   -- Increased padding between charts
+local GUILD_LIST_HEIGHT = 230  -- Reduced from 350 to 230 (roughly 1/3 smaller)
 
 -- Use WoW's built-in class colors
 -- This will be populated in createBarChart for class charts
@@ -39,15 +40,38 @@ end
 
 -- Helper function to sort a table by value
 local function sortByValue(tbl, descending)
+    -- Return empty list if table is nil
+    if not tbl then
+        return {}
+    end
+
     local sorted = {}
     for k, v in pairs(tbl) do
-        table.insert(sorted, {key = k, value = v})
+        -- Ensure key and value are not nil
+        local safeKey = k or "Unknown"
+        local safeValue = v or 0
+        table.insert(sorted, {key = safeKey, value = safeValue})
+    end
+
+    -- Return empty list if we have no entries
+    if #sorted == 0 then
+        return {}
     end
 
     if descending then
-        table.sort(sorted, function(a, b) return a.value > b.value end)
+        table.sort(sorted, function(a, b)
+            -- Safely compare values that might be nil
+            if not a.value then return false end
+            if not b.value then return true end
+            return a.value > b.value
+        end)
     else
-        table.sort(sorted, function(a, b) return a.value < b.value end)
+        table.sort(sorted, function(a, b)
+            -- Safely compare values that might be nil
+            if not a.value then return true end
+            if not b.value then return false end
+            return a.value < b.value
+        end)
     end
 
     return sorted
@@ -194,34 +218,43 @@ local function createGuildTable(parent, x, y, width, height)
 
     -- Create horizontal line
     local line = container:CreateTexture(nil, "ARTWORK")
-    line:SetPoint("TOPLEFT", 0, -20)  -- Moved up since headers are removed
+    line:SetPoint("TOPLEFT", 0, -20)
     line:SetSize(width, 1)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
-    -- Create a ScrollFrame for the guild list (keep scrollbar for guilds)
+    -- Create a ScrollFrame for the guild list
     local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 0, -25)  -- Adjusted position since headers are removed
-    scrollFrame:SetSize(width - 25, height - 30)  -- Adjusted height since headers are removed
+    scrollFrame:SetPoint("TOPLEFT", 0, -25)
+    scrollFrame:SetSize(width - 25, height - 30)
 
     -- Create content frame to hold guild entries
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(width - 40, #sortedGuilds * 20 + 10)
+    content:SetSize(width - 40, math.max(#sortedGuilds * 20 + 10, 10))
     scrollFrame:SetScrollChild(content)
+
+    -- Define column widths
+    local guildColWidth = 200  -- Match the label width in summary stats
+    local killsColWidth = 60   -- Width for the kill count column
 
     -- Create table rows for ALL guilds
     for i = 1, #sortedGuilds do
         local entry = sortedGuilds[i]
         local rowY = -(i * 20)
 
+        -- Ensure key and value exist before using them
+        local guildName = entry.key or "Unknown"
+        local killCount = entry.value or 0
+
         local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         guildText:SetPoint("TOPLEFT", 0, rowY)
-        guildText:SetText(entry.key)
-        guildText:SetWidth(width - 60)
+        guildText:SetText(guildName)
+        guildText:SetWidth(guildColWidth)
         guildText:SetJustifyH("LEFT")
 
         local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        killsText:SetPoint("TOPLEFT", width - 50, rowY)
-        killsText:SetText(entry.value)
+        killsText:SetPoint("TOPLEFT", guildColWidth + 10, rowY)
+        killsText:SetText(tostring(killCount))  -- Convert to string to be safe
+        killsText:SetJustifyH("LEFT")
     end
 
     return container
@@ -249,29 +282,43 @@ local function createSummaryStats(parent, x, y, width, height)
     local totalKills = 0
     local uniqueKills = 0
     local totalLevels = 0
-    local totalPlayerLevels = 0  -- For player level calculation
+    local totalPlayerLevels = 0
     local killsWithLevelData = 0
+    local unknownLevelKills = 0
 
-    -- Count unique players killed and their total kill count
-    for nameWithLevel, data in pairs(PKA_KillCounts) do
-        uniqueKills = uniqueKills + 1
-        totalKills = totalKills + data.kills
+    -- Safety check for nil PKA_KillCounts
+    if PKA_KillCounts then
+        -- Count unique players killed and their total kill count
+        for nameWithLevel, data in pairs(PKA_KillCounts) do
+            -- Skip if data is nil
+            if data then
+                uniqueKills = uniqueKills + 1
+                local kills = data.kills or 0
+                totalKills = totalKills + kills
 
-        -- Extract level from nameWithLevel (Format: "Name:Level")
-        local level = nameWithLevel:match(":(%d+)")
-        if level then
-            totalLevels = totalLevels + tonumber(level) * data.kills  -- Weight by number of kills
-        end
+                -- Check if this is an unknown level player (-1)
+                local level = nameWithLevel:match(":(%S+)")
+                local levelNum = tonumber(level or "0") or 0
 
-        -- Sum player levels for each kill (weighted by number of kills)
-        if data.playerLevel then
-            totalPlayerLevels = totalPlayerLevels + (data.playerLevel * data.kills)
-            killsWithLevelData = killsWithLevelData + data.kills
+                if levelNum == -1 or (data.unknownLevel or false) then
+                    unknownLevelKills = unknownLevelKills + kills
+                else
+                    -- Only add to level calculations if it's a known level
+                    totalLevels = totalLevels + levelNum * kills
+                end
+
+                -- Sum player levels for each kill (weighted by number of kills)
+                if data.playerLevel then
+                    totalPlayerLevels = totalPlayerLevels + (data.playerLevel * kills)
+                    killsWithLevelData = killsWithLevelData + kills
+                end
+            end
         end
     end
 
-    -- Calculate average level (weighted by number of kills)
-    local avgLevel = totalKills > 0 and (totalLevels / totalKills) or 0
+    -- Calculate average level (weighted by number of kills) - exclude unknown levels
+    local knownLevelKills = totalKills - unknownLevelKills
+    local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
 
     -- Calculate average player level at time of kills
     local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData) or UnitLevel("player")
@@ -283,7 +330,7 @@ local function createSummaryStats(parent, x, y, width, height)
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
     -- Create stat lines - adjusted Y position to account for the line
-    local statY = -35  -- Changed from -30 to create space after the line
+    local statY = -35
     local function addStat(label, value)
         local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         labelText:SetPoint("TOPLEFT", 0, statY)
@@ -291,23 +338,24 @@ local function createSummaryStats(parent, x, y, width, height)
 
         local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         valueText:SetPoint("TOPLEFT", 200, statY)
-        valueText:SetText(value)
+        valueText:SetText(tostring(value))  -- Ensure value is a string
 
-        statY = statY - 25
+        statY = statY - 23
     end
 
     addStat("Total Player Kills:", totalKills)
     addStat("Unique Players Killed:", uniqueKills)
+    addStat("Level ?? Kills:", unknownLevelKills)
     addStat("Average Kill Level:", string.format("%.1f", avgLevel))
     addStat("Your Average Level:", string.format("%.1f", avgPlayerLevel))
     addStat("Avg. Level Difference:", string.format("%.1f", avgLevelDiff) ..
         (avgLevelDiff > 0 and " (you're higher)" or " (you're lower)"))
     addStat("Avg. Kills Per Player:", string.format("%.2f", avgKillsPerPlayer))
 
-    -- Add streak statistics
-    addStat("Current Kill Streak:", PKA_CurrentKillStreak)
-    addStat("Highest Kill Streak:", PKA_HighestKillStreak)
-    addStat("Highest Multi-Kill:", PKA_HighestMultiKill)
+    -- Add streak statistics with nil checks
+    addStat("Current Kill Streak:", PKA_CurrentKillStreak or 0)
+    addStat("Highest Kill Streak:", PKA_HighestKillStreak or 0)
+    addStat("Highest Multi-Kill:", PKA_HighestMultiKill or 0)
 
     return container
 end
@@ -318,18 +366,26 @@ local function gatherStatistics()
     local raceData = {}
     local genderData = {}
 
+    -- Safety check if PKA_KillCounts is nil
+    if not PKA_KillCounts then
+        return {}, {}, {}
+    end
+
     for nameWithLevel, data in pairs(PKA_KillCounts) do
-        -- Count class occurrences
-        local class = data.class or "Unknown"
-        classData[class] = (classData[class] or 0) + 1
+        -- Skip if data is nil
+        if data then
+            -- Count class occurrences
+            local class = data.class or "Unknown"
+            classData[class] = (classData[class] or 0) + 1
 
-        -- Count race occurrences
-        local race = data.race or "Unknown"
-        raceData[race] = (raceData[race] or 0) + 1
+            -- Count race occurrences
+            local race = data.race or "Unknown"
+            raceData[race] = (raceData[race] or 0) + 1
 
-        -- Count gender occurrences
-        local gender = data.gender or "Unknown"
-        genderData[gender] = (genderData[gender] or 0) + 1
+            -- Count gender occurrences
+            local gender = data.gender or "Unknown"
+            genderData[gender] = (genderData[gender] or 0) + 1
+        end
     end
 
     return classData, raceData, genderData
@@ -343,7 +399,7 @@ local function calculateChartHeight(data)
     end
 
     -- Calculate required height: title (25px) + entries * (height + spacing) + padding
-    return 30 + (entries * (BAR_HEIGHT + BAR_SPACING)) + 31
+    return 35 + (entries * (BAR_HEIGHT + BAR_SPACING)) + 25  -- Slight adjustment for better spacing
 end
 
 -- Creates or refreshes the stats frame
@@ -356,7 +412,7 @@ function PKA_CreateStatisticsFrame()
 
     -- Remove existing entry from UISpecialFrames if it exists
     for i = #UISpecialFrames, 1, -1 do
-        if UISpecialFrames[i] == "PKAStatisticsFrame" then
+        if (UISpecialFrames[i] == "PKAStatisticsFrame") then
             tremove(UISpecialFrames, i)
             break
         end
@@ -414,18 +470,24 @@ function PKA_CreateStatisticsFrame()
     local genderChartY = raceChartY - raceChartHeight - CHART_PADDING
     createBarChart(statsFrame, "Kills by Gender", genderData, genderColors, 20, genderChartY, CHART_WIDTH, genderChartHeight)
 
-    -- Create guild table
-    createGuildTable(statsFrame, 440, -30, GUILD_LIST_WIDTH, 350)
+    -- Create guild table with reduced height and updated width
+    local summaryStatsWidth = 380  -- Width of summary stats section
+    createGuildTable(statsFrame, 440, -30, summaryStatsWidth, GUILD_LIST_HEIGHT)
 
-    -- Create summary stats
-    createSummaryStats(statsFrame, 440, -400, 380, 180)
+    -- Create summary stats (moved up due to shorter guild list)
+    createSummaryStats(statsFrame, 440, -280, summaryStatsWidth, 250)  -- Using same width for consistency
 
     -- Calculate total frame height needed to fit everything
     local totalChartHeight = 30 + classChartHeight + CHART_PADDING + raceChartHeight + CHART_PADDING + genderChartHeight + 30
-    local frameHeight = math.max(totalChartHeight, 650) -- Increased minimum height
+    local frameHeight = math.max(totalChartHeight, STATS_FRAME_HEIGHT)
 
-    -- Set the frame height based on the content
-    statsFrame:SetHeight(frameHeight)
+    -- Calculate minimum frame height needed based on both left and right columns
+    local leftColumnHeight = 30 + classChartHeight + CHART_PADDING + raceChartHeight + CHART_PADDING + genderChartHeight + 30
+    local rightColumnHeight = 30 + GUILD_LIST_HEIGHT + 30 + 250 + 30  -- Header + guild list + spacing + summary stats + footer
+    local minFrameHeight = math.max(leftColumnHeight, rightColumnHeight)
+
+    -- Set the frame height to the larger of the calculated minimum or the default height
+    statsFrame:SetHeight(math.max(minFrameHeight, STATS_FRAME_HEIGHT))
 end
 
 -- Hook into existing slash command handler

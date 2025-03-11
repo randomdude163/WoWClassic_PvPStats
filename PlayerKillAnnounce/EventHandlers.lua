@@ -300,7 +300,8 @@ local function HandleCombatLogEvent()
                     gender = gender,
                     guild = guild,
                     lastKill = "",
-                    playerLevel = playerLevel  -- Store our level at time of kill
+                    playerLevel = playerLevel,  -- Store our level at time of kill
+                    unknownLevel = (level == -1) -- Track if this is an unknown level player
                 }
             end
 
@@ -313,6 +314,8 @@ local function HandleCombatLogEvent()
             if race ~= "Unknown" then PKA_KillCounts[nameWithLevel].race = race end
             if gender ~= "Unknown" then PKA_KillCounts[nameWithLevel].gender = gender end
             if guild ~= "" then PKA_KillCounts[nameWithLevel].guild = guild end
+            -- Update unknown level flag
+            PKA_KillCounts[nameWithLevel].unknownLevel = (level == -1)
 
             -- Announce the kill to party chat with streak info if significant
             if PKA_EnableKillAnnounce and IsInGroup() then
@@ -329,7 +332,9 @@ local function HandleCombatLogEvent()
                     PKA_SaveSettings()
                 end
 
-                killMessage = killMessage .. " (Level " .. level .. ") x" .. PKA_KillCounts[nameWithLevel].kills
+                -- Display "??" for unknown level players
+                local levelDisplay = level == -1 and "??" or tostring(level)
+                killMessage = killMessage .. " (Level " .. levelDisplay .. ") x" .. PKA_KillCounts[nameWithLevel].kills
 
                 -- Add kill streak message if impressive
                 if PKA_CurrentKillStreak >= 5 then
@@ -363,7 +368,7 @@ local function HandleCombatLogEvent()
             local debugMsg = "Killed: " ..
                 destName ..
                 " (Level " ..
-                level .. ", " .. englishClass .. ", " .. race .. ") - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
+                (level == -1 and "??" or level) .. ", " .. englishClass .. ", " .. race .. ") - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
 
             -- Add streak info to debug message
             debugMsg = debugMsg .. " - Current streak: " .. PKA_CurrentKillStreak
