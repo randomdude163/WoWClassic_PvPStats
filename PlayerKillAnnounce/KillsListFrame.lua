@@ -253,9 +253,12 @@ local function RefreshKillList()
         local name, level = strsplit(":", nameWithLevel)
         local levelNum = tonumber(level) or 0
         local nameLower = name:lower()
+        local guildLower = (data.guild or ""):lower()
 
-        -- Only add entries that match the search text
-        if searchText == "" or nameLower:find(searchText, 1, true) then
+        -- Only add entries that match the search text in either name or guild
+        if searchText == "" or
+           nameLower:find(searchText, 1, true) or
+           guildLower:find(searchText, 1, true) then
             table.insert(sortedEntries, {
                 nameWithLevel = nameWithLevel, -- Store composite key for reference
                 name = name,
@@ -485,7 +488,7 @@ function PKA_CreateKillStatsFrame()
     -- Add search label
     local searchLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     searchLabel:SetPoint("LEFT", searchBg, "LEFT", 8, 0)
-    searchLabel:SetText("Search Player:")
+    searchLabel:SetText("Search Player/Guild:")
     searchLabel:SetTextColor(1, 0.82, 0)  -- Gold color
 
     -- Create a simple EditBox instead of SearchBoxTemplate
@@ -560,6 +563,19 @@ function PKA_CreateKillStatsFrame()
 
     searchBox:SetScript("OnEnterPressed", function(self)
         self:ClearFocus()
+    end)
+
+    -- Add tooltip to search box (after search box creation, around line 525)
+    searchBox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Search")
+        GameTooltip:AddLine("Type to filter by player name or guild name", 1, 1, 1, true)
+        GameTooltip:AddLine("Press ESC to clear search", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+
+    searchBox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
     end)
 
     -- Initialize with empty search
