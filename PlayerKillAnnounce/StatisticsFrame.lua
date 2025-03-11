@@ -304,6 +304,11 @@ local function createSummaryStats(parent, x, y, width, height)
         (avgLevelDiff > 0 and " (you're higher)" or " (you're lower)"))
     addStat("Avg. Kills Per Player:", string.format("%.2f", avgKillsPerPlayer))
 
+    -- Add streak statistics
+    addStat("Current Kill Streak:", PKA_CurrentKillStreak)
+    addStat("Highest Kill Streak:", PKA_HighestKillStreak)
+    addStat("Highest Multi-Kill:", PKA_HighestMultiKill)
+
     return container
 end
 
@@ -343,9 +348,18 @@ end
 
 -- Creates or refreshes the stats frame
 function PKA_CreateStatisticsFrame()
+    -- Close existing frame if it's open
     if statsFrame then
-        statsFrame:Show()
-        return
+        statsFrame:Hide()
+        statsFrame = nil
+    end
+
+    -- Remove existing entry from UISpecialFrames if it exists
+    for i = #UISpecialFrames, 1, -1 do
+        if UISpecialFrames[i] == "PKAStatisticsFrame" then
+            tremove(UISpecialFrames, i)
+            break
+        end
     end
 
     -- Gather statistics first so we can adjust heights
@@ -362,7 +376,24 @@ function PKA_CreateStatisticsFrame()
     statsFrame:SetScript("OnDragStop", statsFrame.StopMovingOrSizing)
 
     -- Make frame closeable with ESC
-    table.insert(UISpecialFrames, "PKAStatisticsFrame")
+    tinsert(UISpecialFrames, "PKAStatisticsFrame")
+
+    -- Add explicit keyboard handling for ESC as a backup method
+    statsFrame:EnableKeyboard(true)
+    statsFrame:SetPropagateKeyboardInput(true)
+    statsFrame:SetScript("OnKeyDown", function(self, key)
+        if key == "ESCAPE" then
+            self:SetPropagateKeyboardInput(false)
+            self:Hide()
+        else
+            self:SetPropagateKeyboardInput(true)
+        end
+    end)
+
+    -- Add close button functionality
+    statsFrame.CloseButton:SetScript("OnClick", function()
+        statsFrame:Hide()
+    end)
 
     -- Set title
     statsFrame.TitleText:SetText("Player Kill Statistics")
@@ -403,7 +434,7 @@ function PKA_SlashCommandHandler(msg)
     local command, rest = msg:match("^(%S*)%s*(.-)$")
     command = string.lower(command or "")
 
-    if command == "statistics" or command == "stat" then
+    if command == "statistics" or command == "stat" or command == "stats" then
         PKA_CreateStatisticsFrame()
     else
         originalSlashHandler(msg)
@@ -415,7 +446,7 @@ local originalPrintUsage = PrintSlashCommandUsage
 if originalPrintUsage then
     PrintSlashCommandUsage = function()
         originalPrintUsage()
-        DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka statistics (or stat) - Show kill statistics",
+        DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka statistics (or stat/stats) - Show kill statistics",
             PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     end
 end

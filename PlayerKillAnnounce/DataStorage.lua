@@ -121,12 +121,48 @@ function PKA_SaveSettings()
     PlayerKillAnnounceDB.PKA_EnableKillAnnounce = PKA_EnableKillAnnounce
     PlayerKillAnnounceDB.PKA_KillAnnounceMessage = PKA_KillAnnounceMessage
     PlayerKillAnnounceDB.PKA_KillCounts = PKA_KillCounts
+    -- Store streak data
+    PlayerKillAnnounceDB.PKA_CurrentKillStreak = PKA_CurrentKillStreak
+    PlayerKillAnnounceDB.PKA_HighestKillStreak = PKA_HighestKillStreak
+    PlayerKillAnnounceDB.PKA_HighestMultiKill = PKA_HighestMultiKill
+    -- Store new record announce preference
+    PlayerKillAnnounceDB.PKA_EnableRecordAnnounce = PKA_EnableRecordAnnounce
+    -- Store custom messages
+    PlayerKillAnnounceDB.PKA_KillStreakEndedMessage = PKA_KillStreakEndedMessage
+    PlayerKillAnnounceDB.PKA_NewStreakRecordMessage = PKA_NewStreakRecordMessage
+    PlayerKillAnnounceDB.PKA_NewMultiKillRecordMessage = PKA_NewMultiKillRecordMessage
 end
 
 function PKA_LoadSettings()
     if PlayerKillAnnounceDB then
         PKA_EnableKillAnnounce = PlayerKillAnnounceDB.PKA_EnableKillAnnounce or true
         PKA_KillAnnounceMessage = PlayerKillAnnounceDB.PKA_KillAnnounceMessage or PlayerKillMessageDefault
+
+        -- Load streak data
+        PKA_CurrentKillStreak = PlayerKillAnnounceDB.PKA_CurrentKillStreak or 0
+        PKA_HighestKillStreak = PlayerKillAnnounceDB.PKA_HighestKillStreak or 0
+        PKA_HighestMultiKill = PlayerKillAnnounceDB.PKA_HighestMultiKill or 0
+
+        -- Load record announcement setting
+        PKA_EnableRecordAnnounce = PlayerKillAnnounceDB.PKA_EnableRecordAnnounce
+        if PKA_EnableRecordAnnounce == nil then PKA_EnableRecordAnnounce = true end
+
+        -- Load custom messages
+        PKA_KillStreakEndedMessage = PlayerKillAnnounceDB.PKA_KillStreakEndedMessage or KillStreakEndedMessageDefault
+        PKA_NewStreakRecordMessage = PlayerKillAnnounceDB.PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault
+        PKA_NewMultiKillRecordMessage = PlayerKillAnnounceDB.PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault
+
+        -- Reset temporary counters
+        PKA_MultiKillCount = 0
+        PKA_LastCombatTime = 0
+
+        -- Debug message to verify values are loading correctly
+        print("Loaded kill statistics - Current streak: " .. PKA_CurrentKillStreak ..
+              ", Highest streak: " .. PKA_HighestKillStreak ..
+              ", Highest multi-kill: " .. PKA_HighestMultiKill)
+
+        PKA_MultiKillCount = 0 -- Always reset multi-kill count on login
+        PKA_LastCombatTime = 0 -- Track the last combat time for multi-kills
 
         -- Handle upgrade path for older versions without level tracking
         if PlayerKillAnnounceDB.PKA_KillCounts then
@@ -145,17 +181,29 @@ function PKA_LoadSettings()
                     local nameWithLevel = name .. ":0"
                     upgradedKills[nameWithLevel] = data
                 end
-                PlayerKillAnnounceDB.KillCounts = upgradedKills
+                PlayerKillAnnounceDB.PKA_KillCounts = upgradedKills
             end
         end
 
         PKA_KillCounts = PlayerKillAnnounceDB.PKA_KillCounts or {}
+
+        -- Load record announcement setting
+        PKA_EnableRecordAnnounce = PlayerKillAnnounceDB.PKA_EnableRecordAnnounce
+        if PKA_EnableRecordAnnounce == nil then PKA_EnableRecordAnnounce = true end
     else
         PlayerKillAnnounceDB = {
-            EnableKillAnnounce = true,
-            KillAnnounceMessage = PlayerKillMessageDefault,
-            KillCounts = {}
+            PKA_EnableKillAnnounce = true,
+            PKA_KillAnnounceMessage = PlayerKillMessageDefault,
+            PKA_KillCounts = {},
+            PKA_CurrentKillStreak = 0,
+            PKA_HighestKillStreak = 0,
+            PKA_HighestMultiKill = 0
         }
-        PKA_KillCounts = PlayerKillAnnounceDB.KillCounts
+        PKA_KillCounts = PlayerKillAnnounceDB.PKA_KillCounts
+        PKA_CurrentKillStreak = 0
+        PKA_HighestKillStreak = 0
+        PKA_HighestMultiKill = 0
+        PKA_MultiKillCount = 0
+        PKA_LastCombatTime = 0
     end
 end
