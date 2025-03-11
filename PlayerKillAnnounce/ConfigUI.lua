@@ -355,6 +355,7 @@ function PKA_CreateConfigFrame()
                 PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
                 PKA_EnableKillAnnounce = true
                 PKA_EnableRecordAnnounce = true
+                PKA_MultiKillThreshold = 3  -- Add default threshold reset
 
                 -- Update UI elements
                 killMsgEditBox:SetText(PKA_KillAnnounceMessage)
@@ -363,6 +364,7 @@ function PKA_CreateConfigFrame()
                 multiKillEditBox:SetText(PKA_NewMultiKillRecordMessage)
                 enableKillAnnounce:SetChecked(PKA_EnableKillAnnounce)
                 enableRecordAnnounce:SetChecked(PKA_EnableRecordAnnounce)
+                multiKillThresholdSlider:SetValue(PKA_MultiKillThreshold)
 
                 PKA_SaveSettings()
                 print("All settings have been reset to default values!")

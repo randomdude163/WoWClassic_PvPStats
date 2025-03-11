@@ -1,6 +1,6 @@
 local statsFrame = nil
-local STATS_FRAME_WIDTH = 780
-local STATS_FRAME_HEIGHT = 650  -- Increased from 700 to 750
+local STATS_FRAME_WIDTH = 850
+local STATS_FRAME_HEIGHT = 680  -- Increased from 650 to 680
 local CHART_WIDTH = 380    -- Reduced width to avoid overlapping
 local BAR_HEIGHT = 16      -- Reduced height to fit more bars
 local BAR_SPACING = 3      -- Reduced spacing to fit more bars
@@ -374,6 +374,44 @@ local function createSummaryStats(parent, x, y, width, height)
     addStat("Highest Kill Streak:", PKA_HighestKillStreak or 0)
     addStat("Highest Multi-Kill:", PKA_HighestMultiKill or 0)
 
+    -- Add credits section with slightly more space above it
+    statY = statY - 30  -- Extra spacing before credits
+
+    -- Credits header in gold color
+    local creditsHeader = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    creditsHeader:SetPoint("TOPLEFT", 0, statY)
+    creditsHeader:SetText("Credits:")
+    creditsHeader:SetTextColor(1.0, 0.82, 0.0)
+
+    -- Get hunter class color
+    local hunterColor = getClassColor("HUNTER")
+
+    -- Add developers credit with hunter class color
+    local devsText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    devsText:SetPoint("TOPLEFT", 0, statY - 20)
+    devsText:SetText("Developed by: ")
+
+    local namesText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    namesText:SetPoint("TOPLEFT", devsText, "TOPRIGHT", 0, 0)
+    namesText:SetText("Severussnipe & Hkfarmer")
+    namesText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
+
+    -- Add realm info
+    local realmText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    realmText:SetPoint("TOPLEFT", 0, statY - 35)
+    realmText:SetText("Realm: Spineshatter")
+
+    -- Add guild info
+    local guildText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    guildText:SetPoint("TOPLEFT", 0, statY - 50)
+    guildText:SetText("Guild: Redridge Police")
+
+    -- Add GitHub link with even smaller font and reduced font height
+    local githubText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    githubText:SetPoint("TOPLEFT", 0, statY - 70)
+    githubText:SetText("https://github.com/randomdude163/WoWClassic_PlayerKillAnnounce")
+    githubText:SetTextHeight(11)
+
     return container
 end
 
@@ -382,19 +420,29 @@ local function gatherStatistics()
     local classData = {}
     local raceData = {}
     local genderData = {}
+    local unknownLevelClassData = {}  -- New table for ?? level kills by class
 
     -- Safety check if PKA_KillCounts is nil
     if not PKA_KillCounts then
-        return {}, {}, {}
+        return {}, {}, {}, {}
     end
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
-        -- Skip if data is nil
         if data then
-            -- Count class occurrences
+            -- Existing statistics gathering...
             local class = data.class or "Unknown"
             classData[class] = (classData[class] or 0) + 1
 
+            -- Check if this is a ?? level player
+            local level = nameWithLevel:match(":(%S+)")
+            local levelNum = tonumber(level or "0") or 0
+            local kills = data.kills or 1
+
+            if levelNum == -1 or (data.unknownLevel or false) then
+                unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
+            end
+
+            -- Rest of existing code...
             -- Count race occurrences
             local race = data.race or "Unknown"
             raceData[race] = (raceData[race] or 0) + 1
@@ -405,7 +453,7 @@ local function gatherStatistics()
         end
     end
 
-    return classData, raceData, genderData
+    return classData, raceData, genderData, unknownLevelClassData
 end
 
 -- Function to calculate the height needed for a chart based on the data
@@ -436,7 +484,7 @@ function PKA_CreateStatisticsFrame()
     end
 
     -- Gather statistics first so we can adjust heights
-    local classData, raceData, genderData = gatherStatistics()
+    local classData, raceData, genderData, unknownLevelClassData = gatherStatistics()
 
     -- Create main frame
     statsFrame = CreateFrame("Frame", "PKAStatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
@@ -487,6 +535,10 @@ function PKA_CreateStatisticsFrame()
     local genderChartY = raceChartY - raceChartHeight - CHART_PADDING
     createBarChart(statsFrame, "Kills by Gender", genderData, genderColors, 20, genderChartY, CHART_WIDTH, genderChartHeight)
 
+    -- Position ?? level class chart below gender chart with increased padding
+    local unknownLevelClassY = genderChartY - genderChartHeight - CHART_PADDING
+    createBarChart(statsFrame, "Level ?? Kills by Class", unknownLevelClassData, nil, 20, unknownLevelClassY, CHART_WIDTH, calculateChartHeight(unknownLevelClassData))
+
     -- Create guild table with reduced height and updated width
     local summaryStatsWidth = 380  -- Width of summary stats section
     createGuildTable(statsFrame, 440, -30, summaryStatsWidth, GUILD_LIST_HEIGHT)
@@ -495,7 +547,7 @@ function PKA_CreateStatisticsFrame()
     createSummaryStats(statsFrame, 440, -280, summaryStatsWidth, 250)  -- Using same width for consistency
 
     -- Calculate total frame height needed to fit everything
-    local totalChartHeight = 30 + classChartHeight + CHART_PADDING + raceChartHeight + CHART_PADDING + genderChartHeight + 30
+    local totalChartHeight = 30 + classChartHeight + CHART_PADDING + raceChartHeight + CHART_PADDING + genderChartHeight + CHART_PADDING + calculateChartHeight(unknownLevelClassData) + 30
     local frameHeight = math.max(totalChartHeight, STATS_FRAME_HEIGHT)
 
     -- Calculate minimum frame height needed based on both left and right columns
