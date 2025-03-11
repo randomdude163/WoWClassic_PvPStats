@@ -6,4 +6,5 @@
 EventHandlers.lua
 DataStorage.lua
 KillsListFrame.lua
+StatisticsFrame.lua
 PlayerKillAnnounce.lua

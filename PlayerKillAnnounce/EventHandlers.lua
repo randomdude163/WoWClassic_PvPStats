@@ -62,7 +62,7 @@ function PKA_SlashCommandHandler(msg)
         HandleSetMessageCommand(rest)
     elseif command == "status" then
         PrintStatus()
-    elseif command == "stats" then
+    elseif command == "kills" then
         -- Open the kill stats window
         PKA_CreateKillStatsFrame()
     else
@@ -102,6 +102,9 @@ local function HandleCombatLogEvent()
             -- Get the best available player info using our cache and other methods
             local level, englishClass, race, gender, guild = PKA_GetPlayerInfo(destName, destGUID)
 
+            -- Get current player level at time of kill
+            local playerLevel = UnitLevel("player")
+
             -- Create composite key with name and level
             local nameWithLevel = destName .. ":" .. level
 
@@ -113,13 +116,16 @@ local function HandleCombatLogEvent()
                     race = race,
                     gender = gender,
                     guild = guild,
-                    lastKill = ""
+                    lastKill = "",
+                    playerLevel = playerLevel  -- Store our level at time of kill
                 }
             end
 
             -- Update kill count and timestamp
             PKA_KillCounts[nameWithLevel].kills = PKA_KillCounts[nameWithLevel].kills + 1
             PKA_KillCounts[nameWithLevel].lastKill = date("%Y-%m-%d %H:%M:%S")
+            -- Update the player level with current level when getting a kill
+            PKA_KillCounts[nameWithLevel].playerLevel = playerLevel
             -- Make sure we always have the latest info for race, gender and guild
             if race ~= "Unknown" then PKA_KillCounts[nameWithLevel].race = race end
             if gender ~= "Unknown" then PKA_KillCounts[nameWithLevel].gender = gender end

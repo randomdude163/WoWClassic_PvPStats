@@ -121,7 +121,6 @@ function PKA_SaveSettings()
     PlayerKillAnnounceDB.PKA_EnableKillAnnounce = PKA_EnableKillAnnounce
     PlayerKillAnnounceDB.PKA_KillAnnounceMessage = PKA_KillAnnounceMessage
     PlayerKillAnnounceDB.PKA_KillCounts = PKA_KillCounts
-    DEFAULT_CHAT_FRAME:AddMessage("Number of kills saved: " .. #PKA_KillCounts)
 end
 
 function PKA_LoadSettings()
@@ -151,7 +150,6 @@ function PKA_LoadSettings()
         end
 
         PKA_KillCounts = PlayerKillAnnounceDB.PKA_KillCounts or {}
-        DEFAULT_CHAT_FRAME:AddMessage("Number of kills: " .. #PKA_KillCounts)
     else
         PlayerKillAnnounceDB = {
             EnableKillAnnounce = true,

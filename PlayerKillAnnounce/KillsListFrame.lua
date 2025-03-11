@@ -1,8 +1,8 @@
 local killStatsFrame = nil
 local searchText = ""
 -- Sorting variables
-local sortBy = "kills"  -- Default sort by kills
-local sortAscending = false  -- Default descending (highest kills first)
+local sortBy = "lastKill"  -- Changed default sort from "kills" to "lastKill"
+local sortAscending = false  -- Default descending (most recent kills first)
 
 local PKA_KILLS_FRAME_WIDTH = 800  -- Increased from 700 to 800 for better column display
 local PKA_KILLS_FRAME_HEIGHT = 500
