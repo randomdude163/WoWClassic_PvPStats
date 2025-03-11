@@ -149,7 +149,7 @@ function PKA_CreateConfigFrame()
 
     -- Create the main frame
     configFrame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    configFrame:SetSize(600, 700)  -- Increased height to 700px to accommodate the additional spacing
+    configFrame:SetSize(600, 700)  -- Maintain height for all content
     configFrame:SetPoint("CENTER")
     configFrame:SetMovable(true)
     configFrame:EnableMouse(true)
@@ -172,26 +172,41 @@ function PKA_CreateConfigFrame()
     if PKA_EnableKillAnnounce == nil then PKA_EnableKillAnnounce = true end
     if PKA_EnableRecordAnnounce == nil then PKA_EnableRecordAnnounce = true end
 
-    -- Add contents
-    -- Announcement Settings Section
-    local announcementHeader, announcementLine = CreateSectionHeader(configFrame, "Announcement Settings", 20, -30)
+    -- Define our spacing constants
+    local SECTION_TOP_MARGIN = 30       -- Space from top of frame to first section
+    local SECTION_SPACING = 100         -- Space between sections
+    local HEADER_ELEMENT_SPACING = 10    -- Space between header and first element
+    local CHECKBOX_SPACING = 0          -- Space between checkboxes
+    local FIELD_SPACING = 10            -- Space between input fields
+    local BUTTON_BOTTOM_MARGIN = 10     -- Space from bottom buttons to frame edge
+
+    -- Track our current Y position for relative positioning
+    local currentY = -SECTION_TOP_MARGIN
+
+    -- SECTION 1: Announcement Settings
+    local announcementHeader, announcementLine = CreateSectionHeader(configFrame, "Announcement Settings", 20, currentY)
+    currentY = currentY - HEADER_ELEMENT_SPACING
 
     -- Enable kill announcements checkbox
     local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(configFrame, "Enable kill announcements", PKA_EnableKillAnnounce, function(checked)
         PKA_EnableKillAnnounce = checked
         PKA_SaveSettings()
     end)
-    enableKillAnnounce:SetPoint("TOPLEFT", announcementHeader, "BOTTOMLEFT", 0, -8) -- Tighter spacing
+    enableKillAnnounce:SetPoint("TOPLEFT", announcementHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
     -- Enable record announcements checkbox
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(configFrame, "Announce new records to party chat", PKA_EnableRecordAnnounce, function(checked)
         PKA_EnableRecordAnnounce = checked
         PKA_SaveSettings()
     end)
-    enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, 0) -- No spacing between checkboxes
+    enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
 
-    -- Message Templates Section - moved 100px lower
-    local templatesHeader, templatesLine = CreateSectionHeader(configFrame, "Message Templates", 20, -195) -- Was -95, now -195
+    -- Calculate position for next section (from top of frame)
+    currentY = currentY - SECTION_SPACING
+
+    -- SECTION 2: Message Templates
+    local templatesHeader, templatesLine = CreateSectionHeader(configFrame, "Message Templates", 20, currentY)
+    currentY = currentY - HEADER_ELEMENT_SPACING
 
     -- Kill announcement message
     local killMsgContainer, killMsgEditBox = CreateInputField(
@@ -204,7 +219,7 @@ function PKA_CreateConfigFrame()
             PKA_SaveSettings()
         end
     )
-    killMsgContainer:SetPoint("TOPLEFT", templatesHeader, "BOTTOMLEFT", 0, -8) -- Tighter spacing
+    killMsgContainer:SetPoint("TOPLEFT", templatesHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
     -- Streak ended message
     local streakEndedContainer, streakEndedEditBox = CreateInputField(
@@ -217,7 +232,7 @@ function PKA_CreateConfigFrame()
             PKA_SaveSettings()
         end
     )
-    streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -12) -- Tighter spacing
+    streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
     -- New streak record message
     local newStreakContainer, newStreakEditBox = CreateInputField(
@@ -230,7 +245,7 @@ function PKA_CreateConfigFrame()
             PKA_SaveSettings()
         end
     )
-    newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -12) -- Tighter spacing
+    newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
     -- New multi-kill record message
     local multiKillContainer, multiKillEditBox = CreateInputField(
@@ -243,10 +258,13 @@ function PKA_CreateConfigFrame()
             PKA_SaveSettings()
         end
     )
-    multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -12) -- Tighter spacing
+    multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
-    -- Multi-kill Window Settings Section - moved 100px lower
-    local multiKillHeader, multiKillLine = CreateSectionHeader(configFrame, "Multi-kill Settings", 20, -450) -- Was -350, now -450
+    -- Calculate position for next section (from top of frame)
+    currentY = currentY - SECTION_SPACING - 180  -- Extra space needed for the input fields
+
+    -- SECTION 3: Multi-kill Settings
+    local multiKillHeader, multiKillLine = CreateSectionHeader(configFrame, "Multi-kill Settings", 20, currentY)
 
     -- Multi-kill time window slider
     local windowContainer, windowSlider, windowValueText = CreateSlider(
@@ -262,14 +280,17 @@ function PKA_CreateConfigFrame()
             PKA_SaveSettings()
         end
     )
-    windowContainer:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 0, -12) -- Tighter spacing
+    windowContainer:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
-    -- Statistics Section - moved 100px lower
-    local statsHeader, statsLine = CreateSectionHeader(configFrame, "Statistics", 20, -550) -- Was -450, now -550
+    -- Calculate position for next section (from top of frame)
+    currentY = currentY - SECTION_SPACING
+
+    -- SECTION 4: Statistics
+    local statsHeader, statsLine = CreateSectionHeader(configFrame, "Statistics", 20, currentY)
 
     -- Current stats display
     configFrame.statsText = configFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    configFrame.statsText:SetPoint("TOPLEFT", statsHeader, "BOTTOMLEFT", 0, -8) -- Tighter spacing
+    configFrame.statsText:SetPoint("TOPLEFT", statsHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
     -- Initialize with current values
     PKA_UpdateConfigStats()
@@ -278,14 +299,14 @@ function PKA_CreateConfigFrame()
     local showKillsBtn = CreateButton(configFrame, "Show Kills List", 150, 22, function()
         PKA_CreateKillStatsFrame()
     end)
-    showKillsBtn:SetPoint("TOPLEFT", configFrame.statsText, "BOTTOMLEFT", 0, -8) -- Tighter spacing
+    showKillsBtn:SetPoint("TOPLEFT", configFrame.statsText, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
     local showStatsBtn = CreateButton(configFrame, "Show Statistics", 150, 22, function()
         PKA_CreateStatisticsFrame()
     end)
-    showStatsBtn:SetPoint("LEFT", showKillsBtn, "RIGHT", 5, 0)  -- Already reduced to 5
+    showStatsBtn:SetPoint("LEFT", showKillsBtn, "RIGHT", 5, 0)
 
-    -- Button row at bottom - moved down to match taller frame
+    -- Button row at bottom of frame
     local resetBtn = CreateButton(configFrame, "Reset Statistics", 150, 22, function()
         StaticPopupDialogs["PKA_RESET_STATS"] = {
             text = "Are you sure you want to reset all kill statistics? This cannot be undone.",
@@ -307,7 +328,7 @@ function PKA_CreateConfigFrame()
         }
         StaticPopup_Show("PKA_RESET_STATS")
     end)
-    resetBtn:SetPoint("BOTTOMLEFT", configFrame, "BOTTOMLEFT", 20, 15)
+    resetBtn:SetPoint("BOTTOMLEFT", configFrame, "BOTTOMLEFT", 20, BUTTON_BOTTOM_MARGIN)
 
     -- Default settings button
     local defaultsBtn = CreateButton(configFrame, "Reset to Defaults", 150, 22, function()
@@ -348,7 +369,7 @@ function PKA_CreateConfigFrame()
     local closeBtn = CreateButton(configFrame, "Close", 80, 22, function()
         configFrame:Hide()
     end)
-    closeBtn:SetPoint("BOTTOMRIGHT", configFrame, "BOTTOMRIGHT", -20, 15)
+    closeBtn:SetPoint("BOTTOMRIGHT", configFrame, "BOTTOMRIGHT", -20, BUTTON_BOTTOM_MARGIN)
 end
 
 -- Add a function to update the statistics text in the config UI
