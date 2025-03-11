@@ -332,9 +332,18 @@ local function HandleCombatLogEvent()
                     PKA_SaveSettings()
                 end
 
-                -- Display "??" for unknown level players
+                -- Only include level info if it's unknown (??) or at least 5 levels above player's level
                 local levelDisplay = level == -1 and "??" or tostring(level)
-                killMessage = killMessage .. " (Level " .. levelDisplay .. ") x" .. PKA_KillCounts[nameWithLevel].kills
+                local playerLevel = UnitLevel("player")
+                local levelDifference = level - playerLevel
+
+                -- Check if we should include level (unknown or significantly higher)
+                if level == -1 or (level > 0 and levelDifference >= 5) then
+                    killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
+                end
+
+                -- Add kill count
+                killMessage = killMessage .. " x" .. PKA_KillCounts[nameWithLevel].kills
 
                 -- Add kill streak message if impressive
                 if PKA_CurrentKillStreak >= 5 then
@@ -365,10 +374,23 @@ local function HandleCombatLogEvent()
             PKA_SaveSettings()
 
             -- Debug message for local confirmation
-            local debugMsg = "Killed: " ..
-                destName ..
-                " (Level " ..
-                (level == -1 and "??" or level) .. ", " .. englishClass .. ", " .. race .. ") - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
+            local debugMsg = "Killed: " .. destName
+
+            -- Calculate level difference for debug message
+            local levelDifference = 0
+            if level > 0 then  -- Ensure level is a valid number before calculating difference
+                levelDifference = level - playerLevel
+            end
+
+            -- Only include level info for local debug if it's unknown or significantly higher
+            if level == -1 or (level > 0 and levelDifference >= 5) then
+                debugMsg = debugMsg .. " (Level " .. (level == -1 and "??" or level)
+            else
+                debugMsg = debugMsg .. " ("
+            end
+
+            -- Always include class and race info
+            debugMsg = debugMsg .. englishClass .. ", " .. race .. ") - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
 
             -- Add streak info to debug message
             debugMsg = debugMsg .. " - Current streak: " .. PKA_CurrentKillStreak
