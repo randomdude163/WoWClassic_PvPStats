@@ -31,6 +31,12 @@ local inCombat = false
 PKA_EnableRecordAnnounce = true  -- Enable announcing new records to party by default
 PKA_MultiKillThreshold = 3       -- Minimum multi-kill count to announce (default: Triple Kill)
 
+-- Add near the top of your file with other variables
+PKA_MILESTONE_STREAKS = {25, 50, 75, 100, 150, 200, 250, 300} -- Kill streak milestones that will trigger the special display
+
+-- Create the milestone frame once and reuse it
+local killStreakMilestoneFrame = nil
+
 local PKA_CHAT_MESSAGE_R = 1.0
 local PKA_CHAT_MESSAGE_G = 1.0
 local PKA_CHAT_MESSAGE_B = 0.74
@@ -52,6 +58,7 @@ local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka status", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debug - Show current streak values", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka records - Toggle announcing new records to party chat", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka registerkill [number] - Register test kill(s) for testing", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 local function PrintStatus()
@@ -161,6 +168,71 @@ function PKA_SlashCommandHandler(msg)
         PKA_SaveSettings()
         local status = PKA_EnableRecordAnnounce and "ENABLED" or "DISABLED"
         DEFAULT_CHAT_FRAME:AddMessage("Record announcements are now " .. status, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    elseif command == "registerkill" then
+        -- Test command to simulate a kill for testing purposes
+        local testKillCount = 1
+
+        -- If an argument was provided, try to use it as the kill count
+        if rest and rest ~= "" then
+            local count = tonumber(rest)
+            if count and count > 0 then
+                testKillCount = count
+            end
+        end
+
+        -- Simulate registering the requested number of kills
+        DEFAULT_CHAT_FRAME:AddMessage("Registering " .. testKillCount .. " test kill(s)...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+
+        for i = 1, testKillCount do
+            -- Increment kill streak
+            PKA_CurrentKillStreak = PKA_CurrentKillStreak + 1
+
+            -- Show milestone if applicable
+            PKA_ShowKillStreakMilestone(PKA_CurrentKillStreak)
+
+            -- Check if this is a new highest streak
+            if PKA_CurrentKillStreak > PKA_HighestKillStreak then
+                PKA_HighestKillStreak = PKA_CurrentKillStreak
+
+                -- Only announce new records if they're greater than 1
+                if PKA_HighestKillStreak > 1 then
+                    -- Local announcement
+                    print("NEW KILL STREAK RECORD: " .. PKA_HighestKillStreak .. "!")
+
+                    -- Party announcement for significant records (10+) and only at multiples of 5
+                    if PKA_HighestKillStreak >= 10 and PKA_HighestKillStreak % 5 == 0 and PKA_EnableRecordAnnounce and IsInGroup() then
+                        local newRecordMsg = string.gsub(PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault, "STREAKCOUNT", PKA_HighestKillStreak)
+                        SendChatMessage(newRecordMsg, "PARTY")
+                    end
+                end
+            end
+
+            -- Add a test kill to stats for a fictional player
+            local testPlayerName = "TestDummy"
+            local testPlayerLevel = 60
+            local nameWithLevel = testPlayerName .. ":" .. testPlayerLevel
+
+            -- Initialize or update kill data for test player
+            if not PKA_KillCounts[nameWithLevel] then
+                PKA_KillCounts[nameWithLevel] = {
+                    kills = 0,
+                    class = "WARRIOR",
+                    race = "Human",
+                    gender = 2,
+                    guild = "Test Guild",
+                    lastKill = "",
+                    playerLevel = UnitLevel("player"),
+                    unknownLevel = false
+                }
+            end
+
+            -- Update kill count and timestamp
+            PKA_KillCounts[nameWithLevel].kills = PKA_KillCounts[nameWithLevel].kills + 1
+            PKA_KillCounts[nameWithLevel].lastKill = date("%Y-%m-%d %H:%M:%S")
+        end
+
+        -- Save settings to persist streak data
+        PKA_SaveSettings()
     else
         PrintSlashCommandUsage()
     end
@@ -235,6 +307,9 @@ local function HandleCombatLogEvent()
 
             if playerOrPartyKill then
                 PKA_CurrentKillStreak = PKA_CurrentKillStreak + 1
+
+                -- Add this line to show milestone notification
+                PKA_ShowKillStreakMilestone(PKA_CurrentKillStreak)
 
                 -- Check if this is a new highest streak
                 if PKA_CurrentKillStreak > PKA_HighestKillStreak then
@@ -451,6 +526,94 @@ local function HandleCombatLogEvent()
             print(debugMsg)
         end
     end
+end
+
+-- Function to display kill streak milestone notifications - remove glow and increase display time
+function PKA_ShowKillStreakMilestone(killCount)
+    -- Only show for specific milestones
+    local showMilestone = false
+    for _, milestone in ipairs(PKA_MILESTONE_STREAKS) do
+        if killCount == milestone then
+            showMilestone = true
+            break
+        end
+    end
+
+    if not showMilestone then
+        return
+    end
+
+    -- Create the frame if it doesn't exist yet
+    if not killStreakMilestoneFrame then
+        killStreakMilestoneFrame = CreateFrame("Frame", "PKA_MilestoneFrame", UIParent)
+        killStreakMilestoneFrame:SetSize(400, 200)
+        killStreakMilestoneFrame:SetPoint("TOP", 0, -80) -- Position in top third of screen
+        killStreakMilestoneFrame:SetFrameStrata("HIGH")
+
+        -- Create the icon texture
+        local icon = killStreakMilestoneFrame:CreateTexture("PKA_MilestoneIcon", "ARTWORK")
+        icon:SetSize(200, 200)
+        icon:SetPoint("TOP", 0, 0)
+        icon:SetTexture("Interface\\AddOns\\PlayerKillAnnounce\\img\\RedridgePoliceLogo.blp")
+        killStreakMilestoneFrame.icon = icon
+
+        -- Create the text
+        local text = killStreakMilestoneFrame:CreateFontString("PKA_MilestoneText", "OVERLAY", "SystemFont_Huge1")
+        text:SetPoint("TOP", icon, "BOTTOM", 0, -10)
+        text:SetTextColor(1, 0, 0) -- Red text for emphasis
+        text:SetTextHeight(30)
+        killStreakMilestoneFrame.text = text
+        killStreakMilestoneFrame:Hide()
+    end
+
+    -- Set the text and show the frame
+    killStreakMilestoneFrame.text:SetText(killCount .. " KILL STREAK!")
+
+    -- Animation for the milestone notification
+    killStreakMilestoneFrame:Show()
+    killStreakMilestoneFrame:SetAlpha(0)
+
+    killStreakMilestoneFrame.animGroup = killStreakMilestoneFrame.animGroup or killStreakMilestoneFrame:CreateAnimationGroup()
+    killStreakMilestoneFrame.animGroup:SetLooping("NONE")
+    killStreakMilestoneFrame.animGroup:Stop()
+
+    -- Clear existing animations
+    killStreakMilestoneFrame.animGroup:SetScript("OnPlay", nil)
+    killStreakMilestoneFrame.animGroup:SetScript("OnFinished", nil)
+    killStreakMilestoneFrame.animGroup:SetScript("OnStop", nil)
+    killStreakMilestoneFrame.animGroup = killStreakMilestoneFrame:CreateAnimationGroup()
+
+    -- Fade in
+    local fadeIn = killStreakMilestoneFrame.animGroup:CreateAnimation("Alpha")
+    fadeIn:SetFromAlpha(0)
+    fadeIn:SetToAlpha(1)
+    fadeIn:SetDuration(0.5)
+    fadeIn:SetOrder(1)
+
+    -- Hold - increased from 3.0 to 6.0 seconds
+    local hold = killStreakMilestoneFrame.animGroup:CreateAnimation("Alpha")
+    hold:SetFromAlpha(1)
+    hold:SetToAlpha(1)
+    hold:SetDuration(9.0)  -- Changed from 3.0 to 6.0
+    hold:SetOrder(2)
+
+    -- Fade out
+    local fadeOut = killStreakMilestoneFrame.animGroup:CreateAnimation("Alpha")
+    fadeOut:SetFromAlpha(1)
+    fadeOut:SetToAlpha(0)
+    fadeOut:SetDuration(0.5)
+    fadeOut:SetOrder(3)
+
+    -- Play sound effect
+    PlaySound(8454) -- Big achievement sound
+    PlaySound(8574) -- Smaller achievement sound
+
+    -- Start animation
+    killStreakMilestoneFrame.animGroup:SetScript("OnFinished", function()
+        killStreakMilestoneFrame:Hide()
+    end)
+
+    killStreakMilestoneFrame.animGroup:Play()
 end
 
 -- Enhanced event registration to include combat tracking
