@@ -7,7 +7,7 @@ local BAR_SPACING = 3      -- Reduced spacing to fit more bars
 local TEXT_OFFSET = 5
 local GUILD_LIST_WIDTH = 350  -- Narrower guild list
 local CHART_PADDING = 0   -- Reduced from 40 to 25 for less space between charts
-local GUILD_LIST_HEIGHT = 230  -- Reduced from 350 to 230 (roughly 1/3 smaller)
+local GUILD_LIST_HEIGHT = 235  -- Reduced from 350 to 230 (roughly 1/3 smaller)
 local TITLE_SPACING = 3       -- New constant to customize space below titles
 
 -- Use WoW's built-in class colors
@@ -234,8 +234,9 @@ local function createGuildTable(parent, x, y, width, height)
 
     -- Create a ScrollFrame for the guild list with improved positioning
     local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 0, -20) -- Reduced from -25 to -20
-    scrollFrame:SetSize(totalContentWidth + 5, height - 25)  -- Reduced from -30 to -25
+    -- KEY CHANGE: Reduce the space between the header and the first entry
+    scrollFrame:SetPoint("TOPLEFT", 0, -20) -- Reduced from -20 to -16
+    scrollFrame:SetSize(totalContentWidth + 5, height - 21)  -- Reduced from -25 to -21
 
     -- Reposition scrollbar
     local scrollBarName = scrollFrame:GetName() and scrollFrame:GetName().."ScrollBar" or nil
@@ -252,11 +253,17 @@ local function createGuildTable(parent, x, y, width, height)
     content:SetSize(totalContentWidth, math.max(#sortedGuilds * 20 + 10, 10))
     scrollFrame:SetScrollChild(content)
 
+    -- KEY CHANGE: Position first row closer to the top
+    local firstRowSpacing = 0 -- Reduced spacing for the first row
+
     -- Create table rows for ALL guilds (with safety checks)
     for i = 1, #sortedGuilds do
         local entry = sortedGuilds[i]
         if entry then
-            local rowY = -(i * 20)
+            -- Adjust the position of the first row
+            local rowY = i == 1
+                and -firstRowSpacing  -- First row has minimal spacing
+                or -(firstRowSpacing + ((i-1) * 20)) -- Other rows follow normal spacing
 
             -- Ensure key and value exist before using them
             local guildName = entry.key or "Unknown"
@@ -550,7 +557,7 @@ function PKA_CreateStatisticsFrame()
 
     -- Create summary stats (moved up due to shorter guild list) with improved positioning
     -- Reduce the gap between guild list and summary stats
-    createSummaryStats(statsFrame, 440, -GUILD_LIST_HEIGHT - topPadding - 5, summaryStatsWidth, 250)
+    createSummaryStats(statsFrame, 440, -GUILD_LIST_HEIGHT - topPadding - 20, summaryStatsWidth, 250)
 
     -- Calculate minimum frame height needed based on both left and right columns with the new spacing
     -- Adjust the calculation to account for increased top padding
