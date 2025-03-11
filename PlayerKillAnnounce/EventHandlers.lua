@@ -547,7 +547,7 @@ function PKA_ShowKillStreakMilestone(killCount)
     if not killStreakMilestoneFrame then
         killStreakMilestoneFrame = CreateFrame("Frame", "PKA_MilestoneFrame", UIParent)
         killStreakMilestoneFrame:SetSize(400, 200)
-        killStreakMilestoneFrame:SetPoint("TOP", 0, -80) -- Position in top third of screen
+        killStreakMilestoneFrame:SetPoint("TOP", 0, -60) -- Position in top third of screen
         killStreakMilestoneFrame:SetFrameStrata("HIGH")
 
         -- Create the icon texture
@@ -567,7 +567,7 @@ function PKA_ShowKillStreakMilestone(killCount)
     end
 
     -- Set the text and show the frame
-    killStreakMilestoneFrame.text:SetText(killCount .. " KILL STREAK!")
+    killStreakMilestoneFrame.text:SetText(killCount .. " KILL STREAK")
 
     -- Animation for the milestone notification
     killStreakMilestoneFrame:Show()
