@@ -149,7 +149,7 @@ function PKA_CreateConfigFrame()
 
     -- Create the main frame
     configFrame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    configFrame:SetSize(600, 700)  -- Maintain height for all content
+    configFrame:SetSize(600, 650)  -- Reduced height since we removed the slider
     configFrame:SetPoint("CENTER")
     configFrame:SetMovable(true)
     configFrame:EnableMouse(true)
@@ -168,7 +168,6 @@ function PKA_CreateConfigFrame()
     if not PKA_KillStreakEndedMessage then PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault end
     if not PKA_NewStreakRecordMessage then PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault end
     if not PKA_NewMultiKillRecordMessage then PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault end
-    if not PKA_MULTI_KILL_WINDOW then PKA_MULTI_KILL_WINDOW = 10 end
     if PKA_EnableKillAnnounce == nil then PKA_EnableKillAnnounce = true end
     if PKA_EnableRecordAnnounce == nil then PKA_EnableRecordAnnounce = true end
 
@@ -260,32 +259,10 @@ function PKA_CreateConfigFrame()
     )
     multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
-    -- Calculate position for next section (from top of frame)
+    -- Calculate position for next section (from top of frame) - Skipping the Multi-kill settings section
     currentY = currentY - SECTION_SPACING - 180  -- Extra space needed for the input fields
 
-    -- SECTION 3: Multi-kill Settings
-    local multiKillHeader, multiKillLine = CreateSectionHeader(configFrame, "Multi-kill Settings", 20, currentY)
-
-    -- Multi-kill time window slider
-    local windowContainer, windowSlider, windowValueText = CreateSlider(
-        configFrame,
-        "Multi-kill time window (seconds)",
-        1,
-        20,
-        1,
-        PKA_MULTI_KILL_WINDOW,
-        "%.0f seconds",
-        function(value)
-            PKA_MULTI_KILL_WINDOW = value
-            PKA_SaveSettings()
-        end
-    )
-    windowContainer:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
-
-    -- Calculate position for next section (from top of frame)
-    currentY = currentY - SECTION_SPACING
-
-    -- SECTION 4: Statistics
+    -- SECTION 3: Statistics (previously SECTION 4)
     local statsHeader, statsLine = CreateSectionHeader(configFrame, "Statistics", 20, currentY)
 
     -- Current stats display
@@ -341,7 +318,6 @@ function PKA_CreateConfigFrame()
                 PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault
                 PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
                 PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
-                PKA_MULTI_KILL_WINDOW = 10
                 PKA_EnableKillAnnounce = true
                 PKA_EnableRecordAnnounce = true
 
@@ -350,7 +326,6 @@ function PKA_CreateConfigFrame()
                 streakEndedEditBox:SetText(PKA_KillStreakEndedMessage)
                 newStreakEditBox:SetText(PKA_NewStreakRecordMessage)
                 multiKillEditBox:SetText(PKA_NewMultiKillRecordMessage)
-                windowSlider:SetValue(PKA_MULTI_KILL_WINDOW)
                 enableKillAnnounce:SetChecked(PKA_EnableKillAnnounce)
                 enableRecordAnnounce:SetChecked(PKA_EnableRecordAnnounce)
 

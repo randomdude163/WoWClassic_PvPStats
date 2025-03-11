@@ -23,7 +23,9 @@ PKA_HighestKillStreak = 0
 PKA_MultiKillCount = 0
 PKA_HighestMultiKill = 0
 PKA_LastCombatTime = 0
-PKA_MULTI_KILL_WINDOW = 10 -- Time window in seconds for multi-kills
+
+-- Add combat state tracking variable
+local inCombat = false
 
 -- Add at the top with other variables
 PKA_EnableRecordAnnounce = true  -- Enable announcing new records to party by default
@@ -157,6 +159,19 @@ local function OnUpdateMouseoverUnit()
     PKA_CollectPlayerInfo("mouseover")
 end
 
+-- Function to handle player entering/leaving combat
+local function HandleCombatState(inCombatNow)
+    -- If we were in combat and now we're not, reset multi-kill count
+    if inCombat and not inCombatNow then
+        PKA_MultiKillCount = 0
+        inCombat = false
+    elseif not inCombat and inCombatNow then
+        -- Reset multi-kill count when entering combat
+        PKA_MultiKillCount = 0
+        inCombat = true
+    end
+end
+
 -- Enhanced combat log event handler
 local function HandleCombatLogEvent()
     local timestamp, combatEvent, _, sourceGUID, sourceName, sourceFlags, _, destGUID, destName, destFlags =
@@ -226,13 +241,19 @@ local function HandleCombatLogEvent()
                     end
                 end
 
-                -- Check for multi-kill (kills while in combat within a time window)
-                local currentTime = GetTime()
-                if currentTime - PKA_LastCombatTime <= PKA_MULTI_KILL_WINDOW and UnitAffectingCombat("player") then
+                -- Check for multi-kill (kills while in combat)
+                if UnitAffectingCombat("player") then
+                    -- Make sure we're tracking combat state
+                    if not inCombat then
+                        inCombat = true
+                    end
+
+                    -- Increment multi-kill counter
                     PKA_MultiKillCount = PKA_MultiKillCount + 1
                 else
-                    -- Reset multi-kill counter if too much time has passed or not in combat
+                    -- Not in combat, reset counter
                     PKA_MultiKillCount = 1
+                    inCombat = false
                 end
 
                 -- Update highest multi-kill if needed
@@ -256,9 +277,6 @@ local function HandleCombatLogEvent()
                         end
                     end
                 end
-
-                -- Update last combat time - THIS CRITICAL LINE WAS MISSING
-                PKA_LastCombatTime = currentTime
 
                 -- Save settings to persist streak data
                 PKA_SaveSettings()
@@ -370,7 +388,7 @@ local function HandleCombatLogEvent()
     end
 end
 
--- Enhanced event registration to include new events for player info collection
+-- Enhanced event registration to include combat tracking
 function RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("PLAYER_LOGIN")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -378,10 +396,14 @@ function RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
     playerKillAnnounceFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_DEAD")
+    playerKillAnnounceFrame:RegisterEvent("PLAYER_REGEN_DISABLED") -- Player enters combat
+    playerKillAnnounceFrame:RegisterEvent("PLAYER_REGEN_ENABLED")  -- Player leaves combat
 
     playerKillAnnounceFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
             PKA_LoadSettings()
+            -- Update combat state
+            inCombat = UnitAffectingCombat("player")
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -396,11 +418,18 @@ function RegisterEvents()
                 SendChatMessage(streakEndedMsg, "PARTY")
             end
 
-            -- Player died, reset current kill streak
+            -- Player died, reset current kill streak and multi-kill
             PKA_CurrentKillStreak = 0
             PKA_MultiKillCount = 0
+            inCombat = false
             PKA_SaveSettings()
             print("You died! Kill streak reset.")
+        elseif event == "PLAYER_REGEN_DISABLED" then
+            -- Player entered combat
+            HandleCombatState(true)
+        elseif event == "PLAYER_REGEN_ENABLED" then
+            -- Player left combat
+            HandleCombatState(false)
         end
     end)
 end

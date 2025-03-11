@@ -137,9 +137,6 @@ function PKA_SaveSettings()
 
     -- Store new record announce preference
     PlayerKillAnnounceDB.PKA_EnableRecordAnnounce = PKA_EnableRecordAnnounce
-
-    -- Store multi-kill window setting
-    PlayerKillAnnounceDB.PKA_MULTI_KILL_WINDOW = PKA_MULTI_KILL_WINDOW
 end
 
 function PKA_LoadSettings()
@@ -170,9 +167,6 @@ function PKA_LoadSettings()
         else
             PKA_EnableRecordAnnounce = true
         end
-
-        -- Load multi-kill window setting
-        PKA_MULTI_KILL_WINDOW = PlayerKillAnnounceDB.PKA_MULTI_KILL_WINDOW or 10
     else
         -- Initialize with defaults if no saved variables exist
         PKA_EnableKillAnnounce = true
@@ -185,7 +179,6 @@ function PKA_LoadSettings()
         PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
         PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
         PKA_EnableRecordAnnounce = true
-        PKA_MULTI_KILL_WINDOW = 10
     end
 
     -- Reset temporary values
