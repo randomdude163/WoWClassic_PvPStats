@@ -6,8 +6,9 @@ local BAR_HEIGHT = 16      -- Reduced height to fit more bars
 local BAR_SPACING = 3      -- Reduced spacing to fit more bars
 local TEXT_OFFSET = 5
 local GUILD_LIST_WIDTH = 350  -- Narrower guild list
-local CHART_PADDING = 40   -- Increased padding between charts
+local CHART_PADDING = 0   -- Reduced from 40 to 25 for less space between charts
 local GUILD_LIST_HEIGHT = 230  -- Reduced from 350 to 230 (roughly 1/3 smaller)
+local TITLE_SPACING = 3       -- New constant to customize space below titles
 
 -- Use WoW's built-in class colors
 -- This will be populated in createBarChart for class charts
@@ -124,14 +125,14 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     container:SetSize(width, height)
     container:SetPoint("TOPLEFT", x, y)
 
-    -- Create title with more spacing below it
+    -- Create title with less spacing below it
     local titleText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     titleText:SetPoint("TOPLEFT", 0, 0)
     titleText:SetText(title)
 
-    -- Add horizontal line under title
+    -- Add horizontal line under title with reduced spacing
     local line = container:CreateTexture(nil, "ARTWORK")
-    line:SetPoint("TOPLEFT", 0, -20)
+    line:SetPoint("TOPLEFT", 0, -15) -- Reduced from -20 to -15
     line:SetSize(width, 1)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
@@ -146,17 +147,17 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     end
 
     -- Create bars directly in the container (no scrollframe)
-    -- Adjust starting position to account for the line
-    local titleSpacing = 25  -- Increased from 20 to account for line
+    -- Adjust starting position to account for the line with less spacing
+    local titleSpacing = TITLE_SPACING  -- Use the new global constant
 
     for i = 1, #sortedData do
         local entry = sortedData[i]
         local barWidth = (entry.value / maxValue) * (width - 160) -- Allow space for labels
-        local barY = -(i * (BAR_HEIGHT + BAR_SPACING) + titleSpacing)  -- Position below the title with more spacing
+        local barY = -(i * (BAR_HEIGHT + BAR_SPACING) + titleSpacing)  -- Position below the title with appropriate spacing
 
         -- Properly format display name (Title case for classes)
         local displayName = entry.key
-        if title == "Kills by Class" then
+        if title == "Kills by Class" or title == "Level ?? Kills by Class" then
             displayName = properCase(entry.key)
         end
 
@@ -174,10 +175,10 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
 
         -- Use the appropriate color based on chart type
         local color
-        if title == "Kills by Class" then
+        if title == "Kills by Class" or title == "Level ?? Kills by Class" then
             color = getClassColor(entry.key)
         else
-            color = colorTable[entry.key] or {r = 0.8, g = 0.8, b = 0.8}
+            color = colorTable and colorTable[entry.key] or {r = 0.8, g = 0.8, b = 0.8}
         end
 
         bar:SetColorTexture(color.r, color.g, color.b, 0.9)  -- Increased alpha for more vibrancy
@@ -191,7 +192,7 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     return container
 end
 
--- Function to create guild kills table (with scrollbar)
+-- Function to create guild kills table (with scrollbar) - update title spacing
 local function createGuildTable(parent, x, y, width, height)
     -- Create container
     local container = CreateFrame("Frame", nil, parent)
@@ -220,9 +221,9 @@ local function createGuildTable(parent, x, y, width, height)
     -- Sort guilds by kill count
     local sortedGuilds = sortByValue(guildKills, true)
 
-    -- Create horizontal line
+    -- Create horizontal line with reduced spacing
     local line = container:CreateTexture(nil, "ARTWORK")
-    line:SetPoint("TOPLEFT", 0, -20)
+    line:SetPoint("TOPLEFT", 0, -15) -- Reduced from -20 to -15
     line:SetSize(width, 1)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
@@ -231,10 +232,10 @@ local function createGuildTable(parent, x, y, width, height)
     local killsColWidth = 60   -- Width for the kill count column
     local totalContentWidth = guildColWidth + killsColWidth + 10  -- 10px for spacing
 
-    -- Create a ScrollFrame for the guild list
+    -- Create a ScrollFrame for the guild list with improved positioning
     local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 0, -25)
-    scrollFrame:SetSize(totalContentWidth + 5, height - 30)  -- +5 to account for scroll bar overlap
+    scrollFrame:SetPoint("TOPLEFT", 0, -20) -- Reduced from -25 to -20
+    scrollFrame:SetSize(totalContentWidth + 5, height - 25)  -- Reduced from -30 to -25
 
     -- Reposition scrollbar
     local scrollBarName = scrollFrame:GetName() and scrollFrame:GetName().."ScrollBar" or nil
@@ -277,7 +278,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
--- Function to create summary statistics area
+-- Function to create summary statistics area - update title spacing
 local function createSummaryStats(parent, x, y, width, height)
     -- Create container
     local container = CreateFrame("Frame", nil, parent)
@@ -289,9 +290,9 @@ local function createSummaryStats(parent, x, y, width, height)
     titleText:SetPoint("TOPLEFT", 0, 0)
     titleText:SetText("Summary Statistics")
 
-    -- Add horizontal line under title
+    -- Add horizontal line under title with reduced spacing
     local line = container:CreateTexture(nil, "ARTWORK")
-    line:SetPoint("TOPLEFT", 0, -20)
+    line:SetPoint("TOPLEFT", 0, -15) -- Reduced from -20 to -15
     line:SetSize(width, 1)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
@@ -346,8 +347,8 @@ local function createSummaryStats(parent, x, y, width, height)
     -- Average kills per unique player
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
-    -- Create stat lines - adjusted Y position to account for the line
-    local statY = -35
+    -- Create stat lines - adjusted Y position with less spacing
+    local statY = -30 -- Changed from -35 to -30
     local function addStat(label, value)
         local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         labelText:SetPoint("TOPLEFT", 0, statY)
@@ -357,7 +358,7 @@ local function createSummaryStats(parent, x, y, width, height)
         valueText:SetPoint("TOPLEFT", 200, statY)
         valueText:SetText(tostring(value))  -- Ensure value is a string
 
-        statY = statY - 23
+        statY = statY - 20 -- Reduced from -23 to -20 for tighter spacing
     end
 
     addStat("Total Player Kills:", totalKills)
@@ -374,8 +375,8 @@ local function createSummaryStats(parent, x, y, width, height)
     addStat("Highest Kill Streak:", PKA_HighestKillStreak or 0)
     addStat("Highest Multi-Kill:", PKA_HighestMultiKill or 0)
 
-    -- Add credits section with slightly more space above it
-    statY = statY - 30  -- Extra spacing before credits
+    -- Add credits section with slightly reduced spacing
+    statY = statY - 25  -- Reduced from -30 to -25
 
     -- Credits header in gold color
     local creditsHeader = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -404,7 +405,7 @@ local function createSummaryStats(parent, x, y, width, height)
     -- Add guild info
     local guildText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     guildText:SetPoint("TOPLEFT", 0, statY - 50)
-    guildText:SetText("Guild: Redridge Police")
+    guildText:SetText("Guild: <Redridge Police>")
 
     -- Add GitHub link with even smaller font and reduced font height
     local githubText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -456,18 +457,18 @@ local function gatherStatistics()
     return classData, raceData, genderData, unknownLevelClassData
 end
 
--- Function to calculate the height needed for a chart based on the data
+-- Function to calculate the height needed for a chart based on the data, with reduced padding
 local function calculateChartHeight(data)
     local entries = 0
     for _ in pairs(data) do
         entries = entries + 1
     end
 
-    -- Calculate required height: title (25px) + entries * (height + spacing) + padding
-    return 35 + (entries * (BAR_HEIGHT + BAR_SPACING)) + 25  -- Slight adjustment for better spacing
+    -- Calculate required height with less padding: title space + entries * (height + spacing) + smaller padding
+    return 30 + (entries * (BAR_HEIGHT + BAR_SPACING)) + 15  -- Reduced from 35+25 to 30+15
 end
 
--- Creates or refreshes the stats frame
+-- Creates or refreshes the stats frame with improved layout
 function PKA_CreateStatisticsFrame()
     -- Close existing frame if it's open
     if statsFrame then
@@ -523,40 +524,47 @@ function PKA_CreateStatisticsFrame()
     local classChartHeight = calculateChartHeight(classData)
     local raceChartHeight = calculateChartHeight(raceData)
     local genderChartHeight = calculateChartHeight(genderData)
+    local unknownLevelClassHeight = calculateChartHeight(unknownLevelClassData)
 
-    -- Create class chart with dynamic height
-    createBarChart(statsFrame, "Kills by Class", classData, nil, 20, -30, CHART_WIDTH, classChartHeight)
+    -- Add more top padding (increase from -25 to -40)
+    local topPadding = 40
 
-    -- Position race chart below class chart with increased padding
-    local raceChartY = -30 - classChartHeight - CHART_PADDING
+    -- Create class chart with dynamic height and increased top padding
+    createBarChart(statsFrame, "Kills by Class", classData, nil, 20, -topPadding, CHART_WIDTH, classChartHeight)
+
+    -- Position race chart below class chart with reduced padding
+    local raceChartY = -topPadding - classChartHeight - CHART_PADDING
     createBarChart(statsFrame, "Kills by Race", raceData, raceColors, 20, raceChartY, CHART_WIDTH, raceChartHeight)
 
-    -- Position gender chart below race chart with increased padding
+    -- Position gender chart below race chart with reduced padding
     local genderChartY = raceChartY - raceChartHeight - CHART_PADDING
     createBarChart(statsFrame, "Kills by Gender", genderData, genderColors, 20, genderChartY, CHART_WIDTH, genderChartHeight)
 
-    -- Position ?? level class chart below gender chart with increased padding
+    -- Position ?? level class chart below gender chart with reduced padding
     local unknownLevelClassY = genderChartY - genderChartHeight - CHART_PADDING
-    createBarChart(statsFrame, "Level ?? Kills by Class", unknownLevelClassData, nil, 20, unknownLevelClassY, CHART_WIDTH, calculateChartHeight(unknownLevelClassData))
+    createBarChart(statsFrame, "Level ?? Kills by Class", unknownLevelClassData, nil, 20, unknownLevelClassY, CHART_WIDTH, unknownLevelClassHeight)
 
-    -- Create guild table with reduced height and updated width
+    -- Create guild table with reduced height and updated width, improved positioning with same top padding
     local summaryStatsWidth = 380  -- Width of summary stats section
-    createGuildTable(statsFrame, 440, -30, summaryStatsWidth, GUILD_LIST_HEIGHT)
+    createGuildTable(statsFrame, 440, -topPadding, summaryStatsWidth, GUILD_LIST_HEIGHT)
 
-    -- Create summary stats (moved up due to shorter guild list)
-    createSummaryStats(statsFrame, 440, -280, summaryStatsWidth, 250)  -- Using same width for consistency
+    -- Create summary stats (moved up due to shorter guild list) with improved positioning
+    -- Reduce the gap between guild list and summary stats
+    createSummaryStats(statsFrame, 440, -GUILD_LIST_HEIGHT - topPadding - 5, summaryStatsWidth, 250)
 
-    -- Calculate total frame height needed to fit everything
-    local totalChartHeight = 30 + classChartHeight + CHART_PADDING + raceChartHeight + CHART_PADDING + genderChartHeight + CHART_PADDING + calculateChartHeight(unknownLevelClassData) + 30
-    local frameHeight = math.max(totalChartHeight, STATS_FRAME_HEIGHT)
+    -- Calculate minimum frame height needed based on both left and right columns with the new spacing
+    -- Adjust the calculation to account for increased top padding
+    local leftColumnHeight = topPadding + classChartHeight + CHART_PADDING +
+                             raceChartHeight + CHART_PADDING +
+                             genderChartHeight + CHART_PADDING +
+                             unknownLevelClassHeight + 25
 
-    -- Calculate minimum frame height needed based on both left and right columns
-    local leftColumnHeight = 30 + classChartHeight + CHART_PADDING + raceChartHeight + CHART_PADDING + genderChartHeight + 30
-    local rightColumnHeight = 30 + GUILD_LIST_HEIGHT + 30 + 250 + 30  -- Header + guild list + spacing + summary stats + footer
+    local rightColumnHeight = topPadding + GUILD_LIST_HEIGHT + 20 + 250 + 25  -- Reduced spacing between elements
+
     local minFrameHeight = math.max(leftColumnHeight, rightColumnHeight)
 
-    -- Set the frame height to the larger of the calculated minimum or the default height
-    statsFrame:SetHeight(math.max(minFrameHeight, STATS_FRAME_HEIGHT))
+    -- Set the frame height based on content with a minimum
+    statsFrame:SetHeight(math.max(minFrameHeight, 550)) -- Set minimum height to 550 instead of always using STATS_FRAME_HEIGHT
 end
 
 -- Hook into existing slash command handler
