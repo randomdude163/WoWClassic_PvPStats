@@ -228,8 +228,8 @@ local function HandleCombatLogEvent()
                         -- Local announcement
                         print("NEW KILL STREAK RECORD: " .. PKA_HighestKillStreak .. "!")
 
-                        -- Party announcement for significant records (3+)
-                        if PKA_HighestKillStreak >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
+                        -- Party announcement for significant records (10+) and only at multiples of 5
+                        if PKA_HighestKillStreak >= 10 and PKA_HighestKillStreak % 5 == 0 and PKA_EnableRecordAnnounce and IsInGroup() then
                             local newRecordMsg = string.gsub(PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault, "STREAKCOUNT", PKA_HighestKillStreak)
                             SendChatMessage(newRecordMsg, "PARTY")
                         end
@@ -345,8 +345,9 @@ local function HandleCombatLogEvent()
                 -- Add kill count
                 killMessage = killMessage .. " x" .. PKA_KillCounts[nameWithLevel].kills
 
-                -- Add kill streak message if impressive
-                if PKA_CurrentKillStreak >= 5 then
+                -- Add kill streak message only at thresholds: 10, 15, 20, etc.
+                -- Check if streak is at least 10 AND is divisible by 5
+                if PKA_CurrentKillStreak >= 10 and PKA_CurrentKillStreak % 5 == 0 then
                     killMessage = killMessage .. " - Kill Streak: " .. PKA_CurrentKillStreak
                 end
 
@@ -362,8 +363,18 @@ local function HandleCombatLogEvent()
                         multiKillText = "TRIPLE KILL!"
                     elseif PKA_MultiKillCount == 4 then
                         multiKillText = "QUADRA KILL!"
-                    elseif PKA_MultiKillCount >= 5 then
+                    elseif PKA_MultiKillCount == 5 then
                         multiKillText = "PENTA KILL!"
+                    elseif PKA_MultiKillCount == 6 then
+                        multiKillText = "HEXA KILL!"
+                    elseif PKA_MultiKillCount == 7 then
+                        multiKillText = "HEPTA KILL!"
+                    elseif PKA_MultiKillCount == 8 then
+                        multiKillText = "OCTA KILL!"
+                    elseif PKA_MultiKillCount == 9 then
+                        multiKillText = "NONA KILL!"
+                    elseif PKA_MultiKillCount >= 10 then
+                        multiKillText = "DECA KILL!"
                     end
 
                     -- Send multi-kill message as a separate message
@@ -404,8 +415,18 @@ local function HandleCombatLogEvent()
                     multiKillText = "TRIPLE KILL!"
                 elseif PKA_MultiKillCount == 4 then
                     multiKillText = "QUADRA KILL!"
-                elseif PKA_MultiKillCount >= 5 then
+                elseif PKA_MultiKillCount == 5 then
                     multiKillText = "PENTA KILL!"
+                elseif PKA_MultiKillCount == 6 then
+                    multiKillText = "HEXA KILL!"
+                elseif PKA_MultiKillCount == 7 then
+                    multiKillText = "HEPTA KILL!"
+                elseif PKA_MultiKillCount == 8 then
+                    multiKillText = "OCTA KILL!"
+                elseif PKA_MultiKillCount == 9 then
+                    multiKillText = "NONA KILL!"
+                elseif PKA_MultiKillCount >= 10 then
+                    multiKillText = "DECA KILL!"
                 end
                 debugMsg = debugMsg .. " - " .. multiKillText
             end
@@ -438,8 +459,8 @@ function RegisterEvents()
         elseif event == "UPDATE_MOUSEOVER_UNIT" then
             OnUpdateMouseoverUnit()
         elseif event == "PLAYER_DEAD" then
-            -- Only announce if the streak was noteworthy and announcements are enabled
-            if PKA_CurrentKillStreak >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
+            -- Only announce if the streak was noteworthy (10+) and announcements are enabled
+            if PKA_CurrentKillStreak >= 10 and PKA_EnableRecordAnnounce and IsInGroup() then
                 -- Announce the end of your streak to party chat
                 local streakEndedMsg = string.gsub(PKA_KillStreakEndedMessage, "STREAKCOUNT", PKA_CurrentKillStreak)
                 SendChatMessage(streakEndedMsg, "PARTY")
