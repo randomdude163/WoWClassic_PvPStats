@@ -176,7 +176,7 @@ function PKA_CreateConfigFrame()
     local SECTION_SPACING = 100         -- Space between sections
     local HEADER_ELEMENT_SPACING = 10    -- Space between header and first element
     local CHECKBOX_SPACING = 0          -- Space between checkboxes
-    local FIELD_SPACING = 10            -- Space between input fields
+    local FIELD_SPACING = 5            -- Space between input fields
     local BUTTON_BOTTOM_MARGIN = 10     -- Space from bottom buttons to frame edge
 
     -- Track our current Y position for relative positioning
@@ -200,8 +200,43 @@ function PKA_CreateConfigFrame()
     end)
     enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
 
-    -- Calculate position for next section (from top of frame)
-    currentY = currentY - SECTION_SPACING
+    -- Add a slider for multi-kill threshold settings
+    local multiKillThresholdSlider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", configFrame, "OptionsSliderTemplate")
+    multiKillThresholdSlider:SetWidth(200)
+    multiKillThresholdSlider:SetHeight(16)
+    multiKillThresholdSlider:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 20, -30)
+    multiKillThresholdSlider:SetOrientation("HORIZONTAL")
+    multiKillThresholdSlider:SetMinMaxValues(2, 10)
+    multiKillThresholdSlider:SetValueStep(1)
+    multiKillThresholdSlider:SetValue(PKA_MultiKillThreshold or 3)
+    getglobal(multiKillThresholdSlider:GetName() .. "Low"):SetText("Double")
+    getglobal(multiKillThresholdSlider:GetName() .. "High"):SetText("Deca")
+    getglobal(multiKillThresholdSlider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
+
+    -- Add handler for slider value change
+    multiKillThresholdSlider:SetScript("OnValueChanged", function(self, value)
+        -- Round to nearest whole number
+        value = math.floor(value + 0.5)
+        self:SetValue(value)
+
+        -- Update text
+        local thresholdText = "Multi-Kill Announce Threshold: " .. value
+        getglobal(self:GetName() .. "Text"):SetText(thresholdText)
+
+        -- Save the value
+        PKA_MultiKillThreshold = value
+        PKA_SaveSettings()
+    end)
+
+    -- Add a descriptive text
+    local multiKillThresholdDesc = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    multiKillThresholdDesc:SetPoint("TOPLEFT", multiKillThresholdSlider, "BOTTOMLEFT", 0, -5)
+    multiKillThresholdDesc:SetText("Set the minimum multi-kill count to announce in party chat")
+    multiKillThresholdDesc:SetJustifyH("LEFT")
+    multiKillThresholdDesc:SetWidth(350)
+
+    -- Calculate position for next section (from top of frame) with extra space for the slider
+    currentY = currentY - SECTION_SPACING - 70  -- Extra 50px for the slider and its description
 
     -- SECTION 2: Message Templates
     local templatesHeader, templatesLine = CreateSectionHeader(configFrame, "Message Templates", 20, currentY)
@@ -259,10 +294,10 @@ function PKA_CreateConfigFrame()
     )
     multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
-    -- Calculate position for next section (from top of frame) - Skipping the Multi-kill settings section
-    currentY = currentY - SECTION_SPACING - 180  -- Extra space needed for the input fields
+    -- Calculate position for next section (from top of frame)
+    currentY = currentY - SECTION_SPACING - 180  -- Space for all the input fields in this section
 
-    -- SECTION 3: Statistics (previously SECTION 4)
+    -- SECTION 3: Statistics
     local statsHeader, statsLine = CreateSectionHeader(configFrame, "Statistics", 20, currentY)
 
     -- Current stats display

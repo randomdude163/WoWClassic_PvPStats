@@ -139,6 +139,12 @@ function PKA_SaveSettings()
 
     -- Store new record announce preference
     PlayerKillAnnounceDB.PKA_EnableRecordAnnounce = PKA_EnableRecordAnnounce
+
+    -- Store multi-kill threshold setting
+    PlayerKillAnnounceDB.PKA_MultiKillThreshold = PKA_MultiKillThreshold
+
+    -- Store player info cache
+    PlayerKillAnnounceDB.PlayerInfoCache = PlayerInfoCache
 end
 
 function PKA_LoadSettings()
@@ -169,6 +175,16 @@ function PKA_LoadSettings()
         else
             PKA_EnableRecordAnnounce = true
         end
+
+        -- Load multi-kill threshold setting
+        if PlayerKillAnnounceDB.PKA_MultiKillThreshold ~= nil then
+            PKA_MultiKillThreshold = PlayerKillAnnounceDB.PKA_MultiKillThreshold
+        else
+            PKA_MultiKillThreshold = 3  -- Default to Triple Kill if not set
+        end
+
+        -- Load player info cache
+        PlayerInfoCache = PlayerKillAnnounceDB.PlayerInfoCache or {}
     else
         -- Initialize with defaults if no saved variables exist
         PKA_EnableKillAnnounce = true
@@ -181,6 +197,8 @@ function PKA_LoadSettings()
         PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
         PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
         PKA_EnableRecordAnnounce = true
+        PKA_MultiKillThreshold = 3  -- Default to Triple Kill
+        PlayerInfoCache = {}
     end
 
     -- Reset temporary values

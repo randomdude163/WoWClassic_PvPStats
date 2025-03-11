@@ -29,6 +29,7 @@ local inCombat = false
 
 -- Add at the top with other variables
 PKA_EnableRecordAnnounce = true  -- Enable announcing new records to party by default
+PKA_MultiKillThreshold = 3       -- Minimum multi-kill count to announce (default: Triple Kill)
 
 local PKA_CHAT_MESSAGE_R = 1.0
 local PKA_CHAT_MESSAGE_G = 1.0
@@ -46,6 +47,7 @@ local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka multikillmessage <message>", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("For streak messages, STREAKCOUNT or MULTIKILLCOUNT will be replaced with the actual count.",
         PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka multikillthreshold <number>", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka stats", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka status", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debug - Show current streak values", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
@@ -62,6 +64,8 @@ local function PrintStatus()
     DEFAULT_CHAT_FRAME:AddMessage("New streak record message: " .. PKA_NewStreakRecordMessage, PKA_CHAT_MESSAGE_R,
         PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("New multi-kill record message: " .. PKA_NewMultiKillRecordMessage, PKA_CHAT_MESSAGE_R,
+        PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Multi-kill announcement threshold: " .. PKA_MultiKillThreshold, PKA_CHAT_MESSAGE_R,
         PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Record announcements: " .. (PKA_EnableRecordAnnounce and "ENABLED" or "DISABLED"),
         PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
@@ -112,6 +116,17 @@ function PKA_SlashCommandHandler(msg)
         PKA_SaveSettings()
         DEFAULT_CHAT_FRAME:AddMessage("New multi-kill record message set to: " .. PKA_NewMultiKillRecordMessage, PKA_CHAT_MESSAGE_R,
             PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    elseif command == "multikillthreshold" and rest and rest ~= "" then
+        local threshold = tonumber(rest)
+        if threshold and threshold >= 2 and threshold <= 10 then
+            PKA_MultiKillThreshold = threshold
+            PKA_SaveSettings()
+            DEFAULT_CHAT_FRAME:AddMessage("Multi-kill announcement threshold set to: " .. PKA_MultiKillThreshold,
+                PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("Invalid threshold. Please enter a number between 2 and 10.",
+                PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+        end
     elseif command == "status" then
         PrintStatus()
     elseif command == "kills" or command == "stats" then
@@ -126,6 +141,8 @@ function PKA_SlashCommandHandler(msg)
         DEFAULT_CHAT_FRAME:AddMessage("Current Multi-kill Count: " .. PKA_MultiKillCount,
                                       PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
         DEFAULT_CHAT_FRAME:AddMessage("Highest Multi-kill: " .. PKA_HighestMultiKill,
+                                      PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+        DEFAULT_CHAT_FRAME:AddMessage("Multi-kill Announcement Threshold: " .. PKA_MultiKillThreshold,
                                       PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 
         -- Add time window info for multi-kills
@@ -355,7 +372,7 @@ local function HandleCombatLogEvent()
                 SendChatMessage(killMessage, "PARTY")
 
                 -- Add multi-kill message as a separate message in all caps
-                if PKA_MultiKillCount >= 2 then
+                if PKA_MultiKillCount >= PKA_MultiKillThreshold then
                     local multiKillText = ""
                     if PKA_MultiKillCount == 2 then
                         multiKillText = "DOUBLE KILL!"
