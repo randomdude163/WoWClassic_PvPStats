@@ -207,6 +207,7 @@ local function HandleCombatLogEvent()
                 -- Check if this is a new highest streak
                 if PKA_CurrentKillStreak > PKA_HighestKillStreak then
                     PKA_HighestKillStreak = PKA_CurrentKillStreak
+
                     -- Only announce new records if they're greater than 1
                     if PKA_HighestKillStreak > 1 then
                         -- Local announcement
@@ -214,7 +215,13 @@ local function HandleCombatLogEvent()
 
                         -- Party announcement for significant records (3+)
                         if PKA_HighestKillStreak >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
-                            SendChatMessage("NEW PERSONAL BEST: Kill streak of " .. PKA_HighestKillStreak .. "!", "PARTY")
+                            local newRecordMsg = string.gsub(PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault, "STREAKCOUNT", PKA_HighestKillStreak)
+                            SendChatMessage(newRecordMsg, "PARTY")
+                        end
+
+                        -- Update config UI if it's open
+                        if PKA_UpdateConfigStats then
+                            PKA_UpdateConfigStats()
                         end
                     end
                 end
@@ -231,6 +238,7 @@ local function HandleCombatLogEvent()
                 -- Update highest multi-kill if needed
                 if PKA_MultiKillCount > PKA_HighestMultiKill then
                     PKA_HighestMultiKill = PKA_MultiKillCount
+
                     -- Only announce new records if they're greater than 1
                     if PKA_HighestMultiKill > 1 then
                         -- Local announcement
@@ -238,7 +246,13 @@ local function HandleCombatLogEvent()
 
                         -- Party announcement for significant records (3+)
                         if PKA_HighestMultiKill >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
-                            SendChatMessage("NEW PERSONAL BEST: Multi-kill of " .. PKA_HighestMultiKill .. "!", "PARTY")
+                            local newMultiKillMsg = string.gsub(PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault, "MULTIKILLCOUNT", PKA_HighestMultiKill)
+                            SendChatMessage(newMultiKillMsg, "PARTY")
+                        end
+
+                        -- Update config UI if it's open
+                        if PKA_UpdateConfigStats then
+                            PKA_UpdateConfigStats()
                         end
                     end
                 end
