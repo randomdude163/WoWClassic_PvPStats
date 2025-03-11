@@ -1,5 +1,5 @@
 local statsFrame = nil
-local STATS_FRAME_WIDTH = 850
+local STATS_FRAME_WIDTH = 780
 local STATS_FRAME_HEIGHT = 650  -- Increased from 700 to 750
 local CHART_WIDTH = 380    -- Reduced width to avoid overlapping
 local BAR_HEIGHT = 16      -- Reduced height to fit more bars
@@ -203,14 +203,18 @@ local function createGuildTable(parent, x, y, width, height)
     titleText:SetPoint("TOPLEFT", 0, 0)
     titleText:SetText("Guild Kills")
 
-    -- Extract guild data
+    -- Extract guild data with safety checks
     local guildKills = {}
-    for nameWithLevel, data in pairs(PKA_KillCounts) do
-        local guild = data.guild or ""
-        if guild == "" then
-            guild = "No Guild"
+    if PKA_KillCounts then
+        for nameWithLevel, data in pairs(PKA_KillCounts) do
+            if data then
+                local guild = data.guild or ""
+                if guild == "" then
+                    guild = "No Guild"
+                end
+                guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
+            end
         end
-        guildKills[guild] = (guildKills[guild] or 0) + data.kills
     end
 
     -- Sort guilds by kill count
@@ -222,39 +226,52 @@ local function createGuildTable(parent, x, y, width, height)
     line:SetSize(width, 1)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
-    -- Create a ScrollFrame for the guild list
-    local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 0, -25)
-    scrollFrame:SetSize(width - 25, height - 30)
-
-    -- Create content frame to hold guild entries
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(width - 40, math.max(#sortedGuilds * 20 + 10, 10))
-    scrollFrame:SetScrollChild(content)
-
     -- Define column widths
     local guildColWidth = 200  -- Match the label width in summary stats
     local killsColWidth = 60   -- Width for the kill count column
+    local totalContentWidth = guildColWidth + killsColWidth + 10  -- 10px for spacing
 
-    -- Create table rows for ALL guilds
+    -- Create a ScrollFrame for the guild list
+    local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 0, -25)
+    scrollFrame:SetSize(totalContentWidth + 5, height - 30)  -- +5 to account for scroll bar overlap
+
+    -- Reposition scrollbar
+    local scrollBarName = scrollFrame:GetName() and scrollFrame:GetName().."ScrollBar" or nil
+    local scrollBar = scrollBarName and _G[scrollBarName] or nil
+
+    if scrollBar then
+        scrollBar:ClearAllPoints()
+        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", -16, -16)
+        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", -16, 16)
+    end
+
+    -- Create content frame to hold guild entries
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(totalContentWidth, math.max(#sortedGuilds * 20 + 10, 10))
+    scrollFrame:SetScrollChild(content)
+
+    -- Create table rows for ALL guilds (with safety checks)
     for i = 1, #sortedGuilds do
         local entry = sortedGuilds[i]
-        local rowY = -(i * 20)
+        if entry then
+            local rowY = -(i * 20)
 
-        -- Ensure key and value exist before using them
-        local guildName = entry.key or "Unknown"
-        local killCount = entry.value or 0
+            -- Ensure key and value exist before using them
+            local guildName = entry.key or "Unknown"
+            local killCount = entry.value or 0
 
-        local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        guildText:SetPoint("TOPLEFT", 0, rowY)
-        guildText:SetText(guildName)
-        guildText:SetWidth(guildColWidth)
-        guildText:SetJustifyH("LEFT")
+            local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            guildText:SetPoint("TOPLEFT", 0, rowY)
+            guildText:SetText(tostring(guildName))
+            guildText:SetWidth(guildColWidth)
+            guildText:SetJustifyH("LEFT")
 
-        local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        killsText:SetPoint("TOPLEFT", guildColWidth + 10, rowY)
-        killsText:SetText(tostring(killCount))  -- Convert to string to be safe
-        killsText:SetJustifyH("LEFT")
+            local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            killsText:SetPoint("TOPLEFT", guildColWidth + 10, rowY)
+            killsText:SetText(tostring(killCount))  -- Convert to string to be safe
+            killsText:SetJustifyH("LEFT")
+        end
     end
 
     return container
