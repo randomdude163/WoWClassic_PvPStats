@@ -1,16 +1,17 @@
 local statsFrame = nil
 
--- UI Constants
 local UI = {
     FRAME = { WIDTH = 850, HEIGHT = 680 },
-    CHART = { WIDTH = 380, PADDING = 0 },
+    CHART = { WIDTH = 380, PADDING = 2 },
     BAR = { HEIGHT = 16, SPACING = 3, TEXT_OFFSET = 5 },
     GUILD_LIST = { WIDTH = 350, HEIGHT = 235 },
     TITLE_SPACING = 3,
-    TOP_PADDING = 40
+    TOP_PADDING = 40,
+    LEFT_SCROLL_PADDING = 20,
+    ZONE_NAME_WIDTH = 140,
+    STANDARD_NAME_WIDTH = 70
 }
 
--- Color definitions
 local raceColors = {
     ["Human"] = {r = 1.00, g = 0.82, b = 0.60},
     ["Dwarf"] = {r = 0.77, g = 0.12, b = 0.23},
@@ -27,7 +28,6 @@ local genderColors = {
     ["Female"] = {r = 1.00, g = 0.41, b = 0.71}
 }
 
--- Helper functions
 local function countOccurrences(items)
     local counts = {}
     for _, item in pairs(items) do
@@ -109,7 +109,6 @@ local function calculateChartHeight(data)
     return 30 + (entries * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
 end
 
--- UI Creation functions
 local function createContainerWithTitle(parent, title, x, y, width, height)
     local container = CreateFrame("Frame", nil, parent)
     container:SetSize(width, height)
@@ -128,7 +127,20 @@ local function createContainerWithTitle(parent, title, x, y, width, height)
 end
 
 local function createBar(container, entry, index, maxValue, total, titleType)
-    local barWidth = (entry.value / maxValue) * (UI.CHART.WIDTH - 160)
+    local barWidth
+    local nameWidth
+    local barX
+
+    if titleType == "zone" then
+        nameWidth = UI.ZONE_NAME_WIDTH
+        barX = nameWidth + 10
+        barWidth = (entry.value / maxValue) * (UI.CHART.WIDTH - nameWidth - 80)
+    else
+        nameWidth = UI.STANDARD_NAME_WIDTH
+        barX = 90
+        barWidth = (entry.value / maxValue) * (UI.CHART.WIDTH - 160)
+    end
+
     local barY = -(index * (UI.BAR.HEIGHT + UI.BAR.SPACING) + UI.TITLE_SPACING)
 
     local displayName = entry.key
@@ -139,11 +151,11 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     local itemLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     itemLabel:SetPoint("TOPLEFT", 0, barY)
     itemLabel:SetText(displayName)
-    itemLabel:SetWidth(80)
+    itemLabel:SetWidth(nameWidth)
     itemLabel:SetJustifyH("LEFT")
 
     local bar = container:CreateTexture(nil, "ARTWORK")
-    bar:SetPoint("TOPLEFT", 90, barY)
+    bar:SetPoint("TOPLEFT", barX, barY)
     bar:SetSize(barWidth, UI.BAR.HEIGHT)
 
     local color
@@ -174,6 +186,8 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     local titleType
     if title == "Kills by Class" or title == "Level ?? Kills by Class" then
         titleType = "class"
+    elseif title == "Kills by Zone" then
+        titleType = "zone"
     else
         titleType = colorTable
     end
@@ -217,8 +231,8 @@ local function createScrollFrame(container, width, height)
 
     if scrollBar then
         scrollBar:ClearAllPoints()
-        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", -16, -16)
-        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", -16, 16)
+        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", 0, -16)
+        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", 0, 16)
     end
 
     return scrollFrame
@@ -390,9 +404,10 @@ local function gatherStatistics()
     local raceData = {}
     local genderData = {}
     local unknownLevelClassData = {}
+    local zoneData = {}
 
     if not PKA_KillCounts then
-        return {}, {}, {}, {}
+        return {}, {}, {}, {}, {}
     end
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
@@ -413,10 +428,46 @@ local function gatherStatistics()
 
             local gender = data.gender or "Unknown"
             genderData[gender] = (genderData[gender] or 0) + 1
+
+            -- Track zone data
+            local zone = data.zone or "Unknown"
+            zoneData[zone] = (zoneData[zone] or 0) + kills
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData
+end
+
+local function createScrollableLeftPanel(parent)
+    local leftPanel = CreateFrame("Frame", nil, parent)
+    leftPanel:SetPoint("TOPLEFT", 0, 0)
+    leftPanel:SetPoint("BOTTOMLEFT", 0, 0)
+    leftPanel:SetWidth(430)
+
+    local containerFrame = CreateFrame("Frame", nil, parent)
+    containerFrame:SetPoint("TOPLEFT", UI.LEFT_SCROLL_PADDING, -UI.TOP_PADDING)
+    containerFrame:SetPoint("BOTTOMLEFT", UI.LEFT_SCROLL_PADDING, 20)
+    containerFrame:SetWidth(400 - UI.LEFT_SCROLL_PADDING)
+
+    local scrollFrame = CreateFrame("ScrollFrame", nil, containerFrame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 0, 0)
+    scrollFrame:SetPoint("BOTTOMRIGHT", 0, 0)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetWidth(375 - UI.LEFT_SCROLL_PADDING)
+
+    scrollFrame:SetScrollChild(content)
+
+    local scrollBarName = scrollFrame:GetName() and scrollFrame:GetName().."ScrollBar" or nil
+    local scrollBar = scrollBarName and _G[scrollBarName] or nil
+
+    if scrollBar then
+        scrollBar:ClearAllPoints()
+        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", -18, -16)
+        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", -18, 16)
+    end
+
+    return content, scrollFrame
 end
 
 local function setupMainFrame()
@@ -448,11 +499,13 @@ local function setupMainFrame()
 
     frame.TitleText:SetText("Player Kill Statistics")
 
-    return frame
-end
+    local separator = frame:CreateTexture(nil, "ARTWORK")
+    separator:SetPoint("TOPLEFT", 430, -5)
+    separator:SetPoint("BOTTOMLEFT", 430, 5)
+    separator:SetWidth(1)
+    separator:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
-local function calculateFrameHeight(leftColumnHeight, rightColumnHeight)
-    return math.max(leftColumnHeight, rightColumnHeight, 675)  -- Increased from 550 to 600
+    return frame
 end
 
 local function hasEnoughData()
@@ -473,7 +526,7 @@ end
 
 local function createEmptyStatsFrame()
     local frame = CreateFrame("Frame", "PKAStatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(UI.FRAME.WIDTH, 200)  -- Smaller height for empty state
+    frame:SetSize(UI.FRAME.WIDTH, 200)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -512,38 +565,38 @@ function PKA_CreateStatisticsFrame()
         return
     end
 
-    local classData, raceData, genderData, unknownLevelClassData = gatherStatistics()
+    local classData, raceData, genderData, unknownLevelClassData, zoneData = gatherStatistics()
 
     statsFrame = setupMainFrame()
+    local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(statsFrame)
 
     local classChartHeight = calculateChartHeight(classData)
     local raceChartHeight = calculateChartHeight(raceData)
     local genderChartHeight = calculateChartHeight(genderData)
     local unknownLevelClassHeight = calculateChartHeight(unknownLevelClassData)
+    local zoneChartHeight = calculateChartHeight(zoneData)
 
-    createBarChart(statsFrame, "Kills by Class", classData, nil, 20, -UI.TOP_PADDING, UI.CHART.WIDTH, classChartHeight)
+    local yOffset = 0
+    createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight)
 
-    local raceChartY = -UI.TOP_PADDING - classChartHeight - UI.CHART.PADDING
-    createBarChart(statsFrame, "Kills by Race", raceData, raceColors, 20, raceChartY, UI.CHART.WIDTH, raceChartHeight)
+    yOffset = yOffset - classChartHeight - UI.CHART.PADDING
+    createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight)
 
-    local genderChartY = raceChartY - raceChartHeight - UI.CHART.PADDING
-    createBarChart(statsFrame, "Kills by Gender", genderData, genderColors, 20, genderChartY, UI.CHART.WIDTH, genderChartHeight)
+    yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
+    createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH, genderChartHeight)
 
-    local unknownLevelClassY = genderChartY - genderChartHeight - UI.CHART.PADDING
-    createBarChart(statsFrame, "Level ?? Kills by Class", unknownLevelClassData, nil, 20, unknownLevelClassY, UI.CHART.WIDTH, unknownLevelClassHeight)
+    yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
+    createBarChart(leftScrollContent, "Level ?? Kills by Class", unknownLevelClassData, nil, 0, yOffset, UI.CHART.WIDTH, unknownLevelClassHeight)
+
+    yOffset = yOffset - unknownLevelClassHeight - UI.CHART.PADDING
+    createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight)
+
+    local totalHeight = -(yOffset) + 25
+    leftScrollContent:SetHeight(totalHeight)
 
     local summaryStatsWidth = 380
     createGuildTable(statsFrame, 440, -UI.TOP_PADDING, summaryStatsWidth, UI.GUILD_LIST.HEIGHT)
     createSummaryStats(statsFrame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth, 250)
-
-    local leftColumnHeight = UI.TOP_PADDING + classChartHeight + UI.CHART.PADDING +
-                             raceChartHeight + UI.CHART.PADDING +
-                             genderChartHeight + UI.CHART.PADDING +
-                             unknownLevelClassHeight + 25
-
-    local rightColumnHeight = UI.TOP_PADDING + UI.GUILD_LIST.HEIGHT + 20 + 250 + 25
-
-    statsFrame:SetHeight(calculateFrameHeight(leftColumnHeight, rightColumnHeight))
 end
 
 local originalSlashHandler = PKA_SlashCommandHandler

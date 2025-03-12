@@ -68,6 +68,8 @@ end
 
 local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
     if not PKA_KillCounts[nameWithLevel] then
+        local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
+
         PKA_KillCounts[nameWithLevel] = {
             kills = 0,
             class = englishClass or "Unknown",
@@ -76,7 +78,8 @@ local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gende
             guild = guild or "Unknown",
             lastKill = "",
             playerLevel = playerLevel or -1,
-            unknownLevel = false
+            unknownLevel = false,
+            zone = currentZone
         }
     end
 end
@@ -85,6 +88,9 @@ local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLe
     PKA_KillCounts[nameWithLevel].kills = PKA_KillCounts[nameWithLevel].kills + 1
     PKA_KillCounts[nameWithLevel].lastKill = date("%Y-%m-%d %H:%M:%S")
     PKA_KillCounts[nameWithLevel].playerLevel = playerLevel or -1
+
+    local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
+    PKA_KillCounts[nameWithLevel].zone = currentZone
 
     -- Update additional info if available
     if race and race ~= "Unknown" then PKA_KillCounts[nameWithLevel].race = race end
@@ -205,6 +211,7 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
 
     debugMsg = debugMsg .. englishClass .. ", " .. race .. ") - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
     debugMsg = debugMsg .. " - Current streak: " .. PKA_CurrentKillStreak
+    debugMsg = debugMsg .. " - Zone: " .. (PKA_KillCounts[nameWithLevel].zone or "Unknown")
 
     if PKA_MultiKillCount >= 2 then
         debugMsg = debugMsg .. " - " .. GetMultiKillText(PKA_MultiKillCount)
@@ -278,18 +285,42 @@ local function SimulatePlayerKills(killCount)
 
     local genders = {"Male", "Female"}
 
+    -- Add random zones for testing
+    local randomZones = {
+        "Stormwind City", "Orgrimmar", "Ironforge", "Thunder Bluff", "Darnassus", "Undercity",
+        "Elwynn Forest", "Durotar", "Mulgore", "Teldrassil", "Tirisfal Glades", "Westfall",
+        "Redridge Mountains", "Duskwood", "Stranglethorn Vale", "The Barrens", "Ashenvale",
+        "Alterac Mountains", "Arathi Highlands", "Badlands", "Blasted Lands", "Burning Steppes",
+        "Desolace", "Dustwallow Marsh", "Eastern Plaguelands", "Felwood", "Feralas",
+        "Hillsbrad Foothills", "Tanaris", "The Hinterlands", "Un'Goro Crater", "Western Plaguelands",
+        "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin", "Alterac Valley"
+    }
+
+    -- Save the original zone for restoration after simulation
+    local originalZone = GetRealZoneText() or "Unknown"
+
     for i = 1, killCount do
         local randomName = randomNames[math.random(#randomNames)]
         local randomGuild = randomGuilds[math.random(#randomGuilds)]
         local randomClass = classes[math.random(#classes)]
         local randomRace = races[math.random(#races)]
         local randomGender = genders[math.random(#genders)]
+        local randomZone = randomZones[math.random(#randomZones)]
 
         local randomLevel = math.min(60, math.floor(math.random() * math.random() * 60) + 1)
         if math.random(100) <= 15 then  -- 15% chance for unknown level
             randomLevel = -1
         end
+
+        -- Temporarily override GetRealZoneText to return our random zone
+        local originalGetRealZoneText = GetRealZoneText
+        GetRealZoneText = function() return randomZone end
+
+        -- Register the kill with random data
         RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild)
+
+        -- Restore the original function
+        GetRealZoneText = originalGetRealZoneText
     end
 
     DEFAULT_CHAT_FRAME:AddMessage("Successfully registered " .. killCount .. " random test kill(s).", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
