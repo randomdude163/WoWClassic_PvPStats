@@ -1,21 +1,30 @@
 local killStatsFrame = nil
 local searchText = ""
--- Sorting variables
-local sortBy = "lastKill"  -- Changed default sort from "kills" to "lastKill"
-local sortAscending = false  -- Default descending (most recent kills first)
+local sortBy = "lastKill"
+local sortAscending = false
 
-local PKA_KILLS_FRAME_WIDTH = 800  -- Increased from 700 to 800 for better column display
+local PKA_KILLS_FRAME_WIDTH = 800
 local PKA_KILLS_FRAME_HEIGHT = 500
 
+local colWidths = {
+    name = 100,
+    class = 80,
+    race = 80,
+    gender = 95,
+    level = 40,
+    guild = 150,
+    kills = 50,
+    lastKill = 145
+}
 
-local function cleanupFontStrings(content)
-    local children = {content:GetChildren()}
+local function CleanupFrameElements(content)
+    local children = { content:GetChildren() }
     for _, child in pairs(children) do
         child:Hide()
         child:SetParent(nil)
     end
-    -- Also clean up font strings directly attached to content
-    for _, region in pairs({content:GetRegions()}) do
+
+    for _, region in pairs({ content:GetRegions() }) do
         if region:GetObjectType() == "FontString" then
             region:Hide()
             region:SetParent(nil)
@@ -23,451 +32,245 @@ local function cleanupFontStrings(content)
     end
 end
 
-local function RefreshKillList()
-    local content = killStatsFrame.content
-    if not content then return end
+local function SetHeaderButtonHighlight(button, enter)
+    local fontString = button:GetFontString()
+    if fontString then
+        fontString:SetTextColor(enter and 1 or 1, enter and 1 or 0.82, enter and 0.5 or 0)
+    end
+end
 
-    -- Clean up all existing entries
-    cleanupFontStrings(content)
+local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset, columnId)
+    local button = CreateFrame("Button", nil, parent)
+    button:SetSize(width, 24)
 
-    -- Column widths - increased for better readability
-    local colWidths = {
-        name = 100,     -- Player names (increased from 80)
-        class = 80,     -- Class name (increased from 65)
-        race = 80,      -- Race column (increased from 65)
-        gender = 95,    -- Gender column (increased from 55)
-        level = 40,     -- Level column (increased from 30)
-        guild = 150,    -- Guild column (increased from 120)
-        kills = 50,     -- Kill count column (increased from 40)
-        lastKill = 145  -- Last kill time (adjusted to fit in frame)
-    }
-
-    -- Setup headers code
-    -- Name Column Header
-    local nameHeaderBtn = CreateFrame("Button", nil, content)
-    nameHeaderBtn:SetSize(colWidths.name, 24)
-    nameHeaderBtn:SetPoint("TOPLEFT", 10, -5)
-    nameHeaderBtn:SetScript("OnClick", function()
-        if sortBy == "name" then
-            sortAscending = not sortAscending
-        else
-            sortBy = "name"
-            sortAscending = true -- Default to alphabetical A-Z when first clicking
-        end
-        RefreshKillList()
-    end)
-
-    local nameHeader = nameHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    nameHeader:SetPoint("LEFT", 0, 0)
-    nameHeader:SetTextColor(1, 0.82, 0)
-    nameHeader:SetText("Name" .. (sortBy == "name" and (sortAscending and " ^" or " v") or ""))
-    nameHeader:SetWidth(colWidths.name)
-    nameHeader:SetJustifyH("LEFT")
-
-    -- Class Column Header
-    local classHeaderBtn = CreateFrame("Button", nil, content)
-    classHeaderBtn:SetSize(colWidths.class, 24)
-    classHeaderBtn:SetPoint("TOPLEFT", nameHeaderBtn, "TOPRIGHT", 0, 0)
-    classHeaderBtn:SetScript("OnClick", function()
-        if sortBy == "class" then
-            sortAscending = not sortAscending
-        else
-            sortBy = "class"
-            sortAscending = true -- Default to alphabetical A-Z when first clicking
-        end
-        RefreshKillList()
-    end)
-
-    local classHeader = classHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    classHeader:SetPoint("LEFT", 0, 0)
-    classHeader:SetTextColor(1, 0.82, 0)
-    classHeader:SetText("Class" .. (sortBy == "class" and (sortAscending and " ^" or " v") or ""))
-    classHeader:SetWidth(colWidths.class)
-    classHeader:SetJustifyH("LEFT")
-
-    -- Race Column Header
-    local raceHeaderBtn = CreateFrame("Button", nil, content)
-    raceHeaderBtn:SetSize(colWidths.race, 24)
-    raceHeaderBtn:SetPoint("TOPLEFT", classHeaderBtn, "TOPRIGHT", 0, 0)
-    raceHeaderBtn:SetScript("OnClick", function()
-        if sortBy == "race" then
-            sortAscending = not sortAscending
-        else
-            sortBy = "race"
-            sortAscending = true -- Default to alphabetical A-Z when first clicking
-        end
-        RefreshKillList()
-    end)
-
-    local raceHeader = raceHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    raceHeader:SetPoint("LEFT", 0, 0)
-    raceHeader:SetTextColor(1, 0.82, 0)
-    raceHeader:SetText("Race" .. (sortBy == "race" and (sortAscending and " ^" or " v") or ""))
-    raceHeader:SetWidth(colWidths.race)
-    raceHeader:SetJustifyH("LEFT")
-
-    -- Gender Column Header
-    local genderHeaderBtn = CreateFrame("Button", nil, content)
-    genderHeaderBtn:SetSize(colWidths.gender, 24)
-    genderHeaderBtn:SetPoint("TOPLEFT", raceHeaderBtn, "TOPRIGHT", 0, 0)
-    genderHeaderBtn:SetScript("OnClick", function()
-        if sortBy == "gender" then
-            sortAscending = not sortAscending
-        else
-            sortBy = "gender"
-            sortAscending = true -- Default to alphabetical A-Z when first clicking
-        end
-        RefreshKillList()
-    end)
-
-    local genderHeader = genderHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    genderHeader:SetPoint("LEFT", 0, 0)
-    genderHeader:SetTextColor(1, 0.82, 0)
-    genderHeader:SetText("Gender" .. (sortBy == "gender" and (sortAscending and " ^" or " v") or ""))
-    genderHeader:SetWidth(colWidths.gender)
-    genderHeader:SetJustifyH("LEFT")
-
-    -- Level Column Header
-    local levelHeaderBtn = CreateFrame("Button", nil, content)
-    levelHeaderBtn:SetSize(colWidths.level, 24)
-    levelHeaderBtn:SetPoint("TOPLEFT", genderHeaderBtn, "TOPRIGHT", 0, 0)
-    levelHeaderBtn:SetScript("OnClick", function()
-        if sortBy == "level" then
-            sortAscending = not sortAscending
-        else
-            sortBy = "level"
-            sortAscending = false -- Default to highest level first when clicking
-        end
-        RefreshKillList()
-    end)
-
-    local levelHeader = levelHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    levelHeader:SetPoint("LEFT", 0, 0)
-    levelHeader:SetTextColor(1, 0.82, 0)
-    levelHeader:SetText("Lvl" .. (sortBy == "level" and (sortAscending and " ^" or " v") or ""))
-    levelHeader:SetWidth(colWidths.level)
-    levelHeader:SetJustifyH("LEFT")
-
-    -- Guild Column Header
-    local guildHeaderBtn = CreateFrame("Button", nil, content)
-    guildHeaderBtn:SetSize(colWidths.guild, 24)
-    guildHeaderBtn:SetPoint("TOPLEFT", levelHeaderBtn, "TOPRIGHT", 0, 0)
-    guildHeaderBtn:SetScript("OnClick", function()
-        if sortBy == "guild" then
-            sortAscending = not sortAscending
-        else
-            sortBy = "guild"
-            sortAscending = true -- Default to alphabetical A-Z when first clicking
-        end
-        RefreshKillList()
-    end)
-
-    local guildHeader = guildHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    guildHeader:SetPoint("LEFT", 0, 0)
-    guildHeader:SetTextColor(1, 0.82, 0)
-    guildHeader:SetText("Guild" .. (sortBy == "guild" and (sortAscending and " ^" or " v") or ""))
-    guildHeader:SetWidth(colWidths.guild)
-    guildHeader:SetJustifyH("LEFT")
-
-    -- Kills Column Header
-    local killsHeaderBtn = CreateFrame("Button", nil, content)
-    killsHeaderBtn:SetSize(colWidths.kills, 24)
-    killsHeaderBtn:SetPoint("TOPLEFT", guildHeaderBtn, "TOPRIGHT", 0, 0)
-    killsHeaderBtn:SetScript("OnClick", function()
-        if sortBy == "kills" then
-            sortAscending = not sortAscending
-        else
-            sortBy = "kills"
-            sortAscending = false -- Default to highest kills first when clicking
-        end
-        RefreshKillList()
-    end)
-
-    local killsHeader = killsHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    killsHeader:SetPoint("LEFT", 0, 0)
-    killsHeader:SetTextColor(1, 0.82, 0)
-    killsHeader:SetText("Kills" .. (sortBy == "kills" and (sortAscending and " ^" or " v") or ""))
-    killsHeader:SetWidth(colWidths.kills)
-    killsHeader:SetJustifyH("LEFT")
-
-    -- Last Kill Column Header
-    local lastKillHeaderBtn = CreateFrame("Button", nil, content)
-    lastKillHeaderBtn:SetSize(colWidths.lastKill, 24)
-    lastKillHeaderBtn:SetPoint("TOPLEFT", killsHeaderBtn, "TOPRIGHT", 0, 0)
-    lastKillHeaderBtn:SetScript("OnClick", function()
-        if sortBy == "lastKill" then
-            sortAscending = not sortAscending
-        else
-            sortBy = "lastKill"
-            sortAscending = false -- Default to most recent first when clicking
-        end
-        RefreshKillList()
-    end)
-
-    local lastKillHeader = lastKillHeaderBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    lastKillHeader:SetPoint("LEFT", 0, 0)
-    lastKillHeader:SetTextColor(1, 0.82, 0)
-    lastKillHeader:SetText("Last Kill" .. (sortBy == "lastKill" and (sortAscending and " ^" or " v") or ""))
-    lastKillHeader:SetWidth(colWidths.lastKill)
-    lastKillHeader:SetJustifyH("LEFT")
-
-    -- Add header hover effects
-    local function SetHeaderButtonHighlight(button, enter)
-        local fontString = button:GetFontString()
-        if fontString then
-            fontString:SetTextColor(enter and 1 or 1, enter and 1 or 0.82, enter and 0.5 or 0)
-        end
+    if type(anchor) == "string" then
+        button:SetPoint("TOPLEFT", xOffset, yOffset)
+    else
+        button:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 0, 0)
     end
 
-    nameHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
-    nameHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
+    button:SetScript("OnClick", function()
+        if sortBy == columnId then
+            sortAscending = not sortAscending
+        else
+            sortBy = columnId
+            -- Set default sort direction based on column type
+            if columnId == "level" or columnId == "kills" then
+                sortAscending = false
+            else
+                sortAscending = true
+            end
+        end
+        RefreshKillList()
+    end)
 
-    classHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
-    classHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
+    local header = button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    header:SetPoint("LEFT", 0, 0)
+    header:SetTextColor(1, 0.82, 0)
+    header:SetText(text .. (sortBy == columnId and (sortAscending and " ^" or " v") or ""))
+    header:SetWidth(width)
+    header:SetJustifyH("LEFT")
 
-    raceHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
-    raceHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
+    button:SetFontString(header)
 
-    genderHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
-    genderHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
+    button:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
+    button:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
 
-    levelHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
-    levelHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
+    return button
+end
 
-    guildHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
-    guildHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
-
-    killsHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
-    killsHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
-
-    lastKillHeaderBtn:SetScript("OnEnter", function(self) SetHeaderButtonHighlight(self, true) end)
-    lastKillHeaderBtn:SetScript("OnLeave", function(self) SetHeaderButtonHighlight(self, false) end)
-
-    local yOffset = -30
-    local count = 0
-
-    -- Sort and filter entries
+local function FilterAndSortEntries()
     local sortedEntries = {}
+
     for nameWithLevel, data in pairs(PKA_KillCounts) do
-        -- Extract the player name and level from the composite key
         local name, level = strsplit(":", nameWithLevel)
         local levelNum = tonumber(level) or 0
         local nameLower = name:lower()
         local guildLower = (data.guild or ""):lower()
 
-        -- Only add entries that match the search text in either name or guild
-        if searchText == "" or
-           nameLower:find(searchText, 1, true) or
-           guildLower:find(searchText, 1, true) then
+        if searchText == "" or nameLower:find(searchText, 1, true) or guildLower:find(searchText, 1, true) then
             table.insert(sortedEntries, {
-                nameWithLevel = nameWithLevel, -- Store composite key for reference
+                nameWithLevel = nameWithLevel,
                 name = name,
                 class = data.class or "Unknown",
                 race = data.race or "Unknown",
                 gender = data.gender or "Unknown",
-                level = levelNum,  -- This could be -1 for unknown levels
+                level = levelNum,
                 guild = data.guild or "",
                 kills = data.kills or 0,
                 lastKill = data.lastKill or "Unknown",
-                unknownLevel = data.unknownLevel or (levelNum == -1)  -- Flag for unknown level
+                unknownLevel = data.unknownLevel or (levelNum == -1)
             })
         end
     end
 
-    -- Sort according to selected column and direction
     table.sort(sortedEntries, function(a, b)
-        -- Handle different sorting columns
         if sortBy == "level" then
-            -- When sorting by level, treat -1 (unknown level) as a high level value
             if a.level == -1 and b.level ~= -1 then
-                -- Unknown level should be considered higher than any known level
                 return not sortAscending
             elseif a.level ~= -1 and b.level == -1 then
-                -- Known levels are lower than unknown levels
                 return sortAscending
             else
-                -- Regular comparison (both known or both unknown)
-                if sortAscending then
-                    return a.level < b.level
-                else
-                    return a.level > b.level
-                end
+                return sortAscending and (a.level < b.level) or (a.level > b.level)
             end
-        elseif sortBy == "name" then
+        else
             if sortAscending then
-                return a.name < b.name
+                return a[sortBy] < b[sortBy]
             else
-                return a.name > b.name
-            end
-        elseif sortBy == "class" then
-            if sortAscending then
-                return a.class < b.class
-            else
-                return a.class > b.class
-            end
-        elseif sortBy == "race" then
-            if sortAscending then
-                return a.race < b.race
-            else
-                return a.race > b.race
-            end
-        elseif sortBy == "gender" then
-            if sortAscending then
-                return a.gender < b.gender
-            else
-                return a.gender > b.gender
-            end
-        elseif sortBy == "guild" then
-            if sortAscending then
-                return a.guild < b.guild
-            else
-                return a.guild > b.guild
-            end
-        elseif sortBy == "kills" then
-            if sortAscending then
-                return a.kills < b.kills
-            else
-                return a.kills > b.kills
-            end
-        elseif sortBy == "lastKill" then
-            if sortAscending then
-                return a.lastKill < b.lastKill
-            else
-                return a.lastKill > b.lastKill
+                return a[sortBy] > b[sortBy]
             end
         end
-
-        -- Default to kills descending if no match
-        return a.kills > b.kills
     end)
 
-    -- Display entries
+    return sortedEntries
+end
+
+local function CreateColumnHeaders(content)
+    local nameHeader = CreateColumnHeader(content, "Name", colWidths.name, "TOPLEFT", 10, -5, "name")
+    local classHeader = CreateColumnHeader(content, "Class", colWidths.class, nameHeader, 0, 0, "class")
+    local raceHeader = CreateColumnHeader(content, "Race", colWidths.race, classHeader, 0, 0, "race")
+    local genderHeader = CreateColumnHeader(content, "Gender", colWidths.gender, raceHeader, 0, 0, "gender")
+    local levelHeader = CreateColumnHeader(content, "Lvl", colWidths.level, genderHeader, 0, 0, "level")
+    local guildHeader = CreateColumnHeader(content, "Guild", colWidths.guild, levelHeader, 0, 0, "guild")
+    local killsHeader = CreateColumnHeader(content, "Kills", colWidths.kills, guildHeader, 0, 0, "kills")
+    local lastKillHeader = CreateColumnHeader(content, "Last Kill", colWidths.lastKill, killsHeader, 0, 0, "lastKill")
+
+    return -30 -- Return the next Y position after headers
+end
+
+local function CreateNameCell(content, xPos, yPos, name, width)
+    local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    nameText:SetPoint("TOPLEFT", xPos, yPos)
+    nameText:SetText(name)
+    nameText:SetWidth(width)
+    nameText:SetJustifyH("LEFT")
+    return nameText
+end
+
+local function CreateClassCell(content, anchorTo, className, width)
+    local classText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    classText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+
+    if className and className ~= "Unknown" then
+        className = className:sub(1, 1):upper() .. className:sub(2):lower()
+    end
+
+    classText:SetText(className)
+    classText:SetWidth(width)
+    classText:SetJustifyH("LEFT")
+
+    if RAID_CLASS_COLORS and RAID_CLASS_COLORS[className:upper()] then
+        local color = RAID_CLASS_COLORS[className:upper()]
+        classText:SetTextColor(color.r, color.g, color.b)
+    end
+
+    return classText
+end
+
+local function CreateRaceCell(content, anchorTo, raceName, width)
+    local raceText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    raceText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+
+    if raceName and raceName ~= "Unknown" then
+        raceName = raceName:sub(1, 1):upper() .. raceName:sub(2):lower()
+    end
+
+    raceText:SetText(raceName)
+    raceText:SetWidth(width)
+    raceText:SetJustifyH("LEFT")
+    return raceText
+end
+
+local function CreateGenderCell(content, anchorTo, gender, width)
+    local genderText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    genderText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    genderText:SetText(gender)
+    genderText:SetWidth(width)
+    genderText:SetJustifyH("LEFT")
+    return genderText
+end
+
+local function CreateLevelCell(content, anchorTo, level, width)
+    local levelText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    levelText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+
+    -- Show ?? for unknown level
+    levelText:SetText(level == -1 and "??" or tostring(level))
+    levelText:SetWidth(width)
+    levelText:SetJustifyH("LEFT")
+    return levelText
+end
+
+local function CreateGuildCell(content, anchorTo, guild, width)
+    local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    guildText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    guildText:SetText(guild)
+    guildText:SetWidth(width)
+    guildText:SetJustifyH("LEFT")
+    return guildText
+end
+
+local function CreateKillsCell(content, anchorTo, kills, width)
+    local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    killsText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    killsText:SetText(tostring(kills))
+    killsText:SetWidth(width)
+    killsText:SetJustifyH("LEFT")
+    return killsText
+end
+
+local function CreateLastKillCell(content, anchorTo, lastKill, width)
+    local lastKillText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    lastKillText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    lastKillText:SetText(lastKill)
+    lastKillText:SetWidth(width)
+    lastKillText:SetJustifyH("LEFT")
+    return lastKillText
+end
+
+local function CreateEntryRow(content, entry, yOffset, colWidths)
+    local nameCell = CreateNameCell(content, 10, yOffset, entry.name, colWidths.name)
+    local classCell = CreateClassCell(content, nameCell, entry.class, colWidths.class)
+    local raceCell = CreateRaceCell(content, classCell, entry.race, colWidths.race)
+    local genderCell = CreateGenderCell(content, raceCell, entry.gender, colWidths.gender)
+    local levelCell = CreateLevelCell(content, genderCell, entry.level, colWidths.level)
+    local guildCell = CreateGuildCell(content, levelCell, entry.guild, colWidths.guild)
+    local killsCell = CreateKillsCell(content, guildCell, entry.kills, colWidths.kills)
+    local lastKillCell = CreateLastKillCell(content, killsCell, entry.lastKill, colWidths.lastKill)
+
+    return yOffset - 16 -- Return the next row position
+end
+
+local function DisplayEntries(content, sortedEntries, startYOffset)
+    local yOffset = startYOffset
+    local count = 0
+
+    -- Column widths
+    local colWidths = {
+        name = 100,
+        class = 80,
+        race = 80,
+        gender = 95,
+        level = 40,
+        guild = 150,
+        kills = 50,
+        lastKill = 145
+    }
+
     for _, entry in ipairs(sortedEntries) do
-        -- Name column
-        local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        nameText:SetPoint("TOPLEFT", 10, yOffset)
-        nameText:SetText(entry.name)
-        nameText:SetWidth(colWidths.name)
-        nameText:SetJustifyH("LEFT")
-
-        -- Class column
-        local classText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        classText:SetPoint("TOPLEFT", nameText, "TOPRIGHT", 0, 0)
-
-        -- Convert class to title case (first letter capitalized, rest lowercase)
-        local className = entry.class
-        if className and className ~= "Unknown" then
-            className = className:sub(1,1):upper() .. className:sub(2):lower()
-        end
-
-        classText:SetText(className)
-        classText:SetWidth(colWidths.class)
-        classText:SetJustifyH("LEFT")
-
-        -- Set class color if available
-        if RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class:upper()] then
-            local color = RAID_CLASS_COLORS[entry.class:upper()]
-            classText:SetTextColor(color.r, color.g, color.b)
-        end
-
-        -- Race column
-        local raceText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        raceText:SetPoint("TOPLEFT", classText, "TOPRIGHT", 0, 0)
-
-        -- Convert race to title case
-        local raceName = entry.race
-        if raceName and raceName ~= "Unknown" then
-            raceName = raceName:sub(1,1):upper() .. raceName:sub(2):lower()
-        end
-
-        raceText:SetText(raceName)
-        raceText:SetWidth(colWidths.race)
-        raceText:SetJustifyH("LEFT")
-
-        -- Gender column
-        local genderText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        genderText:SetPoint("TOPLEFT", raceText, "TOPRIGHT", 0, 0)
-        genderText:SetText(entry.gender)
-        genderText:SetWidth(colWidths.gender)
-        genderText:SetJustifyH("LEFT")
-
-        -- Level column
-        local levelText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        levelText:SetPoint("TOPLEFT", genderText, "TOPRIGHT", 0, 0)
-        -- Show ?? for unknown level (-1)
-        levelText:SetText(entry.level == -1 and "??" or tostring(entry.level))
-        levelText:SetWidth(colWidths.level)
-        levelText:SetJustifyH("LEFT")
-
-        -- Guild column
-        local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        guildText:SetPoint("TOPLEFT", levelText, "TOPRIGHT", 0, 0)
-        guildText:SetText(entry.guild)
-        guildText:SetWidth(colWidths.guild)
-        guildText:SetJustifyH("LEFT")
-
-        -- Kills column
-        local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        killsText:SetPoint("TOPLEFT", guildText, "TOPRIGHT", 0, 0)
-        killsText:SetText(tostring(entry.kills))
-        killsText:SetWidth(colWidths.kills)
-        killsText:SetJustifyH("LEFT")
-
-        -- Last kill column
-        local lastKillText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        lastKillText:SetPoint("TOPLEFT", killsText, "TOPRIGHT", 0, 0)
-        lastKillText:SetText(entry.lastKill)
-        lastKillText:SetWidth(colWidths.lastKill)
-        lastKillText:SetJustifyH("LEFT")
-
-        yOffset = yOffset - 16
+        yOffset = CreateEntryRow(content, entry, yOffset, colWidths)
         count = count + 1
     end
 
-    -- Adjust content height based on number of entries
-    content:SetHeight(math.max((-yOffset + 20), PKA_KILLS_FRAME_HEIGHT - 50))
+    return yOffset, count
 end
 
-function PKA_CreateKillStatsFrame()
-    if killStatsFrame then
-        killStatsFrame:Show()
-        RefreshKillList()
-        return
-    end
-
-    -- Create main frame
-    killStatsFrame = CreateFrame("Frame", "PKAKillStatsFrame", UIParent, "BasicFrameTemplateWithInset")
-    killStatsFrame:SetSize(PKA_KILLS_FRAME_WIDTH, PKA_KILLS_FRAME_HEIGHT)
-    killStatsFrame:SetPoint("CENTER")
-    killStatsFrame:SetMovable(true)
-    killStatsFrame:EnableMouse(true)
-    killStatsFrame:RegisterForDrag("LeftButton")
-    killStatsFrame:SetScript("OnDragStart", killStatsFrame.StartMoving)
-    killStatsFrame:SetScript("OnDragStop", killStatsFrame.StopMovingOrSizing)
-
-    -- Make frame closeable with ESC
-    table.insert(UISpecialFrames, "PKAKillStatsFrame")
-
-    -- Title
-    killStatsFrame.TitleText:SetText("Player Kill Statistics")
-
-    -- Create scroll frame with adjusted bottom padding for search bar
-    local scrollFrame = CreateFrame("ScrollFrame", nil, killStatsFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 12, -30)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 35)  -- Increased bottom padding for search bar
-
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(PKA_KILLS_FRAME_WIDTH - 40, PKA_KILLS_FRAME_HEIGHT * 2)
-    scrollFrame:SetScrollChild(content)
-    killStatsFrame.content = content
-
-    -- Create search bar background
-    local searchBg = CreateFrame("Frame", nil, killStatsFrame, "BackdropTemplate")
+local function CreateSearchBackground(parent)
+    local searchBg = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     searchBg:SetPoint("BOTTOMLEFT", 1, 1)
     searchBg:SetPoint("BOTTOMRIGHT", -1, 1)
     searchBg:SetHeight(30)
 
-    -- Use the correct backdrop method for Classic
     if searchBg.SetBackdrop then
         searchBg:SetBackdrop({
             bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -479,78 +282,82 @@ function PKA_CreateKillStatsFrame()
         })
         searchBg:SetBackdropColor(0, 0, 0, 0.4)
     else
-        -- For very old clients that lack backdroptemplate
         local bg = searchBg:CreateTexture(nil, "BACKGROUND")
         bg:SetAllPoints(true)
         bg:SetColorTexture(0, 0, 0, 0.4)
     end
 
-    -- Add search label
-    local searchLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    searchLabel:SetPoint("LEFT", searchBg, "LEFT", 8, 0)
+    return searchBg
+end
+
+local function CreateSearchLabel(parent)
+    local searchLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    searchLabel:SetPoint("LEFT", parent, "LEFT", 8, 0)
     searchLabel:SetText("Search Player/Guild:")
-    searchLabel:SetTextColor(1, 0.82, 0)  -- Gold color
+    searchLabel:SetTextColor(1, 0.82, 0)
+    return searchLabel
+end
 
-    -- Create a simple EditBox instead of SearchBoxTemplate
-    local searchBox = CreateFrame("EditBox", nil, searchBg)
-    searchBox:SetSize(200, 20)
-    searchBox:SetPoint("LEFT", searchLabel, "RIGHT", 8, 0)
-    searchBox:SetAutoFocus(false)
-    searchBox:SetMaxLetters(50)
-    searchBox:SetFontObject("ChatFontNormal")
-
-    -- Create a background and border for the search box
-    local searchBoxBg = searchBox:CreateTexture(nil, "BACKGROUND")
-    searchBoxBg:SetAllPoints(true)
-    searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
-
-    -- Create border elements
+local function CreateBoxBorder(box)
     local border = {}
-    border.top = searchBox:CreateTexture(nil, "BACKGROUND")
+
+    border.top = box:CreateTexture(nil, "BACKGROUND")
     border.top:SetHeight(1)
-    border.top:SetPoint("TOPLEFT", searchBox, "TOPLEFT", -1, 1)
-    border.top:SetPoint("TOPRIGHT", searchBox, "TOPRIGHT", 1, 1)
+    border.top:SetPoint("TOPLEFT", box, "TOPLEFT", -1, 1)
+    border.top:SetPoint("TOPRIGHT", box, "TOPRIGHT", 1, 1)
     border.top:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    border.bottom = searchBox:CreateTexture(nil, "BACKGROUND")
+    border.bottom = box:CreateTexture(nil, "BACKGROUND")
     border.bottom:SetHeight(1)
-    border.bottom:SetPoint("BOTTOMLEFT", searchBox, "BOTTOMLEFT", -1, -1)
-    border.bottom:SetPoint("BOTTOMRIGHT", searchBox, "BOTTOMRIGHT", 1, -1)
+    border.bottom:SetPoint("BOTTOMLEFT", box, "BOTTOMLEFT", -1, -1)
+    border.bottom:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", 1, -1)
     border.bottom:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    border.left = searchBox:CreateTexture(nil, "BACKGROUND")
+    border.left = box:CreateTexture(nil, "BACKGROUND")
     border.left:SetWidth(1)
     border.left:SetPoint("TOPLEFT", border.top, "TOPLEFT", 0, 0)
     border.left:SetPoint("BOTTOMLEFT", border.bottom, "BOTTOMLEFT", 0, 0)
     border.left:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    border.right = searchBox:CreateTexture(nil, "BACKGROUND")
+    border.right = box:CreateTexture(nil, "BACKGROUND")
     border.right:SetWidth(1)
     border.right:SetPoint("TOPRIGHT", border.top, "TOPRIGHT", 0, 0)
     border.right:SetPoint("BOTTOMRIGHT", border.bottom, "BOTTOMRIGHT", 0, 0)
     border.right:SetColorTexture(0.3, 0.3, 0.3, 0.8)
 
-    -- Add padding
+    return border
+end
+
+local function CreateEditBox(parent, anchorTo)
+    local searchBox = CreateFrame("EditBox", nil, parent)
+    searchBox:SetSize(200, 20)
+    searchBox:SetPoint("LEFT", anchorTo, "RIGHT", 8, 0)
+    searchBox:SetAutoFocus(false)
+    searchBox:SetMaxLetters(50)
+    searchBox:SetFontObject("ChatFontNormal")
+
+    local searchBoxBg = searchBox:CreateTexture(nil, "BACKGROUND")
+    searchBoxBg:SetAllPoints(true)
+    searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
+
+    CreateBoxBorder(searchBox)
+
     searchBox:SetTextInsets(5, 5, 2, 2)
 
-    -- Update search functionality
-    local function updateSearch()
-        searchText = searchBox:GetText():lower()
-        RefreshKillList()
-    end
+    return searchBox
+end
 
+local function SetupSearchBoxScripts(searchBox)
     searchBox:SetScript("OnTextChanged", function(self)
-        -- This will trigger for any text change (typing or deleting)
-        updateSearch()
+        searchText = self:GetText():lower()
+        RefreshKillList()
     end)
 
     searchBox:SetScript("OnEditFocusGained", function(self)
-        -- Highlight text when gaining focus
         self:HighlightText()
     end)
 
     searchBox:SetScript("OnEditFocusLost", function(self)
-        -- Remove highlight when losing focus
         self:HighlightText(0, 0)
     end)
 
@@ -561,11 +368,12 @@ function PKA_CreateKillStatsFrame()
         RefreshKillList()
     end)
 
+    -- Enter key handling
     searchBox:SetScript("OnEnterPressed", function(self)
         self:ClearFocus()
     end)
 
-    -- Add tooltip to search box (after search box creation, around line 525)
+    -- Tooltip handling
     searchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Search")
@@ -577,11 +385,67 @@ function PKA_CreateKillStatsFrame()
     searchBox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
+end
 
-    -- Initialize with empty search
+local function CreateSearchBar(frame)
+    local searchBg = CreateSearchBackground(frame)
+    local searchLabel = CreateSearchLabel(searchBg)
+    local searchBox = CreateEditBox(searchBg, searchLabel)
+    SetupSearchBoxScripts(searchBox)
     searchBox:SetText("")
     searchText = ""
 
-    -- Initial refresh to show all entries
+    return searchBox
+end
+
+local function CreateScrollFrame(parent)
+    local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 12, -30)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 35)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(PKA_KILLS_FRAME_WIDTH - 40, PKA_KILLS_FRAME_HEIGHT * 2)
+    scrollFrame:SetScrollChild(content)
+
+    return content
+end
+
+local function CreateMainFrame()
+    local frame = CreateFrame("Frame", "PKAKillStatsFrame", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(PKA_KILLS_FRAME_WIDTH, PKA_KILLS_FRAME_HEIGHT)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+
+    table.insert(UISpecialFrames, "PKAKillStatsFrame")
+    frame.TitleText:SetText("Player Kill Statistics")
+
+    return frame
+end
+
+function RefreshKillList()
+    local content = killStatsFrame.content
+    if not content then return end
+
+    CleanupFrameElements(content)
+    local yOffset = CreateColumnHeaders(content)
+    local sortedEntries = FilterAndSortEntries()
+    local finalYOffset, entryCount = DisplayEntries(content, sortedEntries, yOffset)
+    content:SetHeight(math.max((-finalYOffset + 20), PKA_KILLS_FRAME_HEIGHT - 50))
+end
+
+function PKA_CreateKillStatsFrame()
+    if killStatsFrame then
+        killStatsFrame:Show()
+        RefreshKillList()
+        return
+    end
+
+    killStatsFrame = CreateMainFrame()
+    killStatsFrame.content = CreateScrollFrame(killStatsFrame)
+    CreateSearchBar(killStatsFrame)
     RefreshKillList()
 end
