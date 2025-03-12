@@ -4,8 +4,8 @@ local PlayerKillMessageDefault = "Enemyplayername killed!"
 local KillStreakEndedMessageDefault = "My kill streak of STREAKCOUNT has ended!"
 local NewStreakRecordMessageDefault = "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
 local NewMultiKillRecordMessageDefault = "NEW PERSONAL BEST: Multi-kill of MULTIKILLCOUNT!"
-
 ------------------------------------------------------------------------
+
 local playerKillAnnounceFrame = CreateFrame("Frame", "PlayerKillAnnounceFrame", UIParent)
 PKA_EnableKillAnnounce = true
 PKA_KillAnnounceMessage = PlayerKillMessageDefault
@@ -22,7 +22,6 @@ PKA_EnableRecordAnnounce = true
 PKA_MultiKillThreshold = 3
 PKA_MILESTONE_STREAKS = {25, 50, 75, 100, 150, 200, 250, 300}
 
--- UI Constants
 local PKA_CHAT_MESSAGE_R = 1.0
 local PKA_CHAT_MESSAGE_G = 1.0
 local PKA_CHAT_MESSAGE_B = 0.74
@@ -172,7 +171,6 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel)
     local killMessage = PKA_KillAnnounceMessage and string.gsub(PKA_KillAnnounceMessage, "Enemyplayername", killedPlayer) or
                         string.gsub(PlayerKillMessageDefault, "Enemyplayername", killedPlayer)
 
-    -- Add level info if unknown or significantly higher
     local playerLevel = UnitLevel("player")
     local levelDifference = level - playerLevel
     local levelDisplay = level == -1 and "??" or tostring(level)
@@ -181,17 +179,14 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel)
         killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
     end
 
-    -- Add kill count
     killMessage = killMessage .. " x" .. PKA_KillCounts[nameWithLevel].kills
 
-    -- Add streak info for significant streaks
     if PKA_CurrentKillStreak >= 10 and PKA_CurrentKillStreak % 5 == 0 then
         killMessage = killMessage .. " - Kill Streak: " .. PKA_CurrentKillStreak
     end
 
     SendChatMessage(killMessage, "PARTY")
 
-    -- Announce multi-kill if significant
     if PKA_MultiKillCount >= PKA_MultiKillThreshold then
         SendChatMessage(GetMultiKillText(PKA_MultiKillCount), "PARTY")
     end
@@ -200,7 +195,6 @@ end
 local function CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel)
     local debugMsg = "Killed: " .. playerName
 
-    -- Add level info if unknown or significantly higher
     local playerLevel = UnitLevel("player")
     local levelDifference = level > 0 and (level - playerLevel) or 0
     if level == -1 or (level > 0 and levelDifference >= 5) then
@@ -256,13 +250,49 @@ local function SimulatePlayerDeath()
 end
 
 local function SimulatePlayerKills(killCount)
-    DEFAULT_CHAT_FRAME:AddMessage("Registering " .. killCount .. " test kill(s)...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Registering " .. killCount .. " random test kill(s)...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+
+    local randomNames = {
+        "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter", "Campmaster",
+        "Roguenstein", "Sneakattack", "Huntard", "Faceroller", "Dotspammer",
+        "Moonbender", "Healnoob", "Ragequitter", "Imbalanced", "Critmaster",
+        "Zerglord", "Epicfail", "Oneshot", "Griefer", "Farmville",
+        "Stunlock", "Procmaster", "Noobslayer", "Bodycamper", "Flagrunner"
+    }
+
+    local randomGuilds = {
+        "Gank Squad", "PvP Masters", "Corpse Campers", "World Slayers", "Honor Farmers",
+        "Rank Grinders", "Blood Knights", "Deadly Alliance", "Battleground Heroes", "Warsong Outlaws",
+        "Death and Taxes", "Tactical Retreat", "Shadow Dancers", "First Strike", "Elite Few",
+        "Kill on Sight", "No Mercy", "Rogues Do It", "Battlefield Legends", ""  -- Empty guild possible
+    }
+
+    local classes = {
+        "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
+        "SHAMAN", "MAGE", "WARLOCK", "DRUID"
+    }
+
+    local races = {
+        "Human", "Dwarf", "NightElf", "Gnome",
+    }
+
+    local genders = {"Male", "Female"}
 
     for i = 1, killCount do
-        local testPlayerName = "TestDummy"
-        local testPlayerLevel = 60
-        RegisterPlayerKill(testPlayerName, testPlayerLevel, "WARRIOR", "Human", "Male", "Test Guild")
+        local randomName = randomNames[math.random(#randomNames)]
+        local randomGuild = randomGuilds[math.random(#randomGuilds)]
+        local randomClass = classes[math.random(#classes)]
+        local randomRace = races[math.random(#races)]
+        local randomGender = genders[math.random(#genders)]
+
+        local randomLevel = math.min(60, math.floor(math.random() * math.random() * 60) + 1)
+        if math.random(100) <= 15 then  -- 15% chance for unknown level
+            randomLevel = -1
+        end
+        RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild)
     end
+
+    DEFAULT_CHAT_FRAME:AddMessage("Successfully registered " .. killCount .. " random test kill(s).", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 function PKA_SlashCommandHandler(msg)
@@ -330,7 +360,6 @@ end
 local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
     local level, englishClass, race, gender, guild = PKA_GetPlayerInfo(destName, destGUID)
 
-    -- Skip kills with unknown attributes
     if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
         print("Kill of " .. destName .. " not counted (incomplete data: " ..
               (race == "Unknown" and "race" or "") ..
@@ -340,13 +369,11 @@ local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceNam
         return
     end
 
-    -- Check if we or party/raid members caused the kill
     local playerOrPartyKill = false
     if sourceGUID and (sourceGUID == UnitGUID("player") or UnitInParty(sourceName) or UnitInRaid(sourceName)) then
         playerOrPartyKill = true
     end
 
-    -- Check if we're in combat - this means we're likely involved in the kill
     if UnitAffectingCombat("player") then
         playerOrPartyKill = true
     end
@@ -359,13 +386,11 @@ end
 local function HandleCombatLogEvent()
     local timestamp, combatEvent, _, sourceGUID, sourceName, sourceFlags, _, destGUID, destName, destFlags = CombatLogGetCurrentEventInfo()
 
-    -- Check if the player died
     if combatEvent == "UNIT_DIED" and destGUID == UnitGUID("player") then
         HandlePlayerDeath()
         return
     end
 
-    -- Collect info about all players we see in the combat log
     if sourceName and bit.band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER then
         PKA_UpdatePlayerInfoCache(sourceName, sourceGUID, nil, nil, nil, nil, nil)
     end
@@ -374,7 +399,6 @@ local function HandleCombatLogEvent()
         PKA_UpdatePlayerInfoCache(destName, destGUID, nil, nil, nil, nil, nil)
     end
 
-    -- Track enemy player deaths
     if combatEvent == "UNIT_DIED" then
         if bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER and
            bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE then
@@ -384,7 +408,6 @@ local function HandleCombatLogEvent()
     end
 end
 
--- Helper function to check if a kill streak count is a milestone
 local function IsKillStreakMilestone(count)
     for _, milestone in ipairs(PKA_MILESTONE_STREAKS) do
         if count == milestone then
@@ -394,24 +417,20 @@ local function IsKillStreakMilestone(count)
     return false
 end
 
--- Creates the milestone frame if it doesn't exist yet
 local function CreateMilestoneFrameIfNeeded()
     if killStreakMilestoneFrame then return killStreakMilestoneFrame end
 
-    -- Create main frame
     local frame = CreateFrame("Frame", "PKA_MilestoneFrame", UIParent)
     frame:SetSize(400, 200)
     frame:SetPoint("TOP", 0, -60)
     frame:SetFrameStrata("HIGH")
 
-    -- Create icon texture
     local icon = frame:CreateTexture("PKA_MilestoneIcon", "ARTWORK")
     icon:SetSize(200, 200)
     icon:SetPoint("TOP", 0, 0)
     icon:SetTexture("Interface\\AddOns\\PlayerKillAnnounce\\img\\RedridgePoliceLogo.blp")
     frame.icon = icon
 
-    -- Create text display
     local text = frame:CreateFontString("PKA_MilestoneText", "OVERLAY", "SystemFont_Huge1")
     text:SetPoint("TOP", icon, "BOTTOM", 0, -10)
     text:SetTextColor(1, 0, 0)
@@ -423,9 +442,7 @@ local function CreateMilestoneFrameIfNeeded()
     return frame
 end
 
--- Setup animation group for the milestone frame
 local function SetupMilestoneAnimation(frame)
-    -- Clean up any existing animation
     if frame.animGroup then
         frame.animGroup:Stop()
         frame.animGroup:SetScript("OnPlay", nil)
@@ -433,32 +450,27 @@ local function SetupMilestoneAnimation(frame)
         frame.animGroup:SetScript("OnStop", nil)
     end
 
-    -- Create new animation group
     local animGroup = frame:CreateAnimationGroup()
     animGroup:SetLooping("NONE")
 
-    -- Fade in animation
     local fadeIn = animGroup:CreateAnimation("Alpha")
     fadeIn:SetFromAlpha(0)
     fadeIn:SetToAlpha(1)
     fadeIn:SetDuration(0.5)
     fadeIn:SetOrder(1)
 
-    -- Hold animation (display duration)
     local hold = animGroup:CreateAnimation("Alpha")
     hold:SetFromAlpha(1)
     hold:SetToAlpha(1)
     hold:SetDuration(9.0)
     hold:SetOrder(2)
 
-    -- Fade out animation
     local fadeOut = animGroup:CreateAnimation("Alpha")
     fadeOut:SetFromAlpha(1)
     fadeOut:SetToAlpha(0)
     fadeOut:SetDuration(0.5)
     fadeOut:SetOrder(3)
 
-    -- Hide the frame when finished
     animGroup:SetScript("OnFinished", function()
         frame:Hide()
     end)
@@ -467,39 +479,29 @@ local function SetupMilestoneAnimation(frame)
     return animGroup
 end
 
--- Play the milestone achievement sound
 local function PlayMilestoneSound()
-    PlaySound(8454) -- First sound effect
-    PlaySound(8574) -- Second sound effect
+    PlaySound(8454) -- Warsong horde win sound
+    PlaySound(8574) -- Cheer sound
 end
 
--- Display the milestone animation with text
 function PKA_ShowKillStreakMilestone(killCount)
-    -- Only proceed if this is a milestone kill streak
     if not IsKillStreakMilestone(killCount) then
         return
     end
 
-    -- Create or get the milestone frame
     local frame = CreateMilestoneFrameIfNeeded()
 
-    -- Update the text for this milestone
     frame.text:SetText(killCount .. " KILL STREAK")
 
-    -- Show the frame but start with zero opacity
     frame:Show()
     frame:SetAlpha(0)
 
-    -- Setup the animation sequence
     local animGroup = SetupMilestoneAnimation(frame)
 
-    -- Play milestone sounds
     PlayMilestoneSound()
 
-    -- Make character perform cheer emote
     DoEmote("CHEER")
 
-    -- Start the animation
     animGroup:Play()
 end
 
