@@ -104,25 +104,65 @@ local function FilterAndSortEntries()
         end
     end
 
-    table.sort(sortedEntries, function(a, b)
+    local function compareEntries(a, b)
+        if not a or not b then return false end
+
+        local aValue = a[sortBy]
+        local bValue = b[sortBy]
+
+        if aValue == nil and bValue == nil then
+            return a.name < b.name
+        elseif aValue == nil then
+            return false
+        elseif bValue == nil then
+            return true
+        end
+
         if sortBy == "level" then
             if a.level == -1 and b.level ~= -1 then
-                return not sortAscending
+                return not sortAscending  -- ?? levels at the end when ascending, at the start when descending
             elseif a.level ~= -1 and b.level == -1 then
-                return sortAscending
-            else
-                return sortAscending and (a.level < b.level) or (a.level > b.level)
+                return sortAscending      -- ?? levels at the end when ascending, at the start when descending
             end
-        else
+
             if sortAscending then
-                return a[sortBy] < b[sortBy]
+                return a.level < b.level
             else
-                return a[sortBy] > b[sortBy]
+                return a.level > b.level
             end
         end
+
+        if type(aValue) ~= type(bValue) then
+            aValue = tostring(aValue)
+            bValue = tostring(bValue)
+        end
+
+        if sortAscending then
+            if type(aValue) == "string" and type(bValue) == "string" then
+                return aValue:lower() < bValue:lower()
+            else
+                return aValue < bValue
+            end
+        else
+            if type(aValue) == "string" and type(bValue) == "string" then
+                return aValue:lower() > bValue:lower()
+            else
+                return aValue > bValue
+            end
+        end
+    end
+
+    local success, result = pcall(function()
+        table.sort(sortedEntries, compareEntries)
+        return sortedEntries
     end)
 
-    return sortedEntries
+    if not success then
+        print("|cFFFF0000PlayerKillAnnounce: Sorting error. Using unsorted list.|r")
+        return sortedEntries
+    end
+
+    return result or sortedEntries
 end
 
 local function CreateColumnHeaders(content)
