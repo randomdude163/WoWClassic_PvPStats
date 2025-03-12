@@ -14,12 +14,11 @@ local PKA_CONFIG_HEADER_G = 0.82
 local PKA_CONFIG_HEADER_B = 0.0
 
 local SECTION_TOP_MARGIN = 30
-local SECTION_SPACING = 100
+local SECTION_SPACING = 20  -- Reduced from 100 to 20
 local HEADER_ELEMENT_SPACING = 10
 local CHECKBOX_SPACING = 0
 local FIELD_SPACING = 5
-local BUTTON_BOTTOM_MARGIN = 10
-
+local BUTTON_BOTTOM_MARGIN = 20
 
 local function ShowResetStatsConfirmation()
     StaticPopupDialogs["PKA_RESET_STATS"] = {
@@ -216,7 +215,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     desc:SetJustifyH("LEFT")
     desc:SetWidth(350)
 
-    return 130 -- Approximate height of this section
+    return 150 -- Approximate height of this section
 end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
@@ -279,47 +278,44 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     }
 end
 
-local function CreateStatisticsSection(parent, yOffset)
-    local header, line = CreateSectionHeader(parent, "Statistics", 20, yOffset)
+local function CreateActionButtons(parent)
+    -- Calculate button widths and spacing
+    local buttonWidth = 120
+    local spacing = 10
+    local margin = 20
 
-    parent.statsText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    parent.statsText:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
-
-    local showKillsBtn = CreateButton(parent, "Show Kills List", 150, 22, function()
-        PKA_CreateKillStatsFrame()
-    end)
-    showKillsBtn:SetPoint("TOPLEFT", parent.statsText, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
-
-    local showStatsBtn = CreateButton(parent, "Show Statistics", 150, 22, function()
+    -- Create buttons starting from left side
+    local showStatsBtn = CreateButton(parent, "Show Statistics", buttonWidth, 22, function()
         PKA_CreateStatisticsFrame()
     end)
-    showStatsBtn:SetPoint("LEFT", showKillsBtn, "RIGHT", 5, 0)
+    showStatsBtn:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", margin, BUTTON_BOTTOM_MARGIN)
 
-    return 80 -- Approximate height of this section
-end
+    local killsListBtn = CreateButton(parent, "Show Kills List", buttonWidth, 22, function()
+        PKA_CreateKillStatsFrame()
+    end)
+    killsListBtn:SetPoint("LEFT", showStatsBtn, "RIGHT", spacing, 0)
 
-local function CreateActionButtons(parent)
-    local resetBtn = CreateButton(parent, "Reset Statistics", 150, 22, function()
+    local resetStatsBtn = CreateButton(parent, "Reset Statistics", buttonWidth, 22, function()
         ShowResetStatsConfirmation()
     end)
-    resetBtn:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 20, BUTTON_BOTTOM_MARGIN)
+    resetStatsBtn:SetPoint("LEFT", killsListBtn, "RIGHT", spacing, 0)
 
-    local defaultsBtn = CreateButton(parent, "Reset to Defaults", 150, 22, function()
+    local defaultsBtn = CreateButton(parent, "Reset to Defaults", buttonWidth, 22, function()
         ShowResetDefaultsConfirmation()
     end)
-    defaultsBtn:SetPoint("LEFT", resetBtn, "RIGHT", 10, 0)
+    defaultsBtn:SetPoint("LEFT", resetStatsBtn, "RIGHT", spacing, 0)
 
-    local closeBtn = CreateButton(parent, "Close", 80, 22, function()
-        parent:Hide()
-    end)
-    closeBtn:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -20, BUTTON_BOTTOM_MARGIN)
-
-    return { resetBtn = resetBtn, defaultsBtn = defaultsBtn, closeBtn = closeBtn }
+    return {
+        resetBtn = resetStatsBtn,
+        defaultsBtn = defaultsBtn,
+        showStatsBtn = showStatsBtn,
+        killsListBtn = killsListBtn
+    }
 end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 650)
+    frame:SetSize(600, 500)  -- Reduced height from 650 to 500
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -377,22 +373,19 @@ end
 
 function PKA_CreateConfigFrame()
     if configFrame then
-        PKA_UpdateConfigStats()
         configFrame:Show()
         return
     end
 
     EnsureDefaultValues()
     configFrame = CreateMainFrame()
+    
     local currentY = -SECTION_TOP_MARGIN
     local announcementHeight = CreateAnnouncementSection(configFrame, currentY)
     currentY = currentY - announcementHeight - SECTION_SPACING
     configFrame.editBoxes = CreateMessageTemplatesSection(configFrame, currentY)
-    currentY = currentY - 180 - SECTION_SPACING -- Estimated height of the templates section
-
-    CreateStatisticsSection(configFrame, currentY)
+    
     CreateActionButtons(configFrame)
-    PKA_UpdateConfigStats()
 end
 
 -- Add command to slash handler to open config UI
