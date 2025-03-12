@@ -172,12 +172,14 @@ end
 local function CreateAnnouncementSection(parent, yOffset)
     local header, line = CreateSectionHeader(parent, "Announcement Settings", 20, yOffset)
 
+    -- Store the checkbox reference in the parent frame
     local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements",
         PKA_EnableKillAnnounce, function(checked)
         PKA_EnableKillAnnounce = checked
         PKA_SaveSettings()
     end)
     enableKillAnnounce:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    parent.enableKillAnnounce = enableKillAnnounce  -- Store reference in parent
 
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
         PKA_EnableRecordAnnounce, function(checked)
@@ -185,6 +187,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         PKA_SaveSettings()
     end)
     enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.enableRecordAnnounce = enableRecordAnnounce  -- Store reference in parent
 
     local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
@@ -197,6 +200,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     getglobal(slider:GetName() .. "Low"):SetText("Double")
     getglobal(slider:GetName() .. "High"):SetText("Deca")
     getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
+    parent.multiKillSlider = slider  -- Store reference in parent
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
@@ -212,7 +216,6 @@ local function CreateAnnouncementSection(parent, yOffset)
     desc:SetJustifyH("LEFT")
     desc:SetWidth(350)
 
-    -- Return section height for positioning next section
     return 130 -- Approximate height of this section
 end
 
@@ -355,6 +358,11 @@ function PKA_UpdateConfigUI()
 
     if configFrame.multiKillSlider then
         configFrame.multiKillSlider:SetValue(PKA_MultiKillThreshold)
+        -- Also update the slider text
+        local sliderName = configFrame.multiKillSlider:GetName()
+        if sliderName then
+            getglobal(sliderName .. "Text"):SetText("Multi-Kill Announce Threshold: " .. PKA_MultiKillThreshold)
+        end
     end
 
     if configFrame.editBoxes then
