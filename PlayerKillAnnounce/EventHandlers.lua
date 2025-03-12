@@ -261,7 +261,7 @@ local function SimulatePlayerKills(killCount)
     for i = 1, killCount do
         local testPlayerName = "TestDummy"
         local testPlayerLevel = 60
-        RegisterPlayerKill(testPlayerName, testPlayerLevel, "WARRIOR", "Human", 1, "Test Guild")
+        RegisterPlayerKill(testPlayerName, testPlayerLevel, "WARRIOR", "Human", "Male", "Test Guild")
     end
 end
 
