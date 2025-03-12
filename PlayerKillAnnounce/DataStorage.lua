@@ -1,7 +1,7 @@
--- Player info cache to store data we collect from various sources
 local PlayerInfoCache = {}
+PlayerKillAnnounceDB = {}
 
--- Function to update player info cache
+
 function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild)
     if not name then return end
 
@@ -16,7 +16,6 @@ function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild
     if guild and guild ~= "" then playerData.guild = guild end
 end
 
--- Function to collect player info from unit
 function PKA_CollectPlayerInfo(unit)
     if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
 
@@ -28,8 +27,6 @@ function PKA_CollectPlayerInfo(unit)
     local _, englishClass = UnitClass(unit)
     local _, englishRace = UnitRace(unit)
     local gender = UnitSex(unit)
-
-    -- Get guild information
     local guildName = GetGuildInfo(unit)
 
     PKA_UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName)
@@ -42,10 +39,10 @@ function PKA_GetInfoFromCachedPlayer(name)
 
     local data = PlayerInfoCache[name]
     return data.level or 0,
-           data.class or "Unknown",
-           data.race or "Unknown",
-           data.gender or 0,
-           data.guild or ""
+        data.class or "Unknown",
+        data.race or "Unknown",
+        data.gender or 0,
+        data.guild or ""
 end
 
 function PKA_GetInfoFromActiveUnit(name, unitId)
@@ -72,12 +69,15 @@ function PKA_GetInfoFromGuid(guid)
 end
 
 function PKA_ConvertGenderToString(genderCode)
-    if genderCode == 2 then return "Male"
-    elseif genderCode == 3 then return "Female"
-    else return "Unknown" end
+    if genderCode == 2 then
+        return "Male"
+    elseif genderCode == 3 then
+        return "Female"
+    else
+        return "Unknown"
+    end
 end
 
--- Function to get best available player info
 function PKA_GetPlayerInfo(name, guid)
     local level, class, race, gender, guild = PKA_GetInfoFromCachedPlayer(name)
 
@@ -108,43 +108,38 @@ function PKA_GetPlayerInfo(name, guid)
         end
     end
 
-    -- Set unknown level to -1 (will show as "??")
     if level == 0 then level = -1 end
 
     return level, class, race, PKA_ConvertGenderToString(gender), guild
 end
 
--- Regular saving function without cleanup operations
 function PKA_SaveSettings()
-    -- Make sure we have a saved variables table
-    PlayerKillAnnounceDB = PlayerKillAnnounceDB or {}
-    local db = PlayerKillAnnounceDB
-
-    db.PKA_EnableKillAnnounce = PKA_EnableKillAnnounce
-    db.PKA_KillAnnounceMessage = PKA_KillAnnounceMessage
-    db.PKA_KillCounts = PKA_KillCounts
-    db.PKA_CurrentKillStreak = PKA_CurrentKillStreak
-    db.PKA_HighestKillStreak = PKA_HighestKillStreak
-    db.PKA_HighestMultiKill = PKA_HighestMultiKill
-    db.PKA_KillStreakEndedMessage = PKA_KillStreakEndedMessage
-    db.PKA_NewStreakRecordMessage = PKA_NewStreakRecordMessage
-    db.PKA_NewMultiKillRecordMessage = PKA_NewMultiKillRecordMessage
-    db.PKA_EnableRecordAnnounce = PKA_EnableRecordAnnounce
-    db.PKA_MultiKillThreshold = PKA_MultiKillThreshold
-    db.PlayerInfoCache = PlayerInfoCache
+    PlayerKillAnnounceDB.PKA_EnableKillAnnounce = PKA_EnableKillAnnounce
+    PlayerKillAnnounceDB.PKA_KillAnnounceMessage = PKA_KillAnnounceMessage
+    PlayerKillAnnounceDB.PKA_KillCounts = PKA_KillCounts
+    PlayerKillAnnounceDB.PKA_CurrentKillStreak = PKA_CurrentKillStreak
+    PlayerKillAnnounceDB.PKA_HighestKillStreak = PKA_HighestKillStreak
+    PlayerKillAnnounceDB.PKA_HighestMultiKill = PKA_HighestMultiKill
+    PlayerKillAnnounceDB.PKA_KillStreakEndedMessage = PKA_KillStreakEndedMessage
+    PlayerKillAnnounceDB.PKA_NewStreakRecordMessage = PKA_NewStreakRecordMessage
+    PlayerKillAnnounceDB.PKA_NewMultiKillRecordMessage = PKA_NewMultiKillRecordMessage
+    PlayerKillAnnounceDB.PKA_EnableRecordAnnounce = PKA_EnableRecordAnnounce
+    PlayerKillAnnounceDB.PKA_MultiKillThreshold = PKA_MultiKillThreshold
+    PlayerKillAnnounceDB.PlayerInfoCache = PlayerInfoCache
+    PlayerKillAnnounceDB.PKA_MinimapPosition = PKA_MinimapPosition
 end
 
 function PKA_IsValidPlayerData(data)
     return data.kills and data.kills > 0 and
-           data.race and data.race ~= "Unknown" and
-           data.gender and data.gender ~= "Unknown" and
-           data.class and data.class ~= "Unknown"
+        data.race and data.race ~= "Unknown" and
+        data.gender and data.gender ~= "Unknown" and
+        data.class and data.class ~= "Unknown"
 end
 
 function PKA_IsUsefulCacheEntry(data)
     return (data.race and data.race ~= "") or
-           (data.gender and data.gender > 0) or
-           (data.class and data.class ~= "")
+        (data.gender and data.gender > 0) or
+        (data.class and data.class ~= "")
 end
 
 -- Separate cleanup function to be called only on logout
@@ -210,6 +205,7 @@ function PKA_LoadSettingsFromDB()
     PKA_EnableRecordAnnounce = db.PKA_EnableRecordAnnounce ~= nil and db.PKA_EnableRecordAnnounce or true
     PKA_MultiKillThreshold = db.PKA_MultiKillThreshold or 3
     PlayerInfoCache = db.PlayerInfoCache or {}
+    PKA_MinimapPosition = db.PKA_MinimapPosition or 195
 end
 
 function PKA_LoadSettings()
