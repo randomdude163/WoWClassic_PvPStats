@@ -43,24 +43,12 @@ local PKA_CHAT_MESSAGE_B = 0.74
 
 
 local function PrintSlashCommandUsage()
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka toggle", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka killmessage <message>", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("The word Enemyplayername will be replaced with the name of the player " ..
-        "that was killed. For example: Enemyplayername killed!", PKA_CHAT_MESSAGE_R,
-        PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka streakendedsay <message>", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka newstreakmessage <message>", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka multikillmessage <message>", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("For streak messages, STREAKCOUNT or MULTIKILLCOUNT will be replaced with the actual count.",
-        PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka multikillthreshold <number>", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka stats", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka status", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka config - Open configuration UI", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka stats - Show kills list", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka status - Show current settings", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debug - Show current streak values", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka records - Toggle announcing new records to party chat", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka registerkill [number] - Register test kill(s) for testing", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka death - Simulate player death (resets kill streak)", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka cleanup - Clean up the database (removes guid-only entries)", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 local function PrintStatus()
@@ -106,36 +94,6 @@ function PKA_SlashCommandHandler(msg)
 
     if command == "" then
         PrintSlashCommandUsage()
-    elseif command == "toggle" then
-        HandleToggleCommand()
-    elseif command == "killmessage" and rest and rest ~= "" then
-        HandleSetMessageCommand(rest)
-    elseif command == "streakendedsay" and rest and rest ~= "" then
-        PKA_KillStreakEndedMessage = rest
-        PKA_SaveSettings()
-        DEFAULT_CHAT_FRAME:AddMessage("Streak ended message set to: " .. PKA_KillStreakEndedMessage, PKA_CHAT_MESSAGE_R,
-            PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    elseif command == "newstreakmessage" and rest and rest ~= "" then
-        PKA_NewStreakRecordMessage = rest
-        PKA_SaveSettings()
-        DEFAULT_CHAT_FRAME:AddMessage("New streak record message set to: " .. PKA_NewStreakRecordMessage, PKA_CHAT_MESSAGE_R,
-            PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    elseif command == "multikillmessage" and rest and rest ~= "" then
-        PKA_NewMultiKillRecordMessage = rest
-        PKA_SaveSettings()
-        DEFAULT_CHAT_FRAME:AddMessage("New multi-kill record message set to: " .. PKA_NewMultiKillRecordMessage, PKA_CHAT_MESSAGE_R,
-            PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    elseif command == "multikillthreshold" and rest and rest ~= "" then
-        local threshold = tonumber(rest)
-        if threshold and threshold >= 2 and threshold <= 10 then
-            PKA_MultiKillThreshold = threshold
-            PKA_SaveSettings()
-            DEFAULT_CHAT_FRAME:AddMessage("Multi-kill announcement threshold set to: " .. PKA_MultiKillThreshold,
-                PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-        else
-            DEFAULT_CHAT_FRAME:AddMessage("Invalid threshold. Please enter a number between 2 and 10.",
-                PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-        end
     elseif command == "status" then
         PrintStatus()
     elseif command == "kills" or command == "stats" then
@@ -164,12 +122,6 @@ function PKA_SlashCommandHandler(msg)
             DEFAULT_CHAT_FRAME:AddMessage("Multi-kill window: expired",
                                          PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
         end
-    elseif command == "records" or command == "announce" then
-        -- Toggle record announcements
-        PKA_EnableRecordAnnounce = not PKA_EnableRecordAnnounce
-        PKA_SaveSettings()
-        local status = PKA_EnableRecordAnnounce and "ENABLED" or "DISABLED"
-        DEFAULT_CHAT_FRAME:AddMessage("Record announcements are now " .. status, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     elseif command == "registerkill" then
         -- Test command to simulate a kill for testing purposes
         local testKillCount = 1
@@ -182,10 +134,16 @@ function PKA_SlashCommandHandler(msg)
             end
         end
 
-        -- Simulate registering the requested number of kills
         DEFAULT_CHAT_FRAME:AddMessage("Registering " .. testKillCount .. " test kill(s)...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 
+        -- Create mock data for simulated kills
         for i = 1, testKillCount do
+            -- Simulate a kill event by creating test data and calling the appropriate functions
+            local testPlayerName = "TestDummy"
+            local testPlayerLevel = 60
+            local nameWithLevel = testPlayerName .. ":" .. testPlayerLevel
+
+            -- Call the same functions as would be called in a real combat situation
             -- Increment kill streak
             PKA_CurrentKillStreak = PKA_CurrentKillStreak + 1
 
@@ -196,23 +154,16 @@ function PKA_SlashCommandHandler(msg)
             if PKA_CurrentKillStreak > PKA_HighestKillStreak then
                 PKA_HighestKillStreak = PKA_CurrentKillStreak
 
-                -- Only announce new records if they're greater than 1
+                -- Same notification logic as the real combat handler
                 if PKA_HighestKillStreak > 1 then
-                    -- Local announcement
                     print("NEW KILL STREAK RECORD: " .. PKA_HighestKillStreak .. "!")
 
-                    -- Party announcement for significant records (10+) and only at multiples of 5
                     if PKA_HighestKillStreak >= 10 and PKA_HighestKillStreak % 5 == 0 and PKA_EnableRecordAnnounce and IsInGroup() then
                         local newRecordMsg = string.gsub(PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault, "STREAKCOUNT", PKA_HighestKillStreak)
                         SendChatMessage(newRecordMsg, "PARTY")
                     end
                 end
             end
-
-            -- Add a test kill to stats for a fictional player
-            local testPlayerName = "TestDummy"
-            local testPlayerLevel = 60
-            local nameWithLevel = testPlayerName .. ":" .. testPlayerLevel
 
             -- Initialize or update kill data for test player
             if not PKA_KillCounts[nameWithLevel] then
@@ -233,13 +184,23 @@ function PKA_SlashCommandHandler(msg)
             PKA_KillCounts[nameWithLevel].lastKill = date("%Y-%m-%d %H:%M:%S")
         end
 
-        -- Save settings to persist streak data
         PKA_SaveSettings()
-    elseif command == "cleanup" or command == "clean" then
-        -- Allow manual cleanup of the database
-        DEFAULT_CHAT_FRAME:AddMessage("Cleaning up PlayerKillAnnounce database...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-        PKA_CleanupDatabase()
-        DEFAULT_CHAT_FRAME:AddMessage("Done! Database has been cleaned.", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    elseif command == "death" then
+        -- Simulate player death by calling the same handler as the PLAYER_DEAD event
+        DEFAULT_CHAT_FRAME:AddMessage("Simulating player death...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+
+        -- Only announce if the streak was noteworthy (10+) and announcements are enabled
+        if PKA_CurrentKillStreak >= 10 and PKA_EnableRecordAnnounce and IsInGroup() then
+            local streakEndedMsg = string.gsub(PKA_KillStreakEndedMessage, "STREAKCOUNT", PKA_CurrentKillStreak)
+            SendChatMessage(streakEndedMsg, "PARTY")
+        end
+
+        -- Player died, reset current kill streak and multi-kill
+        PKA_CurrentKillStreak = 0
+        PKA_MultiKillCount = 0
+        inCombat = false
+        PKA_SaveSettings()
+        DEFAULT_CHAT_FRAME:AddMessage("Death simulated! Kill streak reset.", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     else
         PrintSlashCommandUsage()
     end
