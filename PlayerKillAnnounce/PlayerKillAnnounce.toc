@@ -1,11 +1,14 @@
-## Interface: 11506
-## Title: Player Kill Announce
-## Author: Severussnipe, Hkfarmer <Redridge Police>
-## Notes: Announces player kills in party chat.
-## SavedVariables: PlayerKillAnnounceDB
+## Interface: 11404
+## Title: PlayerKillAnnounce
+## Notes: Announces your PvP kills in chat
+## Author: Severussnipes & Hkfamer <Redridge Police>
+## Version: 1.0
+## SavedVariables: PKA_KillCounts, PKA_KillAnnounceMessage, PKA_KillStreakEndedMessage, PKA_NewStreakRecordMessage, PKA_NewMultiKillRecordMessage, PKA_EnableKillAnnounce, PKA_EnableRecordAnnounce, PKA_MultiKillThreshold, PKA_CurrentKillStreak, PKA_HighestKillStreak, PKA_HighestMultiKill, PKA_MinimapPosition
+
 EventHandlers.lua
 DataStorage.lua
 KillsListFrame.lua
 StatisticsFrame.lua
 ConfigUI.lua
 PlayerKillAnnounce.lua
+MinimapButton.lua
