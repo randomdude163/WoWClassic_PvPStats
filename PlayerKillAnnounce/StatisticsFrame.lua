@@ -378,7 +378,8 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY)
     statY = addSummaryStatLine(container, "Highest Multi-Kill:", PKA_HighestMultiKill or 0, statY)
 
-    statY = statY - 5
+    -- Increase spacing before credits section
+    statY = statY - 30  -- Changed from -55 to -30 to reduce the space
     addCreditsSection(container, statY)
 
     return container
@@ -451,7 +452,46 @@ local function setupMainFrame()
 end
 
 local function calculateFrameHeight(leftColumnHeight, rightColumnHeight)
-    return math.max(leftColumnHeight, rightColumnHeight, 550)
+    return math.max(leftColumnHeight, rightColumnHeight, 675)  -- Increased from 550 to 600
+end
+
+local function hasEnoughData()
+    local totalKills = 0
+    local uniqueKills = 0
+
+    if PKA_KillCounts then
+        for _, data in pairs(PKA_KillCounts) do
+            if data then
+                uniqueKills = uniqueKills + 1
+                totalKills = totalKills + (data.kills or 1)
+            end
+        end
+    end
+
+    return totalKills >= 10 or uniqueKills >= 5
+end
+
+local function createEmptyStatsFrame()
+    local frame = CreateFrame("Frame", "PKAStatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(UI.FRAME.WIDTH, 200)  -- Smaller height for empty state
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+
+    tinsert(UISpecialFrames, "PKAStatisticsFrame")
+
+    frame.TitleText:SetText("Player Kill Statistics")
+
+    -- Create message text
+    local messageText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    messageText:SetPoint("CENTER", 0, 0)
+    messageText:SetText("You need at least 10 kills or 5 unique kills\nto view detailed statistics.")
+    messageText:SetJustifyH("CENTER")
+
+    return frame
 end
 
 function PKA_CreateStatisticsFrame()
@@ -465,6 +505,11 @@ function PKA_CreateStatisticsFrame()
             tremove(UISpecialFrames, i)
             break
         end
+    end
+
+    if not hasEnoughData() then
+        statsFrame = createEmptyStatsFrame()
+        return
     end
 
     local classData, raceData, genderData, unknownLevelClassData = gatherStatistics()
