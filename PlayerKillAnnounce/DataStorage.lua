@@ -5,6 +5,12 @@ PlayerKillAnnounceDB = {}
 function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild)
     if not name then return end
 
+    if UnitExists("target") and UnitName("target") == name then
+        if UnitIsFriend("player", "target") then
+            return
+        end
+    end
+
     PlayerInfoCache[name] = PlayerInfoCache[name] or {}
     local playerData = PlayerInfoCache[name]
 
@@ -18,6 +24,8 @@ end
 
 function PKA_CollectPlayerInfo(unit)
     if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
+
+    if UnitIsFriend("player", unit) then return end
 
     local name = UnitName(unit)
     if not name then return end
@@ -137,17 +145,17 @@ function PKA_IsValidPlayerData(data)
 end
 
 function PKA_IsUsefulCacheEntry(data)
-    return (data.race and data.race ~= "") or
-        (data.gender and data.gender > 0) or
+    return (data.race and data.race ~= "") and
+        (data.gender and data.gender > 0) and
         (data.class and data.class ~= "")
 end
 
--- Separate cleanup function to be called only on logout
 function PKA_CleanupKillCounts()
     local cleanedKillCounts = {}
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
-        if PKA_IsValidPlayerData(data) then
+        -- Only keep entries that have valid player data AND have kills
+        if PKA_IsValidPlayerData(data) and data.kills and data.kills > 0 then
             cleanedKillCounts[nameWithLevel] = data
         end
     end
@@ -158,9 +166,22 @@ end
 
 function PKA_CleanupPlayerInfoCache()
     local cleanedInfoCache = {}
+    local playersWithKills = {}
 
+    if PKA_KillCounts then
+        for nameWithLevel, data in pairs(PKA_KillCounts) do
+            if data.kills and data.kills > 0 then
+                local name = string.match(nameWithLevel, "([^:]+)")
+                if name then
+                    playersWithKills[name] = true
+                end
+            end
+        end
+    end
+
+    -- Now only keep players who either have kills or have useful data
     for name, data in pairs(PlayerInfoCache) do
-        if PKA_IsUsefulCacheEntry(data) then
+        if playersWithKills[name] or PKA_IsUsefulCacheEntry(data) then
             cleanedInfoCache[name] = data
         end
     end
@@ -170,8 +191,17 @@ function PKA_CleanupPlayerInfoCache()
 end
 
 function PKA_CleanupDatabase()
+    if not PlayerKillAnnounceDB then
+        PlayerKillAnnounceDB = {}
+    end
+
     PKA_CleanupKillCounts()
     PKA_CleanupPlayerInfoCache()
+
+    if PKA_MinimapPosition then
+        PlayerKillAnnounceDB.PKA_MinimapPosition = PKA_MinimapPosition
+    end
+
     print("PlayerKillAnnounce: Database cleaned up.")
 end
 
@@ -215,7 +245,6 @@ function PKA_LoadSettings()
         PKA_InitializeDefaults()
     end
 
-    -- Reset temporary values
     PKA_MultiKillCount = 0
     PKA_LastCombatTime = 0
 end
