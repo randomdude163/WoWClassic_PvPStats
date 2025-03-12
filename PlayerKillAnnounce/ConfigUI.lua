@@ -7,14 +7,14 @@ local PlayerKillMessageDefault = PlayerKillMessageDefault or "Enemyplayername ki
 local KillStreakEndedMessageDefault = KillStreakEndedMessageDefault or "My kill streak of STREAKCOUNT has ended!"
 local NewStreakRecordMessageDefault = NewStreakRecordMessageDefault or "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
 local NewMultiKillRecordMessageDefault = NewMultiKillRecordMessageDefault or
-"NEW PERSONAL BEST: Multi-kill of MULTIKILLCOUNT!"
+    "NEW PERSONAL BEST: Multi-kill of MULTIKILLCOUNT!"
 
 local PKA_CONFIG_HEADER_R = 1.0
 local PKA_CONFIG_HEADER_G = 0.82
 local PKA_CONFIG_HEADER_B = 0.0
 
 local SECTION_TOP_MARGIN = 30
-local SECTION_SPACING = 20  -- Reduced from 100 to 20
+local SECTION_SPACING = 20 -- Reduced from 100 to 20
 local HEADER_ELEMENT_SPACING = 10
 local CHECKBOX_SPACING = 0
 local FIELD_SPACING = 5
@@ -174,19 +174,19 @@ local function CreateAnnouncementSection(parent, yOffset)
     -- Store the checkbox reference in the parent frame
     local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements",
         PKA_EnableKillAnnounce, function(checked)
-        PKA_EnableKillAnnounce = checked
-        PKA_SaveSettings()
-    end)
+            PKA_EnableKillAnnounce = checked
+            PKA_SaveSettings()
+        end)
     enableKillAnnounce:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
-    parent.enableKillAnnounce = enableKillAnnounce  -- Store reference in parent
+    parent.enableKillAnnounce = enableKillAnnounce -- Store reference in parent
 
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
         PKA_EnableRecordAnnounce, function(checked)
-        PKA_EnableRecordAnnounce = checked
-        PKA_SaveSettings()
-    end)
+            PKA_EnableRecordAnnounce = checked
+            PKA_SaveSettings()
+        end)
     enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
-    parent.enableRecordAnnounce = enableRecordAnnounce  -- Store reference in parent
+    parent.enableRecordAnnounce = enableRecordAnnounce -- Store reference in parent
 
     local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
@@ -199,7 +199,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     getglobal(slider:GetName() .. "Low"):SetText("Double")
     getglobal(slider:GetName() .. "High"):SetText("Deca")
     getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
-    parent.multiKillSlider = slider  -- Store reference in parent
+    parent.multiKillSlider = slider -- Store reference in parent
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
@@ -219,7 +219,7 @@ local function CreateAnnouncementSection(parent, yOffset)
 end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
-    local header, line = CreateSectionHeader(parent, "Message Templates", 20, yOffset)
+    local header, line = CreateSectionHeader(parent, "Party Messages", 20, yOffset)
 
     local killMsgContainer, killMsgEditBox = CreateInputField(
         parent,
@@ -315,7 +315,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 500)  -- Reduced height from 650 to 500
+    frame:SetSize(600, 500) -- Reduced height from 650 to 500
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -379,12 +379,12 @@ function PKA_CreateConfigFrame()
 
     EnsureDefaultValues()
     configFrame = CreateMainFrame()
-    
+
     local currentY = -SECTION_TOP_MARGIN
     local announcementHeight = CreateAnnouncementSection(configFrame, currentY)
     currentY = currentY - announcementHeight - SECTION_SPACING
     configFrame.editBoxes = CreateMessageTemplatesSection(configFrame, currentY)
-    
+
     CreateActionButtons(configFrame)
 end
 
