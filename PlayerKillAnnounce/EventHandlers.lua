@@ -59,6 +59,8 @@ local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debug - Show current streak values", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka records - Toggle announcing new records to party chat", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka registerkill [number] - Register test kill(s) for testing", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka death - Simulate player death (resets kill streak)", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka cleanup - Clean up the database (removes guid-only entries)", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 local function PrintStatus()
@@ -218,7 +220,7 @@ function PKA_SlashCommandHandler(msg)
                     kills = 0,
                     class = "WARRIOR",
                     race = "Human",
-                    gender = 2,
+                    gender = 1,
                     guild = "Test Guild",
                     lastKill = "",
                     playerLevel = UnitLevel("player"),
@@ -233,6 +235,11 @@ function PKA_SlashCommandHandler(msg)
 
         -- Save settings to persist streak data
         PKA_SaveSettings()
+    elseif command == "cleanup" or command == "clean" then
+        -- Allow manual cleanup of the database
+        DEFAULT_CHAT_FRAME:AddMessage("Cleaning up PlayerKillAnnounce database...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+        PKA_CleanupDatabase()
+        DEFAULT_CHAT_FRAME:AddMessage("Done! Database has been cleaned.", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     else
         PrintSlashCommandUsage()
     end
@@ -305,6 +312,21 @@ local function HandleCombatLogEvent()
                 playerOrPartyKill = true
             end
 
+            -- Get the best available player info using our cache and other methods
+            local level, englishClass, race, gender, guild = PKA_GetPlayerInfo(destName, destGUID)
+
+            -- Skip kills with unknown attributes entirely
+            if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
+                -- Debug message for skipped kill
+                print("Kill of " .. destName .. " not counted (incomplete data: " ..
+                      (race == "Unknown" and "race" or "") ..
+                      (gender == "Unknown" and (race == "Unknown" and ", gender" or "gender") or "") ..
+                      (englishClass == "Unknown" and ((race == "Unknown" or gender == "Unknown") and ", class" or "class") or "") ..
+                      " unknown)")
+                return -- Skip the entire kill processing
+            end
+
+            -- Since we have complete data, now proceed with the kill streak increment
             if playerOrPartyKill then
                 PKA_CurrentKillStreak = PKA_CurrentKillStreak + 1
 
@@ -373,9 +395,6 @@ local function HandleCombatLogEvent()
                 -- Save settings to persist streak data
                 PKA_SaveSettings()
             end
-
-            -- Get the best available player info using our cache and other methods
-            local level, englishClass, race, gender, guild = PKA_GetPlayerInfo(destName, destGUID)
 
             -- Get current player level at time of kill
             local playerLevel = UnitLevel("player")
@@ -626,6 +645,7 @@ function RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("PLAYER_DEAD")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_REGEN_DISABLED") -- Player enters combat
     playerKillAnnounceFrame:RegisterEvent("PLAYER_REGEN_ENABLED")  -- Player leaves combat
+    playerKillAnnounceFrame:RegisterEvent("PLAYER_LOGOUT")
 
     playerKillAnnounceFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
@@ -658,6 +678,9 @@ function RegisterEvents()
         elseif event == "PLAYER_REGEN_ENABLED" then
             -- Player left combat
             HandleCombatState(false)
+        elseif event == "PLAYER_LOGOUT" then
+            -- Clean up the database on logout to avoid performance impact during gameplay
+            PKA_CleanupDatabase()
         end
     end)
 end

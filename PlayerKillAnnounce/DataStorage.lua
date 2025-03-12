@@ -119,6 +119,7 @@ function PKA_GetPlayerInfo(name, guid)
     return level, class, race, genderStr, guild
 end
 
+-- Regular saving function without cleanup operations
 function PKA_SaveSettings()
     -- Make sure we have a saved variables table
     PlayerKillAnnounceDB = PlayerKillAnnounceDB or {}
@@ -143,8 +144,46 @@ function PKA_SaveSettings()
     -- Store multi-kill threshold setting
     PlayerKillAnnounceDB.PKA_MultiKillThreshold = PKA_MultiKillThreshold
 
-    -- Store player info cache
+    -- Store player info cache without cleaning
     PlayerKillAnnounceDB.PlayerInfoCache = PlayerInfoCache
+end
+
+-- Separate cleanup function to be called only on logout
+function PKA_CleanupDatabase()
+    -- Clean up PKA_KillCounts - only keep entries with actual kills
+    local cleanedKillCounts = {}
+    for nameWithLevel, data in pairs(PKA_KillCounts) do
+        -- Only save entries that have kills (actual player kills, not just encounter data)
+        -- And make sure they have complete data (race, gender, class)
+        if data.kills and data.kills > 0 and
+           data.race and data.race ~= "Unknown" and
+           data.gender and data.gender ~= "Unknown" and
+           data.class and data.class ~= "Unknown" then
+            cleanedKillCounts[nameWithLevel] = data
+        end
+    end
+
+    -- Update both the saved variable and the current variable
+    PlayerKillAnnounceDB.PKA_KillCounts = cleanedKillCounts
+    PKA_KillCounts = cleanedKillCounts
+
+    -- Clean the player info cache - only keep useful entries
+    local cleanedInfoCache = {}
+    for name, data in pairs(PlayerInfoCache) do
+        -- Only save players with at least race, gender, or class data
+        if (data.race and data.race ~= "") or
+           (data.gender and data.gender > 0) or
+           (data.class and data.class ~= "") then
+            cleanedInfoCache[name] = data
+        end
+    end
+
+    -- Update both the saved variable and the current variable
+    PlayerKillAnnounceDB.PlayerInfoCache = cleanedInfoCache
+    PlayerInfoCache = cleanedInfoCache
+
+    -- Print debug message to confirm cleanup happened
+    print("PlayerKillAnnounce: Database cleaned up.")
 end
 
 function PKA_LoadSettings()
@@ -157,6 +196,8 @@ function PKA_LoadSettings()
         end
 
         PKA_KillAnnounceMessage = PlayerKillAnnounceDB.PKA_KillAnnounceMessage or PlayerKillMessageDefault
+
+        -- Load kill counts without validating each entry (for performance)
         PKA_KillCounts = PlayerKillAnnounceDB.PKA_KillCounts or {}
 
         -- Load streak data
@@ -183,7 +224,7 @@ function PKA_LoadSettings()
             PKA_MultiKillThreshold = 3  -- Default to Triple Kill if not set
         end
 
-        -- Load player info cache
+        -- Load player info cache without cleaning
         PlayerInfoCache = PlayerKillAnnounceDB.PlayerInfoCache or {}
     else
         -- Initialize with defaults if no saved variables exist
