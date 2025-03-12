@@ -1,21 +1,77 @@
 -- ConfigUI.lua - Configuration interface for PlayerKillAnnounce
 -- This adds a graphical user interface for all settings of the addon
-
-local addonName = "PlayerKillAnnounce"
 local configFrame = nil
 
--- Define default messages in case they're not available from EventHandlers.lua
+-- Default messages as fallbacks
 local PlayerKillMessageDefault = PlayerKillMessageDefault or "Enemyplayername killed!"
 local KillStreakEndedMessageDefault = KillStreakEndedMessageDefault or "My kill streak of STREAKCOUNT has ended!"
 local NewStreakRecordMessageDefault = NewStreakRecordMessageDefault or "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
-local NewMultiKillRecordMessageDefault = NewMultiKillRecordMessageDefault or "NEW PERSONAL BEST: Multi-kill of MULTIKILLCOUNT!"
+local NewMultiKillRecordMessageDefault = NewMultiKillRecordMessageDefault or
+"NEW PERSONAL BEST: Multi-kill of MULTIKILLCOUNT!"
 
--- Colors matching the theme of the addon
 local PKA_CONFIG_HEADER_R = 1.0
 local PKA_CONFIG_HEADER_G = 0.82
 local PKA_CONFIG_HEADER_B = 0.0
 
--- Helper function to create a section header
+local SECTION_TOP_MARGIN = 30
+local SECTION_SPACING = 100
+local HEADER_ELEMENT_SPACING = 10
+local CHECKBOX_SPACING = 0
+local FIELD_SPACING = 5
+local BUTTON_BOTTOM_MARGIN = 10
+
+
+local function ShowResetStatsConfirmation()
+    StaticPopupDialogs["PKA_RESET_STATS"] = {
+        text = "Are you sure you want to reset all kill statistics? This cannot be undone.",
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = function()
+            PKA_CurrentKillStreak = 0
+            PKA_HighestKillStreak = 0
+            PKA_MultiKillCount = 0
+            PKA_HighestMultiKill = 0
+            PKA_KillCounts = {}
+            PKA_SaveSettings()
+            PKA_UpdateConfigStats()
+            print("All kill statistics have been reset!")
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+    }
+    StaticPopup_Show("PKA_RESET_STATS")
+end
+
+local function ShowResetDefaultsConfirmation()
+    StaticPopupDialogs["PKA_RESET_DEFAULTS"] = {
+        text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics.",
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = function()
+            PKA_KillAnnounceMessage = PlayerKillMessageDefault
+            PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault
+            PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
+            PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
+            PKA_EnableKillAnnounce = true
+            PKA_EnableRecordAnnounce = true
+            PKA_MultiKillThreshold = 3
+
+            -- Update UI with reset values
+            if configFrame then
+                PKA_UpdateConfigUI()
+            end
+
+            PKA_SaveSettings()
+            print("All settings have been reset to default values!")
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+    }
+    StaticPopup_Show("PKA_RESET_DEFAULTS")
+end
+
 local function CreateSectionHeader(parent, text, xOffset, yOffset)
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
@@ -31,7 +87,6 @@ local function CreateSectionHeader(parent, text, xOffset, yOffset)
     return header, line
 end
 
--- Helper function to create an input field with label
 local function CreateInputField(parent, labelText, width, initialValue, onTextChangedFunc)
     local container = CreateFrame("Frame", nil, parent)
     container:SetSize(width, 50)
@@ -44,16 +99,16 @@ local function CreateInputField(parent, labelText, width, initialValue, onTextCh
     editBox:SetSize(width - 20, 20)
     editBox:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 5, -5)
     editBox:SetAutoFocus(false)
-    editBox:SetText(initialValue or "")  -- Use empty string if initialValue is nil
+    editBox:SetText(initialValue or "")
+
     editBox:SetScript("OnTextChanged", function(self, userInput)
         if userInput and onTextChangedFunc then
             onTextChangedFunc(self:GetText())
         end
     end)
 
-    -- Add cancel on escape, accept on enter functionality
     editBox:SetScript("OnEscapePressed", function(self)
-        self:SetText(initialValue) -- Reset to initial value
+        self:SetText(initialValue)
         self:ClearFocus()
     end)
 
@@ -64,7 +119,6 @@ local function CreateInputField(parent, labelText, width, initialValue, onTextCh
         self:ClearFocus()
     end)
 
-    -- Add focus behavior
     editBox:SetScript("OnEditFocusGained", function(self)
         self:HighlightText()
     end)
@@ -79,7 +133,6 @@ local function CreateInputField(parent, labelText, width, initialValue, onTextCh
     return container, editBox
 end
 
--- Helper function to create a checkbox with label
 local function CreateCheckbox(parent, labelText, initialValue, onClickFunc)
     local checkbox = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
     checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
@@ -97,38 +150,6 @@ local function CreateCheckbox(parent, labelText, initialValue, onClickFunc)
     return checkbox, label
 end
 
--- Helper function to create a slider with label
-local function CreateSlider(parent, labelText, min, max, step, initialValue, valueFormat, onValueChangedFunc)
-    local container = CreateFrame("Frame", nil, parent)
-    container:SetSize(260, 50)
-
-    local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    label:SetPoint("TOP", container, "TOP", 0, 0)
-    label:SetText(labelText)
-
-    local slider = CreateFrame("Slider", nil, container, "OptionsSliderTemplate")
-    slider:SetPoint("TOP", label, "BOTTOM", 0, -5)
-    slider:SetMinMaxValues(min, max)
-    slider:SetValueStep(step)
-    slider:SetValue(initialValue)
-    slider:SetWidth(200)
-    slider:SetObeyStepOnDrag(true)
-
-    local valueText = slider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    valueText:SetPoint("TOP", slider, "BOTTOM", 0, 0)
-    valueText:SetText(valueFormat:format(initialValue))
-
-    slider:SetScript("OnValueChanged", function(self, value)
-        valueText:SetText(valueFormat:format(value))
-        if onValueChangedFunc then
-            onValueChangedFunc(value)
-        end
-    end)
-
-    return container, slider, valueText
-end
-
--- Helper function to create a button
 local function CreateButton(parent, text, width, height, onClickFunc)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetSize(width, height)
@@ -138,113 +159,68 @@ local function CreateButton(parent, text, width, height, onClickFunc)
     return button
 end
 
--- Create the configuration frame
-function PKA_CreateConfigFrame()
-    -- If the frame already exists, just show it and update stats
-    if configFrame then
-        PKA_UpdateConfigStats() -- Update the stats when showing the frame
-        configFrame:Show()
-        return
-    end
-
-    -- Create the main frame
-    configFrame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    configFrame:SetSize(600, 650)  -- Reduced height since we removed the slider
-    configFrame:SetPoint("CENTER")
-    configFrame:SetMovable(true)
-    configFrame:EnableMouse(true)
-    configFrame:RegisterForDrag("LeftButton")
-    configFrame:SetScript("OnDragStart", configFrame.StartMoving)
-    configFrame:SetScript("OnDragStop", configFrame.StopMovingOrSizing)
-
-    -- Make closeable with Escape
-    tinsert(UISpecialFrames, "PKAConfigFrame")
-
-    -- Set title
-    configFrame.TitleText:SetText("PlayerKillAnnounce Configuration")
-
-    -- Ensure default values if any are missing
+local function EnsureDefaultValues()
     if not PKA_KillAnnounceMessage then PKA_KillAnnounceMessage = PlayerKillMessageDefault end
     if not PKA_KillStreakEndedMessage then PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault end
     if not PKA_NewStreakRecordMessage then PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault end
     if not PKA_NewMultiKillRecordMessage then PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault end
     if PKA_EnableKillAnnounce == nil then PKA_EnableKillAnnounce = true end
     if PKA_EnableRecordAnnounce == nil then PKA_EnableRecordAnnounce = true end
+    if PKA_MultiKillThreshold == nil then PKA_MultiKillThreshold = 3 end
+end
 
-    -- Define our spacing constants
-    local SECTION_TOP_MARGIN = 30       -- Space from top of frame to first section
-    local SECTION_SPACING = 100         -- Space between sections
-    local HEADER_ELEMENT_SPACING = 10    -- Space between header and first element
-    local CHECKBOX_SPACING = 0          -- Space between checkboxes
-    local FIELD_SPACING = 5            -- Space between input fields
-    local BUTTON_BOTTOM_MARGIN = 10     -- Space from bottom buttons to frame edge
+local function CreateAnnouncementSection(parent, yOffset)
+    local header, line = CreateSectionHeader(parent, "Announcement Settings", 20, yOffset)
 
-    -- Track our current Y position for relative positioning
-    local currentY = -SECTION_TOP_MARGIN
-
-    -- SECTION 1: Announcement Settings
-    local announcementHeader, announcementLine = CreateSectionHeader(configFrame, "Announcement Settings", 20, currentY)
-    currentY = currentY - HEADER_ELEMENT_SPACING
-
-    -- Enable kill announcements checkbox
-    local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(configFrame, "Enable kill announcements", PKA_EnableKillAnnounce, function(checked)
+    local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements",
+        PKA_EnableKillAnnounce, function(checked)
         PKA_EnableKillAnnounce = checked
         PKA_SaveSettings()
     end)
-    enableKillAnnounce:SetPoint("TOPLEFT", announcementHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    enableKillAnnounce:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
-    -- Enable record announcements checkbox
-    local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(configFrame, "Announce new records to party chat", PKA_EnableRecordAnnounce, function(checked)
+    local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
+        PKA_EnableRecordAnnounce, function(checked)
         PKA_EnableRecordAnnounce = checked
         PKA_SaveSettings()
     end)
     enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
 
-    -- Add a slider for multi-kill threshold settings
-    local multiKillThresholdSlider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", configFrame, "OptionsSliderTemplate")
-    multiKillThresholdSlider:SetWidth(200)
-    multiKillThresholdSlider:SetHeight(16)
-    multiKillThresholdSlider:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 20, -30)
-    multiKillThresholdSlider:SetOrientation("HORIZONTAL")
-    multiKillThresholdSlider:SetMinMaxValues(2, 10)
-    multiKillThresholdSlider:SetValueStep(1)
-    multiKillThresholdSlider:SetValue(PKA_MultiKillThreshold or 3)
-    getglobal(multiKillThresholdSlider:GetName() .. "Low"):SetText("Double")
-    getglobal(multiKillThresholdSlider:GetName() .. "High"):SetText("Deca")
-    getglobal(multiKillThresholdSlider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
+    local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
+    slider:SetWidth(200)
+    slider:SetHeight(16)
+    slider:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 20, -30)
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetMinMaxValues(2, 10)
+    slider:SetValueStep(1)
+    slider:SetValue(PKA_MultiKillThreshold or 3)
+    getglobal(slider:GetName() .. "Low"):SetText("Double")
+    getglobal(slider:GetName() .. "High"):SetText("Deca")
+    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
 
-    -- Add handler for slider value change
-    multiKillThresholdSlider:SetScript("OnValueChanged", function(self, value)
-        -- Round to nearest whole number
+    slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
         self:SetValue(value)
-
-        -- Update text
-        local thresholdText = "Multi-Kill Announce Threshold: " .. value
-        getglobal(self:GetName() .. "Text"):SetText(thresholdText)
-
-        -- Save the value
+        getglobal(self:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. value)
         PKA_MultiKillThreshold = value
         PKA_SaveSettings()
     end)
 
-    -- Add a descriptive text
-    local multiKillThresholdDesc = configFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    multiKillThresholdDesc:SetPoint("TOPLEFT", multiKillThresholdSlider, "BOTTOMLEFT", 0, -5)
-    multiKillThresholdDesc:SetText("Set the minimum multi-kill count to announce in party chat")
-    multiKillThresholdDesc:SetJustifyH("LEFT")
-    multiKillThresholdDesc:SetWidth(350)
+    local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    desc:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -5)
+    desc:SetText("Set the minimum multi-kill count to announce in party chat")
+    desc:SetJustifyH("LEFT")
+    desc:SetWidth(350)
 
-    -- Calculate position for next section (from top of frame) with extra space for the slider
-    currentY = currentY - SECTION_SPACING - 70  -- Extra 50px for the slider and its description
+    -- Return section height for positioning next section
+    return 130 -- Approximate height of this section
+end
 
-    -- SECTION 2: Message Templates
-    local templatesHeader, templatesLine = CreateSectionHeader(configFrame, "Message Templates", 20, currentY)
-    currentY = currentY - HEADER_ELEMENT_SPACING
+local function CreateMessageTemplatesSection(parent, yOffset)
+    local header, line = CreateSectionHeader(parent, "Message Templates", 20, yOffset)
 
-    -- Kill announcement message
     local killMsgContainer, killMsgEditBox = CreateInputField(
-        configFrame,
+        parent,
         "Kill announcement message (\"Enemyplayername\" will be replaced with the player's name):",
         560,
         PKA_KillAnnounceMessage,
@@ -253,14 +229,13 @@ function PKA_CreateConfigFrame()
             PKA_SaveSettings()
         end
     )
-    killMsgContainer:SetPoint("TOPLEFT", templatesHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    killMsgContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
-    -- Streak ended message
     local streakEndedContainer, streakEndedEditBox = CreateInputField(
-        configFrame,
+        parent,
         "Kill streak ended message (\"STREAKCOUNT\" will be replaced with the streak count):",
         560,
-        PKA_KillStreakEndedMessage or KillStreakEndedMessageDefault,
+        PKA_KillStreakEndedMessage,
         function(text)
             PKA_KillStreakEndedMessage = text
             PKA_SaveSettings()
@@ -268,12 +243,11 @@ function PKA_CreateConfigFrame()
     )
     streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
-    -- New streak record message
     local newStreakContainer, newStreakEditBox = CreateInputField(
-        configFrame,
+        parent,
         "New streak record message (\"STREAKCOUNT\" will be replaced with the streak count):",
         560,
-        PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault,
+        PKA_NewStreakRecordMessage,
         function(text)
             PKA_NewStreakRecordMessage = text
             PKA_SaveSettings()
@@ -281,12 +255,11 @@ function PKA_CreateConfigFrame()
     )
     newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
-    -- New multi-kill record message
     local multiKillContainer, multiKillEditBox = CreateInputField(
-        configFrame,
+        parent,
         "New multi-kill record message (\"MULTIKILLCOUNT\" will be replaced with the count):",
         560,
-        PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault,
+        PKA_NewMultiKillRecordMessage,
         function(text)
             PKA_NewMultiKillRecordMessage = text
             PKA_SaveSettings()
@@ -294,97 +267,70 @@ function PKA_CreateConfigFrame()
     )
     multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
-    -- Calculate position for next section (from top of frame)
-    currentY = currentY - SECTION_SPACING - 180  -- Space for all the input fields in this section
+    -- Return UI elements for potential updates
+    return {
+        killMsg = killMsgEditBox,
+        streakEnded = streakEndedEditBox,
+        newStreak = newStreakEditBox,
+        multiKill = multiKillEditBox
+    }
+end
 
-    -- SECTION 3: Statistics
-    local statsHeader, statsLine = CreateSectionHeader(configFrame, "Statistics", 20, currentY)
+local function CreateStatisticsSection(parent, yOffset)
+    local header, line = CreateSectionHeader(parent, "Statistics", 20, yOffset)
 
-    -- Current stats display
-    configFrame.statsText = configFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    configFrame.statsText:SetPoint("TOPLEFT", statsHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    parent.statsText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    parent.statsText:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
-    -- Initialize with current values
-    PKA_UpdateConfigStats()
-
-    -- Add buttons to open statistics windows
-    local showKillsBtn = CreateButton(configFrame, "Show Kills List", 150, 22, function()
+    local showKillsBtn = CreateButton(parent, "Show Kills List", 150, 22, function()
         PKA_CreateKillStatsFrame()
     end)
-    showKillsBtn:SetPoint("TOPLEFT", configFrame.statsText, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    showKillsBtn:SetPoint("TOPLEFT", parent.statsText, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
-    local showStatsBtn = CreateButton(configFrame, "Show Statistics", 150, 22, function()
+    local showStatsBtn = CreateButton(parent, "Show Statistics", 150, 22, function()
         PKA_CreateStatisticsFrame()
     end)
     showStatsBtn:SetPoint("LEFT", showKillsBtn, "RIGHT", 5, 0)
 
-    -- Button row at bottom of frame
-    local resetBtn = CreateButton(configFrame, "Reset Statistics", 150, 22, function()
-        StaticPopupDialogs["PKA_RESET_STATS"] = {
-            text = "Are you sure you want to reset all kill statistics? This cannot be undone.",
-            button1 = "Yes",
-            button2 = "No",
-            OnAccept = function()
-                PKA_CurrentKillStreak = 0
-                PKA_HighestKillStreak = 0
-                PKA_MultiKillCount = 0
-                PKA_HighestMultiKill = 0
-                PKA_KillCounts = {}
-                PKA_SaveSettings()
-                PKA_UpdateConfigStats()  -- Update the statistics display
-                print("All kill statistics have been reset!")
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-        }
-        StaticPopup_Show("PKA_RESET_STATS")
+    return 80 -- Approximate height of this section
+end
+
+local function CreateActionButtons(parent)
+    local resetBtn = CreateButton(parent, "Reset Statistics", 150, 22, function()
+        ShowResetStatsConfirmation()
     end)
-    resetBtn:SetPoint("BOTTOMLEFT", configFrame, "BOTTOMLEFT", 20, BUTTON_BOTTOM_MARGIN)
+    resetBtn:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 20, BUTTON_BOTTOM_MARGIN)
 
-    -- Default settings button
-    local defaultsBtn = CreateButton(configFrame, "Reset to Defaults", 150, 22, function()
-        StaticPopupDialogs["PKA_RESET_DEFAULTS"] = {
-            text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics.",
-            button1 = "Yes",
-            button2 = "No",
-            OnAccept = function()
-                PKA_KillAnnounceMessage = PlayerKillMessageDefault
-                PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault
-                PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
-                PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
-                PKA_EnableKillAnnounce = true
-                PKA_EnableRecordAnnounce = true
-                PKA_MultiKillThreshold = 3  -- Add default threshold reset
-
-                -- Update UI elements
-                killMsgEditBox:SetText(PKA_KillAnnounceMessage)
-                streakEndedEditBox:SetText(PKA_KillStreakEndedMessage)
-                newStreakEditBox:SetText(PKA_NewStreakRecordMessage)
-                multiKillEditBox:SetText(PKA_NewMultiKillRecordMessage)
-                enableKillAnnounce:SetChecked(PKA_EnableKillAnnounce)
-                enableRecordAnnounce:SetChecked(PKA_EnableRecordAnnounce)
-                multiKillThresholdSlider:SetValue(PKA_MultiKillThreshold)
-
-                PKA_SaveSettings()
-                print("All settings have been reset to default values!")
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-        }
-        StaticPopup_Show("PKA_RESET_DEFAULTS")
+    local defaultsBtn = CreateButton(parent, "Reset to Defaults", 150, 22, function()
+        ShowResetDefaultsConfirmation()
     end)
     defaultsBtn:SetPoint("LEFT", resetBtn, "RIGHT", 10, 0)
 
-    -- Close button
-    local closeBtn = CreateButton(configFrame, "Close", 80, 22, function()
-        configFrame:Hide()
+    local closeBtn = CreateButton(parent, "Close", 80, 22, function()
+        parent:Hide()
     end)
-    closeBtn:SetPoint("BOTTOMRIGHT", configFrame, "BOTTOMRIGHT", -20, BUTTON_BOTTOM_MARGIN)
+    closeBtn:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -20, BUTTON_BOTTOM_MARGIN)
+
+    return { resetBtn = resetBtn, defaultsBtn = defaultsBtn, closeBtn = closeBtn }
 end
 
--- Add a function to update the statistics text in the config UI
+local function CreateMainFrame()
+    local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(600, 650)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+
+    tinsert(UISpecialFrames, "PKAConfigFrame")
+
+    frame.TitleText:SetText("PlayerKillAnnounce Configuration")
+
+    return frame
+end
+
 function PKA_UpdateConfigStats()
     if configFrame and configFrame.statsText then
         configFrame.statsText:SetText(string.format(
@@ -394,6 +340,51 @@ function PKA_UpdateConfigStats()
             PKA_HighestMultiKill or 0
         ))
     end
+end
+
+function PKA_UpdateConfigUI()
+    if not configFrame then return end
+
+    if configFrame.enableKillAnnounce then
+        configFrame.enableKillAnnounce:SetChecked(PKA_EnableKillAnnounce)
+    end
+
+    if configFrame.enableRecordAnnounce then
+        configFrame.enableRecordAnnounce:SetChecked(PKA_EnableRecordAnnounce)
+    end
+
+    if configFrame.multiKillSlider then
+        configFrame.multiKillSlider:SetValue(PKA_MultiKillThreshold)
+    end
+
+    if configFrame.editBoxes then
+        configFrame.editBoxes.killMsg:SetText(PKA_KillAnnounceMessage)
+        configFrame.editBoxes.streakEnded:SetText(PKA_KillStreakEndedMessage)
+        configFrame.editBoxes.newStreak:SetText(PKA_NewStreakRecordMessage)
+        configFrame.editBoxes.multiKill:SetText(PKA_NewMultiKillRecordMessage)
+    end
+
+    PKA_UpdateConfigStats()
+end
+
+function PKA_CreateConfigFrame()
+    if configFrame then
+        PKA_UpdateConfigStats()
+        configFrame:Show()
+        return
+    end
+
+    EnsureDefaultValues()
+    configFrame = CreateMainFrame()
+    local currentY = -SECTION_TOP_MARGIN
+    local announcementHeight = CreateAnnouncementSection(configFrame, currentY)
+    currentY = currentY - announcementHeight - SECTION_SPACING
+    configFrame.editBoxes = CreateMessageTemplatesSection(configFrame, currentY)
+    currentY = currentY - 180 - SECTION_SPACING -- Estimated height of the templates section
+
+    CreateStatisticsSection(configFrame, currentY)
+    CreateActionButtons(configFrame)
+    PKA_UpdateConfigStats()
 end
 
 -- Add command to slash handler to open config UI
@@ -409,7 +400,6 @@ function PKA_SlashCommandHandler(msg)
     end
 end
 
--- Update help text to include config UI option
 local originalPrintUsage = PrintSlashCommandUsage
 if originalPrintUsage then
     PrintSlashCommandUsage = function()
