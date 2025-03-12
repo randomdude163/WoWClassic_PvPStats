@@ -496,6 +496,9 @@ function PKA_ShowKillStreakMilestone(killCount)
     -- Play milestone sounds
     PlayMilestoneSound()
 
+    -- Make character perform cheer emote
+    DoEmote("CHEER")
+
     -- Start the animation
     animGroup:Play()
 end
