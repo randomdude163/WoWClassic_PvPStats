@@ -723,7 +723,8 @@ local function createEmptyStatsFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
-    tinsert(UISpecialFrames, "PKAStatisticsFrame")
+    -- Remove this as it's handled by the frame manager now
+    -- tinsert(UISpecialFrames, "PKAStatisticsFrame")
 
     frame.TitleText:SetText("Player Kill Statistics")
 
@@ -745,13 +746,22 @@ function PKA_CreateStatisticsFrame()
 
     for i = #UISpecialFrames, 1, -1 do
         if (UISpecialFrames[i] == "PKAStatisticsFrame") then
-            tremove(UISpecialFrames, i)
+            table.remove(UISpecialFrames, i)
             break
         end
     end
 
     if not hasEnoughData() then
         statsFrame = createEmptyStatsFrame()
+
+        -- Remove from UISpecialFrames since it will be handled by FrameManager
+        for i = #UISpecialFrames, 1, -1 do
+            if (UISpecialFrames[i] == "PKAStatisticsFrame") then
+                table.remove(UISpecialFrames, i)
+                break
+            end
+        end
+
         PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
         return
     end
@@ -759,6 +769,10 @@ function PKA_CreateStatisticsFrame()
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData = gatherStatistics()
 
     statsFrame = setupMainFrame()
+
+    -- Remove ESC key handling from setupMainFrame
+    statsFrame:SetScript("OnKeyDown", nil)
+
     PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(statsFrame)

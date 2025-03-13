@@ -47,10 +47,45 @@ function PKA_FrameManager:RegisterFrame(frame, frameName)
         end)
     end
 
+    -- Enable keyboard handling for Escape key
+    frame:EnableKeyboard(true)
+    frame:SetPropagateKeyboardInput(true)
+
+    -- Set up Escape key handling
+    frame:SetScript("OnKeyDown", function(self, key)
+        if key == "ESCAPE" then
+            -- Don't propagate ESC key if this is the top-most frame
+            if PKA_FrameManager:IsTopMostVisibleFrame(frameName) then
+                self:SetPropagateKeyboardInput(false)
+                PKA_FrameManager:HideFrame(frameName)
+                return
+            end
+        end
+        -- Propagate all other keys and ESC if not top-most
+        self:SetPropagateKeyboardInput(true)
+    end)
+
     -- Add to frame order and bring to front
     self:BringToFront(frameName)
 
+    -- Remove from UISpecialFrames to prevent default ESC handling
+    for i = #UISpecialFrames, 1, -1 do
+        if UISpecialFrames[i] == frame:GetName() then
+            table.remove(UISpecialFrames, i)
+            break
+        end
+    end
+
     return frame
+end
+
+-- Checks if the frame is the top-most visible frame
+function PKA_FrameManager:IsTopMostVisibleFrame(frameName)
+    if #self.frameOrder == 0 then return false end
+
+    -- Check if this frame is the last (top-most) in our visible stack
+    local topFrameName = self.frameOrder[#self.frameOrder]
+    return frameName == topFrameName
 end
 
 -- Bring a specific frame to the front
