@@ -179,12 +179,16 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(displayName)
 
-        if titleType == "class" then
+        if titleType == "class" or titleType == "unknownLevelClass" then
             GameTooltip:AddLine("Click to show all kills from this class", 1, 1, 1, true)
         elseif titleType == "zone" then
             GameTooltip:AddLine("Click to show all kills from this zone", 1, 1, 1, true)
         elseif titleType == "level" then
-            GameTooltip:AddLine("Click to show all kills at this level", 1, 1, 1, true)
+            if entry.key == "??" then
+                GameTooltip:AddLine("Click to show all unknown level kills", 1, 1, 1, true)
+            else
+                GameTooltip:AddLine("Click to show all kills with this level", 1, 1, 1, true)
+            end
         elseif titleType == raceColors then
             GameTooltip:AddLine("Click to show all kills from this race", 1, 1, 1, true)
         elseif titleType == genderColors then
@@ -206,25 +210,20 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         -- Wait a short time to ensure the frame is created and registered
         C_Timer.After(0.05, function()
             -- Set appropriate search text based on bar type
-            if titleType == "class" then
+            if titleType == "class" or titleType == "unknownLevelClass" then
                 PKA_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
             elseif titleType == "zone" then
                 PKA_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
             elseif titleType == "level" then
-                -- Individual level filter
-                local level = tonumber(entry.key)
-                if level then
-                    PKA_SetKillListLevelRange(level, level, true)
-                end
-            elseif titleType == "unknownLevelClass" then
-                -- This is for the "Level ?? Kills by Class" chart
-                if entry.key then
-                    -- Filter for this class AND unknown level
+                if entry.key == "??" then
+                    -- Special handling for unknown level - explicitly set to -1
                     PKA_SetKillListLevelRange(-1, -1, true)
-                    -- Short delay to allow the level filter to apply first
-                    C_Timer.After(0.05, function()
-                        PKA_SetKillListSearch("", nil, entry.key, nil, nil, nil, false)
-                    end)
+                else
+                    -- Individual level filter
+                    local level = tonumber(entry.key)
+                    if level then
+                        PKA_SetKillListLevelRange(level, level, true)
+                    end
                 end
             elseif titleType == raceColors then
                 PKA_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
@@ -257,11 +256,11 @@ local function createBar(container, entry, index, maxValue, total, titleType)
             g = 0.1 + math.max(0, 0.7 - ratio * 0.7), -- Green decreases with level
             b = math.max(0, 1.0 - ratio * 1.5)        -- Blue decreases with level
         }
-    elseif titleType == "class" then
-        color = getClassColor(entry.key)
     elseif titleType == "level" and entry.key == "??" then
-        -- Use purple for unknown levels
+        -- Purple for unknown level
         color = {r = 0.8, g = 0.3, b = 0.9}
+    elseif titleType == "class" or titleType == "unknownLevelClass" then
+        color = getClassColor(entry.key)
     else
         color = titleType and titleType[entry.key] or {r = 0.8, g = 0.8, b = 0.8}
     end

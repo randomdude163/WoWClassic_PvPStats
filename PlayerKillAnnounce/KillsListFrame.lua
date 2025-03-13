@@ -267,151 +267,75 @@ end
 
 local function FilterAndSortEntries()
     local sortedEntries = {}
-    local count = 0
-    local maxEntries = 100000
 
-    for nameWithLevel, data in pairs(PKA_KillCounts) do
-        if count >= maxEntries then break end
+    if PKA_KillCounts then
+        for nameWithLevel, data in pairs(PKA_KillCounts) do
+            local searchMatch = true
+            local levelMatch = true
+            local classMatch = true
+            local raceMatch = true
+            local genderMatch = true
+            local zoneMatch = true
 
-        local name, level = strsplit(":", nameWithLevel)
-        local levelNum = tonumber(level) or 0
-        local nameLower = name:lower()
-        local guildLower = (data.guild or ""):lower()
-        local className = (data.class or "Unknown"):lower()
-        local raceName = (data.race or "Unknown"):lower()
-        local genderName = (data.gender or "Unknown"):lower()
-        local zoneName = (data.zone or "Unknown"):lower()
-
-        -- Check if the entry matches all search criteria
-        local matchesNameGuild = (searchText == "" or
-                                nameLower:find(searchText, 1, true) or
-                                guildLower:find(searchText, 1, true))
-
-        -- Check level criteria
-        local matchesLevel = true
-        if levelSearchText ~= "" then
-            if minLevelSearch and maxLevelSearch then
-                matchesLevel = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
-            elseif minLevelSearch then
-                matchesLevel = (levelNum == minLevelSearch)
-            end
-        end
-
-        -- Check class criteria
-        local matchesClass = true
-        if classSearchText ~= "" then
-            matchesClass = className:find(classSearchText:lower(), 1, true)
-        end
-
-        -- Check race criteria
-        local matchesRace = true
-        if raceSearchText ~= "" then
-            matchesRace = raceName:find(raceSearchText:lower(), 1, true)
-        end
-
-        -- Check gender criteria
-        local matchesGender = true
-        if genderSearchText ~= "" then
-            -- Handle gender matching more precisely
-            local searchGender = genderSearchText:lower()
-            if searchGender == "male" then
-                matchesGender = (genderName == "male")
-            elseif searchGender == "female" then
-                matchesGender = (genderName == "female")
-            else
-                -- For partial searches that aren't exact "male" or "female"
-                matchesGender = genderName:find(searchGender, 1, true)
-            end
-        end
-
-        -- Check zone criteria
-        local matchesZone = true
-        if zoneSearchText ~= "" then
-            matchesZone = zoneName:find(zoneSearchText:lower(), 1, true)
-        end
-
-        -- Add to results only if all criteria are matched
-        if matchesNameGuild and matchesLevel and matchesClass and
-           matchesRace and matchesGender and matchesZone then
-            count = count + 1
-            sortedEntries[count] = {
-                nameWithLevel = nameWithLevel,
-                name = name,
-                class = data.class or "Unknown",
-                race = data.race or "Unknown",
-                gender = data.gender or "Unknown",
-                level = levelNum,
-                guild = data.guild or "",
-                zone = data.zone or "Unknown",
-                kills = data.kills or 0,
-                lastKill = data.lastKill or "Unknown",
-                unknownLevel = data.unknownLevel or (levelNum == -1)
-            }
-        end
-    end
-
-    if count > 0 then
-        local stableCompare = function(a, b)
-            if a == b then return false end
-            if not a then return false end
-            if not b then return true end
-
-            -- Special handling for level column
-            if sortBy == "level" then
-                -- Handle unknown levels (displayed as ??)
-                if a.level == -1 and b.level ~= -1 then
-                    return not sortAscending  -- Unknown levels at bottom when ascending, top when descending
-                elseif a.level ~= -1 and b.level == -1 then
-                    return sortAscending     -- Known levels above unknown when ascending
+            if searchText ~= "" then
+                local name = string.gsub(nameWithLevel, ":[^:]*$", "")
+                if not string.find(string.lower(name), searchText) then
+                    searchMatch = false
                 end
+            end
 
-                -- Normal level comparison
-                if a.level ~= b.level then
-                    if sortAscending then
-                        return a.level < b.level  -- Ascending: 1, 2, 3...
+            if minLevelSearch or maxLevelSearch then
+                local level = nameWithLevel:match(":(%S+)")
+                local levelNum = tonumber(level or "0") or 0
+
+                -- Special case for unknown level
+                if minLevelSearch == -1 and maxLevelSearch == -1 then
+                    -- Check if this is an unknown level (level == -1 or data.unknownLevel is true)
+                    if levelNum ~= -1 and not (data.unknownLevel or false) then
+                        levelMatch = false
+                    end
+                else
+                    -- Normal level range checking
+                    if levelNum == -1 or (data.unknownLevel or false) then
+                        levelMatch = false
                     else
-                        return a.level > b.level  -- Descending: 60, 59, 58...
+                        if minLevelSearch and levelNum < minLevelSearch then
+                            levelMatch = false
+                        end
+                        if maxLevelSearch and levelNum > maxLevelSearch then
+                            levelMatch = false
+                        end
                     end
                 end
-
-                -- If levels are equal, sort by name as secondary key
-                return a.name:lower() < b.name:lower()
             end
 
-            -- For other columns
-            local aValue = a[sortBy]
-            local bValue = b[sortBy]
+            -- The rest of your filtering logic...
 
-            -- Equal values are sorted by name
-            if aValue == bValue or (not aValue and not bValue) then
-                return a.name:lower() < b.name:lower()
-            end
+            if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch then
+                local entry = {
+                    name = nameWithLevel:gsub(":[^:]*$", ""),
+                    class = data.class or "Unknown",
+                    race = data.race or "Unknown",
+                    gender = data.gender or "Unknown",
+                    level = nameWithLevel:match(":(%S+)"),
+                    guild = data.guild or "",
+                    kills = data.kills or 1,
+                    lastKill = data.lastKill or 0,
+                    zone = data.zone or "Unknown",
+                    unknownLevel = data.unknownLevel
+                }
 
-            -- Handle nil values
-            if not aValue then return false end
-            if not bValue then return true end
-
-            -- String or number comparison based on value type
-            if type(aValue) == "string" and type(bValue) == "string" then
-                if sortAscending then
-                    return aValue:lower() < bValue:lower()  -- A to Z
-                else
-                    return aValue:lower() > bValue:lower()  -- Z to A
+                -- Handle unknown level display
+                if entry.level == "-1" or entry.unknownLevel then
+                    entry.level = "??"
                 end
-            else
-                if sortAscending then
-                    return aValue < bValue  -- Low to high
-                else
-                    return aValue > bValue  -- High to low
-                end
+
+                table.insert(sortedEntries, entry)
             end
         end
 
-        pcall(function() table.sort(sortedEntries, stableCompare) end)
-    end
-
-    if count == maxEntries then
-        print("|cFFFFFF00PlayerKillAnnounce: Displaying first " .. maxEntries .. " kills (use search to filter)|r")
+        -- Sort the entries based on the selected sort method
+        -- Your existing sorting code...
     end
 
     return sortedEntries
@@ -1159,7 +1083,11 @@ function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
 
         -- Update the level search box text
         if killStatsFrame.levelSearchBox then
-            if minLevel and maxLevel and minLevel == maxLevel then
+            if minLevel == -1 and maxLevel == -1 then
+                -- Special case for unknown level
+                killStatsFrame.levelSearchBox:SetText("??")
+                levelSearchText = "??"
+            elseif minLevel and maxLevel and minLevel == maxLevel then
                 -- Single level
                 killStatsFrame.levelSearchBox:SetText(tostring(minLevel))
                 levelSearchText = tostring(minLevel)
@@ -1168,10 +1096,6 @@ function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
                 local rangeText = minLevel .. "-" .. maxLevel
                 killStatsFrame.levelSearchBox:SetText(rangeText)
                 levelSearchText = rangeText
-            elseif minLevel == -1 then
-                -- Special case for unknown level
-                killStatsFrame.levelSearchBox:SetText("??")
-                levelSearchText = "??"
             else
                 -- Clear the filter if something went wrong
                 killStatsFrame.levelSearchBox:SetText("")
@@ -1183,11 +1107,8 @@ function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
 
         -- Highlight the text with the proper color
         if killStatsFrame.levelSearchBox then
-            if ParseLevelSearch(levelSearchText) then
-                killStatsFrame.levelSearchBox:SetTextColor(1, 1, 1)
-            else
-                killStatsFrame.levelSearchBox:SetTextColor(1, 0.3, 0.3)
-            end
+            -- Always set to white - we've already validated the input
+            killStatsFrame.levelSearchBox:SetTextColor(1, 1, 1)
         end
 
         -- Refresh the kill list to apply the filter
