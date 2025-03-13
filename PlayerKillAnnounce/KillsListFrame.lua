@@ -1126,3 +1126,65 @@ function PKA_SetKillListSearch(text, levelText, classText, raceText, genderText,
         RefreshKillList()
     end
 end
+
+-- New function to set level range filter
+function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
+    if killStatsFrame then
+        -- Reset all filters first if requested
+        if resetOtherFilters then
+            killStatsFrame.searchBox:SetText("")
+            searchText = ""
+            killStatsFrame.classSearchBox:SetText("")
+            classSearchText = ""
+            killStatsFrame.raceSearchBox:SetText("")
+            raceSearchText = ""
+            killStatsFrame.genderSearchBox:SetText("")
+            genderSearchText = ""
+            killStatsFrame.zoneSearchBox:SetText("")
+            zoneSearchText = ""
+        end
+
+        -- Set the level range directly to the internal variables
+        minLevelSearch = minLevel
+        maxLevelSearch = maxLevel
+
+        -- Update the level search box text
+        if killStatsFrame.levelSearchBox then
+            if minLevel and maxLevel and minLevel == maxLevel then
+                -- Single level
+                killStatsFrame.levelSearchBox:SetText(tostring(minLevel))
+                levelSearchText = tostring(minLevel)
+            elseif minLevel and maxLevel then
+                -- Level range
+                local rangeText = minLevel .. "-" .. maxLevel
+                killStatsFrame.levelSearchBox:SetText(rangeText)
+                levelSearchText = rangeText
+            elseif minLevel == -1 then
+                -- Special case for unknown level
+                killStatsFrame.levelSearchBox:SetText("??")
+                levelSearchText = "??"
+            else
+                -- Clear the filter if something went wrong
+                killStatsFrame.levelSearchBox:SetText("")
+                levelSearchText = ""
+                minLevelSearch = nil
+                maxLevelSearch = nil
+            end
+        end
+
+        -- Highlight the text with the proper color
+        if killStatsFrame.levelSearchBox then
+            if ParseLevelSearch(levelSearchText) then
+                killStatsFrame.levelSearchBox:SetTextColor(1, 1, 1)
+            else
+                killStatsFrame.levelSearchBox:SetTextColor(1, 0.3, 0.3)
+            end
+        end
+
+        -- Refresh the kill list to apply the filter
+        RefreshKillList()
+
+        -- Bring the kills list frame to front if it's not already
+        PKA_FrameManager:BringToFront("KillsList")
+    end
+end

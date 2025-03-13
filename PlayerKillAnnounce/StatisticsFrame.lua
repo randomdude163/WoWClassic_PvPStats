@@ -183,6 +183,8 @@ local function createBar(container, entry, index, maxValue, total, titleType)
             GameTooltip:AddLine("Click to show all kills from this class", 1, 1, 1, true)
         elseif titleType == "zone" then
             GameTooltip:AddLine("Click to show all kills from this zone", 1, 1, 1, true)
+        elseif titleType == "level" then
+            GameTooltip:AddLine("Click to show all kills in this level range", 1, 1, 1, true)
         elseif titleType == raceColors then
             GameTooltip:AddLine("Click to show all kills from this race", 1, 1, 1, true)
         elseif titleType == genderColors then
@@ -208,6 +210,23 @@ local function createBar(container, entry, index, maxValue, total, titleType)
                 PKA_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
             elseif titleType == "zone" then
                 PKA_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
+            elseif titleType == "level" then
+                -- Extract level range values for filter
+                local minLevel, maxLevel
+                if entry.key == "Level ??" then
+                    -- Special case for unknown level
+                    PKA_SetKillListSearch("", -1, nil, nil, nil, nil, true)
+                else
+                    -- Parse the level range (e.g. "1-10", "11-20")
+                    minLevel, maxLevel = entry.key:match("(%d+)-(%d+)")
+                    if minLevel and maxLevel then
+                        PKA_SetKillListLevelRange(tonumber(minLevel), tonumber(maxLevel), true)
+                    elseif entry.key:match("(%d+)%+") then
+                        -- Handle "81+" format
+                        minLevel = entry.key:match("(%d+)%+")
+                        PKA_SetKillListLevelRange(tonumber(minLevel), 999, true)
+                    end
+                end
             elseif titleType == raceColors then
                 PKA_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
             elseif titleType == genderColors then
@@ -270,6 +289,8 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         titleType = "class"
     elseif title == "Kills by Zone" then
         titleType = "zone"
+    elseif title == "Kills by Level Range" then
+        titleType = "level"
     else
         titleType = colorTable
     end
@@ -518,15 +539,17 @@ local function createSummaryStats(parent, x, y, width, height)
     return container
 end
 
+-- Modify the gatherStatistics function to include level data
 local function gatherStatistics()
     local classData = {}
     local raceData = {}
     local genderData = {}
     local unknownLevelClassData = {}
     local zoneData = {}
+    local levelData = {} -- New table for level data
 
     if not PKA_KillCounts then
-        return {}, {}, {}, {}, {}
+        return {}, {}, {}, {}, {}, {} -- Added empty levelData table
     end
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
@@ -540,6 +563,29 @@ local function gatherStatistics()
 
             if levelNum == -1 or (data.unknownLevel or false) then
                 unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
+            else
+                -- Group levels by ranges of 10
+                local levelRange
+                if levelNum <= 10 then
+                    levelRange = "1-10"
+                elseif levelNum <= 20 then
+                    levelRange = "11-20"
+                elseif levelNum <= 30 then
+                    levelRange = "21-30"
+                elseif levelNum <= 40 then
+                    levelRange = "31-40"
+                elseif levelNum <= 50 then
+                    levelRange = "41-50"
+                elseif levelNum <= 60 then
+                    levelRange = "51-60"
+                elseif levelNum <= 70 then
+                    levelRange = "61-70"
+                elseif levelNum <= 80 then
+                    levelRange = "71-80"
+                else
+                    levelRange = "81+"
+                end
+                levelData[levelRange] = (levelData[levelRange] or 0) + kills
             end
 
             local race = data.race or "Unknown"
@@ -554,7 +600,16 @@ local function gatherStatistics()
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData
+    -- Add level ?? to level data
+    if unknownLevelClassData and next(unknownLevelClassData) then
+        local unknownLevelTotal = 0
+        for _, count in pairs(unknownLevelClassData) do
+            unknownLevelTotal = unknownLevelTotal + count
+        end
+        levelData["Level ??"] = unknownLevelTotal
+    end
+
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData
 end
 
 local function createScrollableLeftPanel(parent)
@@ -665,6 +720,7 @@ local function createEmptyStatsFrame()
     return frame
 end
 
+-- Modify the createStatisticsFrame function to include the new chart
 function PKA_CreateStatisticsFrame()
     if statsFrame then
         PKA_FrameManager:ShowFrame("Statistics")
@@ -684,7 +740,7 @@ function PKA_CreateStatisticsFrame()
         return
     end
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData = gatherStatistics()
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData = gatherStatistics()
 
     statsFrame = setupMainFrame()
     PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
@@ -695,6 +751,7 @@ function PKA_CreateStatisticsFrame()
     local raceChartHeight = calculateChartHeight(raceData)
     local genderChartHeight = calculateChartHeight(genderData)
     local unknownLevelClassHeight = calculateChartHeight(unknownLevelClassData)
+    local levelChartHeight = calculateChartHeight(levelData)
     local zoneChartHeight = calculateChartHeight(zoneData)
 
     local yOffset = 0
@@ -710,6 +767,10 @@ function PKA_CreateStatisticsFrame()
     createBarChart(leftScrollContent, "Level ?? Kills by Class", unknownLevelClassData, nil, 0, yOffset, UI.CHART.WIDTH, unknownLevelClassHeight)
 
     yOffset = yOffset - unknownLevelClassHeight - UI.CHART.PADDING
+    -- Add the new level chart before the zone chart
+    createBarChart(leftScrollContent, "Kills by Level Range", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
+
+    yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight)
 
     local totalHeight = -(yOffset) + 25
