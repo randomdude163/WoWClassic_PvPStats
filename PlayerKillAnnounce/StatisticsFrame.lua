@@ -2,14 +2,17 @@ local statsFrame = nil
 
 local UI = {
     FRAME = { WIDTH = 850, HEIGHT = 680 },
-    CHART = { WIDTH = 380, PADDING = 2 },
-    BAR = { HEIGHT = 16, SPACING = 3, TEXT_OFFSET = 5 },
+    CHART = { WIDTH = 360,  -- Reduced from 380 to allow more space for scroll bar
+              PADDING = 10 }, -- Increased from 2
+    BAR = { HEIGHT = 16,
+            SPACING = 3,
+            TEXT_OFFSET = 5 },
     GUILD_LIST = { WIDTH = 350, HEIGHT = 235 },
     TITLE_SPACING = 3,
     TOP_PADDING = 40,
     LEFT_SCROLL_PADDING = 20,
-    ZONE_NAME_WIDTH = 140,
-    STANDARD_NAME_WIDTH = 70
+    ZONE_NAME_WIDTH = 150,  -- Increased from 140
+    STANDARD_NAME_WIDTH = 80  -- Increased from 70
 }
 
 local raceColors = {
@@ -130,16 +133,19 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     local barWidth
     local nameWidth
     local barX
+    local maxBarWidth
 
     if titleType == "zone" then
         nameWidth = UI.ZONE_NAME_WIDTH
         barX = nameWidth + 10
-        barWidth = (entry.value / maxValue) * (UI.CHART.WIDTH - nameWidth - 80)
+        maxBarWidth = UI.CHART.WIDTH - nameWidth - 110  -- Increased padding from 80 to 110
     else
         nameWidth = UI.STANDARD_NAME_WIDTH
         barX = 90
-        barWidth = (entry.value / maxValue) * (UI.CHART.WIDTH - 160)
+        maxBarWidth = UI.CHART.WIDTH - 190  -- Increased padding from 160 to 190
     end
+
+    barWidth = (entry.value / maxValue) * maxBarWidth
 
     local barY = -(index * (UI.BAR.HEIGHT + UI.BAR.SPACING) + UI.TITLE_SPACING)
 
@@ -170,6 +176,15 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
     valueLabel:SetText(entry.value .. " (" .. string.format("%.1f", entry.value/total*100) .. "%)")
+
+    -- Calculate text width and adjust if needed
+    local valueText = entry.value .. " (" .. string.format("%.1f", entry.value/total*100) .. "%)"
+    local estimatedTextWidth = string.len(valueText) * 6  -- rough estimate of text width
+
+    -- If we're going to overlap the scrollbar, truncate the percentage
+    if barX + barWidth + estimatedTextWidth > (UI.CHART.WIDTH - 25) then
+        valueLabel:SetText(entry.value)
+    end
 end
 
 local function createBarChart(parent, title, data, colorTable, x, y, width, height)
