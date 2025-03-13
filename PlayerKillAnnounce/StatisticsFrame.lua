@@ -2,6 +2,85 @@ if not PKA_ActiveFrameLevel then
     PKA_ActiveFrameLevel = 100
 end
 
+-- Add this helper function at the top of StatisticsFrame.lua
+local function CreateGoldHighlight(parent, height)
+    local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
+    highlight:SetAllPoints(true)
+
+    -- Check if SetGradient with table parameters is available (newer API)
+    local useNewAPI = highlight.SetGradient and
+                      type(highlight.SetGradient) == "function" and
+                      pcall(function()
+                          highlight:SetGradient("HORIZONTAL", {r=1,g=1,b=1,a=1}, {r=1,g=1,b=1,a=1})
+                          return true
+                      end)
+
+    if useNewAPI then
+        -- Use the newer API version with table parameters (WoW 10.0+)
+        highlight:SetColorTexture(1, 0.82, 0, 0.6)  -- Significantly increased alpha
+        -- Try to set gradient in a safe way
+        pcall(function()
+            highlight:SetGradient("HORIZONTAL",
+                {r=1, g=0.82, b=0, a=0.3},    -- Left side (more visible)
+                {r=1, g=0.82, b=0, a=0.8}     -- Right side (very visible)
+            )
+        end)
+    else
+        -- For older clients, create two separate textures for the gradient
+        -- First, clear the main highlight
+        highlight:SetColorTexture(1, 0.82, 0, 0.5)  -- Increased from 0 to 0.5
+
+        -- Create left half with gradient fade in
+        local leftGradient = parent:CreateTexture(nil, "HIGHLIGHT")
+        leftGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+        leftGradient:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+        leftGradient:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+        leftGradient:SetWidth(parent:GetWidth() / 2)
+        leftGradient:SetHeight(height)
+
+        -- Use pcall to safely handle method variations between API versions
+        pcall(function()
+            leftGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.3, 1, 0.82, 0, 0.7)
+        end)
+
+        -- Fallback if SetGradientAlpha fails
+        if leftGradient:GetVertexColor() == 1 and select(2, leftGradient:GetVertexColor()) == 1 then
+            leftGradient:SetVertexColor(1, 0.82, 0, 0.6)
+        end
+
+        -- Create right half with gradient fade out
+        local rightGradient = parent:CreateTexture(nil, "HIGHLIGHT")
+        rightGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+        rightGradient:SetPoint("TOPLEFT", leftGradient, "TOPRIGHT", 0, 0)
+        rightGradient:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+
+        -- Use pcall to safely handle method variations between API versions
+        pcall(function()
+            rightGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.7, 1, 0.82, 0, 0.3)
+        end)
+
+        -- Fallback if SetGradientAlpha fails
+        if rightGradient:GetVertexColor() == 1 and select(2, rightGradient:GetVertexColor()) == 1 then
+            rightGradient:SetVertexColor(1, 0.82, 0, 0.6)
+        end
+    end
+
+    -- Add a semi-transparent border around the highlight for better visibility
+    local topBorder = parent:CreateTexture(nil, "HIGHLIGHT")
+    topBorder:SetHeight(1)
+    topBorder:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    topBorder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    topBorder:SetColorTexture(1, 0.82, 0, 0.8)
+
+    local bottomBorder = parent:CreateTexture(nil, "HIGHLIGHT")
+    bottomBorder:SetHeight(1)
+    bottomBorder:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+    bottomBorder:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+    bottomBorder:SetColorTexture(1, 0.82, 0, 0.8)
+
+    return highlight
+end
+
 -- Get next frame level and increment the counter
 local function PKA_GetNextFrameLevel()
     PKA_ActiveFrameLevel = PKA_ActiveFrameLevel + 10
@@ -169,20 +248,24 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     barButton:SetSize(UI.CHART.WIDTH, UI.BAR.HEIGHT)
     barButton:SetPoint("TOPLEFT", 0, barY)
 
-    -- Add highlight texture
-    local highlightTexture = barButton:CreateTexture(nil, "HIGHLIGHT")
-    highlightTexture:SetAllPoints(true)
-    highlightTexture:SetColorTexture(1, 1, 1, 0.2)
+    -- Create highlight with gradient fade effect
+    local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
 
     -- Add tooltip
     barButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(displayName)
 
-        if titleType == "class" then
+        if titleType == "class" or titleType == "unknownLevelClass" then
             GameTooltip:AddLine("Click to show all kills from this class", 1, 1, 1, true)
         elseif titleType == "zone" then
             GameTooltip:AddLine("Click to show all kills from this zone", 1, 1, 1, true)
+        elseif titleType == "level" then
+            if entry.key == "??" then
+                GameTooltip:AddLine("Click to show all unknown level kills", 1, 1, 1, true)
+            else
+                GameTooltip:AddLine("Click to show all kills with this level", 1, 1, 1, true)
+            end
         elseif titleType == raceColors then
             GameTooltip:AddLine("Click to show all kills from this race", 1, 1, 1, true)
         elseif titleType == genderColors then
@@ -204,10 +287,21 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         -- Wait a short time to ensure the frame is created and registered
         C_Timer.After(0.05, function()
             -- Set appropriate search text based on bar type
-            if titleType == "class" then
+            if titleType == "class" or titleType == "unknownLevelClass" then
                 PKA_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
             elseif titleType == "zone" then
                 PKA_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
+            elseif titleType == "level" then
+                if entry.key == "??" then
+                    -- Special handling for unknown level - explicitly set to -1
+                    PKA_SetKillListLevelRange(-1, -1, true)
+                else
+                    -- Individual level filter
+                    local level = tonumber(entry.key)
+                    if level then
+                        PKA_SetKillListLevelRange(level, level, true)
+                    end
+                end
             elseif titleType == raceColors then
                 PKA_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
             elseif titleType == genderColors then
@@ -226,18 +320,32 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     itemLabel:SetWidth(nameWidth)
     itemLabel:SetJustifyH("LEFT")
 
-    -- Bar visualization
-    local bar = container:CreateTexture(nil, "ARTWORK")
-    bar:SetPoint("TOPLEFT", barX, barY)
-    bar:SetSize(barWidth, UI.BAR.HEIGHT)
-
+    -- Use a gradient color for level bars (blue to red)
     local color
-    if titleType == "class" then
+    if titleType == "level" and entry.key ~= "??" then
+        local level = tonumber(entry.key) or 0
+        local maxLevel = 60
+
+        -- Calculate color gradient from blue (low level) to red (high level)
+        local ratio = level / maxLevel
+        color = {
+            r = math.min(1.0, ratio * 2),             -- Red increases with level
+            g = 0.1 + math.max(0, 0.7 - ratio * 0.7), -- Green decreases with level
+            b = math.max(0, 1.0 - ratio * 1.5)        -- Blue decreases with level
+        }
+    elseif titleType == "level" and entry.key == "??" then
+        -- Purple for unknown level
+        color = {r = 0.8, g = 0.3, b = 0.9}
+    elseif titleType == "class" or titleType == "unknownLevelClass" then
         color = getClassColor(entry.key)
     else
         color = titleType and titleType[entry.key] or {r = 0.8, g = 0.8, b = 0.8}
     end
 
+    -- Bar visualization
+    local bar = container:CreateTexture(nil, "ARTWORK")
+    bar:SetPoint("TOPLEFT", barX, barY)
+    bar:SetSize(barWidth, UI.BAR.HEIGHT)
     bar:SetColorTexture(color.r, color.g, color.b, 0.9)
 
     local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -265,11 +373,42 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         total = total + entry.value
     end
 
+    -- Sort level data numerically instead of by value
+    if (title == "Kills by Level") then
+        local sortedLevelData = {}
+        -- First handle the "??" level specially
+        local unknownLevelEntry
+        for i, entry in ipairs(sortedData) do
+            if entry.key == "??" then
+                unknownLevelEntry = entry
+                table.remove(sortedData, i)
+                break
+            end
+        end
+
+        -- Sort known levels numerically
+        table.sort(sortedData, function(a, b)
+            -- Convert keys to numbers for comparison
+            local aNum = tonumber(a.key) or 0
+            local bNum = tonumber(b.key) or 0
+            return aNum < bNum  -- Sort in ascending order by level
+        end)
+
+        -- Add unknown level entry at the end if it exists
+        if unknownLevelEntry then
+            table.insert(sortedData, unknownLevelEntry)
+        end
+    end
+
     local titleType
-    if title == "Kills by Class" or title == "Level ?? Kills by Class" then
+    if title == "Kills by Class" then
         titleType = "class"
+    elseif title == "Level ?? Kills by Class" then
+        titleType = "unknownLevelClass"  -- New type for unknown level class chart
     elseif title == "Kills by Zone" then
         titleType = "zone"
+    elseif title == "Kills by Level" then
+        titleType = "level"
     else
         titleType = colorTable
     end
@@ -296,10 +435,8 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     rowButton:SetSize(260, 20)  -- Wide enough to cover guild name and kill count
     rowButton:SetPoint("TOPLEFT", 0, rowY)
 
-    -- Add highlight texture
-    local highlightTexture = rowButton:CreateTexture(nil, "HIGHLIGHT")
-    highlightTexture:SetAllPoints(true)
-    highlightTexture:SetColorTexture(1, 1, 1, 0.2)
+    -- Create highlight with gradient fade effect
+    local highlightTexture = CreateGoldHighlight(rowButton, 20)
 
     -- Add tooltip
     rowButton:SetScript("OnEnter", function(self)
@@ -512,21 +649,23 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest Multi-Kill:", PKA_HighestMultiKill or 0, statY)
 
     -- Increase spacing before credits section
-    statY = statY - 30  -- Changed from -55 to -30 to reduce the space
+    statY = statY - 30  -- Changed from -55 to reduce the space
     addCreditsSection(container, statY)
 
     return container
 end
 
+-- Modify the gatherStatistics function to track individual levels but exclude unknown level from levelData
 local function gatherStatistics()
     local classData = {}
     local raceData = {}
     local genderData = {}
     local unknownLevelClassData = {}
     local zoneData = {}
+    local levelData = {} -- Changed to store individual levels
 
     if not PKA_KillCounts then
-        return {}, {}, {}, {}, {}
+        return {}, {}, {}, {}, {}, {}
     end
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
@@ -540,6 +679,13 @@ local function gatherStatistics()
 
             if levelNum == -1 or (data.unknownLevel or false) then
                 unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
+                -- Add unknown levels to levelData for proper display in the level chart
+                levelData["??"] = (levelData["??"] or 0) + kills
+            else
+                -- Track individual levels
+                if levelNum > 0 and levelNum <= 60 then
+                    levelData[tostring(levelNum)] = (levelData[tostring(levelNum)] or 0) + kills
+                end
             end
 
             local race = data.race or "Unknown"
@@ -554,7 +700,7 @@ local function gatherStatistics()
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData
 end
 
 local function createScrollableLeftPanel(parent)
@@ -652,7 +798,8 @@ local function createEmptyStatsFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
-    tinsert(UISpecialFrames, "PKAStatisticsFrame")
+    -- Remove this as it's handled by the frame manager now
+    -- tinsert(UISpecialFrames, "PKAStatisticsFrame")
 
     frame.TitleText:SetText("Player Kill Statistics")
 
@@ -665,6 +812,7 @@ local function createEmptyStatsFrame()
     return frame
 end
 
+-- Modify the createStatisticsFrame function to include the new chart
 function PKA_CreateStatisticsFrame()
     if statsFrame then
         PKA_FrameManager:ShowFrame("Statistics")
@@ -673,20 +821,33 @@ function PKA_CreateStatisticsFrame()
 
     for i = #UISpecialFrames, 1, -1 do
         if (UISpecialFrames[i] == "PKAStatisticsFrame") then
-            tremove(UISpecialFrames, i)
+            table.remove(UISpecialFrames, i)
             break
         end
     end
 
     if not hasEnoughData() then
         statsFrame = createEmptyStatsFrame()
+
+        -- Remove from UISpecialFrames since it will be handled by FrameManager
+        for i = #UISpecialFrames, 1, -1 do
+            if (UISpecialFrames[i] == "PKAStatisticsFrame") then
+                table.remove(UISpecialFrames, i)
+                break
+            end
+        end
+
         PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
         return
     end
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData = gatherStatistics()
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData = gatherStatistics()
 
     statsFrame = setupMainFrame()
+
+    -- Remove ESC key handling from setupMainFrame
+    statsFrame:SetScript("OnKeyDown", nil)
+
     PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(statsFrame)
@@ -694,7 +855,7 @@ function PKA_CreateStatisticsFrame()
     local classChartHeight = calculateChartHeight(classData)
     local raceChartHeight = calculateChartHeight(raceData)
     local genderChartHeight = calculateChartHeight(genderData)
-    local unknownLevelClassHeight = calculateChartHeight(unknownLevelClassData)
+    local levelChartHeight = calculateChartHeight(levelData) -- Now includes level ??
     local zoneChartHeight = calculateChartHeight(zoneData)
 
     local yOffset = 0
@@ -707,9 +868,9 @@ function PKA_CreateStatisticsFrame()
     createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH, genderChartHeight)
 
     yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Level ?? Kills by Class", unknownLevelClassData, nil, 0, yOffset, UI.CHART.WIDTH, unknownLevelClassHeight)
+    createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
 
-    yOffset = yOffset - unknownLevelClassHeight - UI.CHART.PADDING
+    yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight)
 
     local totalHeight = -(yOffset) + 25
