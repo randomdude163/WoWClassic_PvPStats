@@ -1,23 +1,38 @@
+if not PKA_ActiveFrameLevel then
+    PKA_ActiveFrameLevel = 100
+end
+
+-- Get next frame level and increment the counter
+local function PKA_GetNextFrameLevel()
+    PKA_ActiveFrameLevel = PKA_ActiveFrameLevel + 10
+    return PKA_ActiveFrameLevel
+end
+
 local killStatsFrame = nil
 local searchText = ""
-local levelSearchText = ""  -- New variable for level search
-local minLevelSearch = nil  -- For level range search
-local maxLevelSearch = nil  -- For level range search
+local levelSearchText = ""
+local classSearchText = ""  -- New filter variable for class
+local raceSearchText = ""   -- New filter variable for race
+local genderSearchText = "" -- New filter variable for gender
+local zoneSearchText = "" -- New filter variable for zone
+local minLevelSearch = nil
+local maxLevelSearch = nil
 local sortBy = "lastKill"
 local sortAscending = false
 
-local PKA_KILLS_FRAME_WIDTH = 800
-local PKA_KILLS_FRAME_HEIGHT = 500
+local PKA_KILLS_FRAME_WIDTH = 950  -- Increased from 900
+local PKA_KILLS_FRAME_HEIGHT = 550  -- Increased from 500
 
 local colWidths = {
     name = 100,
-    class = 80,
-    race = 80,
-    gender = 95,
-    level = 40,
-    guild = 150,
-    kills = 50,
-    lastKill = 145
+    class = 70,
+    race = 70,
+    gender = 80,   -- Increased from 70
+    level = 70,    -- Increased from 50
+    guild = 150,   -- Unchanged
+    zone = 170,    -- Unchanged
+    kills = 60,    -- Increased from 50
+    lastKill = 130 -- Unchanged
 }
 
 
@@ -182,7 +197,7 @@ end
 
 local function SetHeaderButtonHighlight(button, enter)
     local fontString = button:GetFontString()
-    if fontString then
+    if (fontString) then
         fontString:SetTextColor(enter and 1 or 1, enter and 1 or 0.82, enter and 0.5 or 0)
     end
 end
@@ -191,11 +206,16 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
     local button = CreateFrame("Button", nil, parent)
     button:SetSize(width, 24)
 
-    if type(anchor) == "string" then
-        button:SetPoint("TOPLEFT", xOffset, yOffset)
+    if anchor == nil then
+        button:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
     else
         button:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 0, 0)
     end
+
+    -- Create a background texture
+    local bg = button:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0.1, 0.1, 0.1, 0.7)
 
     button:SetScript("OnClick", function()
         if sortBy == columnId then
@@ -212,12 +232,21 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
         RefreshKillList()
     end)
 
+    -- Create the header text first without the sort indicator
     local header = button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    header:SetPoint("LEFT", 0, 0)
+    header:SetPoint("LEFT", 3, 0)
     header:SetTextColor(1, 0.82, 0)
-    header:SetText(text .. (sortBy == columnId and (sortAscending and " ^" or " v") or ""))
-    header:SetWidth(width)
+    header:SetWidth(width - 6)
     header:SetJustifyH("LEFT")
+
+    -- Set the base text first
+    header:SetText(text)
+
+    -- Add sort indicator separately if this is the sorted column
+    if sortBy == columnId then
+        local sortIndicator = sortAscending and " ^" or " v"
+        header:SetText(text .. sortIndicator)
+    end
 
     button:SetFontString(header)
 
@@ -239,26 +268,62 @@ local function FilterAndSortEntries()
         local levelNum = tonumber(level) or 0
         local nameLower = name:lower()
         local guildLower = (data.guild or ""):lower()
+        local className = (data.class or "Unknown"):lower()
+        local raceName = (data.race or "Unknown"):lower()
+        local genderName = (data.gender or "Unknown"):lower()
+        local zoneName = (data.zone or "Unknown"):lower()
 
-        -- Check if the entry matches the name/guild search
+        -- Check if the entry matches all search criteria
         local matchesNameGuild = (searchText == "" or
                                 nameLower:find(searchText, 1, true) or
                                 guildLower:find(searchText, 1, true))
 
-        -- Check if the entry matches the level search criteria
+        -- Check level criteria
         local matchesLevel = true
         if levelSearchText ~= "" then
             if minLevelSearch and maxLevelSearch then
-                -- Level range: check if level is within range
                 matchesLevel = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
             elseif minLevelSearch then
-                -- Single level: check if level matches exactly
                 matchesLevel = (levelNum == minLevelSearch)
             end
         end
 
-        -- Add to results only if both criteria are matched
-        if matchesNameGuild and matchesLevel then
+        -- Check class criteria
+        local matchesClass = true
+        if classSearchText ~= "" then
+            matchesClass = className:find(classSearchText:lower(), 1, true)
+        end
+
+        -- Check race criteria
+        local matchesRace = true
+        if raceSearchText ~= "" then
+            matchesRace = raceName:find(raceSearchText:lower(), 1, true)
+        end
+
+        -- Check gender criteria
+        local matchesGender = true
+        if genderSearchText ~= "" then
+            -- Handle gender matching more precisely
+            local searchGender = genderSearchText:lower()
+            if searchGender == "male" then
+                matchesGender = (genderName == "male")
+            elseif searchGender == "female" then
+                matchesGender = (genderName == "female")
+            else
+                -- For partial searches that aren't exact "male" or "female"
+                matchesGender = genderName:find(searchGender, 1, true)
+            end
+        end
+
+        -- Check zone criteria
+        local matchesZone = true
+        if zoneSearchText ~= "" then
+            matchesZone = zoneName:find(zoneSearchText:lower(), 1, true)
+        end
+
+        -- Add to results only if all criteria are matched
+        if matchesNameGuild and matchesLevel and matchesClass and
+           matchesRace and matchesGender and matchesZone then
             count = count + 1
             sortedEntries[count] = {
                 nameWithLevel = nameWithLevel,
@@ -268,6 +333,7 @@ local function FilterAndSortEntries()
                 gender = data.gender or "Unknown",
                 level = levelNum,
                 guild = data.guild or "",
+                zone = data.zone or "Unknown",
                 kills = data.kills or 0,
                 lastKill = data.lastKill or "Unknown",
                 unknownLevel = data.unknownLevel or (levelNum == -1)
@@ -281,34 +347,54 @@ local function FilterAndSortEntries()
             if not a then return false end
             if not b then return true end
 
+            -- Special handling for level column
             if sortBy == "level" then
+                -- Handle unknown levels (displayed as ??)
                 if a.level == -1 and b.level ~= -1 then
-                    return not sortAscending
+                    return not sortAscending  -- Unknown levels at bottom when ascending, top when descending
                 elseif a.level ~= -1 and b.level == -1 then
-                    return sortAscending
+                    return sortAscending     -- Known levels above unknown when ascending
                 end
 
-                if a.level == b.level then
-                    return a.name:lower() < b.name:lower()
+                -- Normal level comparison
+                if a.level ~= b.level then
+                    if sortAscending then
+                        return a.level < b.level  -- Ascending: 1, 2, 3...
+                    else
+                        return a.level > b.level  -- Descending: 60, 59, 58...
+                    end
                 end
 
-                return sortAscending and (a.level < b.level) or (a.level > b.level)
+                -- If levels are equal, sort by name as secondary key
+                return a.name:lower() < b.name:lower()
             end
 
+            -- For other columns
             local aValue = a[sortBy]
             local bValue = b[sortBy]
 
+            -- Equal values are sorted by name
             if aValue == bValue or (not aValue and not bValue) then
                 return a.name:lower() < b.name:lower()
             end
 
+            -- Handle nil values
             if not aValue then return false end
             if not bValue then return true end
 
+            -- String or number comparison based on value type
             if type(aValue) == "string" and type(bValue) == "string" then
-                return sortAscending and (aValue:lower() < bValue:lower()) or (aValue:lower() > bValue:lower())
+                if sortAscending then
+                    return aValue:lower() < bValue:lower()  -- A to Z
+                else
+                    return aValue:lower() > bValue:lower()  -- Z to A
+                end
             else
-                return sortAscending and (aValue < bValue) or (aValue > bValue)
+                if sortAscending then
+                    return aValue < bValue  -- Low to high
+                else
+                    return aValue > bValue  -- High to low
+                end
             end
         end
 
@@ -323,16 +409,18 @@ local function FilterAndSortEntries()
 end
 
 local function CreateColumnHeaders(content)
-    local nameHeader = CreateColumnHeader(content, "Name", colWidths.name, "TOPLEFT", 10, -5, "name")
-    local classHeader = CreateColumnHeader(content, "Class", colWidths.class, nameHeader, 0, 0, "class")
-    local raceHeader = CreateColumnHeader(content, "Race", colWidths.race, classHeader, 0, 0, "race")
-    local genderHeader = CreateColumnHeader(content, "Gender", colWidths.gender, raceHeader, 0, 0, "gender")
-    local levelHeader = CreateColumnHeader(content, "Lvl", colWidths.level, genderHeader, 0, 0, "level")
-    local guildHeader = CreateColumnHeader(content, "Guild", colWidths.guild, levelHeader, 0, 0, "guild")
-    local killsHeader = CreateColumnHeader(content, "Kills", colWidths.kills, guildHeader, 0, 0, "kills")
-    local lastKillHeader = CreateColumnHeader(content, "Last Kill", colWidths.lastKill, killsHeader, 0, 0, "lastKill")
+    local nameButton = CreateColumnHeader(content, "Name", colWidths.name, nil, 10, 0, "name")
+    local classButton = CreateColumnHeader(content, "Class", colWidths.class, nameButton, 0, 0, "class")
+    local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
+    local genderButton = CreateColumnHeader(content, "Gender", colWidths.gender, raceButton, 0, 0, "gender")
+    local levelButton = CreateColumnHeader(content, "Level", colWidths.level, genderButton, 0, 0, "level")
+    local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, levelButton, 0, 0, "guild")
+    local zoneButton = CreateColumnHeader(content, "Zone", colWidths.zone, guildButton, 0, 0, "zone")
+    local killsButton = CreateColumnHeader(content, "Kills", colWidths.kills, zoneButton, 0, 0, "kills")
+    local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, killsButton, 0, 0, "lastKill")
 
-    return -30 -- Return the next Y position after headers
+    -- Set the position for the start of the entries
+    return -30
 end
 
 local function CreateNameCell(content, xPos, yPos, name, width)
@@ -425,6 +513,15 @@ local function CreateLastKillCell(content, anchorTo, lastKill, width)
     return lastKillText
 end
 
+local function CreateZoneCell(content, anchorTo, zone, width)
+    local zoneText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    zoneText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    zoneText:SetText(zone)
+    zoneText:SetWidth(width)
+    zoneText:SetJustifyH("LEFT")
+    return zoneText
+end
+
 local function CreateEntryRow(content, entry, yOffset, colWidths)
     local nameCell = CreateNameCell(content, 10, yOffset, entry.name, colWidths.name)
     local classCell = CreateClassCell(content, nameCell, entry.class, colWidths.class)
@@ -432,7 +529,8 @@ local function CreateEntryRow(content, entry, yOffset, colWidths)
     local genderCell = CreateGenderCell(content, raceCell, entry.gender, colWidths.gender)
     local levelCell = CreateLevelCell(content, genderCell, entry.level, colWidths.level)
     local guildCell = CreateGuildCell(content, levelCell, entry.guild, colWidths.guild)
-    local killsCell = CreateKillsCell(content, guildCell, entry.kills, colWidths.kills)
+    local zoneCell = CreateZoneCell(content, guildCell, entry.zone, colWidths.zone)
+    local killsCell = CreateKillsCell(content, zoneCell, entry.kills, colWidths.kills)
     local lastKillCell = CreateLastKillCell(content, killsCell, entry.lastKill, colWidths.lastKill)
 
     return yOffset - 16 -- Return the next row position
@@ -464,7 +562,7 @@ local function CreateSearchBackground(parent)
     local searchBg = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     searchBg:SetPoint("BOTTOMLEFT", 1, 1)
     searchBg:SetPoint("BOTTOMRIGHT", -1, 1)
-    searchBg:SetHeight(30)
+    searchBg:SetHeight(40) -- Increased height
 
     if searchBg.SetBackdrop then
         searchBg:SetBackdrop({
@@ -552,32 +650,369 @@ local function SetupSearchBoxScripts(searchBox)
     end)
 end
 
+local function CreateClassSearchBox(parent, anchorTo)
+    local classSearchBox = CreateFrame("EditBox", nil, parent)
+    classSearchBox:SetSize(60, 20)
+    classSearchBox:SetPoint("LEFT", anchorTo, "RIGHT", 10, 0)
+    classSearchBox:SetAutoFocus(false)
+    classSearchBox:SetMaxLetters(10)
+    classSearchBox:SetFontObject("ChatFontNormal")
+
+    local searchBoxBg = classSearchBox:CreateTexture(nil, "BACKGROUND")
+    searchBoxBg:SetAllPoints(true)
+    searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
+
+    CreateBoxBorder(classSearchBox)
+    classSearchBox:SetTextInsets(5, 5, 2, 2)
+
+    return classSearchBox
+end
+
+local function SetupClassSearchBoxScripts(classSearchBox)
+    classSearchBox:SetScript("OnTextChanged", function(self)
+        classSearchText = self:GetText()
+        RefreshKillList()
+    end)
+
+    classSearchBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+
+    classSearchBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
+
+    classSearchBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        self:SetText("")
+        classSearchText = ""
+        RefreshKillList()
+    end)
+
+    classSearchBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+    end)
+
+    classSearchBox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Class Filter")
+        GameTooltip:AddLine("Enter a class name", 1, 1, 1, true)
+        GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+
+    classSearchBox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
+local function CreateClassSearchLabel(parent, anchorTo)
+    local classLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    classLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
+    classLabel:SetText("Class:")
+    classLabel:SetTextColor(1, 0.82, 0)
+    return classLabel
+end
+
+local function CreateRaceSearchBox(parent, anchorTo)
+    local raceSearchBox = CreateFrame("EditBox", nil, parent)
+    raceSearchBox:SetSize(60, 20)
+    raceSearchBox:SetPoint("LEFT", anchorTo, "RIGHT", 10, 0)
+    raceSearchBox:SetAutoFocus(false)
+    raceSearchBox:SetMaxLetters(10)
+    raceSearchBox:SetFontObject("ChatFontNormal")
+
+    local searchBoxBg = raceSearchBox:CreateTexture(nil, "BACKGROUND")
+    searchBoxBg:SetAllPoints(true)
+    searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
+
+    CreateBoxBorder(raceSearchBox)
+    raceSearchBox:SetTextInsets(5, 5, 2, 2)
+
+    return raceSearchBox
+end
+
+local function SetupRaceSearchBoxScripts(raceSearchBox)
+    raceSearchBox:SetScript("OnTextChanged", function(self)
+        raceSearchText = self:GetText()
+        RefreshKillList()
+    end)
+
+    raceSearchBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+
+    raceSearchBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
+
+    raceSearchBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        self:SetText("")
+        raceSearchText = ""
+        RefreshKillList()
+    end)
+
+    raceSearchBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+    end)
+
+    raceSearchBox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Race Filter")
+        GameTooltip:AddLine("Enter a race name", 1, 1, 1, true)
+        GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+
+    raceSearchBox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
+local function CreateRaceSearchLabel(parent, anchorTo)
+    local raceLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    raceLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
+    raceLabel:SetText("Race:")
+    raceLabel:SetTextColor(1, 0.82, 0)
+    return raceLabel
+end
+
+local function CreateGenderSearchBox(parent, anchorTo)
+    local genderSearchBox = CreateFrame("EditBox", nil, parent)
+    genderSearchBox:SetSize(60, 20)
+    genderSearchBox:SetPoint("LEFT", anchorTo, "RIGHT", 10, 0)
+    genderSearchBox:SetAutoFocus(false)
+    genderSearchBox:SetMaxLetters(6)  -- "Female" is 6 chars
+    genderSearchBox:SetFontObject("ChatFontNormal")
+
+    local searchBoxBg = genderSearchBox:CreateTexture(nil, "BACKGROUND")
+    searchBoxBg:SetAllPoints(true)
+    searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
+
+    CreateBoxBorder(genderSearchBox)
+    genderSearchBox:SetTextInsets(5, 5, 2, 2)
+
+    return genderSearchBox
+end
+
+local function SetupGenderSearchBoxScripts(genderSearchBox)
+    genderSearchBox:SetScript("OnTextChanged", function(self)
+        genderSearchText = self:GetText()
+        RefreshKillList()
+    end)
+
+    genderSearchBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+
+    genderSearchBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
+
+    genderSearchBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        self:SetText("")
+        genderSearchText = ""
+        RefreshKillList()
+    end)
+
+    genderSearchBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+    end)
+
+    genderSearchBox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Gender Filter")
+        GameTooltip:AddLine("Enter Male or Female", 1, 1, 1, true)
+        GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+
+    genderSearchBox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
+local function CreateGenderSearchLabel(parent, anchorTo)
+    local genderLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    genderLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
+    genderLabel:SetText("Gender:")
+    genderLabel:SetTextColor(1, 0.82, 0)
+    return genderLabel
+end
+
+local function CreateZoneSearchBox(parent, anchorTo)
+    local zoneSearchBox = CreateFrame("EditBox", nil, parent)
+    zoneSearchBox:SetSize(130, 20)
+    zoneSearchBox:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
+    zoneSearchBox:SetAutoFocus(false)
+    zoneSearchBox:SetMaxLetters(25)
+    zoneSearchBox:SetFontObject("ChatFontNormal")
+
+    local searchBoxBg = zoneSearchBox:CreateTexture(nil, "BACKGROUND")
+    searchBoxBg:SetAllPoints(true)
+    searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
+
+    CreateBoxBorder(zoneSearchBox)
+    zoneSearchBox:SetTextInsets(5, 5, 2, 2)
+
+    return zoneSearchBox
+end
+
+local function SetupZoneSearchBoxScripts(zoneSearchBox)
+    zoneSearchBox:SetScript("OnTextChanged", function(self)
+        zoneSearchText = self:GetText()
+        RefreshKillList()
+    end)
+
+    zoneSearchBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+
+    zoneSearchBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
+
+    zoneSearchBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        self:SetText("")
+        zoneSearchText = ""
+        RefreshKillList()
+    end)
+
+    zoneSearchBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+    end)
+
+    zoneSearchBox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Zone Filter")
+        GameTooltip:AddLine("Enter a zone name", 1, 1, 1, true)
+        GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+
+    zoneSearchBox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
+local function CreateZoneSearchLabel(parent, anchorTo)
+    local zoneLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    zoneLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
+    zoneLabel:SetText("Zone:")
+    zoneLabel:SetTextColor(1, 0.82, 0)
+    return zoneLabel
+end
+
+
+
 local function CreateSearchBar(frame)
     local searchBg = CreateSearchBackground(frame)
-    local searchLabel = CreateSearchLabel(searchBg)
+
+    -- Make the background taller to accommodate the search fields
+    searchBg:SetHeight(40)
+
+    -- Create a container for the first row of search fields
+    local row1 = CreateFrame("Frame", nil, searchBg)
+    row1:SetSize(searchBg:GetWidth(), 20)
+    row1:SetPoint("TOP", searchBg, "TOP", 0, -10)
+
+    -- Player/Guild search
+    local searchLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    searchLabel:SetPoint("LEFT", row1, "LEFT", 10, 0)
+    searchLabel:SetText("Player/Guild:")
+    searchLabel:SetTextColor(1, 0.82, 0)
+
     local searchBox = CreateEditBox(searchBg, searchLabel)
+    searchBox:SetSize(120, 20) -- Smaller to fit all elements
+    searchBox:SetPoint("LEFT", searchLabel, "RIGHT", 5, 0)
     SetupSearchBoxScripts(searchBox)
     searchBox:SetText("")
     searchText = ""
 
-    -- Add level search components
-    local levelLabel = CreateLevelSearchLabel(searchBg, searchBox)
+    -- Level search
+    local levelLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    levelLabel:SetPoint("LEFT", searchBox, "RIGHT", 15, 0)
+    levelLabel:SetText("Level:")
+    levelLabel:SetTextColor(1, 0.82, 0)
+
     local levelSearchBox = CreateLevelSearchBox(searchBg, levelLabel)
+    levelSearchBox:SetSize(50, 20)
+    levelSearchBox:SetPoint("LEFT", levelLabel, "RIGHT", 5, 0)
     SetupLevelSearchBoxScripts(levelSearchBox)
     levelSearchBox:SetText("")
     levelSearchText = ""
 
+    -- Class search
+    local classLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    classLabel:SetPoint("LEFT", levelSearchBox, "RIGHT", 15, 0)
+    classLabel:SetText("Class:")
+    classLabel:SetTextColor(1, 0.82, 0)
+
+    -- Create the search fields with adjusted widths
+    local classSearchBox = CreateClassSearchBox(searchBg, classLabel)
+    classSearchBox:SetSize(80, 20)  -- Increased from 60
+    classSearchBox:SetPoint("LEFT", classLabel, "RIGHT", 5, 0)
+    SetupClassSearchBoxScripts(classSearchBox)
+    classSearchBox:SetText("")
+    classSearchText = ""
+
+    -- Race search
+    local raceLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    raceLabel:SetPoint("LEFT", classSearchBox, "RIGHT", 15, 0)
+    raceLabel:SetText("Race:")
+    raceLabel:SetTextColor(1, 0.82, 0)
+
+    local raceSearchBox = CreateRaceSearchBox(searchBg, raceLabel)
+    raceSearchBox:SetSize(80, 20)  -- Increased from 60
+    raceSearchBox:SetPoint("LEFT", raceLabel, "RIGHT", 5, 0)
+    SetupRaceSearchBoxScripts(raceSearchBox)
+    raceSearchBox:SetText("")
+    raceSearchText = ""
+
+    -- Gender search
+    local genderLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    genderLabel:SetPoint("LEFT", raceSearchBox, "RIGHT", 15, 0)
+    genderLabel:SetText("Gender:")
+    genderLabel:SetTextColor(1, 0.82, 0)
+
+    local genderSearchBox = CreateGenderSearchBox(searchBg, genderLabel)
+    genderSearchBox:SetSize(55, 20)  -- Unchanged
+    genderSearchBox:SetPoint("LEFT", genderLabel, "RIGHT", 5, 0)
+    SetupGenderSearchBoxScripts(genderSearchBox)
+    genderSearchBox:SetText("")
+    genderSearchText = ""
+
+    -- Zone search
+    local zoneLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    zoneLabel:SetPoint("LEFT", genderSearchBox, "RIGHT", 15, 0)
+    zoneLabel:SetText("Zone:")
+    zoneLabel:SetTextColor(1, 0.82, 0)
+
+    local zoneSearchBox = CreateZoneSearchBox(searchBg, zoneLabel)
+    zoneSearchBox:SetSize(130, 20)  -- Significantly increased from 60
+    zoneSearchBox:SetPoint("LEFT", zoneLabel, "RIGHT", 5, 0)
+    SetupZoneSearchBoxScripts(zoneSearchBox)
+    zoneSearchBox:SetText("")
+    zoneSearchText = ""
+
     -- Store references in the frame for external access
     frame.searchBox = searchBox
     frame.levelSearchBox = levelSearchBox
+    frame.classSearchBox = classSearchBox
+    frame.raceSearchBox = raceSearchBox
+    frame.genderSearchBox = genderSearchBox
+    frame.zoneSearchBox = zoneSearchBox
 
-    return searchBox, levelSearchBox
+    return searchBox
 end
 
 local function CreateScrollFrame(parent)
     local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 12, -30)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 35)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 45) -- Increased bottom margin to make room for search bar
 
     local content = CreateFrame("Frame", nil, scrollFrame)
     content:SetSize(PKA_KILLS_FRAME_WIDTH - 40, PKA_KILLS_FRAME_HEIGHT * 2)
@@ -593,13 +1028,11 @@ local function CreateMainFrame()
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
-    -- Set frame strata to DIALOG to match the statistics frame
-    frame:SetFrameStrata("DIALOG")
-    -- Set frame level to be higher than statistics frame
-    frame:SetFrameLevel(20)
+    -- No need for these anymore as they'll be handled by FrameManager
+    -- frame:SetScript("OnDragStart", frame.StartMoving)
+    -- frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    -- frame:SetScript("OnMouseDown", function(self) ... end)
 
     table.insert(UISpecialFrames, "PKAKillStatsFrame")
     frame.TitleText:SetText("Player Kill List")
@@ -623,9 +1056,7 @@ end
 
 function PKA_CreateKillStatsFrame()
     if killStatsFrame then
-        killStatsFrame:Show()
-        killStatsFrame:Raise()
-        killStatsFrame:SetFrameStrata("MEDIUM")
+        PKA_FrameManager:ShowFrame("KillsList")
         RefreshKillList()
         return
     end
@@ -633,12 +1064,34 @@ function PKA_CreateKillStatsFrame()
     killStatsFrame = CreateMainFrame()
     killStatsFrame.content = CreateScrollFrame(killStatsFrame)
     CreateSearchBar(killStatsFrame)
+
+    -- Register with frame manager
+    PKA_FrameManager:RegisterFrame(killStatsFrame, "KillsList")
+
     RefreshKillList()
 end
 
 -- Make the searchText variable accessible to external functions
-function PKA_SetKillListSearch(text, levelText)
+function PKA_SetKillListSearch(text, levelText, classText, raceText, genderText, zoneText, resetOtherFilters)
     if killStatsFrame then
+        -- Reset all filters first if requested (when clicking on bars in statistics)
+        if resetOtherFilters then
+            killStatsFrame.searchBox:SetText("")
+            searchText = ""
+            killStatsFrame.levelSearchBox:SetText("")
+            levelSearchText = ""
+            killStatsFrame.classSearchBox:SetText("")
+            classSearchText = ""
+            killStatsFrame.raceSearchBox:SetText("")
+            raceSearchText = ""
+            killStatsFrame.genderSearchBox:SetText("")
+            genderSearchText = ""
+            killStatsFrame.zoneSearchBox:SetText("")
+            zoneSearchText = ""
+            minLevelSearch = nil
+            maxLevelSearch = nil
+        end
+
         if killStatsFrame.searchBox and text then
             killStatsFrame.searchBox:SetText(text)
             searchText = text:lower()
@@ -648,6 +1101,26 @@ function PKA_SetKillListSearch(text, levelText)
             killStatsFrame.levelSearchBox:SetText(levelText)
             levelSearchText = levelText
             ParseLevelSearch(levelText)
+        end
+
+        if killStatsFrame.classSearchBox and classText then
+            killStatsFrame.classSearchBox:SetText(classText)
+            classSearchText = classText
+        end
+
+        if killStatsFrame.raceSearchBox and raceText then
+            killStatsFrame.raceSearchBox:SetText(raceText)
+            raceSearchText = raceText
+        end
+
+        if killStatsFrame.genderSearchBox and genderText then
+            killStatsFrame.genderSearchBox:SetText(genderText)
+            genderSearchText = genderText
+        end
+
+        if killStatsFrame.zoneSearchBox and zoneText then
+            killStatsFrame.zoneSearchBox:SetText(zoneText)
+            zoneSearchText = zoneText
         end
 
         RefreshKillList()

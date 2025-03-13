@@ -1,3 +1,13 @@
+if not PKA_ActiveFrameLevel then
+    PKA_ActiveFrameLevel = 100
+end
+
+-- Get next frame level and increment the counter
+local function PKA_GetNextFrameLevel()
+    PKA_ActiveFrameLevel = PKA_ActiveFrameLevel + 10
+    return PKA_ActiveFrameLevel
+end
+
 local statsFrame = nil
 
 local UI = {
@@ -138,11 +148,11 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     if titleType == "zone" then
         nameWidth = UI.ZONE_NAME_WIDTH
         barX = nameWidth + 10
-        maxBarWidth = UI.CHART.WIDTH - nameWidth - 110  -- Increased padding from 80 to 110
+        maxBarWidth = UI.CHART.WIDTH - nameWidth - 110
     else
         nameWidth = UI.STANDARD_NAME_WIDTH
         barX = 90
-        maxBarWidth = UI.CHART.WIDTH - 190  -- Increased padding from 160 to 190
+        maxBarWidth = UI.CHART.WIDTH - 190
     end
 
     barWidth = (entry.value / maxValue) * maxBarWidth
@@ -154,12 +164,69 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         displayName = properCase(entry.key)
     end
 
+    -- Create a clickable button for the entire bar row
+    local barButton = CreateFrame("Button", nil, container)
+    barButton:SetSize(UI.CHART.WIDTH, UI.BAR.HEIGHT)
+    barButton:SetPoint("TOPLEFT", 0, barY)
+
+    -- Add highlight texture
+    local highlightTexture = barButton:CreateTexture(nil, "HIGHLIGHT")
+    highlightTexture:SetAllPoints(true)
+    highlightTexture:SetColorTexture(1, 1, 1, 0.2)
+
+    -- Add tooltip
+    barButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(displayName)
+
+        if titleType == "class" then
+            GameTooltip:AddLine("Click to show all kills from this class", 1, 1, 1, true)
+        elseif titleType == "zone" then
+            GameTooltip:AddLine("Click to show all kills from this zone", 1, 1, 1, true)
+        elseif titleType == raceColors then
+            GameTooltip:AddLine("Click to show all kills from this race", 1, 1, 1, true)
+        elseif titleType == genderColors then
+            GameTooltip:AddLine("Click to show all kills from this gender", 1, 1, 1, true)
+        end
+
+        GameTooltip:Show()
+    end)
+
+    barButton:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    -- Add click handler
+    barButton:SetScript("OnClick", function()
+        -- First open the kills list frame
+        PKA_CreateKillStatsFrame()
+
+        -- Wait a short time to ensure the frame is created and registered
+        C_Timer.After(0.05, function()
+            -- Set appropriate search text based on bar type
+            if titleType == "class" then
+                PKA_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
+            elseif titleType == "zone" then
+                PKA_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
+            elseif titleType == raceColors then
+                PKA_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
+            elseif titleType == genderColors then
+                PKA_SetKillListSearch("", nil, nil, nil, entry.key, nil, true)
+            end
+
+            -- Ensure the kills list frame is in front
+            PKA_FrameManager:BringToFront("KillsList")
+        end)
+    end)
+
+    -- Label with the name
     local itemLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     itemLabel:SetPoint("TOPLEFT", 0, barY)
     itemLabel:SetText(displayName)
     itemLabel:SetWidth(nameWidth)
     itemLabel:SetJustifyH("LEFT")
 
+    -- Bar visualization
     local bar = container:CreateTexture(nil, "ARTWORK")
     bar:SetPoint("TOPLEFT", barX, barY)
     bar:SetSize(barWidth, UI.BAR.HEIGHT)
@@ -246,7 +313,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
         GameTooltip:Hide()
     end)
 
-    -- Add click handler
+    -- Add click handler for guild rows
     rowButton:SetScript("OnClick", function()
         -- First open the kills list frame
         PKA_CreateKillStatsFrame()
@@ -257,8 +324,8 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
             killStatsFrame:SetFrameLevel(statsFrame:GetFrameLevel() + 10)
         end
 
-        -- Then use our function to set the search text
-        PKA_SetKillListSearch(guildName)
+        -- Then use our function to set the search text, reset other filters
+        PKA_SetKillListSearch(guildName, nil, nil, nil, nil, nil, true)
     end)
 
     local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -529,13 +596,6 @@ local function setupMainFrame()
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-
-    -- Set frame strata to DIALOG to ensure it's above normal game elements
-    frame:SetFrameStrata("DIALOG")
-    -- Set frame level to a specific value
-    frame:SetFrameLevel(10)
 
     tinsert(UISpecialFrames, "PKAStatisticsFrame")
 
@@ -607,9 +667,7 @@ end
 
 function PKA_CreateStatisticsFrame()
     if statsFrame then
-        statsFrame:Show()
-        statsFrame:Raise()
-        statsFrame:SetFrameStrata("MEDIUM")
+        PKA_FrameManager:ShowFrame("Statistics")
         return
     end
 
@@ -622,12 +680,15 @@ function PKA_CreateStatisticsFrame()
 
     if not hasEnoughData() then
         statsFrame = createEmptyStatsFrame()
+        PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
         return
     end
 
     local classData, raceData, genderData, unknownLevelClassData, zoneData = gatherStatistics()
 
     statsFrame = setupMainFrame()
+    PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
+
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(statsFrame)
 
     local classChartHeight = calculateChartHeight(classData)

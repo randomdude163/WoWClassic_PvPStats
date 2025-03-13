@@ -3,6 +3,7 @@
 ## Author: Severussnipe, Hkfarmer <Redridge Police>
 ## Notes: Announces player kills in party chat.
 ## SavedVariables: PlayerKillAnnounceDB
+FrameManager.lua
 EventHandlers.lua
 DataStorage.lua
 KillsListFrame.lua
