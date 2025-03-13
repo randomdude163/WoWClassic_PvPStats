@@ -29,8 +29,8 @@ local colWidths = {
     race = 70,
     gender = 80,   -- Increased from 70
     level = 70,    -- Increased from 50
-    guild = 150,   -- Unchanged
-    zone = 170,    -- Unchanged
+    guild = 140,   -- Unchanged
+    zone = 150,    -- Unchanged
     kills = 60,    -- Increased from 50
     lastKill = 130 -- Unchanged
 }
@@ -277,13 +277,16 @@ local function FilterAndSortEntries()
             local genderMatch = true
             local zoneMatch = true
 
+            -- Player/Guild name search
             if searchText ~= "" then
-                local name = string.gsub(nameWithLevel, ":[^:]*$", "")
-                if not string.find(string.lower(name), searchText) then
+                local name = string.gsub(nameWithLevel, ":[^:]*$", ""):lower()
+                local guild = (data.guild or ""):lower()
+                if not (string.find(name, searchText, 1, true) or string.find(guild, searchText, 1, true)) then
                     searchMatch = false
                 end
             end
 
+            -- Level search
             if minLevelSearch or maxLevelSearch then
                 local level = nameWithLevel:match(":(%S+)")
                 local levelNum = tonumber(level or "0") or 0
@@ -309,33 +312,144 @@ local function FilterAndSortEntries()
                 end
             end
 
-            -- The rest of your filtering logic...
+            -- Class filter
+            if classSearchText ~= "" then
+                local class = (data.class or "Unknown"):lower()
+                if not string.find(class:lower(), classSearchText:lower(), 1, true) then
+                    classMatch = false
+                end
+            end
+
+            -- Race filter
+            if raceSearchText ~= "" then
+                local race = (data.race or "Unknown"):lower()
+                if not string.find(race:lower(), raceSearchText:lower(), 1, true) then
+                    raceMatch = false
+                end
+            end
+
+            -- Gender filter - Make this exact match case insensitive
+            if genderSearchText ~= "" then
+                local normalizedSearch = genderSearchText:lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
+                local normalizedGender = (data.gender or "Unknown"):lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
+
+                -- Auto-complete for single-letter inputs
+                if normalizedSearch == "m" then
+                    normalizedSearch = "male"
+                elseif normalizedSearch == "f" then
+                    normalizedSearch = "female"
+                elseif normalizedSearch == "u" then
+                    normalizedSearch = "unknown"
+                end
+
+                if normalizedGender ~= normalizedSearch then
+                    genderMatch = false
+                end
+            end
+
+            -- Zone filter
+            if zoneSearchText ~= "" then
+                local zone = (data.zone or "Unknown"):lower()
+                if not string.find(zone:lower(), zoneSearchText:lower(), 1, true) then
+                    zoneMatch = false
+                end
+            end
 
             if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch then
+                -- Convert level -1 to "??" for display
+                local level = nameWithLevel:match(":(%S+)")
+                local levelDisplay = level
+                if level == "-1" or (data.unknownLevel or false) then
+                    levelDisplay = "??"
+                end
+
                 local entry = {
                     name = nameWithLevel:gsub(":[^:]*$", ""),
                     class = data.class or "Unknown",
                     race = data.race or "Unknown",
                     gender = data.gender or "Unknown",
-                    level = nameWithLevel:match(":(%S+)"),
+                    level = level, -- Keep the original numeric level
+                    levelDisplay = levelDisplay, -- Display level (shows ?? for unknown)
                     guild = data.guild or "",
                     kills = data.kills or 1,
-                    lastKill = data.lastKill or 0,
+                    lastKill = data.lastKill or "",
                     zone = data.zone or "Unknown",
-                    unknownLevel = data.unknownLevel
+                    unknownLevel = data.unknownLevel or false
                 }
-
-                -- Handle unknown level display
-                if entry.level == "-1" or entry.unknownLevel then
-                    entry.level = "??"
-                end
 
                 table.insert(sortedEntries, entry)
             end
         end
 
         -- Sort the entries based on the selected sort method
-        -- Your existing sorting code...
+        table.sort(sortedEntries, function(a, b)
+            -- Safety check - always return a consistent value for any comparison
+            if not a or not b then
+                return false
+            end
+
+            -- For level sorting, handle the special cases first before looking at values
+            if sortBy == "level" then
+                -- Handle nil values
+                local aLevel = a.unknownLevel and -1 or tonumber(a.level) or -1
+                local bLevel = b.unknownLevel and -1 or tonumber(b.level) or -1
+
+                -- Unknown levels (-1) should appear at the end when ascending
+                -- and at the beginning when descending
+                if aLevel == -1 and bLevel ~= -1 then
+                    return not sortAscending
+                elseif aLevel ~= -1 and bLevel == -1 then
+                    return sortAscending
+                else
+                    -- Both are either unknown or known levels
+                    if sortAscending then
+                        return aLevel < bLevel
+                    else
+                        return aLevel > bLevel
+                    end
+                end
+            end
+
+            -- For other fields, extract the values to compare
+            local aVal, bVal
+
+            if sortBy == "name" then
+                aVal, bVal = a.name or "", b.name or ""
+            elseif sortBy == "class" then
+                aVal, bVal = a.class or "Unknown", b.class or "Unknown"
+            elseif sortBy == "race" then
+                aVal, bVal = a.race or "Unknown", b.race or "Unknown"
+            elseif sortBy == "gender" then
+                aVal, bVal = a.gender or "Unknown", b.gender or "Unknown"
+            elseif sortBy == "guild" then
+                aVal, bVal = a.guild or "", b.guild or ""
+            elseif sortBy == "zone" then
+                aVal, bVal = a.zone or "Unknown", b.zone or "Unknown"
+            elseif sortBy == "kills" then
+                aVal, bVal = tonumber(a.kills) or 0, tonumber(b.kills) or 0
+            elseif sortBy == "lastKill" then
+                aVal, bVal = a.lastKill or "", b.lastKill or ""
+            else
+                -- Default to name if sort field is unrecognized
+                aVal, bVal = a.name or "", b.name or ""
+            end
+
+            -- For numeric values like kills, use numeric comparison
+            if type(aVal) == "number" and type(bVal) == "number" then
+                if sortAscending then
+                    return aVal < bVal
+                else
+                    return aVal > bVal
+                end
+            else
+                -- For strings and other values, convert to string for consistent comparison
+                if sortAscending then
+                    return tostring(aVal) < tostring(bVal)
+                else
+                    return tostring(aVal) > tostring(bVal)
+                end
+            end
+        end)
     end
 
     return sortedEntries
@@ -358,7 +472,7 @@ end
 
 local function CreateNameCell(content, xPos, yPos, name, width)
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    nameText:SetPoint("TOPLEFT", xPos, yPos)
+    nameText:SetPoint("LEFT", content, "LEFT", xPos + 10, 0)
     nameText:SetText(name)
     nameText:SetWidth(width)
     nameText:SetJustifyH("LEFT")
@@ -367,7 +481,7 @@ end
 
 local function CreateClassCell(content, anchorTo, className, width)
     local classText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    classText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    classText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
 
     if className and className ~= "Unknown" then
         className = className:sub(1, 1):upper() .. className:sub(2):lower()
@@ -455,18 +569,140 @@ local function CreateZoneCell(content, anchorTo, zone, width)
     return zoneText
 end
 
-local function CreateEntryRow(content, entry, yOffset, colWidths)
-    local nameCell = CreateNameCell(content, 10, yOffset, entry.name, colWidths.name)
-    local classCell = CreateClassCell(content, nameCell, entry.class, colWidths.class)
-    local raceCell = CreateRaceCell(content, classCell, entry.race, colWidths.race)
-    local genderCell = CreateGenderCell(content, raceCell, entry.gender, colWidths.gender)
-    local levelCell = CreateLevelCell(content, genderCell, entry.level, colWidths.level)
-    local guildCell = CreateGuildCell(content, levelCell, entry.guild, colWidths.guild)
-    local zoneCell = CreateZoneCell(content, guildCell, entry.zone, colWidths.zone)
-    local killsCell = CreateKillsCell(content, zoneCell, entry.kills, colWidths.kills)
-    local lastKillCell = CreateLastKillCell(content, killsCell, entry.lastKill, colWidths.lastKill)
+local function CreateGoldHighlight(parent, height)
+    -- Create the main highlight texture
+    local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
+    highlight:SetAllPoints(true)
+
+    -- For gradient effects, we need to handle old and new API versions
+    local useNewAPI = highlight.SetGradient and
+                      type(highlight.SetGradient) == "function" and
+                      pcall(function()
+                          highlight:SetGradient("HORIZONTAL", {r=1,g=1,b=1,a=1}, {r=1,g=1,b=1,a=1})
+                          return true
+                      end)
+
+    if useNewAPI then
+        -- Use the newer API version with table parameters (WoW 10.0+)
+        highlight:SetColorTexture(1, 0.82, 0, 0.6)  -- Significantly increased alpha from 0.35 to 0.6
+
+        -- Try to set gradient in a safe way
+        pcall(function()
+            highlight:SetGradient("HORIZONTAL",
+                {r=1, g=0.82, b=0, a=0.3},   -- Left side (more visible gold)
+                {r=1, g=0.82, b=0, a=0.8}    -- Right side (very visible gold)
+            )
+        end)
+    else
+        -- For older clients, create two separate textures for the gradient
+        -- First, make the main highlight a solid color with high opacity
+        highlight:SetColorTexture(1, 0.82, 0, 0.5)  -- Increased from 0.25 to 0.5
+
+        -- Create left half with gradient fade in
+        local leftGradient = parent:CreateTexture(nil, "HIGHLIGHT")
+        leftGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+        leftGradient:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+        leftGradient:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+        leftGradient:SetWidth(parent:GetWidth() / 2)
+        leftGradient:SetHeight(height)
+
+        -- Use pcall to safely handle method variations between API versions
+        pcall(function()
+            leftGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.3, 1, 0.82, 0, 0.7)  -- Increased values
+        end)
+
+        -- Fallback if SetGradientAlpha fails
+        if leftGradient:GetVertexColor() == 1 and select(2, leftGradient:GetVertexColor()) == 1 then
+            leftGradient:SetVertexColor(1, 0.82, 0, 0.6)  -- Increased from 0.3 to 0.6
+        end
+
+        -- Create right half with gradient fade out
+        local rightGradient = parent:CreateTexture(nil, "HIGHLIGHT")
+        rightGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+        rightGradient:SetPoint("TOPLEFT", leftGradient, "TOPRIGHT", 0, 0)
+        rightGradient:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+
+        -- Use pcall to safely handle method variations between API versions
+        pcall(function()
+            rightGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.7, 1, 0.82, 0, 0.3)  -- Increased values
+        end)
+
+        -- Fallback if SetGradientAlpha fails
+        if rightGradient:GetVertexColor() == 1 and select(2, rightGradient:GetVertexColor()) == 1 then
+            rightGradient:SetVertexColor(1, 0.82, 0, 0.6)  -- Increased from 0.3 to 0.6
+        end
+    end
+
+    -- Add a semi-transparent border around the highlight for better visibility
+    local topBorder = parent:CreateTexture(nil, "HIGHLIGHT")
+    topBorder:SetHeight(1)
+    topBorder:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    topBorder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    topBorder:SetColorTexture(1, 0.82, 0, 0.8)
+
+    local bottomBorder = parent:CreateTexture(nil, "HIGHLIGHT")
+    bottomBorder:SetHeight(1)
+    bottomBorder:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+    bottomBorder:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+    bottomBorder:SetColorTexture(1, 0.82, 0, 0.8)
+
+    return highlight
+end
+
+local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
+    -- Create a row container to handle highlighting
+    local rowContainer = CreateFrame("Button", nil, content)
+    rowContainer:SetSize(content:GetWidth() - 20, 16)
+    rowContainer:SetPoint("TOPLEFT", 10, yOffset)
+
+    -- Add slight alternating row backgrounds for better readability
+    if isAlternate then
+        local bgTexture = rowContainer:CreateTexture(nil, "BACKGROUND")
+        bgTexture:SetAllPoints()
+        bgTexture:SetColorTexture(0.05, 0.05, 0.05, 0.3)
+    end
+
+    -- Create highlight with gradient fade effect
+    local highlightTexture = CreateGoldHighlight(rowContainer, 16)
+
+    -- Remove tooltip code - no longer needed as it shows redundant information
+    -- The OnEnter and OnLeave scripts that were here have been removed
+
+    local nameCell = CreateNameCell(rowContainer, 0, 0, entry.name, colWidths.name)
+    local classCell = CreateClassCell(rowContainer, nameCell, entry.class, colWidths.class)
+    local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
+    local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
+    local levelCell = CreateLevelCell(rowContainer, genderCell, entry.levelDisplay, colWidths.level)
+    local guildCell = CreateGuildCell(rowContainer, levelCell, entry.guild, colWidths.guild)
+    local zoneCell = CreateZoneCell(rowContainer, guildCell, entry.zone, colWidths.zone)
+    local killsCell = CreateKillsCell(rowContainer, zoneCell, entry.kills, colWidths.kills)
+    local lastKillCell = CreateLastKillCell(rowContainer, killsCell, entry.lastKill, colWidths.lastKill)
 
     return yOffset - 16 -- Return the next row position
+end
+
+local function DisplayEntries(content, sortedEntries, startYOffset)
+    local yOffset = startYOffset
+    local count = 0
+    local maxDisplayEntries = 500
+
+    for i, entry in ipairs(sortedEntries) do
+        if count >= maxDisplayEntries then break end
+
+        -- Pass alternating row flag (true for odd rows, false for even rows)
+        yOffset = CreateEntryRow(content, entry, yOffset, colWidths, (count % 2 == 1))
+        count = count + 1
+    end
+
+    if count == maxDisplayEntries and #sortedEntries > maxDisplayEntries then
+        local moreText = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        moreText:SetPoint("TOPLEFT", 10, yOffset)
+        moreText:SetText("Showing " .. count .. " of " .. #sortedEntries .. " entries. Use search to narrow results.")
+        moreText:SetTextColor(1, 0.7, 0)
+        yOffset = yOffset - 20
+    end
+
+    return yOffset, count
 end
 
 local function DisplayEntries(content, sortedEntries, startYOffset)
@@ -731,7 +967,17 @@ end
 
 local function SetupGenderSearchBoxScripts(genderSearchBox)
     genderSearchBox:SetScript("OnTextChanged", function(self)
-        genderSearchText = self:GetText()
+        local text = self:GetText()
+        genderSearchText = text
+
+        -- Auto-normalize when typing certain values
+        local normalizedText = text:lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
+        if normalizedText == "m" then
+            -- Keep as "m" for now - will be expanded in filter
+        elseif normalizedText == "f" then
+            -- Keep as "f" for now - will be expanded in filter
+        end
+
         RefreshKillList()
     end)
 
@@ -741,6 +987,47 @@ local function SetupGenderSearchBoxScripts(genderSearchBox)
 
     genderSearchBox:SetScript("OnEditFocusLost", function(self)
         self:HighlightText(0, 0)
+
+        -- Normalize gender to Male/Female/Unknown
+        local text = self:GetText():lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
+        if text == "m" or text == "male" then
+            self:SetText("Male")
+            genderSearchText = "Male"
+            RefreshKillList()
+        elseif text == "f" or text == "female" then
+            self:SetText("Female")
+            genderSearchText = "Female"
+            RefreshKillList()
+        elseif text == "u" or text == "unknown" or text == "?" or text == "??" then
+            self:SetText("Unknown")
+            genderSearchText = "Unknown"
+            RefreshKillList()
+        elseif text == "" then
+            -- Clear filter
+            genderSearchText = ""
+            RefreshKillList()
+        else
+            -- If text doesn't match known genders, try to find closest match
+            local lowerText = text:lower()
+            if lowerText:find("^ma") or lowerText:find("^me") then
+                self:SetText("Male")
+                genderSearchText = "Male"
+                RefreshKillList()
+            elseif lowerText:find("^fe") or lowerText:find("^wo") then
+                self:SetText("Female")
+                genderSearchText = "Female"
+                RefreshKillList()
+            elseif lowerText:find("^un") then
+                self:SetText("Unknown")
+                genderSearchText = "Unknown"
+                RefreshKillList()
+            else
+                -- Text doesn't match any known gender, clear to avoid confusion
+                self:SetText("")
+                genderSearchText = ""
+                RefreshKillList()
+            end
+        end
     end)
 
     genderSearchBox:SetScript("OnEscapePressed", function(self)
@@ -757,7 +1044,8 @@ local function SetupGenderSearchBoxScripts(genderSearchBox)
     genderSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Gender Filter")
-        GameTooltip:AddLine("Enter Male or Female", 1, 1, 1, true)
+        GameTooltip:AddLine("Type Male, Female, or Unknown", 1, 1, 1, true)
+        GameTooltip:AddLine("Short forms: m, f, u are also accepted", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
@@ -1000,6 +1288,14 @@ function PKA_CreateKillStatsFrame()
 
     -- Register with frame manager
     PKA_FrameManager:RegisterFrame(killStatsFrame, "KillsList")
+
+    -- Remove from UISpecialFrames since FrameManager handles ESC key
+    for i = #UISpecialFrames, 1, -1 do
+        if (UISpecialFrames[i] == "PKAKillStatsFrame") then
+            table.remove(UISpecialFrames, i)
+            break
+        end
+    end
 
     RefreshKillList()
 end

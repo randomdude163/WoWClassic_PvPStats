@@ -2,6 +2,85 @@ if not PKA_ActiveFrameLevel then
     PKA_ActiveFrameLevel = 100
 end
 
+-- Add this helper function at the top of StatisticsFrame.lua
+local function CreateGoldHighlight(parent, height)
+    local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
+    highlight:SetAllPoints(true)
+
+    -- Check if SetGradient with table parameters is available (newer API)
+    local useNewAPI = highlight.SetGradient and
+                      type(highlight.SetGradient) == "function" and
+                      pcall(function()
+                          highlight:SetGradient("HORIZONTAL", {r=1,g=1,b=1,a=1}, {r=1,g=1,b=1,a=1})
+                          return true
+                      end)
+
+    if useNewAPI then
+        -- Use the newer API version with table parameters (WoW 10.0+)
+        highlight:SetColorTexture(1, 0.82, 0, 0.6)  -- Significantly increased alpha
+        -- Try to set gradient in a safe way
+        pcall(function()
+            highlight:SetGradient("HORIZONTAL",
+                {r=1, g=0.82, b=0, a=0.3},    -- Left side (more visible)
+                {r=1, g=0.82, b=0, a=0.8}     -- Right side (very visible)
+            )
+        end)
+    else
+        -- For older clients, create two separate textures for the gradient
+        -- First, clear the main highlight
+        highlight:SetColorTexture(1, 0.82, 0, 0.5)  -- Increased from 0 to 0.5
+
+        -- Create left half with gradient fade in
+        local leftGradient = parent:CreateTexture(nil, "HIGHLIGHT")
+        leftGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+        leftGradient:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+        leftGradient:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+        leftGradient:SetWidth(parent:GetWidth() / 2)
+        leftGradient:SetHeight(height)
+
+        -- Use pcall to safely handle method variations between API versions
+        pcall(function()
+            leftGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.3, 1, 0.82, 0, 0.7)
+        end)
+
+        -- Fallback if SetGradientAlpha fails
+        if leftGradient:GetVertexColor() == 1 and select(2, leftGradient:GetVertexColor()) == 1 then
+            leftGradient:SetVertexColor(1, 0.82, 0, 0.6)
+        end
+
+        -- Create right half with gradient fade out
+        local rightGradient = parent:CreateTexture(nil, "HIGHLIGHT")
+        rightGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+        rightGradient:SetPoint("TOPLEFT", leftGradient, "TOPRIGHT", 0, 0)
+        rightGradient:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+
+        -- Use pcall to safely handle method variations between API versions
+        pcall(function()
+            rightGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.7, 1, 0.82, 0, 0.3)
+        end)
+
+        -- Fallback if SetGradientAlpha fails
+        if rightGradient:GetVertexColor() == 1 and select(2, rightGradient:GetVertexColor()) == 1 then
+            rightGradient:SetVertexColor(1, 0.82, 0, 0.6)
+        end
+    end
+
+    -- Add a semi-transparent border around the highlight for better visibility
+    local topBorder = parent:CreateTexture(nil, "HIGHLIGHT")
+    topBorder:SetHeight(1)
+    topBorder:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    topBorder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    topBorder:SetColorTexture(1, 0.82, 0, 0.8)
+
+    local bottomBorder = parent:CreateTexture(nil, "HIGHLIGHT")
+    bottomBorder:SetHeight(1)
+    bottomBorder:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+    bottomBorder:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+    bottomBorder:SetColorTexture(1, 0.82, 0, 0.8)
+
+    return highlight
+end
+
 -- Get next frame level and increment the counter
 local function PKA_GetNextFrameLevel()
     PKA_ActiveFrameLevel = PKA_ActiveFrameLevel + 10
@@ -169,10 +248,8 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     barButton:SetSize(UI.CHART.WIDTH, UI.BAR.HEIGHT)
     barButton:SetPoint("TOPLEFT", 0, barY)
 
-    -- Add highlight texture
-    local highlightTexture = barButton:CreateTexture(nil, "HIGHLIGHT")
-    highlightTexture:SetAllPoints(true)
-    highlightTexture:SetColorTexture(1, 1, 1, 0.2)
+    -- Create highlight with gradient fade effect
+    local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
 
     -- Add tooltip
     barButton:SetScript("OnEnter", function(self)
@@ -297,7 +374,7 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     end
 
     -- Sort level data numerically instead of by value
-    if title == "Kills by Level" then
+    if (title == "Kills by Level") then
         local sortedLevelData = {}
         -- First handle the "??" level specially
         local unknownLevelEntry
@@ -358,10 +435,8 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     rowButton:SetSize(260, 20)  -- Wide enough to cover guild name and kill count
     rowButton:SetPoint("TOPLEFT", 0, rowY)
 
-    -- Add highlight texture
-    local highlightTexture = rowButton:CreateTexture(nil, "HIGHLIGHT")
-    highlightTexture:SetAllPoints(true)
-    highlightTexture:SetColorTexture(1, 1, 1, 0.2)
+    -- Create highlight with gradient fade effect
+    local highlightTexture = CreateGoldHighlight(rowButton, 20)
 
     -- Add tooltip
     rowButton:SetScript("OnEnter", function(self)
