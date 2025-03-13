@@ -2,15 +2,6 @@
 -- This adds a graphical user interface for all settings of the addon
 local configFrame = nil
 
--- Add this to the top of ConfigUI.lua
-local PKA_ActiveFrameLevel = 100
-
--- Get next frame level and increment the counter
-local function PKA_GetNextFrameLevel()
-    PKA_ActiveFrameLevel = PKA_ActiveFrameLevel + 10
-    return PKA_ActiveFrameLevel
-end
-
 -- Default messages as fallbacks
 local PlayerKillMessageDefault = PlayerKillMessageDefault or "Enemyplayername killed!"
 local KillStreakEndedMessageDefault = KillStreakEndedMessageDefault or "My kill streak of STREAKCOUNT has ended!"
@@ -385,80 +376,22 @@ function PKA_UpdateConfigUI()
     PKA_UpdateConfigStats()
 end
 
-local function CreateConfigSections(content)
-    -- Ensure default values are set
-    EnsureDefaultValues()
-
-    -- Create a general section for future use
-    local generalSection = {}
-    generalSection.checkbox = CreateFrame("CheckButton", nil, content)
-    generalSection.checkbox:SetPoint("TOPLEFT", content, "TOPLEFT", 20, -20)
-    generalSection.checkbox:Hide() -- Hide this placeholder for now
-
-    -- Create announcement settings section
-    local yOffset = -SECTION_TOP_MARGIN
-    local announcementHeight = CreateAnnouncementSection(content, yOffset)
-
-    -- Create message templates section
-    yOffset = yOffset - announcementHeight - SECTION_SPACING
-    local editBoxes = CreateMessageTemplatesSection(content, yOffset)
-
-    -- Store editBoxes for later updates
-    content.editBoxes = editBoxes
-
-    -- Return all sections for potential reference
-    return {
-        generalSection = generalSection,
-        editBoxes = editBoxes
-    }
-end
-
 function PKA_CreateConfigFrame()
-    -- Only create the frame once
+    if configFrame then
+        configFrame:Show()
+        return
+    end
+
+    EnsureDefaultValues()
     configFrame = CreateMainFrame()
+    PKA_FrameManager:RegisterFrame(configFrame, "ConfigUI")
 
-    -- Register with frame manager
-    PKA_FrameManager:RegisterFrame(configFrame, "Config")
+    local currentY = -SECTION_TOP_MARGIN
+    local announcementHeight = CreateAnnouncementSection(configFrame, currentY)
+    currentY = currentY - announcementHeight - SECTION_SPACING
+    configFrame.editBoxes = CreateMessageTemplatesSection(configFrame, currentY)
 
-    -- Enable Escape key closing
-    configFrame:EnableKeyboard(true)
-    configFrame:SetPropagateKeyboardInput(true)
-    configFrame:SetScript("OnKeyDown", function(self, key)
-        if key == "ESCAPE" then
-            self:SetPropagateKeyboardInput(false)
-            self:Hide()
-        else
-            self:SetPropagateKeyboardInput(true)
-        end
-    end)
-
-    local scrollFrame = CreateFrame("ScrollFrame", nil, configFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 10, -30)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 50)
-
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(configFrame:GetWidth() - 40, configFrame:GetHeight() * 3)
-    scrollFrame:SetScrollChild(content)
-
-    -- Create sections
-    local sections = CreateConfigSections(content)
-
-    -- Store editBoxes for later updates
-    configFrame.editBoxes = sections.editBoxes
-
-    -- Create action buttons
-    local buttons = CreateActionButtons(configFrame)
-
-    -- Add stats text
-    local statsText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    statsText:SetPoint("TOPLEFT", sections.generalSection.checkbox, "BOTTOMLEFT", 0, -SECTION_SPACING)
-    statsText:SetPoint("RIGHT", content, "RIGHT", -10, 0)
-    statsText:SetJustifyH("LEFT")
-    configFrame.statsText = statsText
-
-    PKA_UpdateConfigStats()
-
-    return configFrame
+    CreateActionButtons(configFrame)
 end
 
 function PKA_CreateConfigUI()
