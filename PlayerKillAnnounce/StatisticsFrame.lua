@@ -184,7 +184,7 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         elseif titleType == "zone" then
             GameTooltip:AddLine("Click to show all kills from this zone", 1, 1, 1, true)
         elseif titleType == "level" then
-            GameTooltip:AddLine("Click to show all kills in this level range", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills at this level", 1, 1, 1, true)
         elseif titleType == raceColors then
             GameTooltip:AddLine("Click to show all kills from this race", 1, 1, 1, true)
         elseif titleType == genderColors then
@@ -211,21 +211,20 @@ local function createBar(container, entry, index, maxValue, total, titleType)
             elseif titleType == "zone" then
                 PKA_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
             elseif titleType == "level" then
-                -- Extract level range values for filter
-                local minLevel, maxLevel
-                if entry.key == "Level ??" then
-                    -- Special case for unknown level
-                    PKA_SetKillListSearch("", -1, nil, nil, nil, nil, true)
-                else
-                    -- Parse the level range (e.g. "1-10", "11-20")
-                    minLevel, maxLevel = entry.key:match("(%d+)-(%d+)")
-                    if minLevel and maxLevel then
-                        PKA_SetKillListLevelRange(tonumber(minLevel), tonumber(maxLevel), true)
-                    elseif entry.key:match("(%d+)%+") then
-                        -- Handle "81+" format
-                        minLevel = entry.key:match("(%d+)%+")
-                        PKA_SetKillListLevelRange(tonumber(minLevel), 999, true)
-                    end
+                -- Individual level filter
+                local level = tonumber(entry.key)
+                if level then
+                    PKA_SetKillListLevelRange(level, level, true)
+                end
+            elseif titleType == "unknownLevelClass" then
+                -- This is for the "Level ?? Kills by Class" chart
+                if entry.key then
+                    -- Filter for this class AND unknown level
+                    PKA_SetKillListLevelRange(-1, -1, true)
+                    -- Short delay to allow the level filter to apply first
+                    C_Timer.After(0.05, function()
+                        PKA_SetKillListSearch("", nil, entry.key, nil, nil, nil, false)
+                    end)
                 end
             elseif titleType == raceColors then
                 PKA_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
@@ -245,18 +244,32 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     itemLabel:SetWidth(nameWidth)
     itemLabel:SetJustifyH("LEFT")
 
-    -- Bar visualization
-    local bar = container:CreateTexture(nil, "ARTWORK")
-    bar:SetPoint("TOPLEFT", barX, barY)
-    bar:SetSize(barWidth, UI.BAR.HEIGHT)
-
+    -- Use a gradient color for level bars (blue to red)
     local color
-    if titleType == "class" then
+    if titleType == "level" and entry.key ~= "??" then
+        local level = tonumber(entry.key) or 0
+        local maxLevel = 60
+
+        -- Calculate color gradient from blue (low level) to red (high level)
+        local ratio = level / maxLevel
+        color = {
+            r = math.min(1.0, ratio * 2),             -- Red increases with level
+            g = 0.1 + math.max(0, 0.7 - ratio * 0.7), -- Green decreases with level
+            b = math.max(0, 1.0 - ratio * 1.5)        -- Blue decreases with level
+        }
+    elseif titleType == "class" then
         color = getClassColor(entry.key)
+    elseif titleType == "level" and entry.key == "??" then
+        -- Use purple for unknown levels
+        color = {r = 0.8, g = 0.3, b = 0.9}
     else
         color = titleType and titleType[entry.key] or {r = 0.8, g = 0.8, b = 0.8}
     end
 
+    -- Bar visualization
+    local bar = container:CreateTexture(nil, "ARTWORK")
+    bar:SetPoint("TOPLEFT", barX, barY)
+    bar:SetSize(barWidth, UI.BAR.HEIGHT)
     bar:SetColorTexture(color.r, color.g, color.b, 0.9)
 
     local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -284,12 +297,41 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         total = total + entry.value
     end
 
+    -- Sort level data numerically instead of by value
+    if title == "Kills by Level" then
+        local sortedLevelData = {}
+        -- First handle the "??" level specially
+        local unknownLevelEntry
+        for i, entry in ipairs(sortedData) do
+            if entry.key == "??" then
+                unknownLevelEntry = entry
+                table.remove(sortedData, i)
+                break
+            end
+        end
+
+        -- Sort known levels numerically
+        table.sort(sortedData, function(a, b)
+            -- Convert keys to numbers for comparison
+            local aNum = tonumber(a.key) or 0
+            local bNum = tonumber(b.key) or 0
+            return aNum < bNum  -- Sort in ascending order by level
+        end)
+
+        -- Add unknown level entry at the end if it exists
+        if unknownLevelEntry then
+            table.insert(sortedData, unknownLevelEntry)
+        end
+    end
+
     local titleType
-    if title == "Kills by Class" or title == "Level ?? Kills by Class" then
+    if title == "Kills by Class" then
         titleType = "class"
+    elseif title == "Level ?? Kills by Class" then
+        titleType = "unknownLevelClass"  -- New type for unknown level class chart
     elseif title == "Kills by Zone" then
         titleType = "zone"
-    elseif title == "Kills by Level Range" then
+    elseif title == "Kills by Level" then
         titleType = "level"
     else
         titleType = colorTable
@@ -533,23 +575,23 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest Multi-Kill:", PKA_HighestMultiKill or 0, statY)
 
     -- Increase spacing before credits section
-    statY = statY - 30  -- Changed from -55 to -30 to reduce the space
+    statY = statY - 30  -- Changed from -55 to reduce the space
     addCreditsSection(container, statY)
 
     return container
 end
 
--- Modify the gatherStatistics function to include level data
+-- Modify the gatherStatistics function to track individual levels but exclude unknown level from levelData
 local function gatherStatistics()
     local classData = {}
     local raceData = {}
     local genderData = {}
     local unknownLevelClassData = {}
     local zoneData = {}
-    local levelData = {} -- New table for level data
+    local levelData = {} -- Changed to store individual levels
 
     if not PKA_KillCounts then
-        return {}, {}, {}, {}, {}, {} -- Added empty levelData table
+        return {}, {}, {}, {}, {}, {}
     end
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
@@ -563,29 +605,13 @@ local function gatherStatistics()
 
             if levelNum == -1 or (data.unknownLevel or false) then
                 unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
+                -- Add unknown levels to levelData for proper display in the level chart
+                levelData["??"] = (levelData["??"] or 0) + kills
             else
-                -- Group levels by ranges of 10
-                local levelRange
-                if levelNum <= 10 then
-                    levelRange = "1-10"
-                elseif levelNum <= 20 then
-                    levelRange = "11-20"
-                elseif levelNum <= 30 then
-                    levelRange = "21-30"
-                elseif levelNum <= 40 then
-                    levelRange = "31-40"
-                elseif levelNum <= 50 then
-                    levelRange = "41-50"
-                elseif levelNum <= 60 then
-                    levelRange = "51-60"
-                elseif levelNum <= 70 then
-                    levelRange = "61-70"
-                elseif levelNum <= 80 then
-                    levelRange = "71-80"
-                else
-                    levelRange = "81+"
+                -- Track individual levels
+                if levelNum > 0 and levelNum <= 60 then
+                    levelData[tostring(levelNum)] = (levelData[tostring(levelNum)] or 0) + kills
                 end
-                levelData[levelRange] = (levelData[levelRange] or 0) + kills
             end
 
             local race = data.race or "Unknown"
@@ -598,15 +624,6 @@ local function gatherStatistics()
             local zone = data.zone or "Unknown"
             zoneData[zone] = (zoneData[zone] or 0) + kills
         end
-    end
-
-    -- Add level ?? to level data
-    if unknownLevelClassData and next(unknownLevelClassData) then
-        local unknownLevelTotal = 0
-        for _, count in pairs(unknownLevelClassData) do
-            unknownLevelTotal = unknownLevelTotal + count
-        end
-        levelData["Level ??"] = unknownLevelTotal
     end
 
     return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData
@@ -750,8 +767,7 @@ function PKA_CreateStatisticsFrame()
     local classChartHeight = calculateChartHeight(classData)
     local raceChartHeight = calculateChartHeight(raceData)
     local genderChartHeight = calculateChartHeight(genderData)
-    local unknownLevelClassHeight = calculateChartHeight(unknownLevelClassData)
-    local levelChartHeight = calculateChartHeight(levelData)
+    local levelChartHeight = calculateChartHeight(levelData) -- Now includes level ??
     local zoneChartHeight = calculateChartHeight(zoneData)
 
     local yOffset = 0
@@ -764,11 +780,7 @@ function PKA_CreateStatisticsFrame()
     createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH, genderChartHeight)
 
     yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Level ?? Kills by Class", unknownLevelClassData, nil, 0, yOffset, UI.CHART.WIDTH, unknownLevelClassHeight)
-
-    yOffset = yOffset - unknownLevelClassHeight - UI.CHART.PADDING
-    -- Add the new level chart before the zone chart
-    createBarChart(leftScrollContent, "Kills by Level Range", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
+    createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight)

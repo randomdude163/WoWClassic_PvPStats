@@ -77,6 +77,13 @@ local function ParseLevelSearch(text)
         return true
     end
 
+    -- Special case for unknown level ("??")
+    if text == "??" then
+        minLevelSearch = -1
+        maxLevelSearch = -1
+        return true
+    end
+
     -- Check for level range format: "min-max"
     local min, max = text:match("^(%d+)-(%d+)$")
     if min and max then
@@ -95,6 +102,7 @@ local function ParseLevelSearch(text)
     local level = tonumber(text)
     if level and level >= 1 and level <= 60 then
         minLevelSearch = level
+        maxLevelSearch = level
         return true
     end
 
@@ -158,6 +166,7 @@ local function SetupLevelSearchBoxScripts(levelSearchBox)
         GameTooltip:SetText("Level Filter")
         GameTooltip:AddLine("Enter a single level (e.g. 60)", 1, 1, 1, true)
         GameTooltip:AddLine("Or a range (e.g. 30-40)", 1, 1, 1, true)
+        GameTooltip:AddLine("Or ?? for unknown levels", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
@@ -1055,7 +1064,7 @@ function RefreshKillList()
 end
 
 function PKA_CreateKillStatsFrame()
-    if killStatsFrame then
+    if (killStatsFrame) then
         PKA_FrameManager:ShowFrame("KillsList")
         RefreshKillList()
         return
