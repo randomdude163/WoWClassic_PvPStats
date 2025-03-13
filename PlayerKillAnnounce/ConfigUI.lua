@@ -315,13 +315,18 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 500) -- Reduced height from 650 to 500
+    frame:SetSize(600, 500)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+
+    -- Set frame strata to DIALOG to match other frames
+    frame:SetFrameStrata("DIALOG")
+    -- Set frame level to be highest of all addon frames
+    frame:SetFrameLevel(30)
 
     tinsert(UISpecialFrames, "PKAConfigFrame")
 
@@ -386,6 +391,18 @@ function PKA_CreateConfigFrame()
     configFrame.editBoxes = CreateMessageTemplatesSection(configFrame, currentY)
 
     CreateActionButtons(configFrame)
+end
+
+function PKA_CreateConfigUI()
+    if configFrame then
+        configFrame:Show()
+        configFrame:Raise()
+        -- Force it to the top layer when shown
+        configFrame:SetFrameStrata("HIGH")
+        return
+    end
+
+    PKA_CreateConfigFrame()
 end
 
 -- Add command to slash handler to open config UI

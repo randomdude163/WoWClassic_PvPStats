@@ -1,5 +1,8 @@
 local killStatsFrame = nil
 local searchText = ""
+local levelSearchText = ""  -- New variable for level search
+local minLevelSearch = nil  -- For level range search
+local maxLevelSearch = nil  -- For level range search
 local sortBy = "lastKill"
 local sortAscending = false
 
@@ -16,6 +19,147 @@ local colWidths = {
     kills = 50,
     lastKill = 145
 }
+
+
+
+local function CreateBoxBorder(box)
+    local border = {}
+
+    border.top = box:CreateTexture(nil, "BACKGROUND")
+    border.top:SetHeight(1)
+    border.top:SetPoint("TOPLEFT", box, "TOPLEFT", -1, 1)
+    border.top:SetPoint("TOPRIGHT", box, "TOPRIGHT", 1, 1)
+    border.top:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+
+    border.bottom = box:CreateTexture(nil, "BACKGROUND")
+    border.bottom:SetHeight(1)
+    border.bottom:SetPoint("BOTTOMLEFT", box, "BOTTOMLEFT", -1, -1)
+    border.bottom:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", 1, -1)
+    border.bottom:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+
+    border.left = box:CreateTexture(nil, "BACKGROUND")
+    border.left:SetWidth(1)
+    border.left:SetPoint("TOPLEFT", border.top, "TOPLEFT", 0, 0)
+    border.left:SetPoint("BOTTOMLEFT", border.bottom, "BOTTOMLEFT", 0, 0)
+    border.left:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+
+    border.right = box:CreateTexture(nil, "BACKGROUND")
+    border.right:SetWidth(1)
+    border.right:SetPoint("TOPRIGHT", border.top, "TOPRIGHT", 0, 0)
+    border.right:SetPoint("BOTTOMRIGHT", border.bottom, "BOTTOMRIGHT", 0, 0)
+    border.right:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+
+    return border
+end
+
+
+local function ParseLevelSearch(text)
+    -- Reset level search variables
+    minLevelSearch = nil
+    maxLevelSearch = nil
+
+    if text == "" then
+        return true
+    end
+
+    -- Check for level range format: "min-max"
+    local min, max = text:match("^(%d+)-(%d+)$")
+    if min and max then
+        min = tonumber(min)
+        max = tonumber(max)
+        -- Ensure min is less than or equal to max
+        if min and max and min <= max and min >= 1 and max <= 60 then
+            minLevelSearch = min
+            maxLevelSearch = max
+            return true
+        end
+        return false
+    end
+
+    -- Check for single level format
+    local level = tonumber(text)
+    if level and level >= 1 and level <= 60 then
+        minLevelSearch = level
+        return true
+    end
+
+    return false
+end
+
+local function CreateLevelSearchBox(parent, anchorTo)
+    local levelSearchBox = CreateFrame("EditBox", nil, parent)
+    levelSearchBox:SetSize(60, 20)
+    levelSearchBox:SetPoint("LEFT", anchorTo, "RIGHT", 20, 0)
+    levelSearchBox:SetAutoFocus(false)
+    levelSearchBox:SetMaxLetters(5)  -- Max input like "60-60"
+    levelSearchBox:SetFontObject("ChatFontNormal")
+
+    local searchBoxBg = levelSearchBox:CreateTexture(nil, "BACKGROUND")
+    searchBoxBg:SetAllPoints(true)
+    searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
+
+    CreateBoxBorder(levelSearchBox)
+    levelSearchBox:SetTextInsets(5, 5, 2, 2)
+
+    return levelSearchBox
+end
+
+local function SetupLevelSearchBoxScripts(levelSearchBox)
+    levelSearchBox:SetScript("OnTextChanged", function(self)
+        levelSearchText = self:GetText()
+        if ParseLevelSearch(levelSearchText) then
+            self:SetTextColor(1, 1, 1)
+            RefreshKillList()
+        else
+            self:SetTextColor(1, 0.3, 0.3)
+        end
+    end)
+
+    levelSearchBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+
+    levelSearchBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
+
+    levelSearchBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        self:SetText("")
+        levelSearchText = ""
+        minLevelSearch = nil
+        maxLevelSearch = nil
+        RefreshKillList()
+    end)
+
+    -- Enter key handling
+    levelSearchBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+    end)
+
+    -- Tooltip handling
+    levelSearchBox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Level Filter")
+        GameTooltip:AddLine("Enter a single level (e.g. 60)", 1, 1, 1, true)
+        GameTooltip:AddLine("Or a range (e.g. 30-40)", 1, 1, 1, true)
+        GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+
+    levelSearchBox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
+local function CreateLevelSearchLabel(parent, anchorTo)
+    local levelLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    levelLabel:SetPoint("LEFT", anchorTo, "RIGHT", 8, 0)
+    levelLabel:SetText("Level:")
+    levelLabel:SetTextColor(1, 0.82, 0)
+    return levelLabel
+end
+
 
 local function CleanupFrameElements(content)
     local children = {content:GetChildren()}
@@ -96,7 +240,25 @@ local function FilterAndSortEntries()
         local nameLower = name:lower()
         local guildLower = (data.guild or ""):lower()
 
-        if searchText == "" or nameLower:find(searchText, 1, true) or guildLower:find(searchText, 1, true) then
+        -- Check if the entry matches the name/guild search
+        local matchesNameGuild = (searchText == "" or
+                                nameLower:find(searchText, 1, true) or
+                                guildLower:find(searchText, 1, true))
+
+        -- Check if the entry matches the level search criteria
+        local matchesLevel = true
+        if levelSearchText ~= "" then
+            if minLevelSearch and maxLevelSearch then
+                -- Level range: check if level is within range
+                matchesLevel = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
+            elseif minLevelSearch then
+                -- Single level: check if level matches exactly
+                matchesLevel = (levelNum == minLevelSearch)
+            end
+        end
+
+        -- Add to results only if both criteria are matched
+        if matchesNameGuild and matchesLevel then
             count = count + 1
             sortedEntries[count] = {
                 nameWithLevel = nameWithLevel,
@@ -331,36 +493,6 @@ local function CreateSearchLabel(parent)
     return searchLabel
 end
 
-local function CreateBoxBorder(box)
-    local border = {}
-
-    border.top = box:CreateTexture(nil, "BACKGROUND")
-    border.top:SetHeight(1)
-    border.top:SetPoint("TOPLEFT", box, "TOPLEFT", -1, 1)
-    border.top:SetPoint("TOPRIGHT", box, "TOPRIGHT", 1, 1)
-    border.top:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-
-    border.bottom = box:CreateTexture(nil, "BACKGROUND")
-    border.bottom:SetHeight(1)
-    border.bottom:SetPoint("BOTTOMLEFT", box, "BOTTOMLEFT", -1, -1)
-    border.bottom:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", 1, -1)
-    border.bottom:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-
-    border.left = box:CreateTexture(nil, "BACKGROUND")
-    border.left:SetWidth(1)
-    border.left:SetPoint("TOPLEFT", border.top, "TOPLEFT", 0, 0)
-    border.left:SetPoint("BOTTOMLEFT", border.bottom, "BOTTOMLEFT", 0, 0)
-    border.left:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-
-    border.right = box:CreateTexture(nil, "BACKGROUND")
-    border.right:SetWidth(1)
-    border.right:SetPoint("TOPRIGHT", border.top, "TOPRIGHT", 0, 0)
-    border.right:SetPoint("BOTTOMRIGHT", border.bottom, "BOTTOMRIGHT", 0, 0)
-    border.right:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-
-    return border
-end
-
 local function CreateEditBox(parent, anchorTo)
     local searchBox = CreateFrame("EditBox", nil, parent)
     searchBox:SetSize(200, 20)
@@ -428,7 +560,18 @@ local function CreateSearchBar(frame)
     searchBox:SetText("")
     searchText = ""
 
-    return searchBox
+    -- Add level search components
+    local levelLabel = CreateLevelSearchLabel(searchBg, searchBox)
+    local levelSearchBox = CreateLevelSearchBox(searchBg, levelLabel)
+    SetupLevelSearchBoxScripts(levelSearchBox)
+    levelSearchBox:SetText("")
+    levelSearchText = ""
+
+    -- Store references in the frame for external access
+    frame.searchBox = searchBox
+    frame.levelSearchBox = levelSearchBox
+
+    return searchBox, levelSearchBox
 end
 
 local function CreateScrollFrame(parent)
@@ -453,8 +596,13 @@ local function CreateMainFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
+    -- Set frame strata to DIALOG to match the statistics frame
+    frame:SetFrameStrata("DIALOG")
+    -- Set frame level to be higher than statistics frame
+    frame:SetFrameLevel(20)
+
     table.insert(UISpecialFrames, "PKAKillStatsFrame")
-    frame.TitleText:SetText("Player Kill Statistics")
+    frame.TitleText:SetText("Player Kill List")
 
     return frame
 end
@@ -476,6 +624,8 @@ end
 function PKA_CreateKillStatsFrame()
     if killStatsFrame then
         killStatsFrame:Show()
+        killStatsFrame:Raise()
+        killStatsFrame:SetFrameStrata("MEDIUM")
         RefreshKillList()
         return
     end
@@ -484,4 +634,22 @@ function PKA_CreateKillStatsFrame()
     killStatsFrame.content = CreateScrollFrame(killStatsFrame)
     CreateSearchBar(killStatsFrame)
     RefreshKillList()
+end
+
+-- Make the searchText variable accessible to external functions
+function PKA_SetKillListSearch(text, levelText)
+    if killStatsFrame then
+        if killStatsFrame.searchBox and text then
+            killStatsFrame.searchBox:SetText(text)
+            searchText = text:lower()
+        end
+
+        if killStatsFrame.levelSearchBox and levelText then
+            killStatsFrame.levelSearchBox:SetText(levelText)
+            levelSearchText = levelText
+            ParseLevelSearch(levelText)
+        end
+
+        RefreshKillList()
+    end
 end

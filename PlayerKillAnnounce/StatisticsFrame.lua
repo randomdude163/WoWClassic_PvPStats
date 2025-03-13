@@ -224,6 +224,43 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     local guildName = entry.key or "Unknown"
     local killCount = entry.value or 0
 
+    -- Create a clickable button for the row
+    local rowButton = CreateFrame("Button", nil, content)
+    rowButton:SetSize(260, 20)  -- Wide enough to cover guild name and kill count
+    rowButton:SetPoint("TOPLEFT", 0, rowY)
+
+    -- Add highlight texture
+    local highlightTexture = rowButton:CreateTexture(nil, "HIGHLIGHT")
+    highlightTexture:SetAllPoints(true)
+    highlightTexture:SetColorTexture(1, 1, 1, 0.2)
+
+    -- Add tooltip
+    rowButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(guildName)
+        GameTooltip:AddLine("Click to show all kills from this guild", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+
+    rowButton:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    -- Add click handler
+    rowButton:SetScript("OnClick", function()
+        -- First open the kills list frame
+        PKA_CreateKillStatsFrame()
+
+        -- Ensure it's on top
+        if killStatsFrame then
+            -- Keep DIALOG strata but ensure higher frame level
+            killStatsFrame:SetFrameLevel(statsFrame:GetFrameLevel() + 10)
+        end
+
+        -- Then use our function to set the search text
+        PKA_SetKillListSearch(guildName)
+    end)
+
     local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     guildText:SetPoint("TOPLEFT", 0, rowY)
     guildText:SetText(tostring(guildName))
@@ -495,6 +532,11 @@ local function setupMainFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
+    -- Set frame strata to DIALOG to ensure it's above normal game elements
+    frame:SetFrameStrata("DIALOG")
+    -- Set frame level to a specific value
+    frame:SetFrameLevel(10)
+
     tinsert(UISpecialFrames, "PKAStatisticsFrame")
 
     frame:EnableKeyboard(true)
@@ -514,6 +556,7 @@ local function setupMainFrame()
 
     frame.TitleText:SetText("Player Kill Statistics")
 
+    -- Add a vertical separator line
     local separator = frame:CreateTexture(nil, "ARTWORK")
     separator:SetPoint("TOPLEFT", 430, -5)
     separator:SetPoint("BOTTOMLEFT", 430, 5)
@@ -564,8 +607,10 @@ end
 
 function PKA_CreateStatisticsFrame()
     if statsFrame then
-        statsFrame:Hide()
-        statsFrame = nil
+        statsFrame:Show()
+        statsFrame:Raise()
+        statsFrame:SetFrameStrata("MEDIUM")
+        return
     end
 
     for i = #UISpecialFrames, 1, -1 do
