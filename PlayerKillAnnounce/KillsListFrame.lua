@@ -18,18 +18,22 @@ local colWidths = {
 }
 
 local function CleanupFrameElements(content)
-    local children = { content:GetChildren() }
+    local children = {content:GetChildren()}
     for _, child in pairs(children) do
         child:Hide()
         child:SetParent(nil)
+        child = nil
     end
 
-    for _, region in pairs({ content:GetRegions() }) do
-        if region:GetObjectType() == "FontString" then
-            region:Hide()
-            region:SetParent(nil)
-        end
+    local regions = {content:GetRegions()}
+    for _, region in pairs(regions) do
+        region:Hide()
+        region:ClearAllPoints()
+        region:SetParent(nil)
+        region = nil
     end
+
+    collectgarbage("collect")
 end
 
 local function SetHeaderButtonHighlight(button, enter)
@@ -81,15 +85,20 @@ end
 
 local function FilterAndSortEntries()
     local sortedEntries = {}
+    local count = 0
+    local maxEntries = 100000
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
+        if count >= maxEntries then break end
+
         local name, level = strsplit(":", nameWithLevel)
         local levelNum = tonumber(level) or 0
         local nameLower = name:lower()
         local guildLower = (data.guild or ""):lower()
 
         if searchText == "" or nameLower:find(searchText, 1, true) or guildLower:find(searchText, 1, true) then
-            table.insert(sortedEntries, {
+            count = count + 1
+            sortedEntries[count] = {
                 nameWithLevel = nameWithLevel,
                 name = name,
                 class = data.class or "Unknown",
@@ -100,69 +109,55 @@ local function FilterAndSortEntries()
                 kills = data.kills or 0,
                 lastKill = data.lastKill or "Unknown",
                 unknownLevel = data.unknownLevel or (levelNum == -1)
-            })
+            }
         end
     end
 
-    local function compareEntries(a, b)
-        if not a or not b then return false end
+    if count > 0 then
+        local stableCompare = function(a, b)
+            if a == b then return false end
+            if not a then return false end
+            if not b then return true end
 
-        local aValue = a[sortBy]
-        local bValue = b[sortBy]
+            if sortBy == "level" then
+                if a.level == -1 and b.level ~= -1 then
+                    return not sortAscending
+                elseif a.level ~= -1 and b.level == -1 then
+                    return sortAscending
+                end
 
-        if aValue == nil and bValue == nil then
-            return a.name < b.name
-        elseif aValue == nil then
-            return false
-        elseif bValue == nil then
-            return true
-        end
+                if a.level == b.level then
+                    return a.name:lower() < b.name:lower()
+                end
 
-        if sortBy == "level" then
-            if a.level == -1 and b.level ~= -1 then
-                return not sortAscending  -- ?? levels at the end when ascending, at the start when descending
-            elseif a.level ~= -1 and b.level == -1 then
-                return sortAscending      -- ?? levels at the end when ascending, at the start when descending
+                return sortAscending and (a.level < b.level) or (a.level > b.level)
             end
 
-            if sortAscending then
-                return a.level < b.level
-            else
-                return a.level > b.level
+            local aValue = a[sortBy]
+            local bValue = b[sortBy]
+
+            if aValue == bValue or (not aValue and not bValue) then
+                return a.name:lower() < b.name:lower()
             end
-        end
 
-        if type(aValue) ~= type(bValue) then
-            aValue = tostring(aValue)
-            bValue = tostring(bValue)
-        end
+            if not aValue then return false end
+            if not bValue then return true end
 
-        if sortAscending then
             if type(aValue) == "string" and type(bValue) == "string" then
-                return aValue:lower() < bValue:lower()
+                return sortAscending and (aValue:lower() < bValue:lower()) or (aValue:lower() > bValue:lower())
             else
-                return aValue < bValue
-            end
-        else
-            if type(aValue) == "string" and type(bValue) == "string" then
-                return aValue:lower() > bValue:lower()
-            else
-                return aValue > bValue
+                return sortAscending and (aValue < bValue) or (aValue > bValue)
             end
         end
+
+        pcall(function() table.sort(sortedEntries, stableCompare) end)
     end
 
-    local success, result = pcall(function()
-        table.sort(sortedEntries, compareEntries)
-        return sortedEntries
-    end)
-
-    if not success then
-        print("|cFFFF0000PlayerKillAnnounce: Sorting error. Using unsorted list.|r")
-        return sortedEntries
+    if count == maxEntries then
+        print("|cFFFFFF00PlayerKillAnnounce: Displaying first " .. maxEntries .. " kills (use search to filter)|r")
     end
 
-    return result or sortedEntries
+    return sortedEntries
 end
 
 local function CreateColumnHeaders(content)
@@ -284,22 +279,20 @@ end
 local function DisplayEntries(content, sortedEntries, startYOffset)
     local yOffset = startYOffset
     local count = 0
+    local maxDisplayEntries = 500
 
-    -- Column widths
-    local colWidths = {
-        name = 100,
-        class = 80,
-        race = 80,
-        gender = 95,
-        level = 40,
-        guild = 150,
-        kills = 50,
-        lastKill = 145
-    }
-
-    for _, entry in ipairs(sortedEntries) do
+    for i, entry in ipairs(sortedEntries) do
+        if count >= maxDisplayEntries then break end
         yOffset = CreateEntryRow(content, entry, yOffset, colWidths)
         count = count + 1
+    end
+
+    if count == maxDisplayEntries and #sortedEntries > maxDisplayEntries then
+        local moreText = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        moreText:SetPoint("TOPLEFT", 10, yOffset)
+        moreText:SetText("Showing " .. count .. " of " .. #sortedEntries .. " entries. Use search to narrow results.")
+        moreText:SetTextColor(1, 0.7, 0)
+        yOffset = yOffset - 20
     end
 
     return yOffset, count
@@ -471,9 +464,12 @@ function RefreshKillList()
     if not content then return end
 
     CleanupFrameElements(content)
+    collectgarbage("collect")
+
     local yOffset = CreateColumnHeaders(content)
     local sortedEntries = FilterAndSortEntries()
     local finalYOffset, entryCount = DisplayEntries(content, sortedEntries, yOffset)
+
     content:SetHeight(math.max((-finalYOffset + 20), PKA_KILLS_FRAME_HEIGHT - 50))
 end
 
