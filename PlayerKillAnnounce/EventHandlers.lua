@@ -896,7 +896,8 @@ function PKA_CheckBattlegroundStatus()
         "Warsong Gulch",
         "Arathi Basin",
         "Alterac Valley",
-        -- Add other BGs if needed
+        "Elwynn Forest",
+        "Duskwood"
     }
 
     -- Check if current zone is a battleground
