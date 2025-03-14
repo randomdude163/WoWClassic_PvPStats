@@ -77,6 +77,39 @@ local function GetPetOwnerGUID(petGUID)
     return nil
 end
 
+-- Add this helper function
+local function GetNameFromGUID(guid)
+    if not guid then return nil end
+
+    -- Try to find the name from the GUID
+    local name = select(6, GetPlayerInfoByGUID(guid))
+    if name then return name end
+
+    -- If that fails, check if it's the player
+    if guid == UnitGUID("player") then
+        return UnitName("player")
+    end
+
+    -- Check party/raid members
+    local numMembers = IsInRaid() and GetNumGroupMembers() or GetNumGroupMembers()
+    local prefix = IsInRaid() and "raid" or "party"
+
+    for i = 1, numMembers do
+        local unitID
+        if prefix == "party" then
+            unitID = (i == GetNumGroupMembers()) and "player" or (prefix..i)
+        else
+            unitID = prefix..i
+        end
+
+        if UnitGUID(unitID) == guid then
+            return UnitName(unitID)
+        end
+    end
+
+    return nil
+end
+
 local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka config - Open configuration UI", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka stats - Show kills list", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
@@ -712,39 +745,6 @@ local function HandleCombatLogEvent()
             end
         end
     end
-end
-
--- Add this helper function
-local function GetNameFromGUID(guid)
-    if not guid then return nil end
-
-    -- Try to find the name from the GUID
-    local name = select(6, GetPlayerInfoByGUID(guid))
-    if name then return name end
-
-    -- If that fails, check if it's the player
-    if guid == UnitGUID("player") then
-        return UnitName("player")
-    end
-
-    -- Check party/raid members
-    local numMembers = IsInRaid() and GetNumGroupMembers() or GetNumGroupMembers()
-    local prefix = IsInRaid() and "raid" or "party"
-
-    for i = 1, numMembers do
-        local unitID
-        if prefix == "party" then
-            unitID = (i == GetNumGroupMembers()) and "player" or (prefix..i)
-        else
-            unitID = prefix..i
-        end
-
-        if UnitGUID(unitID) == guid then
-            return UnitName(unitID)
-        end
-    end
-
-    return nil
 end
 
 local function IsKillStreakMilestone(count)
