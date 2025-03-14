@@ -16,11 +16,11 @@ local PKA_CONFIG_HEADER_B = 0.0
 local SECTION_TOP_MARGIN = 30
 local SECTION_SPACING = 40
 local HEADER_ELEMENT_SPACING = 15
-local CHECKBOX_SPACING = 5    
+local CHECKBOX_SPACING = 5
 local FIELD_SPACING = 5
 local BUTTON_BOTTOM_MARGIN = 20
 
-PKA_EnableKillSounds = true 
+PKA_EnableKillSounds = true
 
 local function ShowResetStatsConfirmation()
     StaticPopupDialogs["PKA_RESET_STATS"] = {
@@ -79,7 +79,7 @@ local function CreateSectionHeader(parent, text, xOffset, yOffset)
     header:SetText(text)
     header:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
 
-    
+
     local line = parent:CreateTexture(nil, "ARTWORK")
     line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
     line:SetSize(parent:GetWidth() - (xOffset * 2), 1)
@@ -196,7 +196,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     autoBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    
+
     local manualBGMode, manualBGModeLabel = CreateCheckbox(parent, "Force Battleground Mode",
         PKA_BattlegroundMode, function(checked)
             PKA_BattlegroundMode = checked
@@ -206,7 +206,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     manualBGMode:SetPoint("TOPLEFT", autoBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.manualBGMode = manualBGMode
 
-    
+
     manualBGMode:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Force Battleground Mode")
@@ -218,7 +218,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     manualBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    
+
     local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements to party chat",
         PKA_EnableKillAnnounce, function(checked)
             PKA_EnableKillAnnounce = checked
@@ -227,7 +227,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     enableKillAnnounce:SetPoint("TOPLEFT", manualBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillAnnounce = enableKillAnnounce
 
-    
+
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
         PKA_EnableRecordAnnounce, function(checked)
             PKA_EnableRecordAnnounce = checked
@@ -236,13 +236,13 @@ local function CreateAnnouncementSection(parent, yOffset)
     enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableRecordAnnounce = enableRecordAnnounce
 
-    
+
     local enableKillSounds, enableKillSoundsLabel = CreateCheckbox(parent, "Enable multi-kill sound effects",
         PKA_EnableKillSounds, function(checked)
             PKA_EnableKillSounds = checked
             PKA_SaveSettings()
         end)
-    enableKillSounds:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  
+    enableKillSounds:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillSounds = enableKillSounds
 
 
@@ -274,7 +274,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     desc:SetJustifyH("LEFT")
     desc:SetWidth(350)
 
-    return 220 
+    return 220
 end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
@@ -380,7 +380,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 650) 
+    frame:SetSize(600, 650)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -434,7 +434,7 @@ function PKA_UpdateConfigUI()
     if configFrame.editBoxes then
         configFrame.editBoxes.killMsg:SetText(PKA_KillAnnounceMessage)
         configFrame.editBoxes.streakEnded:SetText(PKA_KillStreakEndedMessage)
-        configFrame.editBoxes.newStreak.SetText(PKA_NewStreakRecordMessage)
+        configFrame.editBoxes.newStreak:SetText(PKA_NewStreakRecordMessage)
         configFrame.editBoxes.multiKill:SetText(PKA_NewMultiKillRecordMessage)
     end
 
