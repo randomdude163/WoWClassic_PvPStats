@@ -177,6 +177,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         PKA_AutoBattlegroundMode, function(checked)
             PKA_AutoBattlegroundMode = checked
             PKA_SaveSettings()
+            PKA_CheckBattlegroundStatus()  -- Call this to apply the change immediately
         end)
     autoBGMode:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
     parent.autoBGMode = autoBGMode
@@ -198,6 +199,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         PKA_BattlegroundMode, function(checked)
             PKA_BattlegroundMode = checked
             PKA_SaveSettings()
+            PKA_CheckBattlegroundStatus()  -- Call this to apply the change immediately
         end)
     manualBGMode:SetPoint("TOPLEFT", autoBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  -- Reduced spacing
     parent.manualBGMode = manualBGMode
