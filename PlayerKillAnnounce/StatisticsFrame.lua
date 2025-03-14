@@ -881,15 +881,23 @@ function PKA_CreateStatisticsFrame()
     createSummaryStats(statsFrame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth, 250)
 end
 
-local originalSlashHandler = PKA_SlashCommandHandler
-function PKA_SlashCommandHandler(msg)
-    local command, rest = msg:match("^(%S*)%s*(.-)$")
-    command = string.lower(command or "")
+-- Hook into the slash command handler if it exists already
+if not StatisticsFrame_OriginalSlashHandler and PKA_SlashCommandHandler then
+    StatisticsFrame_OriginalSlashHandler = PKA_SlashCommandHandler
 
-    if command == "statistics" or command == "stat" or command == "stats" then
-        PKA_CreateStatisticsFrame()
-    else
-        originalSlashHandler(msg)
+    function PKA_SlashCommandHandler(msg)
+        local command, rest = msg:match("^(%S*)%s*(.-)$")
+        command = string.lower(command or "")
+
+        if command == "stats" or command == "kills" then
+            PKA_CreateKillStatsFrame()
+        elseif StatisticsFrame_OriginalSlashHandler then
+            StatisticsFrame_OriginalSlashHandler(msg)
+        else
+            -- Fallback if original handler somehow became nil
+            print("Error: Original command handler not found.")
+            PrintSlashCommandUsage()
+        end
     end
 end
 

@@ -43,6 +43,8 @@ local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka death - Simulate player death (resets kill streak)", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka bgmode - Toggle battleground mode manually", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka toggledebug - Toggle debug messages", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka testguid - Test your GUID detection for debugging", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debugevents - Enhanced combat log debugging for 30 seconds", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 local function PrintStatus()
@@ -364,6 +366,10 @@ function PKA_SlashCommandHandler(msg)
         PKA_CheckBattlegroundStatus()
         DEFAULT_CHAT_FRAME:AddMessage("Manual Battleground Mode " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
         PKA_SaveSettings()
+    elseif command == "testguid" then
+        PKA_DebugPlayerGUID()
+    elseif command == "debugevents" then
+        PKA_DebugEvents()
     else
         PrintSlashCommandUsage()
     end
@@ -413,50 +419,79 @@ local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceNam
         return
     end
 
-    local playerKill = false
-
-    -- In battleground mode, only count direct player kills
-    if PKA_InBattleground then
-        if sourceGUID and sourceGUID == UnitGUID("player") then
-            playerKill = true
-            -- Note: not counting pet kills yet as requested
-        end
-    else
-        -- Normal mode: count player, party or nearby combat kills
-        if sourceGUID and (sourceGUID == UnitGUID("player") or UnitInParty(sourceName) or UnitInRaid(sourceName)) then
-            playerKill = true
-        end
-
-        if UnitAffectingCombat("player") then
-            playerKill = true
-        end
+    -- Debug output to help troubleshoot
+    if PKA_Debug then
+        print("Processing death of " .. destName)
+        print("Source GUID: " .. (sourceGUID or "nil"))
+        print("Source Name: " .. (sourceName or "nil"))
+        print("Player GUID: " .. (UnitGUID("player") or "nil"))
+        print("Player Name: " .. (UnitName("player") or "nil"))
+        print("BG Mode: " .. (PKA_InBattleground and "Active" or "Inactive"))
     end
 
-    if playerKill then
-        RegisterPlayerKill(destName, level, englishClass, race, gender, guild)
-    end
+    -- At this point, we've already verified that this kill should count
+    RegisterPlayerKill(destName, level, englishClass, race, gender, guild)
 end
 
 local function HandleCombatLogEvent()
-    local timestamp, combatEvent, _, sourceGUID, sourceName, sourceFlags, _, destGUID, destName, destFlags = CombatLogGetCurrentEventInfo()
+    local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
+          destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
 
+    -- Debug all events for player kills for analysis
+    if PKA_Debug and
+       (combatEvent == "UNIT_DIED" or combatEvent == "PARTY_KILL") and
+       bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+       bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+
+        print("DEBUG: " .. combatEvent .. " event detected")
+        print("Source GUID: " .. (sourceGUID or "nil"))
+        print("Source Name: " .. (sourceName or "nil"))
+        print("Player GUID: " .. (UnitGUID("player") or "nil"))
+        print("Player Name: " .. (UnitName("player") or "nil"))
+        print("Target Killed: " .. (destName or "nil"))
+    end
+
+    -- Check for player death first
     if combatEvent == "UNIT_DIED" and destGUID == UnitGUID("player") then
         HandlePlayerDeath()
         return
     end
 
-    if sourceName and bit.band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER then
+    -- Process player info for cache
+    if sourceName and bit.band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
         PKA_UpdatePlayerInfoCache(sourceName, sourceGUID, nil, nil, nil, nil, nil)
     end
 
-    if destName and bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER then
+    if destName and bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
         PKA_UpdatePlayerInfoCache(destName, destGUID, nil, nil, nil, nil, nil)
     end
 
-    if combatEvent == "UNIT_DIED" then
-        if bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER and
-           bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE then
+    -- Process enemy player deaths using PARTY_KILL event only
+    if combatEvent == "PARTY_KILL" and
+       bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+       bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
 
+        local playerGUID = UnitGUID("player")
+        local countKill = false
+
+        -- In BG mode, only count player's own kills
+        if PKA_InBattleground then
+            if sourceGUID == playerGUID then
+                countKill = true
+                if PKA_Debug then print("BG Mode: Player killing blow") end
+            end
+        -- In normal mode, count kills by player and party/raid members
+        else
+            if sourceGUID == playerGUID then
+                countKill = true
+                if PKA_Debug then print("Normal Mode: Player killing blow") end
+            elseif UnitInParty(sourceName) or UnitInRaid(sourceName) then
+                countKill = true
+                if PKA_Debug then print("Normal Mode: Party/Raid member killing blow") end
+            end
+        end
+
+        if countKill then
             ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
         end
     end
@@ -654,4 +689,44 @@ function PKA_SaveSettings()
     -- Save new battleground settings
     PlayerKillAnnounceDB.AutoBattlegroundMode = PKA_AutoBattlegroundMode
     PlayerKillAnnounceDB.BattlegroundMode = PKA_BattlegroundMode
+end
+
+function PKA_DebugPlayerGUID()
+    local playerGUID = UnitGUID("player")
+    print("Your player GUID is: " .. (playerGUID or "nil"))
+    print("BG Mode is: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"))
+    print("Next time you kill someone in a BG, it should be registered")
+end
+
+-- Add this function near your other debug functions
+function PKA_DebugEvents()
+    print("Enabling enhanced combat log debugging for 30 seconds...")
+
+    -- Store the original combat log handler
+    local originalHandler = HandleCombatLogEvent
+
+    -- Replace with our debug version temporarily
+    HandleCombatLogEvent = function()
+        local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
+              destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
+
+        -- Print out kill-related events
+        if (combatEvent == "UNIT_DIED" or combatEvent == "PARTY_KILL") and
+           bit.band(destFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER or 0) > 0 then
+            print("EVENT: " .. combatEvent)
+            print("SOURCE: " .. (sourceName or "nil") .. " (" .. (sourceGUID or "nil") .. ")")
+            print("TARGET: " .. (destName or "nil") .. " (" .. (destGUID or "nil") .. ")")
+            print("FLAGS: source=" .. (sourceFlags or 0) .. ", dest=" .. (destFlags or 0))
+            print("-----------------------------------")
+        end
+
+        -- Still call the original handler
+        originalHandler()
+    end
+
+    -- Reset after 30 seconds
+    C_Timer.After(30, function()
+        print("Combat log debugging ended.")
+        HandleCombatLogEvent = originalHandler
+    end)
 end
