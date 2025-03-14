@@ -21,6 +21,9 @@ PKA_LastCombatTime = 0
 PKA_EnableRecordAnnounce = true
 PKA_MultiKillThreshold = 3
 PKA_MILESTONE_STREAKS = {25, 50, 75, 100, 150, 200, 250, 300}
+PKA_AutoBattlegroundMode = true  -- Auto-detect BGs
+PKA_BattlegroundMode = false     -- Manual override for BG mode
+PKA_InBattleground = false       -- Current BG state
 
 local PKA_CHAT_MESSAGE_R = 1.0
 local PKA_CHAT_MESSAGE_G = 1.0
@@ -29,6 +32,7 @@ local PKA_CHAT_MESSAGE_B = 0.74
 -- State tracking variables
 local inCombat = false
 local killStreakMilestoneFrame = nil
+PKA_Debug = false  -- Debug mode for extra messages
 
 local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka config - Open configuration UI", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
@@ -37,6 +41,8 @@ local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debug - Show current streak values", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka registerkill [number] - Register test kill(s) for testing", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka death - Simulate player death (resets kill streak)", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka bgmode - Toggle battleground mode manually", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka toggledebug - Toggle debug messages", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 local function PrintStatus()
@@ -48,6 +54,9 @@ local function PrintStatus()
     DEFAULT_CHAT_FRAME:AddMessage("New multi-kill record message: " .. PKA_NewMultiKillRecordMessage, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Multi-kill announcement threshold: " .. PKA_MultiKillThreshold, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Record announcements: " .. (PKA_EnableRecordAnnounce and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Battleground Mode: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Auto BG Detection: " .. (PKA_AutoBattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Manual BG Mode: " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 local function ShowDebugInfo()
@@ -56,14 +65,9 @@ local function ShowDebugInfo()
     DEFAULT_CHAT_FRAME:AddMessage("Current Multi-kill Count: " .. PKA_MultiKillCount, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Highest Multi-kill: " .. PKA_HighestMultiKill, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Multi-kill Announcement Threshold: " .. PKA_MultiKillThreshold, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-
-    local currentTime = GetTime()
-    local timeRemaining = math.max(0, (PKA_LastCombatTime + PKA_MULTI_KILL_WINDOW) - currentTime)
-    if timeRemaining > 0 then
-        DEFAULT_CHAT_FRAME:AddMessage(string.format("Multi-kill window: %.1f seconds remaining", timeRemaining), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    else
-        DEFAULT_CHAT_FRAME:AddMessage("Multi-kill window: expired", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    end
+    DEFAULT_CHAT_FRAME:AddMessage("Battleground Mode: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Auto BG Detection: " .. (PKA_AutoBattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    DEFAULT_CHAT_FRAME:AddMessage("Manual BG Mode: " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
@@ -172,7 +176,8 @@ local function GetMultiKillText(count)
 end
 
 local function AnnounceKill(killedPlayer, level, nameWithLevel)
-    if not PKA_EnableKillAnnounce or not IsInGroup() then return end
+    -- Don't announce in battleground mode or if announcements are disabled
+    if PKA_InBattleground or not PKA_EnableKillAnnounce or not IsInGroup() then return end
 
     local killMessage = PKA_KillAnnounceMessage and string.gsub(PKA_KillAnnounceMessage, "Enemyplayername", killedPlayer) or
                         string.gsub(PlayerKillMessageDefault, "Enemyplayername", killedPlayer)
@@ -338,6 +343,9 @@ function PKA_SlashCommandHandler(msg)
         PKA_CreateKillStatsFrame()
     elseif command == "debug" then
         ShowDebugInfo()
+    elseif command == "toggledebug" then
+        PKA_Debug = not PKA_Debug
+        DEFAULT_CHAT_FRAME:AddMessage("Debug mode " .. (PKA_Debug and "enabled" or "disabled"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     elseif command == "registerkill" then
         local testKillCount = 1
 
@@ -351,6 +359,11 @@ function PKA_SlashCommandHandler(msg)
         SimulatePlayerKills(testKillCount)
     elseif command == "death" then
         SimulatePlayerDeath()
+    elseif command == "bgmode" then
+        PKA_BattlegroundMode = not PKA_BattlegroundMode
+        PKA_CheckBattlegroundStatus()
+        DEFAULT_CHAT_FRAME:AddMessage("Manual Battleground Mode " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+        PKA_SaveSettings()
     else
         PrintSlashCommandUsage()
     end
@@ -400,16 +413,26 @@ local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceNam
         return
     end
 
-    local playerOrPartyKill = false
-    if sourceGUID and (sourceGUID == UnitGUID("player") or UnitInParty(sourceName) or UnitInRaid(sourceName)) then
-        playerOrPartyKill = true
+    local playerKill = false
+
+    -- In battleground mode, only count direct player kills
+    if PKA_InBattleground then
+        if sourceGUID and sourceGUID == UnitGUID("player") then
+            playerKill = true
+            -- Note: not counting pet kills yet as requested
+        end
+    else
+        -- Normal mode: count player, party or nearby combat kills
+        if sourceGUID and (sourceGUID == UnitGUID("player") or UnitInParty(sourceName) or UnitInRaid(sourceName)) then
+            playerKill = true
+        end
+
+        if UnitAffectingCombat("player") then
+            playerKill = true
+        end
     end
 
-    if UnitAffectingCombat("player") then
-        playerOrPartyKill = true
-    end
-
-    if playerOrPartyKill then
+    if playerKill then
         RegisterPlayerKill(destName, level, englishClass, race, gender, guild)
     end
 end
@@ -546,11 +569,13 @@ function RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_LOGOUT")
+    playerKillAnnounceFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")  -- Add zone change event
 
     playerKillAnnounceFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
             PKA_LoadSettings()
             inCombat = UnitAffectingCombat("player")
+            PKA_CheckBattlegroundStatus()  -- Check BG status on login/reload
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -565,6 +590,68 @@ function RegisterEvents()
             HandleCombatState(false)
         elseif event == "PLAYER_LOGOUT" then
             PKA_CleanupDatabase()
+        elseif event == "ZONE_CHANGED_NEW_AREA" then
+            PKA_CheckBattlegroundStatus()  -- Check BG status on zone change
         end
     end)
+end
+
+-- Add after the RegisterEvents function
+function PKA_CheckBattlegroundStatus()
+    if not PKA_AutoBattlegroundMode then
+        PKA_InBattleground = PKA_BattlegroundMode
+        return PKA_InBattleground
+    end
+
+    -- Get current zone
+    local currentZone = GetRealZoneText() or ""
+
+    -- List of battleground zones
+    local battlegroundZones = {
+        "Warsong Gulch",
+        "Arathi Basin",
+        "Alterac Valley",
+        -- Add other BGs if needed
+    }
+
+    -- Check if current zone is a battleground
+    for _, bgName in ipairs(battlegroundZones) do
+        if currentZone == bgName then
+            PKA_InBattleground = true
+            if PKA_Debug and not PKA_LastBattlegroundState then
+                print("PlayerKillAnnounce: Entered battleground. Only direct kills will be counted.")
+            end
+            PKA_LastBattlegroundState = true
+            return true
+        end
+    end
+
+    -- Not in a battleground
+    if PKA_Debug and PKA_LastBattlegroundState then
+        print("PlayerKillAnnounce: Left battleground. Normal kill tracking active.")
+    end
+    PKA_LastBattlegroundState = false
+    PKA_InBattleground = PKA_BattlegroundMode
+    return PKA_InBattleground
+end
+
+function PKA_SaveSettings()
+    -- Save existing settings
+    PlayerKillAnnounceDB = PlayerKillAnnounceDB or {}
+    PlayerKillAnnounceDB.KillAnnounceMessage = PKA_KillAnnounceMessage
+    PlayerKillAnnounceDB.KillCounts = PKA_KillCounts
+    PlayerKillAnnounceDB.CurrentKillStreak = PKA_CurrentKillStreak
+    PlayerKillAnnounceDB.HighestKillStreak = PKA_HighestKillStreak
+    PlayerKillAnnounceDB.EnableKillAnnounce = PKA_EnableKillAnnounce
+    PlayerKillAnnounceDB.KillStreakEndedMessage = PKA_KillStreakEndedMessage
+    PlayerKillAnnounceDB.NewStreakRecordMessage = PKA_NewStreakRecordMessage
+    PlayerKillAnnounceDB.NewMultiKillRecordMessage = PKA_NewMultiKillRecordMessage
+    PlayerKillAnnounceDB.EnableRecordAnnounce = PKA_EnableRecordAnnounce
+    PlayerKillAnnounceDB.MultiKillThreshold = PKA_MultiKillThreshold
+    PlayerKillAnnounceDB.MultiKillCount = PKA_MultiKillCount
+    PlayerKillAnnounceDB.HighestMultiKill = PKA_HighestMultiKill
+
+    -- Save new battleground settings
+    PlayerKillAnnounceDB.AutoBattlegroundMode = PKA_AutoBattlegroundMode
+    PlayerKillAnnounceDB.BattlegroundMode = PKA_BattlegroundMode
 end

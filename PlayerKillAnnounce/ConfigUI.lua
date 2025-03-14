@@ -14,9 +14,9 @@ local PKA_CONFIG_HEADER_G = 0.82
 local PKA_CONFIG_HEADER_B = 0.0
 
 local SECTION_TOP_MARGIN = 30
-local SECTION_SPACING = 20 -- Reduced from 100 to 20
-local HEADER_ELEMENT_SPACING = 10
-local CHECKBOX_SPACING = 0
+local SECTION_SPACING = 40
+local HEADER_ELEMENT_SPACING = 15
+local CHECKBOX_SPACING = 5      -- Reduced from 8 to 5 for tighter checkbox spacing
 local FIELD_SPACING = 5
 local BUTTON_BOTTOM_MARGIN = 20
 
@@ -170,28 +170,73 @@ end
 
 local function CreateAnnouncementSection(parent, yOffset)
     local header, line = CreateSectionHeader(parent, "Announcement Settings", 20, yOffset)
+    local currentY = yOffset
 
-    -- Store the checkbox reference in the parent frame
+    -- Auto BG Mode checkbox with tooltip
+    local autoBGMode, autoBGModeLabel = CreateCheckbox(parent, "Auto Battleground Mode (No announcements, only killing blows count)",
+        PKA_AutoBattlegroundMode, function(checked)
+            PKA_AutoBattlegroundMode = checked
+            PKA_SaveSettings()
+        end)
+    autoBGMode:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    parent.autoBGMode = autoBGMode
+
+    -- Add tooltip for Auto BG Mode
+    autoBGMode:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Auto Battleground Mode")
+        GameTooltip:AddLine("Automatically detects when you enter battlegrounds.", 1, 1, 1, true)
+        GameTooltip:AddLine("In battlegrounds:", 1, 1, 1, true)
+        GameTooltip:AddLine("• Only your or your pet's killing blows count", 1, 1, 1, true)
+        GameTooltip:AddLine("• No messages are posted to group chat", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    autoBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- Manual BG Mode checkbox with tooltip
+    local manualBGMode, manualBGModeLabel = CreateCheckbox(parent, "Force Battleground Mode",
+        PKA_BattlegroundMode, function(checked)
+            PKA_BattlegroundMode = checked
+            PKA_SaveSettings()
+        end)
+    manualBGMode:SetPoint("TOPLEFT", autoBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  -- Reduced spacing
+    parent.manualBGMode = manualBGMode
+
+    -- Add tooltip for Manual BG Mode
+    manualBGMode:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Force Battleground Mode")
+        GameTooltip:AddLine("Enable battleground conditions anywhere in the world.", 1, 1, 1, true)
+        GameTooltip:AddLine("When enabled:", 1, 1, 1, true)
+        GameTooltip:AddLine("• Only your or your pet's killing blows are counted", 1, 1, 1, true)
+        GameTooltip:AddLine("• Prevents chat spam in crowded PvP situations", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    manualBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- Enable Kill Announcements checkbox
     local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements",
         PKA_EnableKillAnnounce, function(checked)
             PKA_EnableKillAnnounce = checked
             PKA_SaveSettings()
         end)
-    enableKillAnnounce:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
-    parent.enableKillAnnounce = enableKillAnnounce -- Store reference in parent
+    enableKillAnnounce:SetPoint("TOPLEFT", manualBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  -- Reduced spacing
+    parent.enableKillAnnounce = enableKillAnnounce
 
+    -- Enable Record Announcements checkbox
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
         PKA_EnableRecordAnnounce, function(checked)
             PKA_EnableRecordAnnounce = checked
             PKA_SaveSettings()
         end)
-    enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
-    parent.enableRecordAnnounce = enableRecordAnnounce -- Store reference in parent
+    enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  -- Reduced spacing
+    parent.enableRecordAnnounce = enableRecordAnnounce
 
+    -- Multi-kill threshold slider
     local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(16)
-    slider:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 20, -30)
+    slider:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 40, -20)  -- Position below checkboxes
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(2, 10)
     slider:SetValueStep(1)
@@ -199,7 +244,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     getglobal(slider:GetName() .. "Low"):SetText("Double")
     getglobal(slider:GetName() .. "High"):SetText("Deca")
     getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
-    parent.multiKillSlider = slider -- Store reference in parent
+    parent.multiKillSlider = slider
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
@@ -209,16 +254,20 @@ local function CreateAnnouncementSection(parent, yOffset)
         PKA_SaveSettings()
     end)
 
+    -- Slider description
     local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     desc:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -5)
     desc:SetText("Set the minimum multi-kill count to announce in party chat")
     desc:SetJustifyH("LEFT")
     desc:SetWidth(350)
 
-    return 150 -- Approximate height of this section
+    return 200  -- Increased return height to account for slider section
 end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
+    -- Add extra spacing before the Party Messages section
+    yOffset = yOffset - 10  -- Added 10 pixels of extra space
+
     local header, line = CreateSectionHeader(parent, "Party Messages", 20, yOffset)
 
     local killMsgContainer, killMsgEditBox = CreateInputField(
@@ -315,7 +364,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 500)
+    frame:SetSize(600, 570)   -- Increased height from 550 to 570
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -369,7 +418,7 @@ function PKA_UpdateConfigUI()
     if configFrame.editBoxes then
         configFrame.editBoxes.killMsg:SetText(PKA_KillAnnounceMessage)
         configFrame.editBoxes.streakEnded:SetText(PKA_KillStreakEndedMessage)
-        configFrame.editBoxes.newStreak:SetText(PKA_NewStreakRecordMessage)
+        configFrame.editBoxes.newStreak.SetText(PKA_NewStreakRecordMessage)
         configFrame.editBoxes.multiKill:SetText(PKA_NewMultiKillRecordMessage)
     end
 
@@ -388,7 +437,7 @@ function PKA_CreateConfigFrame()
 
     local currentY = -SECTION_TOP_MARGIN
     local announcementHeight = CreateAnnouncementSection(configFrame, currentY)
-    currentY = currentY - announcementHeight - SECTION_SPACING
+    currentY = currentY - announcementHeight - SECTION_SPACING - 10  -- Added 10 pixels of extra space
     configFrame.editBoxes = CreateMessageTemplatesSection(configFrame, currentY)
 
     CreateActionButtons(configFrame)
