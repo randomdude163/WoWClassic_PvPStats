@@ -247,6 +247,24 @@ local function GetMultiKillText(count)
         "NONA KILL!"
     }
 
+    -- Play sound based on kill count if enabled
+    if PKA_EnableKillSounds then
+        local soundFile
+        if count == 2 then
+            soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\double_kill.mp3"
+        elseif count == 3 then
+            soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\triple_kill.mp3"
+        elseif count == 4 then
+            soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\quadra_kill.mp3"
+        elseif count == 5 then
+            soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\penta_kill.mp3"
+        end
+        
+        if soundFile then
+            PlaySoundFile(soundFile, "Master")
+        end
+    end
+
     if count <= 9 then
         return killTexts[count - 1]
     else
@@ -940,6 +958,30 @@ function PKA_SaveSettings()
     -- Save new battleground settings
     PlayerKillAnnounceDB.AutoBattlegroundMode = PKA_AutoBattlegroundMode
     PlayerKillAnnounceDB.BattlegroundMode = PKA_BattlegroundMode
+    PlayerKillAnnounceDB.EnableKillSounds = PKA_EnableKillSounds
+end
+
+function PKA_LoadSettings()
+    -- Load existing settings
+    PlayerKillAnnounceDB = PlayerKillAnnounceDB or {}
+    PKA_KillAnnounceMessage = PlayerKillAnnounceDB.KillAnnounceMessage or PlayerKillMessageDefault
+    PKA_KillCounts = PlayerKillAnnounceDB.KillCounts or {}
+    PKA_CurrentKillStreak = PlayerKillAnnounceDB.CurrentKillStreak or 0
+    PKA_HighestKillStreak = PlayerKillAnnounceDB.HighestKillStreak or 0
+    PKA_EnableKillAnnounce = PlayerKillAnnounceDB.EnableKillAnnounce ~= false
+    PKA_KillStreakEndedMessage = PlayerKillAnnounceDB.KillStreakEndedMessage or KillStreakEndedMessageDefault
+    PKA_NewStreakRecordMessage = PlayerKillAnnounceDB.NewStreakRecordMessage or NewStreakRecordMessageDefault
+    PKA_NewMultiKillRecordMessage = PlayerKillAnnounceDB.NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault
+    PKA_EnableRecordAnnounce = PlayerKillAnnounceDB.EnableRecordAnnounce ~= false
+    PKA_MultiKillThreshold = PlayerKillAnnounceDB.MultiKillThreshold or 3
+    PKA_MultiKillCount = PlayerKillAnnounceDB.MultiKillCount or 0
+    PKA_HighestMultiKill = PlayerKillAnnounceDB.HighestMultiKill or 0
+
+    -- Load new battleground settings
+    PKA_AutoBattlegroundMode = PlayerKillAnnounceDB.AutoBattlegroundMode ~= false
+    PKA_BattlegroundMode = PlayerKillAnnounceDB.BattlegroundMode ~= false
+    PKA_EnableKillSounds = PlayerKillAnnounceDB.EnableKillSounds
+    if PKA_EnableKillSounds == nil then PKA_EnableKillSounds = true end  -- Default to enabled
 end
 
 function PKA_DebugPlayerGUID()

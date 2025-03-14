@@ -16,9 +16,11 @@ local PKA_CONFIG_HEADER_B = 0.0
 local SECTION_TOP_MARGIN = 30
 local SECTION_SPACING = 40
 local HEADER_ELEMENT_SPACING = 15
-local CHECKBOX_SPACING = 5      -- Reduced from 8 to 5 for tighter checkbox spacing
+local CHECKBOX_SPACING = 5    
 local FIELD_SPACING = 5
 local BUTTON_BOTTOM_MARGIN = 20
+
+PKA_EnableKillSounds = true 
 
 local function ShowResetStatsConfirmation()
     StaticPopupDialogs["PKA_RESET_STATS"] = {
@@ -77,7 +79,7 @@ local function CreateSectionHeader(parent, text, xOffset, yOffset)
     header:SetText(text)
     header:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
 
-    -- Add a horizontal line below the header
+    
     local line = parent:CreateTexture(nil, "ARTWORK")
     line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
     line:SetSize(parent:GetWidth() - (xOffset * 2), 1)
@@ -177,7 +179,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         PKA_AutoBattlegroundMode, function(checked)
             PKA_AutoBattlegroundMode = checked
             PKA_SaveSettings()
-            PKA_CheckBattlegroundStatus()  -- Call this to apply the change immediately
+            PKA_CheckBattlegroundStatus()
         end)
     autoBGMode:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
     parent.autoBGMode = autoBGMode
@@ -194,17 +196,17 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     autoBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Manual BG Mode checkbox with tooltip
+    
     local manualBGMode, manualBGModeLabel = CreateCheckbox(parent, "Force Battleground Mode",
         PKA_BattlegroundMode, function(checked)
             PKA_BattlegroundMode = checked
             PKA_SaveSettings()
-            PKA_CheckBattlegroundStatus()  -- Call this to apply the change immediately
+            PKA_CheckBattlegroundStatus()
         end)
-    manualBGMode:SetPoint("TOPLEFT", autoBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  -- Reduced spacing
+    manualBGMode:SetPoint("TOPLEFT", autoBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.manualBGMode = manualBGMode
 
-    -- Add tooltip for Manual BG Mode
+    
     manualBGMode:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Force Battleground Mode")
@@ -216,29 +218,38 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     manualBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Enable Kill Announcements checkbox
-    local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements",
+    
+    local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements to party chat",
         PKA_EnableKillAnnounce, function(checked)
             PKA_EnableKillAnnounce = checked
             PKA_SaveSettings()
         end)
-    enableKillAnnounce:SetPoint("TOPLEFT", manualBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  -- Reduced spacing
+    enableKillAnnounce:SetPoint("TOPLEFT", manualBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillAnnounce = enableKillAnnounce
 
-    -- Enable Record Announcements checkbox
+    
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
         PKA_EnableRecordAnnounce, function(checked)
             PKA_EnableRecordAnnounce = checked
             PKA_SaveSettings()
         end)
-    enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  -- Reduced spacing
+    enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableRecordAnnounce = enableRecordAnnounce
 
-    -- Multi-kill threshold slider
+    
+    local enableKillSounds, enableKillSoundsLabel = CreateCheckbox(parent, "Enable multi-kill sound effects",
+        PKA_EnableKillSounds, function(checked)
+            PKA_EnableKillSounds = checked
+            PKA_SaveSettings()
+        end)
+    enableKillSounds:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)  
+    parent.enableKillSounds = enableKillSounds
+
+
     local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(16)
-    slider:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 40, -20)  -- Position below checkboxes
+    slider:SetPoint("TOPLEFT", enableKillSounds, "BOTTOMLEFT", 40, -20)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(2, 10)
     slider:SetValueStep(1)
@@ -263,12 +274,12 @@ local function CreateAnnouncementSection(parent, yOffset)
     desc:SetJustifyH("LEFT")
     desc:SetWidth(350)
 
-    return 200  -- Increased return height to account for slider section
+    return 220 
 end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
     -- Add extra spacing before the Party Messages section
-    yOffset = yOffset - 10  -- Added 10 pixels of extra space
+    yOffset = yOffset - 35
 
     local header, line = CreateSectionHeader(parent, "Party Messages", 20, yOffset)
 
@@ -330,28 +341,31 @@ local function CreateMessageTemplatesSection(parent, yOffset)
 end
 
 local function CreateActionButtons(parent)
+    local buttonBar = CreateFrame("Frame", nil, parent)
+    buttonBar:SetSize(parent:GetWidth() - 40, 30)
+    buttonBar:SetPoint("BOTTOM", parent, "BOTTOM", 0, 0)  -- Increased from 10 to 20 (+10)
+
     -- Calculate button widths and spacing
     local buttonWidth = 120
     local spacing = 10
     local margin = 20
 
-    -- Create buttons starting from left side
-    local showStatsBtn = CreateButton(parent, "Show Statistics", buttonWidth, 22, function()
+    local showStatsBtn = CreateButton(buttonBar, "Show Statistics", buttonWidth, 22, function()
         PKA_CreateStatisticsFrame()
     end)
-    showStatsBtn:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", margin, BUTTON_BOTTOM_MARGIN)
+    showStatsBtn:SetPoint("BOTTOMLEFT", buttonBar, "BOTTOMLEFT", margin, BUTTON_BOTTOM_MARGIN)
 
-    local killsListBtn = CreateButton(parent, "Show Kills List", buttonWidth, 22, function()
+    local killsListBtn = CreateButton(buttonBar, "Show Kills List", buttonWidth, 22, function()
         PKA_CreateKillStatsFrame()
     end)
     killsListBtn:SetPoint("LEFT", showStatsBtn, "RIGHT", spacing, 0)
 
-    local resetStatsBtn = CreateButton(parent, "Reset Statistics", buttonWidth, 22, function()
+    local resetStatsBtn = CreateButton(buttonBar, "Reset Statistics", buttonWidth, 22, function()
         ShowResetStatsConfirmation()
     end)
     resetStatsBtn:SetPoint("LEFT", killsListBtn, "RIGHT", spacing, 0)
 
-    local defaultsBtn = CreateButton(parent, "Reset to Defaults", buttonWidth, 22, function()
+    local defaultsBtn = CreateButton(buttonBar, "Reset to Defaults", buttonWidth, 22, function()
         ShowResetDefaultsConfirmation()
     end)
     defaultsBtn:SetPoint("LEFT", resetStatsBtn, "RIGHT", spacing, 0)
@@ -366,7 +380,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 570)   -- Increased height from 550 to 570
+    frame:SetSize(600, 650) 
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -439,7 +453,7 @@ function PKA_CreateConfigFrame()
 
     local currentY = -SECTION_TOP_MARGIN
     local announcementHeight = CreateAnnouncementSection(configFrame, currentY)
-    currentY = currentY - announcementHeight - SECTION_SPACING - 10  -- Added 10 pixels of extra space
+    currentY = currentY - announcementHeight - SECTION_SPACING - 20
     configFrame.editBoxes = CreateMessageTemplatesSection(configFrame, currentY)
 
     CreateActionButtons(configFrame)
