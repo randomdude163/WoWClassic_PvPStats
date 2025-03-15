@@ -168,20 +168,60 @@ local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gende
             lastKill = "",
             playerLevel = playerLevel or -1,
             unknownLevel = false,
-            zone = currentZone
+            zone = currentZone,
+            killLocations = {} -- Initialize empty array for kill locations
         }
     end
 end
 
 local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, isUnknownLevel)
     PKA_KillCounts[nameWithLevel].kills = PKA_KillCounts[nameWithLevel].kills + 1
-    PKA_KillCounts[nameWithLevel].lastKill = date("%Y-%m-%d %H:%M:%S")
+    local timestamp = date("%Y-%m-%d %H:%M:%S")
+    PKA_KillCounts[nameWithLevel].lastKill = timestamp
     PKA_KillCounts[nameWithLevel].playerLevel = playerLevel or -1
 
+    -- Ensure zone is captured correctly
     local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
     PKA_KillCounts[nameWithLevel].zone = currentZone
 
-    -- Update additional info if available
+    -- Get current map position
+    local mapID = C_Map.GetBestMapForUnit("player")
+    local position = nil
+    if mapID then
+        position = C_Map.GetPlayerMapPosition(mapID, "player")
+    end
+
+    -- Create a location record with coordinates
+    if mapID and position and position.x and position.y then
+        local x = position.x * 100
+        local y = position.y * 100
+
+        -- Ensure the killLocations array exists
+        PKA_KillCounts[nameWithLevel].killLocations = PKA_KillCounts[nameWithLevel].killLocations or {}
+
+        -- Add new location record
+        table.insert(PKA_KillCounts[nameWithLevel].killLocations, {
+            timestamp = timestamp,
+            zone = currentZone,
+            mapID = mapID,
+            x = x,
+            y = y,
+            killNumber = PKA_KillCounts[nameWithLevel].kills
+        })
+
+        -- Debug info
+        if PKA_Debug then
+            print(string.format("Kill recorded at %s (%.4f, %.4f) in %s (Map ID: %d)",
+                timestamp, x, y, currentZone, mapID))
+        end
+    else
+        -- Log error if we couldn't get position
+        if PKA_Debug then
+            print("Failed to get player position for kill location")
+        end
+    end
+
+    -- Update other player information if available
     if race and race ~= "Unknown" then PKA_KillCounts[nameWithLevel].race = race end
     if gender and gender ~= "Unknown" then PKA_KillCounts[nameWithLevel].gender = gender end
     if guild and guild ~= "" then PKA_KillCounts[nameWithLevel].guild = guild end
@@ -409,9 +449,6 @@ local function SimulatePlayerKills(killCount)
         "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin", "Alterac Valley"
     }
 
-    -- Save the original zone for restoration after simulation
-    local originalZone = GetRealZoneText() or "Unknown"
-
     for i = 1, killCount do
         local randomName = randomNames[math.random(#randomNames)]
         local randomGuild = randomGuilds[math.random(#randomGuilds)]
@@ -429,8 +466,20 @@ local function SimulatePlayerKills(killCount)
         local originalGetRealZoneText = GetRealZoneText
         GetRealZoneText = function() return randomZone end
 
+        local randomX = 10.0 + (90.0 - 10.0) * math.random()
+        local randomY = 10.0 + (90.0 - 10.0) * math.random()
+
+        -- Override C_Map.GetPlayerMapPosition for this simulation
+        local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
+        C_Map.GetPlayerMapPosition = function(mapID, unit)
+            return {x = randomX, y = randomY}
+        end
+
         -- Register the kill with random data
         RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild)
+
+        -- Restore the original function
+        C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
 
         -- Restore the original function
         GetRealZoneText = originalGetRealZoneText
