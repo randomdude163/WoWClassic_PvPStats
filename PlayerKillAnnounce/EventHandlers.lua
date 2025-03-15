@@ -32,7 +32,7 @@ local PKA_CHAT_MESSAGE_B = 0.74
 -- State tracking variables
 local inCombat = false
 local killStreakMilestoneFrame = nil
-PKA_Debug = false  -- Debug mode for extra messages
+PKA_Debug = true  -- Debug mode for extra messages
 
 -- Add these variables at the top
 local PKA_RecentPetDamage = {}  -- Track recent pet damage
@@ -119,17 +119,49 @@ end
 -- After the other function declarations near the top
 
 -- Helper function to get honor rank from target
-local function GetTargetHonorRank()
-    -- Check if unit has PvP rank info
+local function GetHonorRank(unit)
     if not UnitPVPRank then return 0 end
 
-    local pvpRank = UnitPVPRank("target")
-    -- Classic returns ranks as 1-14 where 1=Unranked, 2=Rank 1, etc.
-    -- So we need to subtract 1 to get 0-13 range
-    if pvpRank and pvpRank > 0 then
-        return pvpRank - 1
+    -- First check the combat text for the actual rank name
+    local playerName = UnitName(unit)
+    if playerName and PKA_Debug then
+        print("Checking rank for player: " .. playerName)
     end
-    return 0
+
+    -- The rank text in the combat log message "X dies, honorable kill Rank: Y"
+    -- is more reliable than UnitPVPRank, which seems to be returning incorrect values
+
+    -- Get the raw PvP rank value
+    local pvpRank = UnitPVPRank(unit)
+
+    if PKA_Debug then
+        print("Raw UnitPVPRank value: " .. (pvpRank or "nil"))
+    end
+
+    -- Classic WoW API returns ranks differently depending on client version
+    -- Many versions return values like 0 for no rank and 16 for Corporal (rank 2)
+    -- We need to map these correctly
+
+    if pvpRank then
+        -- Map the raw API value to our 0-14 scale
+        if pvpRank == 0 then
+            return 0  -- No rank
+        elseif pvpRank >= 15 then
+            -- Some clients use index+14 for rank values
+            -- 15=Scout/Private (rank 1), 16=Corporal (rank 2), etc.
+            return pvpRank - 14
+        elseif pvpRank >= 1 and pvpRank <= 14 then
+            -- Direct mapping for clients that use 1-14 range
+            return pvpRank
+        end
+    end
+
+    return 0  -- Default: no rank
+end
+
+-- Replace GetTargetHonorRank with the new function
+local function GetTargetHonorRank()
+    return GetHonorRank("target")
 end
 
 local function PrintSlashCommandUsage()
@@ -198,8 +230,8 @@ local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLe
     PKA_KillCounts[nameWithLevel].lastKill = timestamp
     PKA_KillCounts[nameWithLevel].playerLevel = playerLevel or -1
 
-    -- Update rank if provided
-    if rank and rank > 0 then
+    -- Always update rank if provided (even if 0)
+    if rank ~= nil then
         PKA_KillCounts[nameWithLevel].rank = rank
     end
 
@@ -381,11 +413,19 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
         debugMsg = debugMsg .. " ("
     end
 
-    debugMsg = debugMsg .. englishClass .. ", " .. race .. ") - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
+    debugMsg = debugMsg .. englishClass .. ", " .. race .. ")"
+
+    -- Add rank info to debug message
+    local rank = PKA_KillCounts[nameWithLevel].rank or 0
+    if rank > 0 then
+        debugMsg = debugMsg .. " [Rank: " .. rank .. "]"
+    end
+
+    debugMsg = debugMsg .. " - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
     debugMsg = debugMsg .. " - Current streak: " .. PKA_CurrentKillStreak
     debugMsg = debugMsg .. " - Zone: " .. (PKA_KillCounts[nameWithLevel].zone or "Unknown")
 
-    -- Add info on who got the kill
+    -- Rest of function remains unchanged...
     if killerGUID and IsPetGUID(killerGUID) then
         debugMsg = debugMsg .. " - Kill by: Your Pet (" .. (killerName or "Unknown") .. ")"
     end
@@ -414,6 +454,31 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     -- Print debug message using the new function
     local debugMsg = CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel, killerGUID, killerName)
     print(debugMsg)
+
+    -- Add this inside the RegisterPlayerKill function, just before PKA_SaveSettings()
+    if PKA_Debug then
+        local rankName = "None"
+        if rank and rank > 0 then
+            local rankTitles = {
+                [1] = "Scout/Private",
+                [2] = "Grunt/Corporal",
+                [3] = "Sergeant",
+                [4] = "Master Sergeant",
+                [5] = "Sergeant Major",
+                [6] = "Knight/Stone Guard",
+                [7] = "Knight-Lieutenant/Blood Guard",
+                [8] = "Knight-Captain/Legionnaire",
+                [9] = "Knight-Champion/Centurion",
+                [10] = "Lieutenant Commander/Champion",
+                [11] = "Commander/Lieutenant General",
+                [12] = "Marshal/General",
+                [13] = "Field Marshal/Warlord",
+                [14] = "Grand Marshal/High Warlord"
+            }
+            rankName = rankTitles[rank] or ("Rank " .. rank)
+        end
+        print("Killed player rank: " .. rank .. " (" .. rankName .. ")")
+    end
 
     PKA_SaveSettings()
 end
@@ -486,6 +551,28 @@ local function SimulatePlayerKills(killCount)
             randomLevel = -1
         end
 
+        -- Generate random rank (0-14)
+        -- Higher chance for lower ranks, lower chance for high ranks
+        local rankChance = math.random(100)
+        local randomRank = 0
+
+        if rankChance <= 40 then
+            -- 40% chance for rank 0 (no rank)
+            randomRank = 0
+        elseif rankChance <= 70 then
+            -- 30% chance for ranks 1-4 (Private to Master Sergeant)
+            randomRank = math.random(1, 4)
+        elseif rankChance <= 90 then
+            -- 20% chance for ranks 5-8 (Sergeant Major to Knight-Captain)
+            randomRank = math.random(5, 8)
+        elseif rankChance <= 98 then
+            -- 8% chance for ranks 9-12 (Knight-Champion to Marshal)
+            randomRank = math.random(9, 12)
+        else
+            -- 2% chance for ranks 13-14 (Field Marshal and Grand Marshal)
+            randomRank = math.random(13, 14)
+        end
+
         -- Temporarily override GetRealZoneText to return our random zone
         local originalGetRealZoneText = GetRealZoneText
         GetRealZoneText = function() return randomZone end
@@ -496,16 +583,14 @@ local function SimulatePlayerKills(killCount)
         -- Override C_Map.GetPlayerMapPosition for this simulation
         local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
         C_Map.GetPlayerMapPosition = function(mapID, unit)
-            return {x = randomX, y = randomY}
+            return {x = randomX/100, y = randomY/100}
         end
 
-        -- Register the kill with random data
-        RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild)
+        -- Register the kill with random data including rank
+        RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, nil, nil, randomRank)
 
-        -- Restore the original function
+        -- Restore the original functions
         C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
-
-        -- Restore the original function
         GetRealZoneText = originalGetRealZoneText
     end
 
@@ -589,7 +674,22 @@ local function HandlePlayerDeath()
 end
 
 local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
-    local level, englishClass, race, gender, guild = PKA_GetPlayerInfo(destName, destGUID)
+    local level, englishClass, race, gender, guild, rank = PKA_GetPlayerInfo(destName, destGUID)
+
+    if PKA_Debug then
+        print("Processing enemy death - Name: " .. destName .. ", Rank: " .. (rank or "nil"))
+    end
+
+    -- Extra check for rank from target if the player is our current target
+    if UnitExists("target") and UnitName("target") == destName then
+        local targetRank = GetHonorRank("target")
+        if targetRank > 0 then
+            rank = targetRank
+            if PKA_Debug then
+                print("Found rank " .. rank .. " from target unit directly")
+            end
+        end
+    end
 
     if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
         print("Kill of " .. destName .. " not counted (incomplete data: " ..
@@ -601,9 +701,8 @@ local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceNam
     end
 
     -- At this point, we've already verified that this kill should count
-    RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName)
+    RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName, rank)
 end
-
 
 -- Add this function to clean up old damage records
 local function CleanupRecentPetDamage()
@@ -1238,12 +1337,19 @@ function PKA_CollectPlayerInfo(unit)
     local gender = UnitSex(unit)
     local guildName = GetGuildInfo(unit)
 
-    -- Add rank collection
-    local rank = 0
-    if unit == "target" then
-        rank = GetTargetHonorRank()
+    -- Get rank using our improved GetHonorRank function
+    local rank = GetHonorRank(unit)
+
+    if PKA_Debug then
+        print("Collecting player info for " .. name .. " - Rank: " .. rank)
+
+        -- Show raw UnitPVPRank value to help debug
+        if UnitPVPRank then
+            local rawRank = UnitPVPRank(unit)
+            print("Raw UnitPVPRank value: " .. (rawRank or "nil"))
+        end
     end
 
-    -- Update to pass the rank information
+    -- Update with rank information
     PKA_UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName, rank)
 end
