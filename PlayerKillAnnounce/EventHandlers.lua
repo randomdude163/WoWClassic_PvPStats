@@ -39,6 +39,9 @@ local PKA_RecentPetDamage = {}  -- Track recent pet damage
 local PKA_DAMAGE_WINDOW = 0.01   -- 1.0 second window for pet damage (more reliable)
 local PKA_LastUnitDied = {guid = nil, name = nil, timestamp = 0}
 
+-- Add this variable at the top with your other variables
+local tooltipHookSetup = false
+
 -- Functions to identify pets and pet owners
 local function IsPetGUID(guid)
     if not guid then return false end
@@ -259,7 +262,7 @@ local function GetMultiKillText(count)
         elseif count == 5 then
             soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\penta_kill.mp3"
         end
-        
+
         if soundFile then
             PlaySoundFile(soundFile, "Master")
         end
@@ -877,6 +880,7 @@ function RegisterEvents()
     playerKillAnnounceFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
             PKA_LoadSettings()
+            PKA_SetupTooltip() -- Add this line to call the tooltip setup
             inCombat = UnitAffectingCombat("player")
             PKA_CheckBattlegroundStatus()  -- Check BG status on login/reload
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
@@ -1085,4 +1089,36 @@ function PKA_DebugPetKills()
         print("Pet kill debugging ended.")
         HandleCombatLogEvent = originalHandler
     end)
+end
+
+-- Add this function after PKA_LoadSettings but before RegisterEvents
+
+function PKA_SetupTooltip()
+    if tooltipHookSetup then return end
+
+    -- Create and hook into game tooltip
+    local function OnTooltipSetUnit(tooltip)
+        -- Get unit from tooltip
+        local name, unit = tooltip:GetUnit()
+        if not unit then return end
+
+        -- Only continue for enemy players
+        if not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then return end
+
+        -- Get the player's name and level for lookup
+        local playerName = UnitName(unit)
+        local playerLevel = UnitLevel(unit)
+        local nameWithLevel = playerName .. ":" .. playerLevel
+
+        -- Find kill count in our database
+        local kills = 0
+        if PKA_KillCounts[nameWithLevel] then
+            kills = PKA_KillCounts[nameWithLevel].kills
+        end
+        tooltip:AddLine("Kills: " .. kills, 1, 1, 1)
+    end
+
+    -- Hook the tooltip
+    GameTooltip:HookScript("OnTooltipSetUnit", OnTooltipSetUnit)
+    tooltipHookSetup = true
 end
