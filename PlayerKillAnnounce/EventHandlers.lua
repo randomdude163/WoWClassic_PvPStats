@@ -1083,6 +1083,10 @@ function PKA_SetupTooltip()
 
     -- Handle live player tooltips
     local function OnTooltipSetUnit(tooltip)
+        -- Check if tooltip info is enabled
+        if not PKA_ShowTooltipKillInfo then return end
+
+        -- Get unit from tooltip
         local name, unit = tooltip:GetUnit()
         if not unit then return end
 
