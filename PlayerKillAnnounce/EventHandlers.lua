@@ -1098,6 +1098,9 @@ function PKA_SetupTooltip()
 
     -- Create and hook into game tooltip
     local function OnTooltipSetUnit(tooltip)
+        -- Check if tooltip info is enabled
+        if not PKA_ShowTooltipKillInfo then return end
+
         -- Get unit from tooltip
         local name, unit = tooltip:GetUnit()
         if not unit then return end
@@ -1114,8 +1117,16 @@ function PKA_SetupTooltip()
         local kills = 0
         if PKA_KillCounts[nameWithLevel] then
             kills = PKA_KillCounts[nameWithLevel].kills
+            -- Add last kill date if available
+            if PKA_KillCounts[nameWithLevel].lastKill then
+                tooltip:AddLine("Kills: " .. kills, 1, 1, 1)
+                tooltip:AddLine("Last killed: " .. PKA_KillCounts[nameWithLevel].lastKill, 0.8, 0.8, 0.8)
+            else
+                tooltip:AddLine("Kills: " .. kills, 1, 1, 1)
+            end
+        else
+            tooltip:AddLine("Kills: 0", 1, 1, 1)
         end
-        tooltip:AddLine("Kills: " .. kills, 1, 1, 1)
     end
 
     -- Hook the tooltip

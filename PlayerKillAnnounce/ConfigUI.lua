@@ -2,6 +2,9 @@
 -- This adds a graphical user interface for all settings of the addon
 local configFrame = nil
 
+-- Add this near other default settings
+PKA_ShowTooltipKillInfo = true -- New default setting
+
 -- Default messages as fallbacks
 local PlayerKillMessageDefault = PlayerKillMessageDefault or "Enemyplayername killed!"
 local KillStreakEndedMessageDefault = KillStreakEndedMessageDefault or "My kill streak of STREAKCOUNT has ended!"
@@ -168,6 +171,7 @@ local function EnsureDefaultValues()
     if PKA_EnableKillAnnounce == nil then PKA_EnableKillAnnounce = true end
     if PKA_EnableRecordAnnounce == nil then PKA_EnableRecordAnnounce = true end
     if PKA_MultiKillThreshold == nil then PKA_MultiKillThreshold = 3 end
+    if PKA_ShowTooltipKillInfo == nil then PKA_ShowTooltipKillInfo = true end
 end
 
 local function CreateAnnouncementSection(parent, yOffset)
@@ -206,7 +210,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     manualBGMode:SetPoint("TOPLEFT", autoBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.manualBGMode = manualBGMode
 
-
+    -- Add tooltip for manual BG Mode
     manualBGMode:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Force Battleground Mode")
@@ -218,16 +222,36 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     manualBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Add tooltip checkbox right after battleground mode
+    local tooltipKillInfo, tooltipKillInfoLabel = CreateCheckbox(parent,
+        "Show kill statistics in enemy player tooltips",
+        PKA_ShowTooltipKillInfo,
+        function(checked)
+            PKA_ShowTooltipKillInfo = checked
+            PKA_SaveSettings()
+        end)
+    tooltipKillInfo:SetPoint("TOPLEFT", manualBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.tooltipKillInfo = tooltipKillInfo
+
+    -- Add tooltip explanation
+    tooltipKillInfo:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enemy Player Tooltips")
+        GameTooltip:AddLine("When enabled, shows your kill statistics for enemy players when you mouse over them.", 1, 1, 1, true)
+        GameTooltip:AddLine("Displays kill count over this player.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    tooltipKillInfo:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements to party chat",
         PKA_EnableKillAnnounce, function(checked)
             PKA_EnableKillAnnounce = checked
             PKA_SaveSettings()
         end)
-    enableKillAnnounce:SetPoint("TOPLEFT", manualBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    enableKillAnnounce:SetPoint("TOPLEFT", tooltipKillInfo, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillAnnounce = enableKillAnnounce
 
-
+    -- Rest of the function remains the same...
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
         PKA_EnableRecordAnnounce, function(checked)
             PKA_EnableRecordAnnounce = checked
@@ -244,35 +268,6 @@ local function CreateAnnouncementSection(parent, yOffset)
         end)
     enableKillSounds:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillSounds = enableKillSounds
-
-
-    local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
-    slider:SetWidth(200)
-    slider:SetHeight(16)
-    slider:SetPoint("TOPLEFT", enableKillSounds, "BOTTOMLEFT", 40, -20)
-    slider:SetOrientation("HORIZONTAL")
-    slider:SetMinMaxValues(2, 10)
-    slider:SetValueStep(1)
-    slider:SetValue(PKA_MultiKillThreshold or 3)
-    getglobal(slider:GetName() .. "Low"):SetText("Double")
-    getglobal(slider:GetName() .. "High"):SetText("Deca")
-    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
-    parent.multiKillSlider = slider
-
-    slider:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value + 0.5)
-        self:SetValue(value)
-        getglobal(self:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. value)
-        PKA_MultiKillThreshold = value
-        PKA_SaveSettings()
-    end)
-
-    -- Slider description
-    local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    desc:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -5)
-    desc:SetText("Set the minimum multi-kill count to announce in party chat")
-    desc:SetJustifyH("LEFT")
-    desc:SetWidth(350)
 
     return 220
 end
@@ -331,56 +326,96 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     )
     multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
+    -- Add section header for Multi-Kill settings
+    local multiKillHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    multiKillHeader:SetPoint("TOPLEFT", multiKillContainer, "BOTTOMLEFT", 0, -20)
+    multiKillHeader:SetText("Multi-Kill Announce")
+
+    -- Add the threshold slider and description
+    local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
+    slider:SetWidth(200)
+    slider:SetHeight(16)
+    slider:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 40, -20)
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetMinMaxValues(2, 10)
+    slider:SetValueStep(1)
+    slider:SetValue(PKA_MultiKillThreshold or 3)
+    getglobal(slider:GetName() .. "Low"):SetText("Double")
+    getglobal(slider:GetName() .. "High"):SetText("Deca")
+    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
+    parent.multiKillSlider = slider
+
+    slider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value + 0.5)
+        self:SetValue(value)
+        getglobal(self:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. value)
+        PKA_MultiKillThreshold = value
+        PKA_SaveSettings()
+    end)
+
+    -- Slider description
+    local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    desc:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -5)
+    desc:SetText("Set the minimum multi-kill count to announce in party chat")
+    desc:SetJustifyH("LEFT")
+    desc:SetWidth(350)
+
     -- Return UI elements for potential updates
     return {
         killMsg = killMsgEditBox,
         streakEnded = streakEndedEditBox,
         newStreak = newStreakEditBox,
-        multiKill = multiKillEditBox
+        multiKill = multiKillEditBox,
+        multiKillSlider = slider,
+        multiKillDesc = desc
     }
 end
 
 local function CreateActionButtons(parent)
-    local buttonBar = CreateFrame("Frame", nil, parent)
-    buttonBar:SetSize(parent:GetWidth() - 40, 30)
-    buttonBar:SetPoint("BOTTOM", parent, "BOTTOM", 0, 0)  -- Increased from 10 to 20 (+10)
+    -- Create a centered container for buttons
+    local buttonContainer = CreateFrame("Frame", nil, parent)
+    buttonContainer:SetSize(200, 200)  -- Fixed width container
+    buttonContainer:SetPoint("CENTER")
 
-    -- Calculate button widths and spacing
-    local buttonWidth = 120
-    local spacing = 10
-    local margin = 20
+    -- Consistent button sizes and spacing
+    local buttonWidth = 160  -- Fixed width for all buttons
+    local buttonHeight = 25  -- Fixed height for all buttons
+    local buttonSpacing = 15 -- Space between buttons
 
-    local showStatsBtn = CreateButton(buttonBar, "Show Statistics", buttonWidth, 22, function()
+    -- Create buttons with consistent sizing
+    local showStatsBtn = CreateButton(buttonContainer, "Show Statistics", buttonWidth, buttonHeight, function()
         PKA_CreateStatisticsFrame()
     end)
-    showStatsBtn:SetPoint("BOTTOMLEFT", buttonBar, "BOTTOMLEFT", margin, BUTTON_BOTTOM_MARGIN)
 
-    local killsListBtn = CreateButton(buttonBar, "Show Kills List", buttonWidth, 22, function()
+    local killsListBtn = CreateButton(buttonContainer, "Show Kills List", buttonWidth, buttonHeight, function()
         PKA_CreateKillStatsFrame()
     end)
-    killsListBtn:SetPoint("LEFT", showStatsBtn, "RIGHT", spacing, 0)
 
-    local resetStatsBtn = CreateButton(buttonBar, "Reset Statistics", buttonWidth, 22, function()
+    local resetStatsBtn = CreateButton(buttonContainer, "Reset Statistics", buttonWidth, buttonHeight, function()
         ShowResetStatsConfirmation()
     end)
-    resetStatsBtn:SetPoint("LEFT", killsListBtn, "RIGHT", spacing, 0)
 
-    local defaultsBtn = CreateButton(buttonBar, "Reset to Defaults", buttonWidth, 22, function()
+    local defaultsBtn = CreateButton(buttonContainer, "Reset to Defaults", buttonWidth, buttonHeight, function()
         ShowResetDefaultsConfirmation()
     end)
-    defaultsBtn:SetPoint("LEFT", resetStatsBtn, "RIGHT", spacing, 0)
+
+    -- Stack buttons vertically with even spacing
+    showStatsBtn:SetPoint("TOP", buttonContainer, "TOP", 0, 0)
+    killsListBtn:SetPoint("TOP", showStatsBtn, "BOTTOM", 0, -buttonSpacing)
+    resetStatsBtn:SetPoint("TOP", killsListBtn, "BOTTOM", 0, -buttonSpacing)
+    defaultsBtn:SetPoint("TOP", resetStatsBtn, "BOTTOM", 0, -buttonSpacing)
 
     return {
-        resetBtn = resetStatsBtn,
-        defaultsBtn = defaultsBtn,
         showStatsBtn = showStatsBtn,
-        killsListBtn = killsListBtn
+        killsListBtn = killsListBtn,
+        resetBtn = resetStatsBtn,
+        defaultsBtn = defaultsBtn
     }
 end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 650)
+    frame:SetSize(600, 600) -- Reduced from 650 to 600
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -435,10 +470,107 @@ function PKA_UpdateConfigUI()
         configFrame.editBoxes.killMsg:SetText(PKA_KillAnnounceMessage)
         configFrame.editBoxes.streakEnded:SetText(PKA_KillStreakEndedMessage)
         configFrame.editBoxes.newStreak:SetText(PKA_NewStreakRecordMessage)
-        configFrame.editBoxes.multiKill:SetText(PKA_NewMultiKillRecordMessage)
+        configFrame.editBoxes.multiKill.SetText(PKA_NewMultiKillRecordMessage)
+    end
+
+    if configFrame.tooltipKillInfo then
+        configFrame.tooltipKillInfo:SetChecked(PKA_ShowTooltipKillInfo)
     end
 
     PKA_UpdateConfigStats()
+end
+
+local function CreateTabSystem(parent)
+    local tabWidth = 85  -- Smaller initial width
+    local tabHeight = 32
+    local tabs = {}
+    local tabFrames = {}
+
+    local tabContainer = CreateFrame("Frame", nil, parent)
+    tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
+    tabContainer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -7, 7)
+
+    -- Create tab buttons
+    local tabNames = {"General", "Messages", "Reset"}
+    for i, name in ipairs(tabNames) do
+        local tab = CreateFrame("Button", parent:GetName().."Tab"..i, parent, "CharacterFrameTabButtonTemplate")
+        tab:SetText(name)
+        tab:SetID(i)
+
+        -- Set initial size
+        tab:SetSize(tabWidth, tabHeight)
+
+        -- Get references to all tab textures
+        local tabMiddle = _G[tab:GetName().."Middle"]
+        local tabLeft = _G[tab:GetName().."Left"]
+        local tabRight = _G[tab:GetName().."Right"]
+        local tabSelectedMiddle = _G[tab:GetName().."SelectedMiddle"]
+        local tabSelectedLeft = _G[tab:GetName().."SelectedLeft"]
+        local tabSelectedRight = _G[tab:GetName().."SelectedRight"]
+        local tabText = _G[tab:GetName().."Text"]
+
+        -- Fix texture sizes immediately
+        if tabMiddle then
+            tabMiddle:ClearAllPoints()
+            tabMiddle:SetPoint("LEFT", tabLeft, "RIGHT", 0, 0)
+            tabMiddle:SetWidth(tabWidth - 31)
+        end
+        if tabSelectedMiddle then
+            tabSelectedMiddle:ClearAllPoints()
+            tabSelectedMiddle:SetPoint("LEFT", tabSelectedLeft, "RIGHT", 0, 0)
+            tabSelectedMiddle:SetWidth(tabWidth - 31)
+        end
+
+        -- Position tabs with proper spacing
+        if i == 1 then
+            tab:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 5, 0)
+        else
+            tab:SetPoint("LEFT", tabs[i-1], "RIGHT", -8, 0)
+        end
+
+        -- Force proper text positioning
+        if tabText then
+            tabText:ClearAllPoints()
+            tabText:SetPoint("CENTER", tab, "CENTER", 0, 2)
+            tabText:SetJustifyH("CENTER")
+            tabText:SetWidth(tabWidth - 40)
+        end
+
+        -- Create content frame for this tab
+        local contentFrame = CreateFrame("Frame", nil, tabContainer)
+        contentFrame:SetPoint("TOPLEFT", tabContainer, "TOPLEFT", 0, -5)
+        contentFrame:SetPoint("BOTTOMRIGHT", tabContainer, "BOTTOMRIGHT")
+        contentFrame:Hide()
+
+        tabFrames[i] = contentFrame
+        table.insert(tabs, tab)
+
+        -- Set up click handler
+        tab:SetScript("OnClick", function()
+            PanelTemplates_SetTab(parent, i)
+            for index, frame in ipairs(tabFrames) do
+                if index == i then
+                    frame:Show()
+                    PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+                else
+                    frame:Hide()
+                end
+            end
+        end)
+    end
+
+    parent.tabs = tabs
+    parent.numTabs = #tabs
+    PanelTemplates_SetNumTabs(parent, #tabs)
+    PanelTemplates_SetTab(parent, 1)
+    tabFrames[1]:Show()
+
+    -- Force resize and texture setup
+    for i, tab in ipairs(tabs) do
+        PanelTemplates_TabResize(tab, 0)
+    end
+
+    return tabFrames
 end
 
 function PKA_CreateConfigFrame()
@@ -451,12 +583,25 @@ function PKA_CreateConfigFrame()
     configFrame = CreateMainFrame()
     PKA_FrameManager:RegisterFrame(configFrame, "ConfigUI")
 
-    local currentY = -SECTION_TOP_MARGIN
-    local announcementHeight = CreateAnnouncementSection(configFrame, currentY)
-    currentY = currentY - announcementHeight - SECTION_SPACING - 20
-    configFrame.editBoxes = CreateMessageTemplatesSection(configFrame, currentY)
+    -- Create tab system
+    local tabFrames = CreateTabSystem(configFrame)
 
-    CreateActionButtons(configFrame)
+    -- General Tab (Tab 1)
+    local currentY = -10
+    local announcementHeight = CreateAnnouncementSection(tabFrames[1], currentY)
+
+    -- Messages Tab (Tab 2)
+    configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
+
+    -- Reset Tab (Tab 3) - Add this section
+    local resetButtons = CreateActionButtons(tabFrames[3])
+    configFrame.resetButtons = resetButtons
+
+    -- Initialize first tab
+    PanelTemplates_SetTab(configFrame, 1)
+    tabFrames[1]:Show()
+
+    return configFrame
 end
 
 function PKA_CreateConfigUI()
