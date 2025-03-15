@@ -502,8 +502,10 @@ local function createGuildTable(parent, x, y, width, height)
         for _, data in pairs(PKA_KillCounts) do
             if data then
                 local guild = data.guild or ""
-                if guild == "" then guild = "No Guild" end
-                guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
+                -- Only count players who are in a guild
+                if guild ~= "" then
+                    guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
+                end
             end
         end
     end
@@ -526,7 +528,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
-local function addSummaryStatLine(container, label, value, yPosition)
+local function addSummaryStatLine(container, label, value, yPosition, tooltipText)
     local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", 0, yPosition)
     labelText:SetText(label)
@@ -534,6 +536,23 @@ local function addSummaryStatLine(container, label, value, yPosition)
     local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueText:SetPoint("TOPLEFT", 200, yPosition)
     valueText:SetText(tostring(value))
+
+    -- If tooltip text is provided, create a tooltip trigger frame
+    if tooltipText then
+        local tooltipFrame = CreateFrame("Frame", nil, container)
+        tooltipFrame:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
+        tooltipFrame:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
+
+        tooltipFrame:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+            GameTooltip:AddLine(tooltipText, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+
+        tooltipFrame:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
+    end
 
     return yPosition - 20
 end
@@ -644,8 +663,10 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY)
 
     statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer), statY)
-    statY = addSummaryStatLine(container, "Current Kill Streak:", PKA_CurrentKillStreak or 0, statY)
-    statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY)
+    statY = addSummaryStatLine(container, "Current Kill Streak:", PKA_CurrentKillStreak or 0, statY,
+        "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
+    statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY,
+        "This record persists through logouts and can only be reset manually through the Reset tab in the Addon Settings.")
     statY = addSummaryStatLine(container, "Highest Multi-Kill:", PKA_HighestMultiKill or 0, statY)
 
     -- Increase spacing before credits section
