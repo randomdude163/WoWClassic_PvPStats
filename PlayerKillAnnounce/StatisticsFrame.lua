@@ -684,9 +684,13 @@ local function gatherStatistics()
     local unknownLevelClassData = {}
     local zoneData = {}
     local levelData = {} -- Changed to store individual levels
+    local guildStatusData = {    -- Add this new table
+        ["In Guild"] = 0,
+        ["No Guild"] = 0
+    }
 
     if not PKA_KillCounts then
-        return {}, {}, {}, {}, {}, {}
+        return {}, {}, {}, {}, {}, {}, {}  -- Add an extra return value
     end
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
@@ -718,10 +722,18 @@ local function gatherStatistics()
             -- Track zone data
             local zone = data.zone or "Unknown"
             zoneData[zone] = (zoneData[zone] or 0) + kills
+
+            -- Track guild status
+            local guild = data.guild or ""
+            if guild ~= "" then
+                guildStatusData["In Guild"] = guildStatusData["In Guild"] + kills
+            else
+                guildStatusData["No Guild"] = guildStatusData["No Guild"] + kills
+            end
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
 end
 
 local function createScrollableLeftPanel(parent)
@@ -892,7 +904,7 @@ function PKA_UpdateStatisticsFrame(frame)
     if frame:GetHeight() < 400 then return end
 
     -- Get fresh statistics
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData = gatherStatistics()
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = gatherStatistics()
 
     -- Create new content
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
@@ -915,6 +927,16 @@ function PKA_UpdateStatisticsFrame(frame)
     createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH, genderChartHeight)
 
     yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
+
+    -- Add the new Guild Status chart
+    local guildStatusChartHeight = calculateChartHeight(guildStatusData)
+    local guildStatusColors = {
+        ["In Guild"] = {r = 0.2, g = 0.8, b = 0.2},    -- Green for guild members
+        ["No Guild"] = {r = 0.8, g = 0.2, b = 0.2}     -- Red for guildless
+    }
+    createBarChart(leftScrollContent, "Kills by Guild Status", guildStatusData, guildStatusColors, 0, yOffset, UI.CHART.WIDTH, guildStatusChartHeight)
+
+    yOffset = yOffset - guildStatusChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
