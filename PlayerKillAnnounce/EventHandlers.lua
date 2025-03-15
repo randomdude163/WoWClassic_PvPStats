@@ -25,10 +25,6 @@ PKA_AutoBattlegroundMode = true  -- Auto-detect BGs
 PKA_BattlegroundMode = false     -- Manual override for BG mode
 PKA_InBattleground = false       -- Current BG state
 
-local PKA_CHAT_MESSAGE_R = 1.0
-local PKA_CHAT_MESSAGE_G = 1.0
-local PKA_CHAT_MESSAGE_B = 0.74
-
 -- State tracking variables
 local inCombat = false
 local killStreakMilestoneFrame = nil
@@ -117,45 +113,48 @@ local function GetNameFromGUID(guid)
 end
 
 
+function PKA_Print(message)
+    local PKA_CHAT_MESSAGE_R = 1.0
+    local PKA_CHAT_MESSAGE_G = 1.0
+    local PKA_CHAT_MESSAGE_B = 0.74
+    DEFAULT_CHAT_FRAME:AddMessage(message, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
 end
 
 local function PrintSlashCommandUsage()
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka config - Open configuration UI", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka stats - Show kills list", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka status - Show current settings", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debug - Show current streak values", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka registerkill [number] - Register test kill(s) for testing", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka death - Simulate player death (resets kill streak)", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka bgmode - Toggle battleground mode manually", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka toggledebug - Toggle debug messages", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka testguid - Test your GUID detection for debugging", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debugevents - Enhanced combat log debugging for 30 seconds", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka debugpet - Track all pet damage and kills for 60 seconds", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    PKA_Print("Usage: /pka config - Open configuration UI")
+    PKA_Print("Usage: /pka stats - Show kills list")
+    PKA_Print("Usage: /pka status - Show current settings")
+    PKA_Print("Usage: /pka debug - Show current streak values")
+    PKA_Print("Usage: /pka registerkill [number] - Register test kill(s) for testing")
+    PKA_Print("Usage: /pka bgmode - Toggle battleground mode manually")
+    PKA_Print("Usage: /pka toggledebug - Toggle debug messages")
+    PKA_Print("Usage: /pka debugevents - Enhanced combat log debugging for 30 seconds")
+    PKA_Print("Usage: /pka debugpet - Track all pet damage and kills for 60 seconds")
 end
 
 local function PrintStatus()
     local statusMessage = "Kill announce messages are " .. (PKA_EnableKillAnnounce and "ENABLED" or "DISABLED") .. "."
-    DEFAULT_CHAT_FRAME:AddMessage(statusMessage, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Current kill announce message: " .. PKA_KillAnnounceMessage, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Streak ended message: " .. PKA_KillStreakEndedMessage, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("New streak record message: " .. PKA_NewStreakRecordMessage, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("New multi-kill record message: " .. PKA_NewMultiKillRecordMessage, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Multi-kill announcement threshold: " .. PKA_MultiKillThreshold, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Record announcements: " .. (PKA_EnableRecordAnnounce and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Battleground Mode: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Auto BG Detection: " .. (PKA_AutoBattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Manual BG Mode: " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    PKA_Print(statusMessage)
+    PKA_Print("Current kill announce message: " .. PKA_KillAnnounceMessage)
+    PKA_Print("Streak ended message: " .. PKA_KillStreakEndedMessage)
+    PKA_Print("New streak record message: " .. PKA_NewStreakRecordMessage)
+    PKA_Print("New multi-kill record message: " .. PKA_NewMultiKillRecordMessage)
+    PKA_Print("Multi-kill announcement threshold: " .. PKA_MultiKillThreshold)
+    PKA_Print("Record announcements: " .. (PKA_EnableRecordAnnounce and "ENABLED" or "DISABLED"))
+    PKA_Print("Battleground Mode: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"))
+    PKA_Print("Auto BG Detection: " .. (PKA_AutoBattlegroundMode and "ENABLED" or "DISABLED"))
+    PKA_Print("Manual BG Mode: " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"))
 end
 
 local function ShowDebugInfo()
-    DEFAULT_CHAT_FRAME:AddMessage("Current Kill Streak: " .. PKA_CurrentKillStreak, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Highest Kill Streak: " .. PKA_HighestKillStreak, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Current Multi-kill Count: " .. PKA_MultiKillCount, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Highest Multi-kill: " .. PKA_HighestMultiKill, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Multi-kill Announcement Threshold: " .. PKA_MultiKillThreshold, PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Battleground Mode: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Auto BG Detection: " .. (PKA_AutoBattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    DEFAULT_CHAT_FRAME:AddMessage("Manual BG Mode: " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    PKA_Print("Current Kill Streak: " .. PKA_CurrentKillStreak)
+    PKA_Print("Highest Kill Streak: " .. PKA_HighestKillStreak)
+    PKA_Print("Current Multi-kill Count: " .. PKA_MultiKillCount)
+    PKA_Print("Highest Multi-kill: " .. PKA_HighestMultiKill)
+    PKA_Print("Multi-kill Announcement Threshold: " .. PKA_MultiKillThreshold)
+    PKA_Print("Battleground Mode: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"))
+    PKA_Print("Auto BG Detection: " .. (PKA_AutoBattlegroundMode and "ENABLED" or "DISABLED"))
+    PKA_Print("Manual BG Mode: " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"))
 end
 
 local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
@@ -179,7 +178,7 @@ local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gende
 end
 
 -- Update UpdateKillCacheEntry to include rank
-local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, isUnknownLevel, rank)
+local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
     PKA_KillCounts[nameWithLevel].kills = PKA_KillCounts[nameWithLevel].kills + 1
     local timestamp = date("%Y-%m-%d %H:%M:%S")
     PKA_KillCounts[nameWithLevel].lastKill = timestamp
@@ -222,8 +221,8 @@ local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLe
 
         -- Debug info
         if PKA_Debug then
-            print(string.format("Kill recorded at %s (%.4f, %.4f) in %s (Map ID: %d)",
-                timestamp, x, y, currentZone, mapID))
+            print(string.format("Kill recorded at %s (%.4f, %.4f) in %s",
+                timestamp, x, y, currentZone))
         end
     else
         -- Log error if we couldn't get position
@@ -236,7 +235,6 @@ local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLe
     if race and race ~= "Unknown" then PKA_KillCounts[nameWithLevel].race = race end
     if gender and gender ~= "Unknown" then PKA_KillCounts[nameWithLevel].gender = gender end
     if guild and guild ~= "" then PKA_KillCounts[nameWithLevel].guild = guild end
-    PKA_KillCounts[nameWithLevel].unknownLevel = isUnknownLevel or false
 end
 
 local function UpdateKillStreak()
@@ -402,7 +400,7 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     UpdateMultiKill()
 
     InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
-    UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, (level == -1), rank)
+    UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
 
     AnnounceKill(playerName, level, nameWithLevel)
 
@@ -416,7 +414,7 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
 end
 
 local function SimulatePlayerDeath()
-    DEFAULT_CHAT_FRAME:AddMessage("Simulating player death...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    PKA_Print("Simulating player death...")
 
     if PKA_CurrentKillStreak >= 10 and PKA_EnableRecordAnnounce and IsInGroup() then
         local streakEndedMsg = string.gsub(PKA_KillStreakEndedMessage, "STREAKCOUNT", PKA_CurrentKillStreak)
@@ -427,11 +425,11 @@ local function SimulatePlayerDeath()
     PKA_MultiKillCount = 0
     inCombat = false
     PKA_SaveSettings()
-    DEFAULT_CHAT_FRAME:AddMessage("Death simulated! Kill streak reset.", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    PKA_Print("Death simulated! Kill streak reset.")
 end
 
 local function SimulatePlayerKills(killCount)
-    DEFAULT_CHAT_FRAME:AddMessage("Registering " .. killCount .. " random test kill(s)...", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    PKA_Print("Registering " .. killCount .. " random test kill(s)...")
 
     local randomNames = {
         "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter", "Campmaster",
@@ -526,7 +524,7 @@ local function SimulatePlayerKills(killCount)
         GetRealZoneText = originalGetRealZoneText
     end
 
-    DEFAULT_CHAT_FRAME:AddMessage("Successfully registered " .. killCount .. " random test kill(s).", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+    PKA_Print("Successfully registered " .. killCount .. " random test kill(s).")
 end
 
 function PKA_SlashCommandHandler(msg)
@@ -543,7 +541,7 @@ function PKA_SlashCommandHandler(msg)
         ShowDebugInfo()
     elseif command == "toggledebug" then
         PKA_Debug = not PKA_Debug
-        DEFAULT_CHAT_FRAME:AddMessage("Debug mode " .. (PKA_Debug and "enabled" or "disabled"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+        PKA_Print("Debug mode " .. (PKA_Debug and "enabled" or "disabled"))
     elseif command == "registerkill" then
         local testKillCount = 1
 
@@ -560,10 +558,8 @@ function PKA_SlashCommandHandler(msg)
     elseif command == "bgmode" then
         PKA_BattlegroundMode = not PKA_BattlegroundMode
         PKA_CheckBattlegroundStatus()
-        DEFAULT_CHAT_FRAME:AddMessage("Manual Battleground Mode " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"), PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
+        PKA_Print("Manual Battleground Mode " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"))
         PKA_SaveSettings()
-    elseif command == "testguid" then
-        PKA_DebugPlayerGUID()
     elseif command == "debugevents" then
         PKA_DebugEvents()
     elseif command == "debugpet" then
@@ -574,12 +570,12 @@ function PKA_SlashCommandHandler(msg)
 end
 
 local function OnPlayerTargetChanged()
-    PKA_CollectPlayerInfo("target")
-    PKA_CollectPlayerInfo("targettarget")
+    PKA_StorePlayerInfo("target")
+    PKA_StorePlayerInfo("targettarget")
 end
 
 local function OnUpdateMouseoverUnit()
-    PKA_CollectPlayerInfo("mouseover")
+    PKA_StorePlayerInfo("mouseover")
 end
 
 local function HandleCombatState(inCombatNow)
@@ -672,26 +668,6 @@ local function HandleCombatLogEvent()
         end
     end
 
-    -- Debug all events for player/pet kills
-    if PKA_Debug and
-       (combatEvent == "UNIT_DIED" or combatEvent == "PARTY_KILL") and
-       bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-       bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
-
-        print("DEBUG: " .. combatEvent .. " event detected")
-        print("Source GUID: " .. (sourceGUID or "nil"))
-        print("Source Name: " .. (sourceName or "nil"))
-        print("Player GUID: " .. (UnitGUID("player") or "nil"))
-        print("Player Name: " .. (UnitName("player") or "nil"))
-        print("Target Killed: " .. (destName or "nil"))
-    end
-
-    -- Check for player death first
-    if combatEvent == "UNIT_DIED" and destGUID == UnitGUID("player") then
-        HandlePlayerDeath()
-        return
-    end
-
     if IsPetGUID(sourceGUID) and destGUID then
         local damageAmount = 0
 
@@ -766,7 +742,6 @@ local function HandleCombatLogEvent()
                     if PKA_Debug then
                         print("BG Mode: Pet killing blow detected (via recent damage)")
                         print("Pet: " .. (petDamage.petName or "Unknown"))
-                        print("Time since damage: " .. string.format("%.6f", GetTime() - petDamage.timestamp) .. " seconds")
                     end
                 end
             -- In normal mode, also accept party/raid member pets
@@ -775,7 +750,6 @@ local function HandleCombatLogEvent()
                     countKill = true
                     if PKA_Debug then
                         print("Normal Mode: Your pet killing blow detected")
-                        print("Time since damage: " .. string.format("%.6f", GetTime() - petDamage.timestamp) .. " seconds")
                     end
                 else
                     -- Check if owner is in party/raid
@@ -785,7 +759,6 @@ local function HandleCombatLogEvent()
                         countKill = true
                         if PKA_Debug then
                             print("Normal Mode: Party/raid member's pet kill detected")
-                            print("Time since damage: " .. string.format("%.6f", GetTime() - petDamage.timestamp) .. " seconds")
                         end
                     end
                 end
@@ -900,7 +873,6 @@ function PKA_ShowKillStreakMilestone(killCount)
 end
 
 function RegisterEvents()
-    playerKillAnnounceFrame:RegisterEvent("PLAYER_LOGIN")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     playerKillAnnounceFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -912,11 +884,14 @@ function RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")  -- Add zone change event
 
     playerKillAnnounceFrame:SetScript("OnEvent", function(self, event, ...)
-        if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
+        if event == "PLAYER_ENTERING_WORLD" then
             PKA_LoadSettings()
             PKA_SetupTooltip() -- Add this line to call the tooltip setup
             inCombat = UnitAffectingCombat("player")
             PKA_CheckBattlegroundStatus()  -- Check BG status on login/reload
+            if UnitIsDeadOrGhost("player") then
+                HandlePlayerDeath()
+            end
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -1214,8 +1189,4 @@ function PKA_SetupTooltip()
     end)
 
     tooltipHookSetup = true
-
-    if PKA_Debug then
-        print("PlayerKillAnnounce: Tooltip hooks initialized")
-    end
 end

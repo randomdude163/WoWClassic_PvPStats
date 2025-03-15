@@ -33,7 +33,7 @@ local function GetHonorRank(unit)
     return 0
 end
 
-function PKA_CollectPlayerInfo(unit)
+function PKA_StorePlayerInfo(unit)
     if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
 
     if UnitIsFriend("player", unit) then return end
