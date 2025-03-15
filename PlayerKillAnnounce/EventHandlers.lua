@@ -116,52 +116,7 @@ local function GetNameFromGUID(guid)
     return nil
 end
 
--- After the other function declarations near the top
 
--- Helper function to get honor rank from target
-local function GetHonorRank(unit)
-    if not UnitPVPRank then return 0 end
-
-    -- First check the combat text for the actual rank name
-    local playerName = UnitName(unit)
-    if playerName and PKA_Debug then
-        print("Checking rank for player: " .. playerName)
-    end
-
-    -- The rank text in the combat log message "X dies, honorable kill Rank: Y"
-    -- is more reliable than UnitPVPRank, which seems to be returning incorrect values
-
-    -- Get the raw PvP rank value
-    local pvpRank = UnitPVPRank(unit)
-
-    if PKA_Debug then
-        print("Raw UnitPVPRank value: " .. (pvpRank or "nil"))
-    end
-
-    -- Classic WoW API returns ranks differently depending on client version
-    -- Many versions return values like 0 for no rank and 16 for Corporal (rank 2)
-    -- We need to map these correctly
-
-    if pvpRank then
-        -- Map the raw API value to our 0-14 scale
-        if pvpRank == 0 then
-            return 0  -- No rank
-        elseif pvpRank >= 15 then
-            -- Some clients use index+14 for rank values
-            -- 15=Scout/Private (rank 1), 16=Corporal (rank 2), etc.
-            return pvpRank - 14
-        elseif pvpRank >= 1 and pvpRank <= 14 then
-            -- Direct mapping for clients that use 1-14 range
-            return pvpRank
-        end
-    end
-
-    return 0  -- Default: no rank
-end
-
--- Replace GetTargetHonorRank with the new function
-local function GetTargetHonorRank()
-    return GetHonorRank("target")
 end
 
 local function PrintSlashCommandUsage()
@@ -452,32 +407,9 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     AnnounceKill(playerName, level, nameWithLevel)
 
     -- Print debug message using the new function
-    local debugMsg = CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel, killerGUID, killerName)
-    print(debugMsg)
-
-    -- Add this inside the RegisterPlayerKill function, just before PKA_SaveSettings()
     if PKA_Debug then
-        local rankName = "None"
-        if rank and rank > 0 then
-            local rankTitles = {
-                [1] = "Scout/Private",
-                [2] = "Grunt/Corporal",
-                [3] = "Sergeant",
-                [4] = "Master Sergeant",
-                [5] = "Sergeant Major",
-                [6] = "Knight/Stone Guard",
-                [7] = "Knight-Lieutenant/Blood Guard",
-                [8] = "Knight-Captain/Legionnaire",
-                [9] = "Knight-Champion/Centurion",
-                [10] = "Lieutenant Commander/Champion",
-                [11] = "Commander/Lieutenant General",
-                [12] = "Marshal/General",
-                [13] = "Field Marshal/Warlord",
-                [14] = "Grand Marshal/High Warlord"
-            }
-            rankName = rankTitles[rank] or ("Rank " .. rank)
-        end
-        print("Killed player rank: " .. rank .. " (" .. rankName .. ")")
+        local debugMsg = CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel, killerGUID, killerName)
+        print(debugMsg)
     end
 
     PKA_SaveSettings()
@@ -676,21 +608,6 @@ end
 local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
     local level, englishClass, race, gender, guild, rank = PKA_GetPlayerInfo(destName, destGUID)
 
-    if PKA_Debug then
-        print("Processing enemy death - Name: " .. destName .. ", Rank: " .. (rank or "nil"))
-    end
-
-    -- Extra check for rank from target if the player is our current target
-    if UnitExists("target") and UnitName("target") == destName then
-        local targetRank = GetHonorRank("target")
-        if targetRank > 0 then
-            rank = targetRank
-            if PKA_Debug then
-                print("Found rank " .. rank .. " from target unit directly")
-            end
-        end
-    end
-
     if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
         print("Kill of " .. destName .. " not counted (incomplete data: " ..
               (race == "Unknown" and "race" or "") ..
@@ -700,7 +617,6 @@ local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceNam
         return
     end
 
-    -- At this point, we've already verified that this kill should count
     RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName, rank)
 end
 
@@ -774,15 +690,6 @@ local function HandleCombatLogEvent()
     if combatEvent == "UNIT_DIED" and destGUID == UnitGUID("player") then
         HandlePlayerDeath()
         return
-    end
-
-    -- Process player info for cache
-    if sourceName and bit.band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
-        PKA_UpdatePlayerInfoCache(sourceName, sourceGUID, nil, nil, nil, nil, nil)
-    end
-
-    if destName and bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
-        PKA_UpdatePlayerInfoCache(destName, destGUID, nil, nil, nil, nil, nil)
     end
 
     if IsPetGUID(sourceGUID) and destGUID then
@@ -1115,13 +1022,6 @@ function PKA_LoadSettings()
     if PKA_EnableKillSounds == nil then PKA_EnableKillSounds = true end  -- Default to enabled
 end
 
-function PKA_DebugPlayerGUID()
-    local playerGUID = UnitGUID("player")
-    print("Your player GUID is: " .. (playerGUID or "nil"))
-    print("BG Mode is: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"))
-    print("Next time you kill someone in a BG, it should be registered")
-end
-
 -- Add this function near your other debug functions
 function PKA_DebugEvents()
     print("Enabling enhanced combat log debugging for 30 seconds...")
@@ -1318,38 +1218,4 @@ function PKA_SetupTooltip()
     if PKA_Debug then
         print("PlayerKillAnnounce: Tooltip hooks initialized")
     end
-end
-
--- Find the function PKA_CollectPlayerInfo in the DataStorage.lua file and add the rank parameter
-
-function PKA_CollectPlayerInfo(unit)
-    if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
-
-    if UnitIsFriend("player", unit) then return end
-
-    local name = UnitName(unit)
-    if not name then return end
-
-    local guid = UnitGUID(unit)
-    local level = UnitLevel(unit)
-    local _, englishClass = UnitClass(unit)
-    local _, englishRace = UnitRace(unit)
-    local gender = UnitSex(unit)
-    local guildName = GetGuildInfo(unit)
-
-    -- Get rank using our improved GetHonorRank function
-    local rank = GetHonorRank(unit)
-
-    if PKA_Debug then
-        print("Collecting player info for " .. name .. " - Rank: " .. rank)
-
-        -- Show raw UnitPVPRank value to help debug
-        if UnitPVPRank then
-            local rawRank = UnitPVPRank(unit)
-            print("Raw UnitPVPRank value: " .. (rawRank or "nil"))
-        end
-    end
-
-    -- Update with rank information
-    PKA_UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName, rank)
 end

@@ -5,12 +5,6 @@ PlayerKillAnnounceDB = {}
 function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild, rank)
     if not name then return end
 
-    if UnitExists("target") and UnitName("target") == name then
-        if UnitIsFriend("player", "target") then
-            return
-        end
-    end
-
     PlayerInfoCache[name] = PlayerInfoCache[name] or {}
     local playerData = PlayerInfoCache[name]
 
@@ -21,6 +15,22 @@ function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild
     if gender and gender ~= nil then playerData.gender = gender end
     if guild and guild ~= "" then playerData.guild = guild end
     if rank and rank > 0 then playerData.rank = rank end
+end
+
+local function GetHonorRank(unit)
+    if not UnitPVPRank then return 0 end
+
+    local pvpRank = UnitPVPRank(unit)
+
+    if not pvpRank then
+        return 0
+    end
+
+    if pvpRank >= 5 then
+        return pvpRank - 4
+    end
+
+    return 0
 end
 
 function PKA_CollectPlayerInfo(unit)
@@ -37,8 +47,9 @@ function PKA_CollectPlayerInfo(unit)
     local _, englishRace = UnitRace(unit)
     local gender = UnitSex(unit)
     local guildName = GetGuildInfo(unit)
+    local rank = GetHonorRank(unit)
 
-    PKA_UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName)
+    PKA_UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName, rank)
 end
 
 function PKA_GetInfoFromCachedPlayer(name)
@@ -94,40 +105,9 @@ function PKA_ConvertGenderToString(genderCode)
     end
 end
 
-function PKA_GetPlayerInfo(name, guid)
+function PKA_GetPlayerInfo(name)
     local level, class, race, gender, guild, rank = PKA_GetInfoFromCachedPlayer(name)
-
-    if level == 0 or class == "Unknown" or race == "Unknown" then
-        -- Try target unit
-        local targetLevel, targetClass, targetRace, targetGender, targetGuild, targetRank =
-            PKA_GetInfoFromActiveUnit(name, "target")
-
-        level = (targetLevel > 0) and targetLevel or level
-        class = (targetClass ~= "Unknown") and targetClass or class
-        race = (targetRace ~= "Unknown") and targetRace or race
-        gender = (targetGender > 0) and targetGender or gender
-        guild = (targetGuild ~= "") and targetGuild or guild
-        rank = (targetRank > 0) and targetRank or rank
-
-        -- Try mouseover unit
-        local mouseLevel, mouseClass, mouseRace, mouseGender, mouseGuild, mouseRank =
-            PKA_GetInfoFromActiveUnit(name, "mouseover")
-
-        level = (mouseLevel > 0) and mouseLevel or level
-        class = (mouseClass ~= "Unknown") and mouseClass or class
-        race = (mouseRace ~= "Unknown") and mouseRace or race
-        gender = (mouseGender > 0) and mouseGender or gender
-        guild = (mouseGuild ~= "") and mouseGuild or guild
-        rank = (mouseRank > 0) and mouseRank or rank
-
-        -- Try GUID as last resort for class info
-        if class == "Unknown" then
-            class = PKA_GetInfoFromGuid(guid)
-        end
-    end
-
     if level == 0 then level = -1 end
-
     return level, class, race, PKA_ConvertGenderToString(gender), guild, rank
 end
 
