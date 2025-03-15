@@ -15,24 +15,27 @@ local classSearchText = ""  -- New filter variable for class
 local raceSearchText = ""   -- New filter variable for race
 local genderSearchText = "" -- New filter variable for gender
 local zoneSearchText = "" -- New filter variable for zone
+local rankSearchText = "" -- Add this variable at the top with other search variables
 local minLevelSearch = nil
 local maxLevelSearch = nil
-local sortBy = "lastKill"
+local minRankSearch = nil
+local maxRankSearch = nil
+local sortBy = "lastKill"local sortBy = "lastKill"
 local sortAscending = false
-
-local PKA_KILLS_FRAME_WIDTH = 950  -- Increased from 900
+local PKA_KILLS_FRAME_WIDTH = 1020  -- Increased from 900
 local PKA_KILLS_FRAME_HEIGHT = 550  -- Increased from 500
 
 local colWidths = {
     name = 100,
     class = 70,
     race = 70,
-    gender = 80,   -- Increased from 70
-    level = 70,    -- Increased from 50
-    guild = 140,   -- Unchanged
-    zone = 150,    -- Unchanged
-    kills = 60,    -- Increased from 50
-    lastKill = 130 -- Unchanged
+    gender = 80,
+    level = 70,
+    rank = 70,    -- New rank column
+    guild = 140,
+    zone = 150,
+    kills = 60,
+    lastKill = 130
 }
 
 
@@ -103,6 +106,41 @@ local function ParseLevelSearch(text)
     if level and level >= 1 and level <= 60 then
         minLevelSearch = level
         maxLevelSearch = level
+        return true
+    end
+
+    return false
+end
+
+-- Add this function to parse rank range searches
+local function ParseRankSearch(text)
+    -- Reset rank search variables
+    minRankSearch = nil
+    maxRankSearch = nil
+
+    if text == "" then
+        return true
+    end
+
+    -- Check for rank range format: "min-max"
+    local min, max = text:match("^(%d+)-(%d+)$")
+    if min and max then
+        min = tonumber(min)
+        max = tonumber(max)
+        -- Ensure min is less than or equal to max
+        if min and max and min <= max and min >= 0 and max <= 14 then
+            minRankSearch = min
+            maxRankSearch = max
+            return true
+        end
+        return false
+    end
+
+    -- Check for single rank format
+    local rank = tonumber(text)
+    if rank and rank >= 0 and rank <= 14 then
+        minRankSearch = rank
+        maxRankSearch = rank
         return true
     end
 
@@ -276,6 +314,7 @@ local function FilterAndSortEntries()
             local raceMatch = true
             local genderMatch = true
             local zoneMatch = true
+            local rankMatch = true  -- Add rank match variable
 
             -- Player/Guild name search
             if searchText ~= "" then
@@ -355,7 +394,25 @@ local function FilterAndSortEntries()
                 end
             end
 
-            if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch then
+            -- Rank filter
+            if rankSearchText ~= "" then
+                local rank = data.rank or 0
+
+                if minRankSearch ~= nil and maxRankSearch ~= nil then
+                    -- Use the parsed range values
+                    if rank < minRankSearch or rank > maxRankSearch then
+                        rankMatch = false
+                    end
+                else
+                    -- Fallback to text-based matching if range parsing failed
+                    local rankStr = tostring(rank)
+                    if not string.find(rankStr, rankSearchText, 1, true) then
+                        rankMatch = false
+                    end
+                end
+            end
+
+            if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
                 -- Convert level -1 to "??" for display
                 local level = nameWithLevel:match(":(%S+)")
                 local levelDisplay = level
@@ -374,7 +431,8 @@ local function FilterAndSortEntries()
                     kills = data.kills or 1,
                     lastKill = data.lastKill or "",
                     zone = data.zone or "Unknown",
-                    unknownLevel = data.unknownLevel or false
+                    unknownLevel = data.unknownLevel or false,
+                    rank = data.rank or 0  -- Add the rank data
                 }
 
                 table.insert(sortedEntries, entry)
@@ -421,6 +479,8 @@ local function FilterAndSortEntries()
                 aVal, bVal = a.race or "Unknown", b.race or "Unknown"
             elseif sortBy == "gender" then
                 aVal, bVal = a.gender or "Unknown", b.gender or "Unknown"
+            elseif sortBy == "rank" then  -- Add rank sorting option
+                aVal, bVal = tonumber(a.rank) or 0, tonumber(b.rank) or 0
             elseif sortBy == "guild" then
                 aVal, bVal = a.guild or "", b.guild or ""
             elseif sortBy == "zone" then
@@ -461,7 +521,8 @@ local function CreateColumnHeaders(content)
     local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
     local genderButton = CreateColumnHeader(content, "Gender", colWidths.gender, raceButton, 0, 0, "gender")
     local levelButton = CreateColumnHeader(content, "Level", colWidths.level, genderButton, 0, 0, "level")
-    local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, levelButton, 0, 0, "guild")
+    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, levelButton, 0, 0, "rank")  -- New rank column header
+    local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, rankButton, 0, 0, "guild")  -- Changed anchor
     local zoneButton = CreateColumnHeader(content, "Zone", colWidths.zone, guildButton, 0, 0, "zone")
     local killsButton = CreateColumnHeader(content, "Kills", colWidths.kills, zoneButton, 0, 0, "kills")
     local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, killsButton, 0, 0, "lastKill")
@@ -569,6 +630,22 @@ local function CreateZoneCell(content, anchorTo, zone, width)
     return zoneText
 end
 
+local function CreateRankCell(content, anchorTo, rank, width)
+    local rankText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    rankText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+
+    -- Format the rank display as a number instead of title
+    local rankDisplay = "0"
+    if rank and rank > 0 then
+        rankDisplay = tostring(rank)
+    end
+
+    rankText:SetText(rankDisplay)
+    rankText:SetWidth(width)
+    rankText:SetJustifyH("LEFT")
+    return rankText
+end
+
 local function CreateGoldHighlight(parent, height)
     -- Create the main highlight texture
     local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
@@ -665,15 +742,13 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     -- Create highlight with gradient fade effect
     local highlightTexture = CreateGoldHighlight(rowContainer, 16)
 
-    -- Remove tooltip code - no longer needed as it shows redundant information
-    -- The OnEnter and OnLeave scripts that were here have been removed
-
     local nameCell = CreateNameCell(rowContainer, 0, 0, entry.name, colWidths.name)
     local classCell = CreateClassCell(rowContainer, nameCell, entry.class, colWidths.class)
     local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
     local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
     local levelCell = CreateLevelCell(rowContainer, genderCell, entry.levelDisplay, colWidths.level)
-    local guildCell = CreateGuildCell(rowContainer, levelCell, entry.guild, colWidths.guild)
+    local rankCell = CreateRankCell(rowContainer, levelCell, entry.rank, colWidths.rank)  -- Add rank cell
+    local guildCell = CreateGuildCell(rowContainer, rankCell, entry.guild, colWidths.guild)  -- Change anchor
     local zoneCell = CreateZoneCell(rowContainer, guildCell, entry.zone, colWidths.zone)
     local killsCell = CreateKillsCell(rowContainer, zoneCell, entry.kills, colWidths.kills)
     local lastKillCell = CreateLastKillCell(rowContainer, killsCell, entry.lastKill, colWidths.lastKill)
@@ -691,28 +766,6 @@ local function DisplayEntries(content, sortedEntries, startYOffset)
 
         -- Pass alternating row flag (true for odd rows, false for even rows)
         yOffset = CreateEntryRow(content, entry, yOffset, colWidths, (count % 2 == 1))
-        count = count + 1
-    end
-
-    if count == maxDisplayEntries and #sortedEntries > maxDisplayEntries then
-        local moreText = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        moreText:SetPoint("TOPLEFT", 10, yOffset)
-        moreText:SetText("Showing " .. count .. " of " .. #sortedEntries .. " entries. Use search to narrow results.")
-        moreText:SetTextColor(1, 0.7, 0)
-        yOffset = yOffset - 20
-    end
-
-    return yOffset, count
-end
-
-local function DisplayEntries(content, sortedEntries, startYOffset)
-    local yOffset = startYOffset
-    local count = 0
-    local maxDisplayEntries = 500
-
-    for i, entry in ipairs(sortedEntries) do
-        if count >= maxDisplayEntries then break end
-        yOffset = CreateEntryRow(content, entry, yOffset, colWidths)
         count = count + 1
     end
 
@@ -1127,7 +1180,78 @@ local function CreateZoneSearchLabel(parent, anchorTo)
     return zoneLabel
 end
 
+local function CreateRankSearchBox(parent, anchorTo)
+    local rankSearchBox = CreateFrame("EditBox", nil, parent)
+    rankSearchBox:SetSize(50, 20)  -- Reduced width from 70 to 50
+    rankSearchBox:SetPoint("LEFT", anchorTo, "RIGHT", 10, 0)
+    rankSearchBox:SetAutoFocus(false)
+    rankSearchBox:SetMaxLetters(5)  -- Enough for "14-14"
+    rankSearchBox:SetFontObject("ChatFontNormal")
 
+    local searchBoxBg = rankSearchBox:CreateTexture(nil, "BACKGROUND")
+    searchBoxBg:SetAllPoints(true)
+    searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
+
+    CreateBoxBorder(rankSearchBox)
+    rankSearchBox:SetTextInsets(5, 5, 2, 2)
+
+    return rankSearchBox
+end
+
+local function SetupRankSearchBoxScripts(rankSearchBox)
+    rankSearchBox:SetScript("OnTextChanged", function(self)
+        rankSearchText = self:GetText()
+        if ParseRankSearch(rankSearchText) then
+            self:SetTextColor(1, 1, 1)
+            RefreshKillList()
+        else
+            self:SetTextColor(1, 0.3, 0.3)
+        end
+    end)
+
+    rankSearchBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+
+    rankSearchBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
+
+    rankSearchBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        self:SetText("")
+        rankSearchText = ""
+        minRankSearch = nil
+        maxRankSearch = nil
+        RefreshKillList()
+    end)
+
+    rankSearchBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+    end)
+
+    rankSearchBox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Rank Filter")
+        GameTooltip:AddLine("Enter a single rank (e.g. 8)", 1, 1, 1, true)
+        GameTooltip:AddLine("Or a range (e.g. 5-10)", 1, 1, 1, true)
+        GameTooltip:AddLine("Valid ranks: 0-14", 1, 1, 1, true)
+        GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+
+    rankSearchBox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
+local function CreateRankSearchLabel(parent, anchorTo)
+    local rankLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    rankLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
+    rankLabel:SetText("Rank:")
+    rankLabel:SetTextColor(1, 0.82, 0)
+    return rankLabel
+end
 
 local function CreateSearchBar(frame)
     local searchBg = CreateSearchBackground(frame)
@@ -1219,6 +1343,19 @@ local function CreateSearchBar(frame)
     zoneSearchBox:SetText("")
     zoneSearchText = ""
 
+    -- Rank search
+    local rankLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    rankLabel:SetPoint("LEFT", zoneSearchBox, "RIGHT", 15, 0)
+    rankLabel:SetText("Rank:")
+    rankLabel:SetTextColor(1, 0.82, 0)
+
+    local rankSearchBox = CreateRankSearchBox(searchBg, rankLabel)
+    rankSearchBox:SetSize(50, 20)  -- Reduced width
+    rankSearchBox:SetPoint("LEFT", rankLabel, "RIGHT", 5, 0)
+    SetupRankSearchBoxScripts(rankSearchBox)
+    rankSearchBox:SetText("")
+    rankSearchText = ""
+
     -- Store references in the frame for external access
     frame.searchBox = searchBox
     frame.levelSearchBox = levelSearchBox
@@ -1226,6 +1363,7 @@ local function CreateSearchBar(frame)
     frame.raceSearchBox = raceSearchBox
     frame.genderSearchBox = genderSearchBox
     frame.zoneSearchBox = zoneSearchBox
+    frame.rankSearchBox = rankSearchBox  -- Add this line
 
     return searchBox
 end
@@ -1405,6 +1543,65 @@ function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
         if killStatsFrame.levelSearchBox then
             -- Always set to white - we've already validated the input
             killStatsFrame.levelSearchBox:SetTextColor(1, 1, 1)
+        end
+
+        -- Refresh the kill list to apply the filter
+        RefreshKillList()
+
+        -- Bring the kills list frame to front if it's not already
+        PKA_FrameManager:BringToFront("KillsList")
+    end
+end
+
+-- Add a new function to set rank range filter (similar to level range)
+function PKA_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
+    if killStatsFrame then
+        -- Reset all filters first if requested
+        if resetOtherFilters then
+            killStatsFrame.searchBox:SetText("")
+            searchText = ""
+            killStatsFrame.levelSearchBox:SetText("")
+            levelSearchText = ""
+            minLevelSearch = nil
+            maxLevelSearch = nil
+            killStatsFrame.classSearchBox:SetText("")
+            classSearchText = ""
+            killStatsFrame.raceSearchBox:SetText("")
+            raceSearchText = ""
+            killStatsFrame.genderSearchBox:SetText("")
+            genderSearchText = ""
+            killStatsFrame.zoneSearchBox:SetText("")
+            zoneSearchText = ""
+        end
+
+        -- Set the rank range directly to the internal variables
+        minRankSearch = minRank
+        maxRankSearch = maxRank
+
+        -- Update the rank search box text
+        if killStatsFrame.rankSearchBox then
+            if minRank and maxRank and minRank == maxRank then
+                -- Single rank
+                killStatsFrame.rankSearchBox:SetText(tostring(minRank))
+                rankSearchText = tostring(minRank)
+            elseif minRank and maxRank then
+                -- Rank range
+                local rangeText = minRank .. "-" .. maxRank
+                killStatsFrame.rankSearchBox:SetText(rangeText)
+                rankSearchText = rangeText
+            else
+                -- Clear the filter if something went wrong
+                killStatsFrame.rankSearchBox:SetText("")
+                rankSearchText = ""
+                minRankSearch = nil
+                maxRankSearch = nil
+            end
+        end
+
+        -- Highlight the text with the proper color
+        if killStatsFrame.rankSearchBox then
+            -- Always set to white - we've already validated the input
+            killStatsFrame.rankSearchBox:SetTextColor(1, 1, 1)
         end
 
         -- Refresh the kill list to apply the filter

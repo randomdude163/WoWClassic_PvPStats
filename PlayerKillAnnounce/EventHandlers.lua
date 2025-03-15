@@ -32,7 +32,7 @@ local PKA_CHAT_MESSAGE_B = 0.74
 -- State tracking variables
 local inCombat = false
 local killStreakMilestoneFrame = nil
-PKA_Debug = false  -- Debug mode for extra messages
+PKA_Debug = true  -- Debug mode for extra messages
 
 -- Add these variables at the top
 local PKA_RecentPetDamage = {}  -- Track recent pet damage
@@ -116,6 +116,9 @@ local function GetNameFromGUID(guid)
     return nil
 end
 
+
+end
+
 local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka config - Open configuration UI", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka stats - Show kills list", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
@@ -169,17 +172,25 @@ local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gende
             playerLevel = playerLevel or -1,
             unknownLevel = false,
             zone = currentZone,
-            killLocations = {} -- Initialize empty array for kill locations
+            killLocations = {}, -- Initialize empty array for kill locations
+            rank = 0 -- Initialize rank
         }
     end
 end
 
-local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, isUnknownLevel)
+-- Update UpdateKillCacheEntry to include rank
+local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, isUnknownLevel, rank)
     PKA_KillCounts[nameWithLevel].kills = PKA_KillCounts[nameWithLevel].kills + 1
     local timestamp = date("%Y-%m-%d %H:%M:%S")
     PKA_KillCounts[nameWithLevel].lastKill = timestamp
     PKA_KillCounts[nameWithLevel].playerLevel = playerLevel or -1
 
+    -- Always update rank if provided (even if 0)
+    if rank ~= nil then
+        PKA_KillCounts[nameWithLevel].rank = rank
+    end
+
+    -- Rest of the function remains the same...
     -- Ensure zone is captured correctly
     local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
     PKA_KillCounts[nameWithLevel].zone = currentZone
@@ -357,11 +368,19 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
         debugMsg = debugMsg .. " ("
     end
 
-    debugMsg = debugMsg .. englishClass .. ", " .. race .. ") - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
+    debugMsg = debugMsg .. englishClass .. ", " .. race .. ")"
+
+    -- Add rank info to debug message
+    local rank = PKA_KillCounts[nameWithLevel].rank or 0
+    if rank > 0 then
+        debugMsg = debugMsg .. " [Rank: " .. rank .. "]"
+    end
+
+    debugMsg = debugMsg .. " - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
     debugMsg = debugMsg .. " - Current streak: " .. PKA_CurrentKillStreak
     debugMsg = debugMsg .. " - Zone: " .. (PKA_KillCounts[nameWithLevel].zone or "Unknown")
 
-    -- Add info on who got the kill
+    -- Rest of function remains unchanged...
     if killerGUID and IsPetGUID(killerGUID) then
         debugMsg = debugMsg .. " - Kill by: Your Pet (" .. (killerName or "Unknown") .. ")"
     end
@@ -373,7 +392,7 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
     return debugMsg
 end
 
-local function RegisterPlayerKill(playerName, level, englishClass, race, gender, guild, killerGUID, killerName)
+local function RegisterPlayerKill(playerName, level, englishClass, race, gender, guild, killerGUID, killerName, rank)
     local playerLevel = UnitLevel("player")
     local nameWithLevel = playerName .. ":" .. level
 
@@ -383,13 +402,15 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     UpdateMultiKill()
 
     InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
-    UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, (level == -1))
+    UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, (level == -1), rank)
 
     AnnounceKill(playerName, level, nameWithLevel)
 
     -- Print debug message using the new function
-    local debugMsg = CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel, killerGUID, killerName)
-    print(debugMsg)
+    if PKA_Debug then
+        local debugMsg = CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel, killerGUID, killerName)
+        print(debugMsg)
+    end
 
     PKA_SaveSettings()
 end
@@ -462,6 +483,28 @@ local function SimulatePlayerKills(killCount)
             randomLevel = -1
         end
 
+        -- Generate random rank (0-14)
+        -- Higher chance for lower ranks, lower chance for high ranks
+        local rankChance = math.random(100)
+        local randomRank = 0
+
+        if rankChance <= 40 then
+            -- 40% chance for rank 0 (no rank)
+            randomRank = 0
+        elseif rankChance <= 70 then
+            -- 30% chance for ranks 1-4 (Private to Master Sergeant)
+            randomRank = math.random(1, 4)
+        elseif rankChance <= 90 then
+            -- 20% chance for ranks 5-8 (Sergeant Major to Knight-Captain)
+            randomRank = math.random(5, 8)
+        elseif rankChance <= 98 then
+            -- 8% chance for ranks 9-12 (Knight-Champion to Marshal)
+            randomRank = math.random(9, 12)
+        else
+            -- 2% chance for ranks 13-14 (Field Marshal and Grand Marshal)
+            randomRank = math.random(13, 14)
+        end
+
         -- Temporarily override GetRealZoneText to return our random zone
         local originalGetRealZoneText = GetRealZoneText
         GetRealZoneText = function() return randomZone end
@@ -472,16 +515,14 @@ local function SimulatePlayerKills(killCount)
         -- Override C_Map.GetPlayerMapPosition for this simulation
         local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
         C_Map.GetPlayerMapPosition = function(mapID, unit)
-            return {x = randomX, y = randomY}
+            return {x = randomX/100, y = randomY/100}
         end
 
-        -- Register the kill with random data
-        RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild)
+        -- Register the kill with random data including rank
+        RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, nil, nil, randomRank)
 
-        -- Restore the original function
+        -- Restore the original functions
         C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
-
-        -- Restore the original function
         GetRealZoneText = originalGetRealZoneText
     end
 
@@ -565,7 +606,7 @@ local function HandlePlayerDeath()
 end
 
 local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
-    local level, englishClass, race, gender, guild = PKA_GetPlayerInfo(destName, destGUID)
+    local level, englishClass, race, gender, guild, rank = PKA_GetPlayerInfo(destName, destGUID)
 
     if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
         print("Kill of " .. destName .. " not counted (incomplete data: " ..
@@ -576,10 +617,8 @@ local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceNam
         return
     end
 
-    -- At this point, we've already verified that this kill should count
-    RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName)
+    RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName, rank)
 end
-
 
 -- Add this function to clean up old damage records
 local function CleanupRecentPetDamage()
@@ -651,15 +690,6 @@ local function HandleCombatLogEvent()
     if combatEvent == "UNIT_DIED" and destGUID == UnitGUID("player") then
         HandlePlayerDeath()
         return
-    end
-
-    -- Process player info for cache
-    if sourceName and bit.band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
-        PKA_UpdatePlayerInfoCache(sourceName, sourceGUID, nil, nil, nil, nil, nil)
-    end
-
-    if destName and bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
-        PKA_UpdatePlayerInfoCache(destName, destGUID, nil, nil, nil, nil, nil)
     end
 
     if IsPetGUID(sourceGUID) and destGUID then
@@ -928,7 +958,7 @@ function PKA_CheckBattlegroundStatus()
 
     -- Check if current zone is a battleground
     for _, bgName in ipairs(battlegroundZones) do
-        if currentZone == bgName then
+        if (currentZone == bgName) then
             PKA_InBattleground = true
             if PKA_Debug and not PKA_LastBattlegroundState then
                 print("PlayerKillAnnounce: Entered battleground. Only direct kills will be counted.")
@@ -990,13 +1020,6 @@ function PKA_LoadSettings()
     PKA_BattlegroundMode = PlayerKillAnnounceDB.BattlegroundMode ~= false
     PKA_EnableKillSounds = PlayerKillAnnounceDB.EnableKillSounds
     if PKA_EnableKillSounds == nil then PKA_EnableKillSounds = true end  -- Default to enabled
-end
-
-function PKA_DebugPlayerGUID()
-    local playerGUID = UnitGUID("player")
-    print("Your player GUID is: " .. (playerGUID or "nil"))
-    print("BG Mode is: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"))
-    print("Next time you kill someone in a BG, it should be registered")
 end
 
 -- Add this function near your other debug functions
