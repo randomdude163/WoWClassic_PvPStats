@@ -502,8 +502,10 @@ local function createGuildTable(parent, x, y, width, height)
         for _, data in pairs(PKA_KillCounts) do
             if data then
                 local guild = data.guild or ""
-                if guild == "" then guild = "No Guild" end
-                guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
+                -- Only count players who are in a guild
+                if guild ~= "" then
+                    guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
+                end
             end
         end
     end
@@ -526,7 +528,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
-local function addSummaryStatLine(container, label, value, yPosition)
+local function addSummaryStatLine(container, label, value, yPosition, tooltipText)
     local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", 0, yPosition)
     labelText:SetText(label)
@@ -534,6 +536,23 @@ local function addSummaryStatLine(container, label, value, yPosition)
     local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueText:SetPoint("TOPLEFT", 200, yPosition)
     valueText:SetText(tostring(value))
+
+    -- If tooltip text is provided, create a tooltip trigger frame
+    if tooltipText then
+        local tooltipFrame = CreateFrame("Frame", nil, container)
+        tooltipFrame:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
+        tooltipFrame:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
+
+        tooltipFrame:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+            GameTooltip:AddLine(tooltipText, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+
+        tooltipFrame:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
+    end
 
     return yPosition - 20
 end
@@ -644,8 +663,10 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY)
 
     statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer), statY)
-    statY = addSummaryStatLine(container, "Current Kill Streak:", PKA_CurrentKillStreak or 0, statY)
-    statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY)
+    statY = addSummaryStatLine(container, "Current Kill Streak:", PKA_CurrentKillStreak or 0, statY,
+        "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
+    statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY,
+        "This record persists through logouts and can only be reset manually through the Reset tab in the Addon Settings.")
     statY = addSummaryStatLine(container, "Highest Multi-Kill:", PKA_HighestMultiKill or 0, statY)
 
     -- Increase spacing before credits section
@@ -663,9 +684,13 @@ local function gatherStatistics()
     local unknownLevelClassData = {}
     local zoneData = {}
     local levelData = {} -- Changed to store individual levels
+    local guildStatusData = {    -- Add this new table
+        ["In Guild"] = 0,
+        ["No Guild"] = 0
+    }
 
     if not PKA_KillCounts then
-        return {}, {}, {}, {}, {}, {}
+        return {}, {}, {}, {}, {}, {}, {}  -- Add an extra return value
     end
 
     for nameWithLevel, data in pairs(PKA_KillCounts) do
@@ -697,10 +722,18 @@ local function gatherStatistics()
             -- Track zone data
             local zone = data.zone or "Unknown"
             zoneData[zone] = (zoneData[zone] or 0) + kills
+
+            -- Track guild status
+            local guild = data.guild or ""
+            if guild ~= "" then
+                guildStatusData["In Guild"] = guildStatusData["In Guild"] + kills
+            else
+                guildStatusData["No Guild"] = guildStatusData["No Guild"] + kills
+            end
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
 end
 
 local function createScrollableLeftPanel(parent)
@@ -871,7 +904,7 @@ function PKA_UpdateStatisticsFrame(frame)
     if frame:GetHeight() < 400 then return end
 
     -- Get fresh statistics
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData = gatherStatistics()
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = gatherStatistics()
 
     -- Create new content
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
@@ -894,6 +927,16 @@ function PKA_UpdateStatisticsFrame(frame)
     createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH, genderChartHeight)
 
     yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
+
+    -- Add the new Guild Status chart
+    local guildStatusChartHeight = calculateChartHeight(guildStatusData)
+    local guildStatusColors = {
+        ["In Guild"] = {r = 0.2, g = 0.8, b = 0.2},    -- Green for guild members
+        ["No Guild"] = {r = 0.8, g = 0.2, b = 0.2}     -- Red for guildless
+    }
+    createBarChart(leftScrollContent, "Kills by Guild Status", guildStatusData, guildStatusColors, 0, yOffset, UI.CHART.WIDTH, guildStatusChartHeight)
+
+    yOffset = yOffset - guildStatusChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
