@@ -116,6 +116,22 @@ local function GetNameFromGUID(guid)
     return nil
 end
 
+-- After the other function declarations near the top
+
+-- Helper function to get honor rank from target
+local function GetTargetHonorRank()
+    -- Check if unit has PvP rank info
+    if not UnitPVPRank then return 0 end
+
+    local pvpRank = UnitPVPRank("target")
+    -- Classic returns ranks as 1-14 where 1=Unranked, 2=Rank 1, etc.
+    -- So we need to subtract 1 to get 0-13 range
+    if pvpRank and pvpRank > 0 then
+        return pvpRank - 1
+    end
+    return 0
+end
+
 local function PrintSlashCommandUsage()
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka config - Open configuration UI", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
     DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka stats - Show kills list", PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
@@ -169,17 +185,25 @@ local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gende
             playerLevel = playerLevel or -1,
             unknownLevel = false,
             zone = currentZone,
-            killLocations = {} -- Initialize empty array for kill locations
+            killLocations = {}, -- Initialize empty array for kill locations
+            rank = 0 -- Initialize rank
         }
     end
 end
 
-local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, isUnknownLevel)
+-- Update UpdateKillCacheEntry to include rank
+local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, isUnknownLevel, rank)
     PKA_KillCounts[nameWithLevel].kills = PKA_KillCounts[nameWithLevel].kills + 1
     local timestamp = date("%Y-%m-%d %H:%M:%S")
     PKA_KillCounts[nameWithLevel].lastKill = timestamp
     PKA_KillCounts[nameWithLevel].playerLevel = playerLevel or -1
 
+    -- Update rank if provided
+    if rank and rank > 0 then
+        PKA_KillCounts[nameWithLevel].rank = rank
+    end
+
+    -- Rest of the function remains the same...
     -- Ensure zone is captured correctly
     local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
     PKA_KillCounts[nameWithLevel].zone = currentZone
@@ -373,7 +397,7 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
     return debugMsg
 end
 
-local function RegisterPlayerKill(playerName, level, englishClass, race, gender, guild, killerGUID, killerName)
+local function RegisterPlayerKill(playerName, level, englishClass, race, gender, guild, killerGUID, killerName, rank)
     local playerLevel = UnitLevel("player")
     local nameWithLevel = playerName .. ":" .. level
 
@@ -383,7 +407,7 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     UpdateMultiKill()
 
     InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
-    UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, (level == -1))
+    UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, (level == -1), rank)
 
     AnnounceKill(playerName, level, nameWithLevel)
 
@@ -928,7 +952,7 @@ function PKA_CheckBattlegroundStatus()
 
     -- Check if current zone is a battleground
     for _, bgName in ipairs(battlegroundZones) do
-        if currentZone == bgName then
+        if (currentZone == bgName) then
             PKA_InBattleground = true
             if PKA_Debug and not PKA_LastBattlegroundState then
                 print("PlayerKillAnnounce: Entered battleground. Only direct kills will be counted.")
@@ -1195,4 +1219,31 @@ function PKA_SetupTooltip()
     if PKA_Debug then
         print("PlayerKillAnnounce: Tooltip hooks initialized")
     end
+end
+
+-- Find the function PKA_CollectPlayerInfo in the DataStorage.lua file and add the rank parameter
+
+function PKA_CollectPlayerInfo(unit)
+    if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
+
+    if UnitIsFriend("player", unit) then return end
+
+    local name = UnitName(unit)
+    if not name then return end
+
+    local guid = UnitGUID(unit)
+    local level = UnitLevel(unit)
+    local _, englishClass = UnitClass(unit)
+    local _, englishRace = UnitRace(unit)
+    local gender = UnitSex(unit)
+    local guildName = GetGuildInfo(unit)
+
+    -- Add rank collection
+    local rank = 0
+    if unit == "target" then
+        rank = GetTargetHonorRank()
+    end
+
+    -- Update to pass the rank information
+    PKA_UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName, rank)
 end
