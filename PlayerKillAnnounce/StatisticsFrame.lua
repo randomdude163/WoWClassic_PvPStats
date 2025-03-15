@@ -814,11 +814,17 @@ end
 
 -- Modify the createStatisticsFrame function to include the new chart
 function PKA_CreateStatisticsFrame()
+    -- Check if we should destroy and recreate the frame based on data status
+    local hasData = hasEnoughData()
+
+    -- Always recreate the frame when it's reopened to prevent crashes
     if statsFrame then
-        PKA_FrameManager:ShowFrame("Statistics")
-        return
+        statsFrame:Hide()
+        PKA_FrameManager:HideFrame("Statistics")
+        statsFrame = nil
     end
 
+    -- Remove from UISpecialFrames if present
     for i = #UISpecialFrames, 1, -1 do
         if (UISpecialFrames[i] == "PKAStatisticsFrame") then
             table.remove(UISpecialFrames, i)
@@ -826,36 +832,56 @@ function PKA_CreateStatisticsFrame()
         end
     end
 
-    if not hasEnoughData() then
+    if not hasData then
         statsFrame = createEmptyStatsFrame()
-
-        -- Remove from UISpecialFrames since it will be handled by FrameManager
-        for i = #UISpecialFrames, 1, -1 do
-            if (UISpecialFrames[i] == "PKAStatisticsFrame") then
-                table.remove(UISpecialFrames, i)
-                break
-            end
-        end
-
         PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
         return
     end
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData = gatherStatistics()
-
+    -- Create the main statistics frame
     statsFrame = setupMainFrame()
-
-    -- Remove ESC key handling from setupMainFrame
-    statsFrame:SetScript("OnKeyDown", nil)
-
+    statsFrame:SetScript("OnKeyDown", nil) -- Remove ESC key handling from setupMainFrame
     PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
 
-    local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(statsFrame)
+    -- Fill the frame with content
+    PKA_UpdateStatisticsFrame(statsFrame)
+end
+
+-- New function to update statistics frame content
+function PKA_UpdateStatisticsFrame(frame)
+    if not frame then return end
+
+    -- Clear existing content if any
+    if frame.leftScrollContent then
+        frame.leftScrollContent:SetParent(nil)
+        frame.leftScrollContent = nil
+    end
+
+    if frame.guildTable then
+        frame.guildTable:SetParent(nil)
+        frame.guildTable = nil
+    end
+
+    if frame.summaryStats then
+        frame.summaryStats:SetParent(nil)
+        frame.summaryStats = nil
+    end
+
+    -- If this is the empty frame, nothing more to do
+    if frame:GetHeight() < 400 then return end
+
+    -- Get fresh statistics
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData = gatherStatistics()
+
+    -- Create new content
+    local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
+    frame.leftScrollContent = leftScrollContent
+    frame.leftScrollFrame = leftScrollFrame
 
     local classChartHeight = calculateChartHeight(classData)
     local raceChartHeight = calculateChartHeight(raceData)
     local genderChartHeight = calculateChartHeight(genderData)
-    local levelChartHeight = calculateChartHeight(levelData) -- Now includes level ??
+    local levelChartHeight = calculateChartHeight(levelData)
     local zoneChartHeight = calculateChartHeight(zoneData)
 
     local yOffset = 0
@@ -877,8 +903,8 @@ function PKA_CreateStatisticsFrame()
     leftScrollContent:SetHeight(totalHeight)
 
     local summaryStatsWidth = 380
-    createGuildTable(statsFrame, 440, -UI.TOP_PADDING, summaryStatsWidth, UI.GUILD_LIST.HEIGHT)
-    createSummaryStats(statsFrame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth, 250)
+    frame.guildTable = createGuildTable(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, UI.GUILD_LIST.HEIGHT)
+    frame.summaryStats = createSummaryStats(frame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth, 250)
 end
 
 -- Hook into the slash command handler if it exists already
