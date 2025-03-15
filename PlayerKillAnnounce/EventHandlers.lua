@@ -1051,9 +1051,38 @@ end
 function PKA_SetupTooltip()
     if tooltipHookSetup then return end
 
-    -- Create and hook into game tooltip
+    -- Helper function to check if a kills line already exists in the tooltip
+    local function HasKillsLineInTooltip(tooltip)
+        for i = 1, tooltip:NumLines() do
+            local line = _G[tooltip:GetName() .. "TextLeft" .. i]
+            if line and line:GetText() and line:GetText():find("^Kills: ") then
+                return true
+            end
+        end
+        return false
+    end
+
+    -- Helper function to add kills to tooltip if not already present
+    local function AddKillsToTooltip(tooltip, kills)
+        if not HasKillsLineInTooltip(tooltip) then
+            tooltip:AddLine("Kills: " .. kills, 1, 1, 1)
+            tooltip:Show() -- Force refresh to show the new line
+        end
+    end
+
+    -- Helper function to get kills for a player by name (checking all level entries)
+    local function GetKillsByPlayerName(playerName)
+        for nameWithLevel, data in pairs(PKA_KillCounts) do
+            local storedName = nameWithLevel:match("^(.+):")
+            if storedName == playerName then
+                return data.kills
+            end
+        end
+        return 0
+    end
+
+    -- Handle live player tooltips
     local function OnTooltipSetUnit(tooltip)
-        -- Get unit from tooltip
         local name, unit = tooltip:GetUnit()
         if not unit then return end
 
@@ -1070,10 +1099,47 @@ function PKA_SetupTooltip()
         if PKA_KillCounts[nameWithLevel] then
             kills = PKA_KillCounts[nameWithLevel].kills
         end
-        tooltip:AddLine("Kills: " .. kills, 1, 1, 1)
+
+        AddKillsToTooltip(tooltip, kills)
     end
 
-    -- Hook the tooltip
+    -- Handle corpse tooltips
+    local function OnTooltipShow(tooltip)
+        if not tooltip:IsShown() then return end
+
+        local line1 = _G[tooltip:GetName().."TextLeft1"]
+        if not line1 then return end
+
+        local text = line1:GetText()
+        if not text or not text:find("^Corpse of ") then return end
+
+        -- Extract player name
+        local playerName = text:match("^Corpse of (.+)$")
+        if not playerName then return end
+
+        -- Look up player in our database (check at all levels)
+        local kills = GetKillsByPlayerName(playerName)
+
+        -- Always add the kill count, even if 0
+        AddKillsToTooltip(tooltip, kills)
+    end
+
+    -- Hook into various tooltip events for better coverage
     GameTooltip:HookScript("OnTooltipSetUnit", OnTooltipSetUnit)
+    GameTooltip:HookScript("OnShow", OnTooltipShow)
+
+    -- The OnTooltipCleared event might fire too early, so we also use a small timer
+    GameTooltip:HookScript("OnTooltipCleared", function(tooltip)
+        C_Timer.After(0.01, function()
+            if tooltip:IsShown() then
+                OnTooltipShow(tooltip)
+            end
+        end)
+    end)
+
     tooltipHookSetup = true
+
+    if PKA_Debug then
+        print("PlayerKillAnnounce: Tooltip hooks initialized")
+    end
 end
