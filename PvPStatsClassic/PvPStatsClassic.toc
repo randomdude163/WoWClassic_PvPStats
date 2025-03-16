@@ -1,5 +1,5 @@
 ## Interface: 11506
-## Title: Player Kill Announce
+## Title: PvP Stats Classic
 ## Author: Severussnipe, Hkfarmer <Redridge Police>
 ## Notes: Announces player kills in party chat.
 ## SavedVariables: PlayerKillAnnounceDB
