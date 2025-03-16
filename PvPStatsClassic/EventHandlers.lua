@@ -817,7 +817,7 @@ local function CreateMilestoneFrameIfNeeded()
     return frame
 end
 
-local function SetupMilestoneAnimation(frame)
+local function SetupKillstreakMilestoneAnimation(frame, duration)
     if frame.animGroup then
         frame.animGroup:Stop()
         frame.animGroup:SetScript("OnPlay", nil)
@@ -831,13 +831,13 @@ local function SetupMilestoneAnimation(frame)
     local fadeIn = animGroup:CreateAnimation("Alpha")
     fadeIn:SetFromAlpha(0)
     fadeIn:SetToAlpha(1)
-    fadeIn:SetDuration(0.5)
+    fadeIn:SetDuration(0.01)
     fadeIn:SetOrder(1)
 
     local hold = animGroup:CreateAnimation("Alpha")
     hold:SetFromAlpha(1)
     hold:SetToAlpha(1)
-    hold:SetDuration(9.0)
+    hold:SetDuration(duration)
     hold:SetOrder(2)
 
     local fadeOut = animGroup:CreateAnimation("Alpha")
@@ -871,12 +871,9 @@ function PKA_ShowKillStreakMilestone(killCount)
     frame:Show()
     frame:SetAlpha(0)
 
-    local animGroup = SetupMilestoneAnimation(frame)
-
+    local animGroup = SetupKillstreakMilestoneAnimation(frame, 9.0)
     PlayMilestoneSound()
-
     DoEmote("CHEER")
-
     animGroup:Play()
 end
 
@@ -1628,9 +1625,9 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     frame.levelText:SetWidth(textWidth)
     frame.killText:SetWidth(textWidth)
 
-    -- Show the frame
     frame:Show()
-
+    local animGroup = SetupKillstreakMilestoneAnimation(frame, PKA_MilestoneAutoHideTime)
+    animGroup:Play()
     PlaySound(8213) -- PVPFlagCapturedHorde
 
     -- Cancel existing timer if any
@@ -1639,7 +1636,7 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     end
 
     -- Set auto-hide timer
-    PKA_MilestoneTimer = C_Timer.NewTimer(PKA_MilestoneAutoHideTime, function()
+    PKA_MilestoneTimer = C_Timer.NewTimer(PKA_MilestoneAutoHideTime + 1.0, function()
         frame:Hide()
         PKA_MilestoneTimer = nil
     end)
