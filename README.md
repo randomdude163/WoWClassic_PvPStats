@@ -11,3 +11,49 @@ PvP Stats Classic tracks your PvP kills and provides detailed statistics and cus
 - **Mouseover Tooltip**: Quickly see how often you killed players when hovering your mouse over them
 - **Battleground Mode**: Party chat announcements are automatically disabled when you join a BG to prevent spam
 - **Fully Customizable**: Set custom announcement messages and kill streak/milestone notification thresholds
+
+
+## Screenshots
+### Party announce messages:
+Kills:
+
+<img src="PvPStatsClassic/img/party_kill_announcement.png" width="500">
+
+Kill streaks / multi-kills:
+
+<img src="PvPStatsClassic/img/kill_streak_multi_kill_announcement.png" width="500">
+
+
+<img src="PvPStatsClassic/img/kill_streak_ended.png" width="500">
+
+<img src="PvPStatsClassic/img/personal_best_multi_kill.png" width="500">
+
+### Kill milestones:
+
+<img src="PvPStatsClassic/img/kill_milestone_1.png" width="180">
+<img src="PvPStatsClassic/img/kill_milestone_3.png" width="190">
+<img src="PvPStatsClassic/img/kill_milestone_2.png" width="200">
+
+### Mouseover tooltips:
+
+<img src="PvPStatsClassic/img/alive_tooltip.png" width="180">
+<img src="PvPStatsClassic/img/corpse_tooltip.png" width="180">
+
+
+### Kills List:
+
+<img src="PvPStatsClassic/img/kills_list.png" width="500">
+
+### Statistics:
+
+<img src="PvPStatsClassic/img/stats_1.png" width="500">
+<img src="PvPStatsClassic/img/stats_2.png" width="500">
+
+### Configuration / Customization:
+
+<img src="PvPStatsClassic/img/config_announcements.png" width="500">
+
+<img src="PvPStatsClassic/img/config_messages.png" width="500">
+
+
+

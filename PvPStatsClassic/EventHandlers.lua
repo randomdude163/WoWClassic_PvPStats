@@ -3,7 +3,7 @@
 local PlayerKillMessageDefault = "Enemyplayername killed!"
 local KillStreakEndedMessageDefault = "My kill streak of STREAKCOUNT has ended!"
 local NewStreakRecordMessageDefault = "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
-local NewMultiKillRecordMessageDefault = "NEW PERSONAL BEST: Multi-kill of MULTIKILLCOUNT!"
+local NewMultiKillRecordMessageDefault = "NEW PERSONAL BEST: MULTIKILLTEXT!"
 ------------------------------------------------------------------------
 
 local playerKillAnnounceFrame = CreateFrame("Frame", "PlayerKillAnnounceFrame", UIParent)
@@ -28,7 +28,7 @@ PKA_InBattleground = false       -- Current BG state
 -- State tracking variables
 local inCombat = false
 local killStreakMilestoneFrame = nil
-PKA_Debug = true  -- Debug mode for extra messages
+PKA_Debug = false  -- Debug mode for extra messages
 
 -- Add these variables at the top
 local PKA_RecentPetDamage = {}  -- Track recent pet damage
@@ -257,7 +257,7 @@ local function UpdateKillStreak()
         PKA_HighestKillStreak = PKA_CurrentKillStreak
 
         if PKA_HighestKillStreak > 1 then
-            print("NEW KILL STREAK RECORD: " .. PKA_HighestKillStreak .. "!")
+            print("New kill streak personal best: " .. PKA_HighestKillStreak .. "!")
 
             if PKA_HighestKillStreak >= 10 and PKA_HighestKillStreak % 5 == 0 and PKA_EnableRecordAnnounce and IsInGroup() then
                 local newRecordMsg = string.gsub(PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault, "STREAKCOUNT", PKA_HighestKillStreak)
@@ -269,6 +269,24 @@ local function UpdateKillStreak()
             end
         end
     end
+end
+
+local function GetMultiKillText(count)
+    print("GetMultiKillText called with count: " .. count)
+    if count < 2 then return "" end
+
+    local killTexts = {
+        "DOUBLE KILL!",
+        "TRIPLE KILL!",
+        "QUADRA KILL!",
+        "PENTA KILL!"
+    }
+
+    if count <= 5 then
+        return killTexts[count - 1]
+    end
+
+    return "Multi-kill of " .. count
 end
 
 local function UpdateMultiKill()
@@ -283,48 +301,16 @@ local function UpdateMultiKill()
         inCombat = false
     end
 
-    if PKA_MultiKillCount > PKA_HighestMultiKill then
-        PKA_HighestMultiKill = PKA_MultiKillCount
-
-        if PKA_HighestMultiKill > 1 then
-            print("NEW MULTI-KILL RECORD: " .. PKA_HighestMultiKill .. "!")
-
-            if PKA_HighestMultiKill >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
-                local newMultiKillMsg = string.gsub(PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault, "MULTIKILLCOUNT", PKA_HighestMultiKill)
-                SendChatMessage(newMultiKillMsg, "PARTY")
-            end
-
-            if PKA_UpdateConfigStats then
-                PKA_UpdateConfigStats()
-            end
-        end
-    end
-end
-
-local function GetMultiKillText(count)
-    if count < 2 then return "" end
-
-    local killTexts = {
-        "DOUBLE KILL!",
-        "TRIPLE KILL!",
-        "QUADRA KILL!",
-        "PENTA KILL!",
-        "HEXA KILL!",
-        "HEPTA KILL!",
-        "OCTA KILL!",
-        "NONA KILL!"
-    }
-
     -- Play sound based on kill count if enabled
     if PKA_EnableKillSounds then
         local soundFile
-        if count == 2 then
+        if PKA_MultiKillCount == 2 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\double_kill.mp3"
-        elseif count == 3 then
+        elseif PKA_MultiKillCount == 3 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\triple_kill.mp3"
-        elseif count == 4 then
+        elseif PKA_MultiKillCount == 4 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\quadra_kill.mp3"
-        elseif count == 5 then
+        elseif PKA_MultiKillCount == 5 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\penta_kill.mp3"
         end
 
@@ -333,10 +319,21 @@ local function GetMultiKillText(count)
         end
     end
 
-    if count <= 9 then
-        return killTexts[count - 1]
-    else
-        return "DECA KILL!"
+    if PKA_MultiKillCount > PKA_HighestMultiKill then
+        PKA_HighestMultiKill = PKA_MultiKillCount
+
+        if PKA_HighestMultiKill > 1 then
+            print("NEW MULTI-KILL RECORD: " .. PKA_HighestMultiKill .. "!")
+
+            if PKA_HighestMultiKill >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
+                local newMultiKillMsg = string.gsub(PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault, "MULTIKILLTEXT", GetMultiKillText(PKA_HighestMultiKill))
+                SendChatMessage(newMultiKillMsg, "PARTY")
+            end
+
+            if PKA_UpdateConfigStats then
+                PKA_UpdateConfigStats()
+            end
+        end
     end
 end
 
@@ -409,12 +406,9 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
 
     UpdateKillStreak()
     PKA_ShowKillStreakMilestone(PKA_CurrentKillStreak)
-
-    UpdateMultiKill()
-
     InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
     UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
-
+    UpdateMultiKill()
     AnnounceKill(playerName, level, nameWithLevel)
 
     -- Print debug message using the new function
@@ -823,7 +817,7 @@ local function CreateMilestoneFrameIfNeeded()
     return frame
 end
 
-local function SetupMilestoneAnimation(frame)
+local function SetupKillstreakMilestoneAnimation(frame, duration)
     if frame.animGroup then
         frame.animGroup:Stop()
         frame.animGroup:SetScript("OnPlay", nil)
@@ -837,13 +831,13 @@ local function SetupMilestoneAnimation(frame)
     local fadeIn = animGroup:CreateAnimation("Alpha")
     fadeIn:SetFromAlpha(0)
     fadeIn:SetToAlpha(1)
-    fadeIn:SetDuration(0.5)
+    fadeIn:SetDuration(0.01)
     fadeIn:SetOrder(1)
 
     local hold = animGroup:CreateAnimation("Alpha")
     hold:SetFromAlpha(1)
     hold:SetToAlpha(1)
-    hold:SetDuration(9.0)
+    hold:SetDuration(duration)
     hold:SetOrder(2)
 
     local fadeOut = animGroup:CreateAnimation("Alpha")
@@ -877,12 +871,9 @@ function PKA_ShowKillStreakMilestone(killCount)
     frame:Show()
     frame:SetAlpha(0)
 
-    local animGroup = SetupMilestoneAnimation(frame)
-
+    local animGroup = SetupKillstreakMilestoneAnimation(frame, 9.0)
     PlayMilestoneSound()
-
     DoEmote("CHEER")
-
     animGroup:Play()
 end
 
@@ -1444,7 +1435,7 @@ function PKA_CreateMilestoneFrame()
 
     -- Create the main frame
     local frame = CreateFrame("Frame", "PKA_KillMilestoneFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(250, 82)  -- Base size - will be adjusted dynamically
+    frame:SetSize(200, 82)  -- Base size - will be adjusted dynamically
     frame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
     frame:SetFrameStrata("MEDIUM")
     frame:SetMovable(true)
@@ -1621,7 +1612,7 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     local frameWidth = 20 + 24 + 5 + requiredContentWidth + 20
 
     -- Apply minimum and maximum width constraints
-    local minWidth = 180   -- Minimum width
+    local minWidth = 140   -- Minimum width
     local maxWidth = 300   -- Maximum width cap
     frameWidth = math.min(maxWidth, math.max(minWidth, frameWidth))
 
@@ -1634,8 +1625,10 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     frame.levelText:SetWidth(textWidth)
     frame.killText:SetWidth(textWidth)
 
-    -- Show the frame
     frame:Show()
+    local animGroup = SetupKillstreakMilestoneAnimation(frame, PKA_MilestoneAutoHideTime)
+    animGroup:Play()
+    PlaySound(8213) -- PVPFlagCapturedHorde
 
     -- Cancel existing timer if any
     if PKA_MilestoneTimer then
@@ -1643,7 +1636,7 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     end
 
     -- Set auto-hide timer
-    PKA_MilestoneTimer = C_Timer.NewTimer(PKA_MilestoneAutoHideTime, function()
+    PKA_MilestoneTimer = C_Timer.NewTimer(PKA_MilestoneAutoHideTime + 1.0, function()
         frame:Hide()
         PKA_MilestoneTimer = nil
     end)

@@ -1394,7 +1394,7 @@ local function CreateMainFrame()
     -- frame:SetScript("OnMouseDown", function(self) ... end)
 
     table.insert(UISpecialFrames, "PKAKillStatsFrame")
-    frame.TitleText:SetText("Player Kill List")
+    frame.TitleText:SetText("Player Kills List")
 
     return frame
 end
