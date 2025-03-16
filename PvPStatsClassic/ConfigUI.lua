@@ -72,12 +72,13 @@ local function ResetAllSettingsToDefault()
     end
 
     PKA_SaveSettings()
+    ReloadUI()
     print("All settings have been reset to default values!")
 end
 
 local function ShowResetDefaultsConfirmation()
     StaticPopupDialogs["PKA_RESET_DEFAULTS"] = {
-        text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics.",
+        text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
         button1 = "Yes",
         button2 = "No",
         OnAccept = function()
