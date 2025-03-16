@@ -656,9 +656,6 @@ local function HandleCombatLogEvent()
     local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
           destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
 
-    -- Clean up old pet damage records
-    CleanupRecentPetDamage()
-
     -- Clean up recently counted kills
     local now = GetTime()
     local cutoff = now - PKA_KILL_TRACKING_WINDOW
@@ -904,6 +901,7 @@ function RegisterEvents()
             HandleCombatState(true)
         elseif event == "PLAYER_REGEN_ENABLED" then
             HandleCombatState(false)
+            CleanupRecentPetDamage()
         elseif event == "PLAYER_LOGOUT" then
             PKA_CleanupDatabase()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
