@@ -552,6 +552,28 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
         tooltipFrame:SetScript("OnLeave", function(self)
             GameTooltip:Hide()
         end)
+
+        -- Check if this is the most killed player line and make it visually clickable
+        if label == "Most Killed Player:" then
+            -- Create a button-like appearance
+            local button = CreateFrame("Button", nil, tooltipFrame)
+            button:SetAllPoints(true)
+
+            -- Create gold highlight with gradient fade effect
+            CreateGoldHighlight(button, 20)
+
+            -- Add the click handler directly to the button
+            button:SetScript("OnMouseUp", function()
+                if value ~= "None (0)" then
+                    local playerName = value:match("([^%(]+)"):trim()
+                    PKA_CreateKillStatsFrame()
+                    C_Timer.After(0.05, function()
+                        PKA_SetKillListSearch(playerName, nil, nil, nil, nil, nil, true)
+                        PKA_FrameManager:BringToFront("KillsList")
+                    end)
+                end
+            end)
+        end
     end
 
     return yPosition - 20
@@ -597,7 +619,7 @@ local function addCreditsSection(container, yPosition)
     githubText:SetTextHeight(11)
 end
 
--- Update the calculateStatistics function to remove unknownLevel check
+-- Update the calculateStatistics function to include most killed player
 local function calculateStatistics()
     local totalKills = 0
     local uniqueKills = 0
@@ -605,6 +627,8 @@ local function calculateStatistics()
     local totalPlayerLevels = 0
     local killsWithLevelData = 0
     local unknownLevelKills = 0
+    local mostKilledPlayer = nil
+    local mostKilledCount = 0
 
     if PKA_KillCounts then
         for nameWithLevel, data in pairs(PKA_KillCounts) do
@@ -612,6 +636,13 @@ local function calculateStatistics()
                 uniqueKills = uniqueKills + 1
                 local kills = data.kills or 0
                 totalKills = totalKills + kills
+
+                -- Track most killed player
+                if kills > mostKilledCount then
+                    local playerName = nameWithLevel:match("([^:]+)")
+                    mostKilledPlayer = playerName
+                    mostKilledCount = kills
+                end
 
                 local level = nameWithLevel:match(":(%S+)")
                 local levelNum = tonumber(level or "0") or 0
@@ -643,7 +674,9 @@ local function calculateStatistics()
         avgLevel = avgLevel,
         avgPlayerLevel = avgPlayerLevel,
         avgLevelDiff = avgLevelDiff,
-        avgKillsPerPlayer = avgKillsPerPlayer
+        avgKillsPerPlayer = avgKillsPerPlayer,
+        mostKilledPlayer = mostKilledPlayer or "None",
+        mostKilledCount = mostKilledCount
     }
 end
 
@@ -664,6 +697,30 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY)
 
     statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer), statY)
+
+    -- Add the new line for most killed player
+    local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
+    statY = addSummaryStatLine(container, "Most Killed Player:", mostKilledText, statY,
+        "Click to filter kill list to show only kills of this player")
+
+    -- Add click handler to the most killed player stat line
+    if stats.mostKilledPlayer ~= "None" then
+        local tooltipFrame = container:GetChildren()
+        for _, child in pairs({container:GetChildren()}) do
+            if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
+                -- This is likely our tooltip frame for the most killed player
+                child:SetScript("OnMouseUp", function()
+                    PKA_CreateKillStatsFrame()
+                    C_Timer.After(0.05, function()
+                        PKA_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
+                        PKA_FrameManager:BringToFront("KillsList")
+                    end)
+                end)
+                break
+            end
+        end
+    end
+
     statY = addSummaryStatLine(container, "Current Kill Streak:", PKA_CurrentKillStreak or 0, statY,
         "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
     statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY,
