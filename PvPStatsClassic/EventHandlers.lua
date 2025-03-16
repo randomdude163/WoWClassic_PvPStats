@@ -28,7 +28,7 @@ PKA_InBattleground = false       -- Current BG state
 -- State tracking variables
 local inCombat = false
 local killStreakMilestoneFrame = nil
-PKA_Debug = true  -- Debug mode for extra messages
+PKA_Debug = false  -- Debug mode for extra messages
 
 -- Add these variables at the top
 local PKA_RecentPetDamage = {}  -- Track recent pet damage
@@ -257,7 +257,7 @@ local function UpdateKillStreak()
         PKA_HighestKillStreak = PKA_CurrentKillStreak
 
         if PKA_HighestKillStreak > 1 then
-            print("NEW KILL STREAK RECORD: " .. PKA_HighestKillStreak .. "!")
+            print("New kill streak personal best: " .. PKA_HighestKillStreak .. "!")
 
             if PKA_HighestKillStreak >= 10 and PKA_HighestKillStreak % 5 == 0 and PKA_EnableRecordAnnounce and IsInGroup() then
                 local newRecordMsg = string.gsub(PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault, "STREAKCOUNT", PKA_HighestKillStreak)
@@ -282,24 +282,6 @@ local function GetMultiKillText(count)
         "PENTA KILL!"
     }
 
-    -- Play sound based on kill count if enabled
-    if PKA_EnableKillSounds then
-        local soundFile
-        if count == 2 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\double_kill.mp3"
-        elseif count == 3 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\triple_kill.mp3"
-        elseif count == 4 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\quadra_kill.mp3"
-        elseif count == 5 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\penta_kill.mp3"
-        end
-
-        if soundFile then
-            PlaySoundFile(soundFile, "Master")
-        end
-    end
-
     if count <= 5 then
         return killTexts[count - 1]
     end
@@ -317,6 +299,24 @@ local function UpdateMultiKill()
     else
         PKA_MultiKillCount = 1
         inCombat = false
+    end
+
+    -- Play sound based on kill count if enabled
+    if PKA_EnableKillSounds then
+        local soundFile
+        if PKA_MultiKillCount == 2 then
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\double_kill.mp3"
+        elseif PKA_MultiKillCount == 3 then
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\triple_kill.mp3"
+        elseif PKA_MultiKillCount == 4 then
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\quadra_kill.mp3"
+        elseif PKA_MultiKillCount == 5 then
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\penta_kill.mp3"
+        end
+
+        if soundFile then
+            PlaySoundFile(soundFile, "Master")
+        end
     end
 
     if PKA_MultiKillCount > PKA_HighestMultiKill then
