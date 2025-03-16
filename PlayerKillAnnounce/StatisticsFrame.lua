@@ -950,31 +950,3 @@ function PKA_UpdateStatisticsFrame(frame)
     frame.guildTable = createGuildTable(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, UI.GUILD_LIST.HEIGHT)
     frame.summaryStats = createSummaryStats(frame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth, 250)
 end
-
--- Hook into the slash command handler if it exists already
-if not StatisticsFrame_OriginalSlashHandler and PKA_SlashCommandHandler then
-    StatisticsFrame_OriginalSlashHandler = PKA_SlashCommandHandler
-
-    function PKA_SlashCommandHandler(msg)
-        local command, rest = msg:match("^(%S*)%s*(.-)$")
-        command = string.lower(command or "")
-
-        if command == "stats" or command == "kills" then
-            PKA_CreateKillStatsFrame()
-        elseif StatisticsFrame_OriginalSlashHandler then
-            StatisticsFrame_OriginalSlashHandler(msg)
-        else
-            -- Fallback if original handler somehow became nil
-            print("Error: Original command handler not found.")
-            PrintSlashCommandUsage()
-        end
-    end
-end
-
-local originalPrintUsage = PrintSlashCommandUsage
-if originalPrintUsage then
-    PrintSlashCommandUsage = function()
-        originalPrintUsage()
-        PKA_Print("Usage: /pka statistics (or stat/stats) - Show kill statistics")
-    end
-end

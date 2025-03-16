@@ -544,14 +544,12 @@ function PKA_SlashCommandHandler(msg)
         PKA_Print("Debug mode " .. (PKA_Debug and "enabled" or "disabled"))
     elseif command == "registerkill" then
         local testKillCount = 1
-
         if rest and rest ~= "" then
             local count = tonumber(rest)
             if count and count > 0 then
                 testKillCount = count
             end
         end
-
         SimulatePlayerKills(testKillCount)
     elseif command == "death" then
         SimulatePlayerDeath()
@@ -561,9 +559,11 @@ function PKA_SlashCommandHandler(msg)
         PKA_Print("Manual Battleground Mode " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"))
         PKA_SaveSettings()
     elseif command == "debugevents" then
-        PKA_DebugEvents()
+        PKA_DebugCombatLogEvents()
     elseif command == "debugpet" then
         PKA_DebugPetKills()
+    elseif command == "config" or command == "options" or command == "settings" then
+            PKA_CreateConfigUI()
     else
         PrintSlashCommandUsage()
     end
@@ -996,7 +996,7 @@ function PKA_LoadSettings()
 end
 
 -- Add this function near your other debug functions
-function PKA_DebugEvents()
+function PKA_DebugCombatLogEvents()
     print("Enabling enhanced combat log debugging for 30 seconds...")
 
     -- Store the original combat log handler
