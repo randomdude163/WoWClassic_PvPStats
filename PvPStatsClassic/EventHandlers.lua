@@ -32,11 +32,11 @@ PKA_Debug = false  -- Debug mode for extra messages
 
 -- Add these variables at the top
 local PKA_RecentPetDamage = {}  -- Track recent pet damage
-local PKA_DAMAGE_WINDOW = 0.01   -- 1.0 second window for pet damage (more reliable)
+local PKA_PET_DAMAGE_WINDOW = 0.05   -- 1.0 second window for pet damage (more reliable)
 
 -- Add this variable near the other state tracking variables
 local PKA_RecentlyCountedKills = {}  -- Track recently counted kills to prevent duplicates
-local PKA_KILL_TRACKING_WINDOW = 1.0  -- 1 second window to prevent duplicate kill counting
+local PKA_KILL_TRACKING_WINDOW = 1.0
 
 -- Add this variable at the top with your other variables
 local tooltipHookSetup = false
@@ -352,7 +352,9 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel)
         killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
     end
 
-    killMessage = killMessage .. " x" .. PKA_KillCounts[nameWithLevel].kills
+    if PKA_KillCounts[nameWithLevel].kills >= 2 then
+        killMessage = killMessage .. " x" .. PKA_KillCounts[nameWithLevel].kills
+    end
 
     if PKA_CurrentKillStreak >= 10 and PKA_CurrentKillStreak % 5 == 0 then
         killMessage = killMessage .. " - Kill Streak: " .. PKA_CurrentKillStreak
@@ -630,7 +632,7 @@ end
 -- Add this function to clean up old damage records
 local function CleanupRecentPetDamage()
     local now = GetTime()
-    local cutoff = now - PKA_DAMAGE_WINDOW
+    local cutoff = now - PKA_PET_DAMAGE_WINDOW
 
     for guid, info in pairs(PKA_RecentPetDamage) do
         if info.timestamp < cutoff then
@@ -739,7 +741,7 @@ local function HandleCombatLogEvent()
         -- Check if this player was recently damaged by a pet
         local petDamage = PKA_RecentPetDamage[destGUID]
 
-        if petDamage and (GetTime() - petDamage.timestamp) <= PKA_DAMAGE_WINDOW then
+        if petDamage and (GetTime() - petDamage.timestamp) <= PKA_PET_DAMAGE_WINDOW then
             local playerGUID = UnitGUID("player")
             local countKill = false
 
@@ -762,7 +764,6 @@ local function HandleCombatLogEvent()
                 else
                     -- Check if owner is in party/raid
                     local ownerName = GetNameFromGUID(petDamage.ownerGUID)
-
                     if ownerName and (UnitInParty(ownerName) or UnitInRaid(ownerName)) then
                         countKill = true
                         if PKA_Debug then
