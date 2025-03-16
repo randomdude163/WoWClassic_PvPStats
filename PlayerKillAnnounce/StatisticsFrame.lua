@@ -597,6 +597,7 @@ local function addCreditsSection(container, yPosition)
     githubText:SetTextHeight(11)
 end
 
+-- Update the calculateStatistics function to remove unknownLevel check
 local function calculateStatistics()
     local totalKills = 0
     local uniqueKills = 0
@@ -615,7 +616,7 @@ local function calculateStatistics()
                 local level = nameWithLevel:match(":(%S+)")
                 local levelNum = tonumber(level or "0") or 0
 
-                if levelNum == -1 or (data.unknownLevel or false) then
+                if levelNum == -1 then
                     unknownLevelKills = unknownLevelKills + kills
                 else
                     totalLevels = totalLevels + levelNum * kills
@@ -676,7 +677,7 @@ local function createSummaryStats(parent, x, y, width, height)
     return container
 end
 
--- Modify the gatherStatistics function to track individual levels but exclude unknown level from levelData
+-- Update the gatherStatistics function to remove unknownLevel check
 local function gatherStatistics()
     local classData = {}
     local raceData = {}
@@ -702,7 +703,7 @@ local function gatherStatistics()
             local levelNum = tonumber(level or "0") or 0
             local kills = data.kills or 1
 
-            if levelNum == -1 or (data.unknownLevel or false) then
+            if levelNum == -1 then
                 unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
                 -- Add unknown levels to levelData for proper display in the level chart
                 levelData["??"] = (levelData["??"] or 0) + kills
@@ -948,33 +949,4 @@ function PKA_UpdateStatisticsFrame(frame)
     local summaryStatsWidth = 380
     frame.guildTable = createGuildTable(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, UI.GUILD_LIST.HEIGHT)
     frame.summaryStats = createSummaryStats(frame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth, 250)
-end
-
--- Hook into the slash command handler if it exists already
-if not StatisticsFrame_OriginalSlashHandler and PKA_SlashCommandHandler then
-    StatisticsFrame_OriginalSlashHandler = PKA_SlashCommandHandler
-
-    function PKA_SlashCommandHandler(msg)
-        local command, rest = msg:match("^(%S*)%s*(.-)$")
-        command = string.lower(command or "")
-
-        if command == "stats" or command == "kills" then
-            PKA_CreateKillStatsFrame()
-        elseif StatisticsFrame_OriginalSlashHandler then
-            StatisticsFrame_OriginalSlashHandler(msg)
-        else
-            -- Fallback if original handler somehow became nil
-            print("Error: Original command handler not found.")
-            PrintSlashCommandUsage()
-        end
-    end
-end
-
-local originalPrintUsage = PrintSlashCommandUsage
-if originalPrintUsage then
-    PrintSlashCommandUsage = function()
-        originalPrintUsage()
-        DEFAULT_CHAT_FRAME:AddMessage("Usage: /pka statistics (or stat/stats) - Show kill statistics",
-            PKA_CHAT_MESSAGE_R, PKA_CHAT_MESSAGE_G, PKA_CHAT_MESSAGE_B)
-    end
 end

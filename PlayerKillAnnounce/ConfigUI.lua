@@ -612,31 +612,3 @@ function PKA_CreateConfigUI()
 
     PKA_CreateConfigFrame()
 end
-
--- Hook into the slash command handler if it exists already
-if not ConfigUI_OriginalSlashHandler and PKA_SlashCommandHandler then
-    ConfigUI_OriginalSlashHandler = PKA_SlashCommandHandler
-
-    function PKA_SlashCommandHandler(msg)
-        local command, rest = msg:match("^(%S*)%s*(.-)$")
-        command = string.lower(command or "")
-
-        if command == "config" or command == "options" or command == "settings" then
-            PKA_CreateConfigUI()
-        elseif ConfigUI_OriginalSlashHandler then
-            ConfigUI_OriginalSlashHandler(msg)
-        else
-            -- Fallback if original handler somehow became nil
-            print("Error: Original command handler not found.")
-            PrintSlashCommandUsage()
-        end
-    end
-end
-
--- Only modify PrintSlashCommandUsage if we haven't done so already
-if not ConfigUI_ModifiedPrintUsage then
-    ConfigUI_ModifiedPrintUsage = true
-
-    -- The main EventHandlers.lua file now includes all usage information
-    -- No need to modify PrintSlashCommandUsage anymore
-end

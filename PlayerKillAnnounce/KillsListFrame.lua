@@ -20,7 +20,7 @@ local minLevelSearch = nil
 local maxLevelSearch = nil
 local minRankSearch = nil
 local maxRankSearch = nil
-local sortBy = "lastKill"local sortBy = "lastKill"
+local sortBy = "lastKill"
 local sortAscending = false
 local PKA_KILLS_FRAME_WIDTH = 1020  -- Increased from 900
 local PKA_KILLS_FRAME_HEIGHT = 550  -- Increased from 500
