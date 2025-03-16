@@ -15,6 +15,15 @@ function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild
     if gender and gender ~= nil then playerData.gender = gender end
     if guild and guild ~= "" then playerData.guild = guild end
     if rank and rank > 0 then playerData.rank = rank end
+    if PKA_Debug then
+        print("Player info updated for " .. name)
+        print("GUID: " .. (playerData.guid or "N/A"))
+        print("Level: " .. (playerData.level or "N/A"))
+        print("Class: " .. (playerData.class or "N/A"))
+        print("Race: " .. (playerData.race or "N/A"))
+        print("Guild: " .. (playerData.guild or "N/A"))
+        print("Rank: " .. (playerData.rank or "N/A"))
+    end
 end
 
 local function GetHonorRank(unit)
@@ -54,6 +63,7 @@ end
 
 function PKA_GetInfoFromCachedPlayer(name)
     if not PlayerInfoCache[name] then
+        print("Player info not found in cache for " .. name)
         return 0, "Unknown", "Unknown", 0, "", 0
     end
 
@@ -192,7 +202,9 @@ function PKA_CleanupDatabase()
         PlayerKillAnnounceDB.PKA_MinimapPosition = PKA_MinimapPosition
     end
 
-    print("PlayerKillAnnounce: Database cleaned up.")
+    if PKA_Debug then
+        print("PlayerKillAnnounce: Database cleaned up.")
+    end
 end
 
 function PKA_InitializeDefaults()
