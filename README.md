@@ -47,18 +47,18 @@ Kill streaks / multi-kills:
 
 ### Kills List:
 
-<img src="PvPStatsClassic/img/kills_list.png" width="500">
+<img src="PvPStatsClassic/img/kills_list.png" width="800">
 
 ### Statistics:
 
-<img src="PvPStatsClassic/img/stats_1.png" width="500">
-<img src="PvPStatsClassic/img/stats_2.png" width="500">
+<img src="PvPStatsClassic/img/stats_1.png" width="800">
+<img src="PvPStatsClassic/img/stats_2.png" width="800">
 
 ### Configuration / Customization:
 
-<img src="PvPStatsClassic/img/config_announcements.png" width="500">
+<img src="PvPStatsClassic/img/config_announcements.png" width="600">
 
-<img src="PvPStatsClassic/img/config_messages.png" width="500">
+<img src="PvPStatsClassic/img/config_messages.png" width="600">
 
 
 
