@@ -1021,6 +1021,9 @@ function PKA_LoadSettings()
     PKA_KillMilestoneNotificationsEnabled = PlayerKillAnnounceDB.ShowKillMilestone ~= false -- Default to enabled
     PKA_MilestoneAutoHideTime = PlayerKillAnnounceDB.MilestoneAutoHideTime or 5
     PKA_MilestoneInterval = PlayerKillAnnounceDB.MilestoneInterval or 5
+
+    -- Load minimap button position
+    PKA_MinimapPosition = PlayerKillAnnounceDB.PKA_MinimapPosition or 195
 end
 
 -- Add this function near your other debug functions
