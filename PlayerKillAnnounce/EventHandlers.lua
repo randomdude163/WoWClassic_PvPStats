@@ -643,12 +643,12 @@ local function RecordPetDamage(petGUID, petName, targetGUID, targetName, amount)
         amount = amount or 0
     }
 
-    if PKA_Debug then
-        local playerGUID = UnitGUID("player")
-        if ownerGUID == playerGUID then
-            print("Recorded damage from your pet to: " .. targetName)
-        end
-    end
+    -- if PKA_Debug then
+    --     local playerGUID = UnitGUID("player")
+    --     if ownerGUID == playerGUID then
+    --         print("Recorded damage from your pet to: " .. targetName)
+    --     end
+    -- end
 end
 
 -- Replace the HandleCombatLogEvent function with this streamlined version
