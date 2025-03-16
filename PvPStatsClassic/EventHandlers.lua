@@ -352,7 +352,9 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel)
         killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
     end
 
-    killMessage = killMessage .. " x" .. PKA_KillCounts[nameWithLevel].kills
+    if PKA_KillCounts[nameWithLevel].kills >= 2 then
+        killMessage = killMessage .. " x" .. PKA_KillCounts[nameWithLevel].kills
+    end
 
     if PKA_CurrentKillStreak >= 10 and PKA_CurrentKillStreak % 5 == 0 then
         killMessage = killMessage .. " - Kill Streak: " .. PKA_CurrentKillStreak
