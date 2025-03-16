@@ -498,15 +498,6 @@ local function CreateActionButtons(parent)
     local buttonHeight = 25  -- Fixed height for all buttons
     local buttonSpacing = 15 -- Space between buttons
 
-    -- Create buttons with consistent sizing
-    local showStatsBtn = CreateButton(buttonContainer, "Show Statistics", buttonWidth, buttonHeight, function()
-        PKA_CreateStatisticsFrame()
-    end)
-
-    local killsListBtn = CreateButton(buttonContainer, "Show Kills List", buttonWidth, buttonHeight, function()
-        PKA_CreateKillStatsFrame()
-    end)
-
     local resetStatsBtn = CreateButton(buttonContainer, "Reset Statistics", buttonWidth, buttonHeight, function()
         ShowResetStatsConfirmation()
     end)
@@ -515,15 +506,10 @@ local function CreateActionButtons(parent)
         ShowResetDefaultsConfirmation()
     end)
 
-    -- Stack buttons vertically with even spacing
-    showStatsBtn:SetPoint("TOP", buttonContainer, "TOP", 0, 0)
-    killsListBtn:SetPoint("TOP", showStatsBtn, "BOTTOM", 0, -buttonSpacing)
-    resetStatsBtn:SetPoint("TOP", killsListBtn, "BOTTOM", 0, -buttonSpacing)
+    resetStatsBtn:SetPoint("TOP", buttonContainer, "TOP", 0, 0)
     defaultsBtn:SetPoint("TOP", resetStatsBtn, "BOTTOM", 0, -buttonSpacing)
 
     return {
-        showStatsBtn = showStatsBtn,
-        killsListBtn = killsListBtn,
         resetBtn = resetStatsBtn,
         defaultsBtn = defaultsBtn
     }
