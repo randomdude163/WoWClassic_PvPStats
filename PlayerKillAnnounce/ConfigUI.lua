@@ -62,7 +62,7 @@ local function ShowResetDefaultsConfirmation()
             PKA_MultiKillThreshold = 3
             PKA_ShowTooltipKillInfo = true
 
-            -- Reset Kill Milestone settings (renamed from Last Kill Preview)
+            -- Reset Kill Milestone settings
             PKA_ShowKillMilestone = true
             PKA_MilestoneAutoHideTime = 5
             PKA_MilestoneInterval = 5
@@ -251,7 +251,7 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     -- Add Kill Milestone checkbox (renamed from Last Kill Preview)
     local killMilestone, killMilestoneLabel = CreateCheckbox(parent,
-        "Show Kill Milestone frame",
+        "Show Kill Milestones",
         PKA_ShowKillMilestone,
         function(checked)
             PKA_ShowKillMilestone = checked
@@ -589,7 +589,6 @@ function PKA_UpdateConfigUI()
         configFrame.tooltipKillInfo:SetChecked(PKA_ShowTooltipKillInfo)
     end
 
-    -- Update Kill Milestone settings (renamed from Last Kill Preview)
     if configFrame.killMilestone then
         configFrame.killMilestone:SetChecked(PKA_ShowKillMilestone)
     end
@@ -614,7 +613,7 @@ function PKA_UpdateConfigUI()
 end
 
 local function CreateTabSystem(parent)
-    local tabWidth = 85  -- Smaller initial width
+    local tabWidth = 85
     local tabHeight = 32
     local tabs = {}
     local tabFrames = {}

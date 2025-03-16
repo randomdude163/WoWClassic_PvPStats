@@ -1490,7 +1490,7 @@ function PKA_CreateMilestoneFrame()
 
     -- Create the main frame
     local frame = CreateFrame("Frame", "PKA_KillMilestoneFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(250, 80)  -- Wider to accommodate longer PvP rank names
+    frame:SetSize(250, 82)  -- Base size - will be adjusted dynamically
     frame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
     frame:SetFrameStrata("MEDIUM")
     frame:SetMovable(true)
@@ -1546,26 +1546,29 @@ function PKA_CreateMilestoneFrame()
     title:SetTextColor(1, 0.82, 0)
     frame.title = title
 
+    -- Define left margin for consistent spacing
+    local leftMargin = 20
+
     -- Class icon
     local classIcon = frame:CreateTexture(nil, "ARTWORK")
     classIcon:SetSize(24, 24)
-    classIcon:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -30)
+    classIcon:SetPoint("TOPLEFT", frame, "TOPLEFT", leftMargin, -30)
     frame.classIcon = classIcon
 
     -- Player name
     local nameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     nameText:SetPoint("TOPLEFT", classIcon, "TOPRIGHT", 5, 0)
-    nameText:SetWidth(190) -- Wider to accommodate long names
     nameText:SetJustifyH("LEFT")
     frame.nameText = nameText
 
-    -- Level and rank
+    -- Level and rank - aligned left like the player name
     local levelText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     levelText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -2)
     levelText:SetTextColor(0.8, 0.8, 0.8)
+    levelText:SetJustifyH("LEFT")  -- Explicit left justification
     frame.levelText = levelText
 
-    -- Kill count - now aligned left like the other rows and colored gold
+    -- Kill count - aligned left like the others
     local killText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     killText:SetPoint("TOPLEFT", levelText, "BOTTOMLEFT", 0, -2)
     killText:SetTextColor(1, 0.82, 0) -- Gold color
@@ -1621,29 +1624,61 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     frame.nameText:SetText(playerName)
     frame.nameText:SetTextColor(classColor.r, classColor.g, classColor.b)
 
+    -- Get rank name if applicable
+    local rankName = nil
+    if rank and rank > 0 then
+        rankName = PKA_GetRankName(rank, faction)
+    end
+
     -- Set level and rank if applicable
     local levelString = "Level " .. (level > 0 and level or "??")
-    if rank and rank > 0 then
-        levelString = levelString .. " - " .. PKA_GetRankName(rank, faction)
-        -- Keep full width for players with rank (250px)
-        frame:SetWidth(250)
-        -- Ensure name has enough width for rank info
-        frame.nameText:SetWidth(190)
-    else
-        frame:SetWidth(200)
-        -- Give name text a bit more room in the smaller frame
-        frame.nameText:SetWidth(170)
+    if rankName then
+        levelString = levelString .. " - " .. rankName
     end
     frame.levelText:SetText(levelString)
 
-    -- Set milestone message
+    -- Set kill message
     local killMessage
     if killCount == 1 then
-        killMessage = "First Kill! Entry added"
+        killMessage = "First kill!"
     else
         killMessage = killCount .. "th kill!"
     end
     frame.killText:SetText(killMessage)
+
+    -- Calculate required width for content
+    -- 1. Get the text width of the level string (most likely to be longest)
+    frame.levelText:SetWidth(0) -- Reset width constraint to get natural width
+    local levelTextWidth = frame.levelText:GetStringWidth()
+
+    -- 2. Get the text width of the player name
+    frame.nameText:SetWidth(0) -- Reset width constraint to get natural width
+    local nameTextWidth = frame.nameText:GetStringWidth()
+
+    -- 3. Get width of kill message
+    frame.killText:SetWidth(0)
+    local killTextWidth = frame.killText:GetStringWidth()
+
+    -- 4. Calculate the needed width (add padding for icon and margins)
+    local requiredContentWidth = math.max(levelTextWidth, nameTextWidth, killTextWidth)
+
+    -- Add consistent margins on both left and right sides
+    -- 20px left margin + 24px icon + 5px icon-to-text + content width + 20px right margin
+    local frameWidth = 20 + 24 + 5 + requiredContentWidth + 20
+
+    -- Apply minimum and maximum width constraints
+    local minWidth = 180   -- Minimum width
+    local maxWidth = 300   -- Maximum width cap
+    frameWidth = math.min(maxWidth, math.max(minWidth, frameWidth))
+
+    -- Apply the calculated width to the frame
+    frame:SetWidth(frameWidth)
+
+    -- Set text element widths to match the frame with proper margins
+    local textWidth = frameWidth - (20 + 24 + 5 + 20) -- Left margin + icon + spacing + right margin
+    frame.nameText:SetWidth(textWidth)
+    frame.levelText:SetWidth(textWidth)
+    frame.killText:SetWidth(textWidth)
 
     -- Show the frame
     frame:Show()
