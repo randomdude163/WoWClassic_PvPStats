@@ -545,7 +545,7 @@ local function CreateMainFrame()
 
     tinsert(UISpecialFrames, "PKAConfigFrame")
 
-    frame.TitleText:SetText("PvPStatsClassic Configuration")
+    frame.TitleText:SetText("PvP Stats Classic Configuration")
 
     return frame
 end
