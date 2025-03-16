@@ -1,4 +1,4 @@
--- ConfigUI.lua - Configuration interface for PlayerKillAnnounce
+-- ConfigUI.lua - Configuration interface for PvPStatsClassic
 -- This adds a graphical user interface for all settings of the addon
 local configFrame = nil
 
@@ -545,7 +545,7 @@ local function CreateMainFrame()
 
     tinsert(UISpecialFrames, "PKAConfigFrame")
 
-    frame.TitleText:SetText("PlayerKillAnnounce Configuration")
+    frame.TitleText:SetText("PvPStatsClassic Configuration")
 
     return frame
 end
@@ -719,7 +719,7 @@ local function CreateAboutTab(parent)
     local logo = parent:CreateTexture(nil, "ARTWORK")
     logo:SetSize(220, 220)
     logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
-    logo:SetTexture("Interface\\AddOns\\PlayerKillAnnounce\\img\\RedridgePoliceLogo.blp")
+    logo:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
 
     -- Get hunter class color for developers' names
     local hunterColor = RAID_CLASS_COLORS["HUNTER"] or {r = 0.67, g = 0.83, b = 0.45}

@@ -1,4 +1,4 @@
--- PlayerKillAnnounce EventHandlers.lua
+-- PvPStatsClassic EventHandlers.lua
 -- Tracks and announces player kills with streak tracking and statistics
 local PlayerKillMessageDefault = "Enemyplayername killed!"
 local KillStreakEndedMessageDefault = "My kill streak of STREAKCOUNT has ended!"
@@ -319,13 +319,13 @@ local function GetMultiKillText(count)
     if PKA_EnableKillSounds then
         local soundFile
         if count == 2 then
-            soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\double_kill.mp3"
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\double_kill.mp3"
         elseif count == 3 then
-            soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\triple_kill.mp3"
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\triple_kill.mp3"
         elseif count == 4 then
-            soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\quadra_kill.mp3"
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\quadra_kill.mp3"
         elseif count == 5 then
-            soundFile = "Interface\\AddOns\\PlayerKillAnnounce\\sounds\\penta_kill.mp3"
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\penta_kill.mp3"
         end
 
         if soundFile then
@@ -809,7 +809,7 @@ local function CreateMilestoneFrameIfNeeded()
     local icon = frame:CreateTexture("PKA_MilestoneIcon", "ARTWORK")
     icon:SetSize(200, 200)
     icon:SetPoint("TOP", 0, 0)
-    icon:SetTexture("Interface\\AddOns\\PlayerKillAnnounce\\img\\RedridgePoliceLogo.blp")
+    icon:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
     frame.icon = icon
 
     local text = frame:CreateFontString("PKA_MilestoneText", "OVERLAY", "SystemFont_Huge1")
@@ -951,7 +951,7 @@ function PKA_CheckBattlegroundStatus()
         if (currentZone == bgName) then
             PKA_InBattleground = true
             if PKA_Debug and not PKA_LastBattlegroundState then
-                print("PlayerKillAnnounce: Entered battleground. Only direct kills will be counted.")
+                print("PvPStatsClassic: Entered battleground. Only direct kills will be counted.")
             end
             PKA_LastBattlegroundState = true
             return true
@@ -960,7 +960,7 @@ function PKA_CheckBattlegroundStatus()
 
     -- Not in a battleground
     if PKA_Debug and PKA_LastBattlegroundState then
-        print("PlayerKillAnnounce: Left battleground. Normal kill tracking active.")
+        print("PvPStatsClassic: Left battleground. Normal kill tracking active.")
     end
     PKA_LastBattlegroundState = false
     PKA_InBattleground = PKA_BattlegroundMode
