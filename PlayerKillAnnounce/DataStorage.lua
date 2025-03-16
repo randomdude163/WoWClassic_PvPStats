@@ -14,16 +14,16 @@ function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild
     if race and race ~= "" then playerData.race = race end
     if gender and gender ~= nil then playerData.gender = gender end
     if guild and guild ~= "" then playerData.guild = guild end
-    if rank and rank > 0 then playerData.rank = rank end
-    if PKA_Debug then
-        print("Player info updated for " .. name)
-        print("GUID: " .. (playerData.guid or "N/A"))
-        print("Level: " .. (playerData.level or "N/A"))
-        print("Class: " .. (playerData.class or "N/A"))
-        print("Race: " .. (playerData.race or "N/A"))
-        print("Guild: " .. (playerData.guild or "N/A"))
-        print("Rank: " .. (playerData.rank or "N/A"))
-    end
+    if rank then playerData.rank = rank end
+    -- if PKA_Debug then
+    --     print("Player info updated for " .. name)
+    --     print("GUID: " .. (playerData.guid or "N/A"))
+    --     print("Level: " .. (playerData.level or "N/A"))
+    --     print("Class: " .. (playerData.class or "N/A"))
+    --     print("Race: " .. (playerData.race or "N/A"))
+    --     print("Guild: " .. (playerData.guild or "N/A"))
+    --     print("Rank: " .. (playerData.rank or "N/A"))
+    -- end
 end
 
 local function GetHonorRank(unit)
