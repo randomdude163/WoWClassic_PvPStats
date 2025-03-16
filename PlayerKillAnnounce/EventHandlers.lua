@@ -41,6 +41,12 @@ local PKA_KILL_TRACKING_WINDOW = 1.0  -- 1 second window to prevent duplicate ki
 -- Add this variable at the top with your other variables
 local tooltipHookSetup = false
 
+-- Add these variables at the top with your other addon variables
+PKA_LastKillFrame = nil
+PKA_ShowLastKillPreview = true  -- Default enabled
+PKA_LastKillAutoHideTime = 5    -- Hide after 5 seconds
+PKA_LastKillTimer = nil
+
 -- Functions to identify pets and pet owners
 local function IsPetGUID(guid)
     if not guid then return false end
@@ -409,6 +415,10 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
         local debugMsg = CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel, killerGUID, killerName)
         print(debugMsg)
     end
+
+    -- Show last kill preview with the player's kill count
+    local killCount = PKA_KillCounts[nameWithLevel].kills
+    PKA_ShowLastKill(playerName, level, englishClass, race, gender, guild, rank, killCount)
 
     PKA_SaveSettings()
 end
@@ -970,6 +980,11 @@ function PKA_SaveSettings()
     PlayerKillAnnounceDB.AutoBattlegroundMode = PKA_AutoBattlegroundMode
     PlayerKillAnnounceDB.BattlegroundMode = PKA_BattlegroundMode
     PlayerKillAnnounceDB.EnableKillSounds = PKA_EnableKillSounds
+
+    -- Save Last Kill Preview settings
+    PlayerKillAnnounceDB.ShowLastKillPreview = PKA_ShowLastKillPreview
+    PlayerKillAnnounceDB.LastKillAutoHideTime = PKA_LastKillAutoHideTime
+    -- Position is saved when frame is moved
 end
 
 function PKA_LoadSettings()
@@ -993,6 +1008,10 @@ function PKA_LoadSettings()
     PKA_BattlegroundMode = PlayerKillAnnounceDB.BattlegroundMode ~= false
     PKA_EnableKillSounds = PlayerKillAnnounceDB.EnableKillSounds
     if PKA_EnableKillSounds == nil then PKA_EnableKillSounds = true end  -- Default to enabled
+
+    -- Load Last Kill Preview settings
+    PKA_ShowLastKillPreview = PlayerKillAnnounceDB.ShowLastKillPreview ~= false -- Default to enabled
+    PKA_LastKillAutoHideTime = PlayerKillAnnounceDB.LastKillAutoHideTime or 5
 end
 
 -- Add this function near your other debug functions
@@ -1187,4 +1206,244 @@ function PKA_SetupTooltip()
     end)
 
     tooltipHookSetup = true
+end
+
+-- Function to create and set up the Last Kill Preview frame
+function PKA_CreateLastKillFrame()
+    if PKA_LastKillFrame then return PKA_LastKillFrame end
+
+    -- Create the main frame
+    local frame = CreateFrame("Frame", "PKA_LastKillPreviewFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
+    frame:SetSize(200, 80)
+    frame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
+    frame:SetFrameStrata("MEDIUM")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:SetClampedToScreen(true)
+
+    -- Create backdrop for Classic compatibility
+    local backdrop = {
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 },
+    }
+
+    -- Apply backdrop using the appropriate method for the client version
+    if frame.SetBackdrop then
+        frame:SetBackdrop(backdrop)
+    else
+        -- Create background texture
+        local bg = frame:CreateTexture(nil, "BACKGROUND")
+        bg:SetTexture(backdrop.bgFile)
+        bg:SetAllPoints(frame)
+        bg:SetTexCoord(0, 1, 0, 1)
+
+        -- Create border textures (simplified approach)
+        local border = frame:CreateTexture(nil, "BORDER")
+        border:SetTexture(backdrop.edgeFile)
+        border:SetPoint("TOPLEFT", frame, "TOPLEFT", -backdrop.edgeSize/2, backdrop.edgeSize/2)
+        border:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", backdrop.edgeSize/2, -backdrop.edgeSize/2)
+    end
+
+    -- Make it draggable
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        -- Save position for future sessions
+        local point, _, relativePoint, xOfs, yOfs = self:GetPoint()
+        PlayerKillAnnounceDB.LastKillFramePosition = {
+            point = point,
+            relativePoint = relativePoint,
+            xOfs = xOfs,
+            yOfs = yOfs
+        }
+    end)
+
+    -- Title
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    title:SetPoint("TOP", frame, "TOP", 0, -15)
+    title:SetText("Kill Preview")
+    title:SetTextColor(1, 0.82, 0)
+    frame.title = title
+
+    -- Class icon
+    local classIcon = frame:CreateTexture(nil, "ARTWORK")
+    classIcon:SetSize(24, 24)
+    classIcon:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -30)
+    frame.classIcon = classIcon
+
+    -- Player name
+    local nameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    nameText:SetPoint("TOPLEFT", classIcon, "TOPRIGHT", 5, 0)
+    nameText:SetWidth(140)
+    nameText:SetJustifyH("LEFT")
+    frame.nameText = nameText
+
+    -- Level and rank
+    local levelText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    levelText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -2)
+    levelText:SetTextColor(0.8, 0.8, 0.8)
+    frame.levelText = levelText
+
+    -- Kill count
+    local killText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    killText:SetPoint("BOTTOM", frame, "BOTTOM", 0, 15)
+    killText:SetTextColor(1, 0.5, 0)
+    frame.killText = killText
+
+    -- Close button
+    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
+    close:SetSize(20, 20)
+    close:SetScript("OnClick", function()
+        frame:Hide()
+        if PKA_LastKillTimer then
+            PKA_LastKillTimer:Cancel()
+            PKA_LastKillTimer = nil
+        end
+    end)
+
+    frame:Hide()
+    PKA_LastKillFrame = frame
+    return frame
+end
+
+-- Function to update and show the last kill frame
+function PKA_ShowLastKill(playerName, level, englishClass, race, gender, guild, rank, killCount)
+    if not PKA_ShowLastKillPreview then return end
+
+    local frame = PKA_CreateLastKillFrame()
+
+    -- Update position if saved
+    if PlayerKillAnnounceDB and PlayerKillAnnounceDB.LastKillFramePosition then
+        local pos = PlayerKillAnnounceDB.LastKillFramePosition
+        frame:ClearAllPoints()
+        frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.xOfs, pos.yOfs)
+    end
+
+    -- Only show for milestone kills (1st, 5th, 10th)
+    if killCount ~= 1 and killCount ~= 5 and killCount ~= 10 then
+        return
+    end
+
+    -- Set class icon
+    local classIconCoords = CLASS_ICON_TCOORDS[englishClass or "WARRIOR"]
+    if classIconCoords then
+        frame.classIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+        frame.classIcon:SetTexCoord(unpack(classIconCoords))
+    else
+        frame.classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+    end
+
+    -- Set name with color by class
+    local classColor = RAID_CLASS_COLORS[englishClass] or RAID_CLASS_COLORS["WARRIOR"]
+    frame.nameText:SetText(playerName)
+    frame.nameText:SetTextColor(classColor.r, classColor.g, classColor.b)
+
+    -- Set level and rank if applicable
+    local levelString = "Level " .. (level > 0 and level or "??")
+    if rank and rank > 0 then
+        levelString = levelString .. " - " .. PKA_GetRankName(rank)
+    end
+    frame.levelText:SetText(levelString)
+
+    -- Set milestone message
+    local killMessage
+    if killCount == 1 then
+        killMessage = "First Kill! Entry added"
+    elseif killCount == 5 then
+        killMessage = "5th kill!"
+    elseif killCount == 10 then
+        killMessage = "10th kill!"
+    end
+    frame.killText:SetText(killMessage)
+
+    -- Show the frame
+    frame:Show()
+
+    -- Cancel existing timer if any
+    if PKA_LastKillTimer then
+        PKA_LastKillTimer:Cancel()
+    end
+
+    -- Set auto-hide timer
+    PKA_LastKillTimer = C_Timer.NewTimer(PKA_LastKillAutoHideTime, function()
+        frame:Hide()
+        PKA_LastKillTimer = nil
+    end)
+end
+
+-- Helper function to get PvP rank name based on rank number
+function PKA_GetRankName(rank)
+    local rankNames = {
+        [1] = "Private",
+        [2] = "Corporal",
+        [3] = "Sergeant",
+        [4] = "Master Sergeant",
+        [5] = "Sergeant Major",
+        [6] = "Knight",
+        [7] = "Knight-Lieutenant",
+        [8] = "Knight-Captain",
+        [9] = "Knight-Champion",
+        [10] = "Lieutenant Commander",
+        [11] = "Commander",
+        [12] = "Marshal",
+        [13] = "Field Marshal",
+        [14] = "Grand Marshal"
+    }
+    return rankNames[rank] or "Rank " .. rank
+end
+
+-- Add to config UI code if you have one
+-- This would go in your PKA_CreateConfigUI function
+function PKA_AddLastKillPreviewOptions(parent)
+    -- Create a checkbox for enabling/disabling Last Kill Preview
+    local lastKillPreviewCheckbox = CreateFrame("CheckButton", "PKA_LastKillPreviewCheckbox", parent, "InterfaceOptionsCheckButtonTemplate")
+    lastKillPreviewCheckbox:SetPoint("TOPLEFT", 20, -200)  -- Adjust position as needed
+    lastKillPreviewCheckbox.Text:SetText("Show Last Kill Preview")
+    lastKillPreviewCheckbox.tooltipText = "Shows a small frame with details about your last kill when you score the 1st, 5th, or 10th kill of a player."
+    lastKillPreviewCheckbox:SetChecked(PKA_ShowLastKillPreview)
+    lastKillPreviewCheckbox:SetScript("OnClick", function(self)
+        PKA_ShowLastKillPreview = self:GetChecked()
+        PKA_SaveSettings()
+    end)
+
+    -- Create a slider for auto-hide time
+    local lastKillTimeSlider = CreateFrame("Slider", "PKA_LastKillTimeSlider", parent, "OptionsSliderTemplate")
+    lastKillTimeSlider:SetPoint("TOPLEFT", lastKillPreviewCheckbox, "BOTTOMLEFT", 20, -30)
+    lastKillTimeSlider:SetWidth(200)
+    lastKillTimeSlider:SetHeight(20)
+    lastKillTimeSlider:SetMinMaxValues(1, 15)
+    lastKillTimeSlider:SetValueStep(1)
+    lastKillTimeSlider:SetValue(PKA_LastKillAutoHideTime)
+    lastKillTimeSlider:SetObeyStepOnDrag(true)
+
+    _G[lastKillTimeSlider:GetName() .. "Text"]:SetText("Auto-Hide Time: " .. PKA_LastKillAutoHideTime .. " seconds")
+    _G[lastKillTimeSlider:GetName() .. "Low"]:SetText("1")
+    _G[lastKillTimeSlider:GetName() .. "High"]:SetText("15")
+
+    lastKillTimeSlider:SetScript("OnValueChanged", function(self, value)
+        value = floor(value + 0.5)
+        PKA_LastKillAutoHideTime = value
+        _G[self:GetName() .. "Text"]:SetText("Auto-Hide Time: " .. value .. " seconds")
+        PKA_SaveSettings()
+    end)
+
+    -- Test button
+    local testButton = CreateFrame("Button", "PKA_TestLastKillButton", parent, "UIPanelButtonTemplate")
+    testButton:SetSize(100, 22)
+    testButton:SetPoint("TOPLEFT", lastKillTimeSlider, "BOTTOMLEFT", 0, -20)
+    testButton:SetText("Test Preview")
+    testButton:SetScript("OnClick", function()
+        -- Test with sample data for all three milestone kill counts
+        local testKillCounts = {1, 5, 10}
+        local index = math.random(1, 3)
+        PKA_ShowLastKill("TestPlayer", 60, "WARRIOR", "Human", 1, "Test Guild", 5, testKillCounts[index])
+    end)
+
+    return lastKillPreviewCheckbox
 end

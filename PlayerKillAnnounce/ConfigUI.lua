@@ -60,6 +60,11 @@ local function ShowResetDefaultsConfirmation()
             PKA_EnableKillAnnounce = true
             PKA_EnableRecordAnnounce = true
             PKA_MultiKillThreshold = 3
+            PKA_ShowTooltipKillInfo = true
+
+            -- Reset Last Kill Preview settings
+            PKA_ShowLastKillPreview = true
+            PKA_LastKillAutoHideTime = 5
 
             -- Update UI with reset values
             if configFrame then
@@ -243,15 +248,75 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     tooltipKillInfo:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Add Last Kill Preview checkbox
+    local lastKillPreview, lastKillPreviewLabel = CreateCheckbox(parent,
+        "Show Last Kill Preview frame",
+        PKA_ShowLastKillPreview,
+        function(checked)
+            PKA_ShowLastKillPreview = checked
+            PKA_SaveSettings()
+        end)
+    lastKillPreview:SetPoint("TOPLEFT", tooltipKillInfo, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.lastKillPreview = lastKillPreview
+
+    -- Add tooltip explanation for Last Kill Preview
+    lastKillPreview:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Last Kill Preview")
+        GameTooltip:AddLine("Shows a small draggable frame with details about milestone kills.", 1, 1, 1, true)
+        GameTooltip:AddLine("• Displays on 1st, 5th, and 10th kills of a player", 1, 1, 1, true)
+        GameTooltip:AddLine("• Shows player name, level, rank, and class", 1, 1, 1, true)
+        GameTooltip:AddLine("• Auto-hides after " .. PKA_LastKillAutoHideTime .. " seconds", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    lastKillPreview:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- Add Last Kill Preview auto-hide time slider
+    local lastKillSlider = CreateFrame("Slider", "PKA_LastKillTimeSlider", parent, "OptionsSliderTemplate")
+    lastKillSlider:SetWidth(200)
+    lastKillSlider:SetHeight(16)
+    lastKillSlider:SetPoint("TOPLEFT", lastKillPreview, "BOTTOMLEFT", 40, -20)
+    lastKillSlider:SetOrientation("HORIZONTAL")
+    lastKillSlider:SetMinMaxValues(1, 15)
+    lastKillSlider:SetValueStep(1)
+    lastKillSlider:SetValue(PKA_LastKillAutoHideTime or 5)
+    getglobal(lastKillSlider:GetName() .. "Low"):SetText("1 sec")
+    getglobal(lastKillSlider:GetName() .. "High"):SetText("15 sec")
+    getglobal(lastKillSlider:GetName() .. "Text"):SetText("Auto-Hide Time: " .. (PKA_LastKillAutoHideTime or 5) .. " seconds")
+    parent.lastKillSlider = lastKillSlider
+
+    lastKillSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value + 0.5)
+        self:SetValue(value)
+        getglobal(self:GetName() .. "Text"):SetText("Auto-Hide Time: " .. value .. " seconds")
+        PKA_LastKillAutoHideTime = value
+        PKA_SaveSettings()
+    end)
+
+    -- Add a test button
+    local testButton = CreateButton(parent, "Test Last Kill Preview", 160, 22, function()
+        -- Test with sample data for all three milestone kill counts
+        local testKillCounts = {1, 5, 10}
+        local index = math.random(1, 3)
+
+        -- Create a sample kill event with random class
+        local classes = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID"}
+        local randomClass = classes[math.random(1, #classes)]
+
+        PKA_ShowLastKill("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", math.random(0, 14), testKillCounts[index])
+    end)
+    testButton:SetPoint("TOPLEFT", lastKillSlider, "BOTTOMLEFT", -20, -10)
+    parent.lastKillTestButton = testButton
+
+    -- Now continue with the original checkboxes
     local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements to party chat",
         PKA_EnableKillAnnounce, function(checked)
             PKA_EnableKillAnnounce = checked
             PKA_SaveSettings()
         end)
-    enableKillAnnounce:SetPoint("TOPLEFT", tooltipKillInfo, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    enableKillAnnounce:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", -20, -10)
     parent.enableKillAnnounce = enableKillAnnounce
 
-    -- Rest of the function remains the same...
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
         PKA_EnableRecordAnnounce, function(checked)
             PKA_EnableRecordAnnounce = checked
@@ -259,7 +324,6 @@ local function CreateAnnouncementSection(parent, yOffset)
         end)
     enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableRecordAnnounce = enableRecordAnnounce
-
 
     local enableKillSounds, enableKillSoundsLabel = CreateCheckbox(parent, "Enable multi-kill sound effects",
         PKA_EnableKillSounds, function(checked)
@@ -269,7 +333,8 @@ local function CreateAnnouncementSection(parent, yOffset)
     enableKillSounds:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillSounds = enableKillSounds
 
-    return 220
+    -- Return a slightly increased height to accommodate the new elements
+    return 300
 end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
@@ -470,11 +535,24 @@ function PKA_UpdateConfigUI()
         configFrame.editBoxes.killMsg:SetText(PKA_KillAnnounceMessage)
         configFrame.editBoxes.streakEnded:SetText(PKA_KillStreakEndedMessage)
         configFrame.editBoxes.newStreak:SetText(PKA_NewStreakRecordMessage)
-        configFrame.editBoxes.multiKill.SetText(PKA_NewMultiKillRecordMessage)
+        configFrame.editBoxes.multiKill:SetText(PKA_NewMultiKillRecordMessage)
     end
 
     if configFrame.tooltipKillInfo then
         configFrame.tooltipKillInfo:SetChecked(PKA_ShowTooltipKillInfo)
+    end
+
+    -- Update Last Kill Preview settings
+    if configFrame.lastKillPreview then
+        configFrame.lastKillPreview:SetChecked(PKA_ShowLastKillPreview)
+    end
+
+    if configFrame.lastKillSlider then
+        configFrame.lastKillSlider:SetValue(PKA_LastKillAutoHideTime)
+        local sliderName = configFrame.lastKillSlider:GetName()
+        if sliderName then
+            getglobal(sliderName .. "Text"):SetText("Auto-Hide Time: " .. PKA_LastKillAutoHideTime .. " seconds")
+        end
     end
 
     PKA_UpdateConfigStats()
