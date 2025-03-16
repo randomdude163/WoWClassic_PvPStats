@@ -266,8 +266,9 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("Kill Milestone")
         GameTooltip:AddLine("Shows a small draggable frame with details about milestone kills.", 1, 1, 1, true)
         GameTooltip:AddLine("• Displays on 1st kill and every " .. PKA_MilestoneInterval .. " kills", 1, 1, 1, true)
-        GameTooltip:AddLine("• Shows player name, level, rank, and class", 1, 1, 1, true)
+        GameTooltip:AddLine("• Shows player name, level, PvP rank, and class", 1, 1, 1, true)
         GameTooltip:AddLine("• Auto-hides after " .. PKA_MilestoneAutoHideTime .. " seconds", 1, 1, 1, true)
+        GameTooltip:AddLine("• Alliance and Horde PvP ranks are properly displayed", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     killMilestone:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -326,7 +327,30 @@ local function CreateAnnouncementSection(parent, yOffset)
         local classes = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID"}
         local randomClass = classes[math.random(1, #classes)]
 
-        PKA_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", math.random(0, 14), testKillCounts[index])
+        -- 50% chance to show Horde ranks instead of Alliance
+        local useHorde = (math.random(1, 2) == 1)
+        local faction = useHorde and "Horde" or "Alliance"
+
+        -- 30% chance of no rank
+        local rank
+        if math.random(1, 10) <= 3 then
+            rank = 0
+        else
+            -- Otherwise random rank 1-14 (higher ranks less common)
+            local rankRoll = math.random(1, 100)
+            if rankRoll <= 50 then
+                rank = math.random(1, 4) -- 50% chance for ranks 1-4
+            elseif rankRoll <= 75 then
+                rank = math.random(5, 8) -- 25% chance for ranks 5-8
+            elseif rankRoll <= 90 then
+                rank = math.random(9, 11) -- 15% chance for ranks 9-11
+            else
+                rank = math.random(12, 14) -- 10% chance for ranks 12-14
+            end
+        end
+
+        local prefix = useHorde and "Horde" or ""
+        PKA_ShowKillMilestone(prefix .. "TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
     end)
     testButton:SetPoint("TOPLEFT", milestoneSlider, "BOTTOMLEFT", -20, -10)
     parent.milestoneTestButton = testButton

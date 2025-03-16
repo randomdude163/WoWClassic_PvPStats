@@ -1386,25 +1386,52 @@ function PKA_ShowLastKill(playerName, level, englishClass, race, gender, guild, 
     end)
 end
 
--- Helper function to get PvP rank name based on rank number
-function PKA_GetRankName(rank)
+-- Helper function to get PvP rank name based on rank number and faction
+function PKA_GetRankName(rank, faction)
+    if not rank or rank <= 0 then
+        return nil
+    end
+
+    -- Default to Alliance ranks if faction not specified
+    faction = faction or UnitFactionGroup("player") or "Alliance"
+
     local rankNames = {
-        [1] = "Private",
-        [2] = "Corporal",
-        [3] = "Sergeant",
-        [4] = "Master Sergeant",
-        [5] = "Sergeant Major",
-        [6] = "Knight",
-        [7] = "Knight-Lieutenant",
-        [8] = "Knight-Captain",
-        [9] = "Knight-Champion",
-        [10] = "Lieutenant Commander",
-        [11] = "Commander",
-        [12] = "Marshal",
-        [13] = "Field Marshal",
-        [14] = "Grand Marshal"
+        Alliance = {
+            [1] = "Private",
+            [2] = "Corporal",
+            [3] = "Sergeant",
+            [4] = "Master Sergeant",
+            [5] = "Sergeant Major",
+            [6] = "Knight",
+            [7] = "Knight-Lieutenant",
+            [8] = "Knight-Captain",
+            [9] = "Knight-Champion",
+            [10] = "Lieutenant Commander",
+            [11] = "Commander",
+            [12] = "Marshal",
+            [13] = "Field Marshal",
+            [14] = "Grand Marshal"
+        },
+        Horde = {
+            [1] = "Scout",
+            [2] = "Grunt",
+            [3] = "Sergeant",
+            [4] = "Senior Sergeant",
+            [5] = "First Sergeant",
+            [6] = "Stone Guard",
+            [7] = "Blood Guard",
+            [8] = "Legionnaire",
+            [9] = "Centurion",
+            [10] = "Champion",
+            [11] = "Lieutenant General",
+            [12] = "General",
+            [13] = "Warlord",
+            [14] = "High Warlord"
+        }
     }
-    return rankNames[rank] or "Rank " .. rank
+
+    local factionTable = rankNames[faction] or rankNames["Alliance"]
+    return factionTable[rank] or "Rank " .. rank
 end
 
 -- Add to config UI code if you have one
@@ -1540,7 +1567,7 @@ function PKA_CreateMilestoneFrame()
 
     -- Kill count - now aligned left like the other rows and colored gold
     local killText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killText:SetPoint("TOPLEFT", levelText, "BOTTOMLEFT", 0, -5)
+    killText:SetPoint("TOPLEFT", levelText, "BOTTOMLEFT", 0, -2)
     killText:SetTextColor(1, 0.82, 0) -- Gold color
     killText:SetJustifyH("LEFT")
     frame.killText = killText
@@ -1563,7 +1590,7 @@ function PKA_CreateMilestoneFrame()
 end
 
 -- Function to update and show the milestone frame
-function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
+function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount, faction)
     if not PKA_ShowKillMilestone then return end
 
     local frame = PKA_CreateMilestoneFrame()
@@ -1597,7 +1624,15 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     -- Set level and rank if applicable
     local levelString = "Level " .. (level > 0 and level or "??")
     if rank and rank > 0 then
-        levelString = levelString .. " - " .. PKA_GetRankName(rank)
+        levelString = levelString .. " - " .. PKA_GetRankName(rank, faction)
+        -- Keep full width for players with rank (250px)
+        frame:SetWidth(250)
+        -- Ensure name has enough width for rank info
+        frame.nameText:SetWidth(190)
+    else
+        frame:SetWidth(200)
+        -- Give name text a bit more room in the smaller frame
+        frame.nameText:SetWidth(170)
     end
     frame.levelText:SetText(levelString)
 
