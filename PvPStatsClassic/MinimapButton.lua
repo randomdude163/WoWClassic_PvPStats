@@ -72,7 +72,10 @@ end)
 minimapButton:RegisterEvent("PLAYER_LOGIN")
 minimapButton:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_LOGIN" then
-        position = PKA_MinimapPosition or 195
+        -- Load position from saved variables
+        if PlayerKillAnnounceDB and PlayerKillAnnounceDB.PKA_MinimapPosition then
+            position = PlayerKillAnnounceDB.PKA_MinimapPosition
+        end
         UpdatePosition()
     end
 end)
