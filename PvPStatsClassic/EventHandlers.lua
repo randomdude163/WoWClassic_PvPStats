@@ -1637,6 +1637,8 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     -- Show the frame
     frame:Show()
 
+    PlaySound(8213) -- PVPFlagCapturedHorde
+
     -- Cancel existing timer if any
     if PKA_MilestoneTimer then
         PKA_MilestoneTimer:Cancel()
