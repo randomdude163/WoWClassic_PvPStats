@@ -9,5 +9,5 @@ DataStorage.lua
 KillsListFrame.lua
 StatisticsFrame.lua
 ConfigUI.lua
-PlayerKillAnnounce.lua
+PvPStatsClassic.lua
 MinimapButton.lua

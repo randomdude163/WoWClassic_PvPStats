@@ -1,4 +1,4 @@
--- ConfigUI.lua - Configuration interface for PlayerKillAnnounce
+-- ConfigUI.lua - Configuration interface for PvPStatsClassic
 -- This adds a graphical user interface for all settings of the addon
 local configFrame = nil
 
@@ -25,20 +25,24 @@ local BUTTON_BOTTOM_MARGIN = 20
 
 PKA_EnableKillSounds = true
 
+
+local function ResetAllStatsToDefault()
+    PKA_CurrentKillStreak = 0
+    PKA_HighestKillStreak = 0
+    PKA_MultiKillCount = 0
+    PKA_HighestMultiKill = 0
+    PKA_KillCounts = {}
+    PKA_SaveSettings()
+    print("All kill statistics have been reset!")
+end
+
 local function ShowResetStatsConfirmation()
     StaticPopupDialogs["PKA_RESET_STATS"] = {
         text = "Are you sure you want to reset all kill statistics? This cannot be undone.",
         button1 = "Yes",
         button2 = "No",
         OnAccept = function()
-            PKA_CurrentKillStreak = 0
-            PKA_HighestKillStreak = 0
-            PKA_MultiKillCount = 0
-            PKA_HighestMultiKill = 0
-            PKA_KillCounts = {}
-            PKA_SaveSettings()
-            PKA_UpdateConfigStats()
-            print("All kill statistics have been reset!")
+            ResetAllStatsToDefault()
         end,
         timeout = 0,
         whileDead = true,
@@ -47,33 +51,38 @@ local function ShowResetStatsConfirmation()
     StaticPopup_Show("PKA_RESET_STATS")
 end
 
+local function ResetAllSettingsToDefault()
+    PKA_KillAnnounceMessage = PlayerKillMessageDefault
+    PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault
+    PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
+    PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
+    PKA_EnableKillAnnounce = true
+    PKA_EnableRecordAnnounce = true
+    PKA_MultiKillThreshold = 3
+    PKA_ShowTooltipKillInfo = true
+
+    -- Reset Kill Milestone settings
+    PKA_KillMilestoneNotificationsEnabled = true
+    PKA_MilestoneAutoHideTime = 5
+    PKA_MilestoneInterval = 5
+
+    -- Update UI with reset values
+    if configFrame then
+        PKA_UpdateConfigUI()
+    end
+
+    PKA_SaveSettings()
+    ReloadUI()
+    print("All settings have been reset to default values!")
+end
+
 local function ShowResetDefaultsConfirmation()
     StaticPopupDialogs["PKA_RESET_DEFAULTS"] = {
-        text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics.",
+        text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
         button1 = "Yes",
         button2 = "No",
         OnAccept = function()
-            PKA_KillAnnounceMessage = PlayerKillMessageDefault
-            PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault
-            PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
-            PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
-            PKA_EnableKillAnnounce = true
-            PKA_EnableRecordAnnounce = true
-            PKA_MultiKillThreshold = 3
-            PKA_ShowTooltipKillInfo = true
-
-            -- Reset Kill Milestone settings
-            PKA_ShowKillMilestone = true
-            PKA_MilestoneAutoHideTime = 5
-            PKA_MilestoneInterval = 5
-
-            -- Update UI with reset values
-            if configFrame then
-                PKA_UpdateConfigUI()
-            end
-
-            PKA_SaveSettings()
-            print("All settings have been reset to default values!")
+            ResetAllSettingsToDefault()
         end,
         timeout = 0,
         whileDead = true,
@@ -186,7 +195,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     local currentY = yOffset
 
     -- Auto BG Mode checkbox with tooltip
-    local autoBGMode, autoBGModeLabel = CreateCheckbox(parent, "Auto Battleground Mode (No announcements, only killing blows count)",
+    local autoBGMode, autoBGModeLabel = CreateCheckbox(parent, "Auto Battleground Mode (No announcements, only your own killing blows are tracked)",
         PKA_AutoBattlegroundMode, function(checked)
             PKA_AutoBattlegroundMode = checked
             PKA_SaveSettings()
@@ -207,7 +216,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     autoBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local manualBGMode, manualBGModeLabel = CreateCheckbox(parent, "Force Battleground Mode",
+    local manualBGMode, manualBGModeLabel = CreateCheckbox(parent, "Force Enable Battleground Mode",
         PKA_BattlegroundMode, function(checked)
             PKA_BattlegroundMode = checked
             PKA_SaveSettings()
@@ -243,8 +252,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     tooltipKillInfo:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Enemy Player Tooltips")
-        GameTooltip:AddLine("When enabled, shows your kill statistics for enemy players when you mouse over them.", 1, 1, 1, true)
-        GameTooltip:AddLine("Displays kill count over this player.", 1, 1, 1, true)
+        GameTooltip:AddLine("Shows how often you killed players while you mouseover them.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     tooltipKillInfo:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -252,9 +260,9 @@ local function CreateAnnouncementSection(parent, yOffset)
     -- Add Kill Milestone checkbox (renamed from Last Kill Preview)
     local killMilestone, killMilestoneLabel = CreateCheckbox(parent,
         "Show Kill Milestones",
-        PKA_ShowKillMilestone,
+        PKA_KillMilestoneNotificationsEnabled,
         function(checked)
-            PKA_ShowKillMilestone = checked
+            PKA_KillMilestoneNotificationsEnabled = checked
             PKA_SaveSettings()
         end)
     killMilestone:SetPoint("TOPLEFT", tooltipKillInfo, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
@@ -264,11 +272,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     killMilestone:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Kill Milestone")
-        GameTooltip:AddLine("Shows a small draggable frame with details about milestone kills.", 1, 1, 1, true)
-        GameTooltip:AddLine("• Displays on 1st kill and every " .. PKA_MilestoneInterval .. " kills", 1, 1, 1, true)
-        GameTooltip:AddLine("• Shows player name, level, PvP rank, and class", 1, 1, 1, true)
-        GameTooltip:AddLine("• Auto-hides after " .. PKA_MilestoneAutoHideTime .. " seconds", 1, 1, 1, true)
-        GameTooltip:AddLine("• Alliance and Horde PvP ranks are properly displayed", 1, 1, 1, true)
+        GameTooltip:AddLine("Shows movable notification for kill milestones.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     killMilestone:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -306,19 +310,19 @@ local function CreateAnnouncementSection(parent, yOffset)
     milestoneSlider:SetValue(PKA_MilestoneAutoHideTime or 5)
     getglobal(milestoneSlider:GetName() .. "Low"):SetText("1 sec")
     getglobal(milestoneSlider:GetName() .. "High"):SetText("15 sec")
-    getglobal(milestoneSlider:GetName() .. "Text"):SetText("Auto-Hide Time: " .. (PKA_MilestoneAutoHideTime or 5) .. " seconds")
+    getglobal(milestoneSlider:GetName() .. "Text"):SetText("Hide notification after: " .. (PKA_MilestoneAutoHideTime or 5) .. " seconds")
     parent.milestoneSlider = milestoneSlider
 
     milestoneSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
         self:SetValue(value)
-        getglobal(self:GetName() .. "Text"):SetText("Auto-Hide Time: " .. value .. " seconds")
+        getglobal(self:GetName() .. "Text"):SetText("Hide notification after: " .. value .. " seconds")
         PKA_MilestoneAutoHideTime = value
         PKA_SaveSettings()
     end)
 
     -- Add a test button
-    local testButton = CreateButton(parent, "Test Milestone", 160, 22, function()
+    local testButton = CreateButton(parent, "Show Kill Milestone", 160, 22, function()
         -- Test with sample data for milestone kill counts
         local testKillCounts = {1, PKA_MilestoneInterval, PKA_MilestoneInterval * 2}
         local index = math.random(1, 3)
@@ -349,7 +353,7 @@ local function CreateAnnouncementSection(parent, yOffset)
             end
         end
 
-        local prefix = useHorde and "Horde" or ""
+        local prefix = useHorde and "Horde" or "Alliance"
         PKA_ShowKillMilestone(prefix .. "TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
     end)
     testButton:SetPoint("TOPLEFT", milestoneSlider, "BOTTOMLEFT", -20, -10)
@@ -364,7 +368,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     enableKillAnnounce:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", -20, -10)
     parent.enableKillAnnounce = enableKillAnnounce
 
-    local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new records to party chat",
+    local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new personal bests to party chat",
         PKA_EnableRecordAnnounce, function(checked)
             PKA_EnableRecordAnnounce = checked
             PKA_SaveSettings()
@@ -542,20 +546,9 @@ local function CreateMainFrame()
 
     tinsert(UISpecialFrames, "PKAConfigFrame")
 
-    frame.TitleText:SetText("PlayerKillAnnounce Configuration")
+    frame.TitleText:SetText("PvP Stats Classic Configuration")
 
     return frame
-end
-
-function PKA_UpdateConfigStats()
-    if configFrame and configFrame.statsText then
-        configFrame.statsText:SetText(string.format(
-            "Current Kill Streak: %d\nHighest Kill Streak: %d\nHighest Multi-Kill: %d",
-            PKA_CurrentKillStreak or 0,
-            PKA_HighestKillStreak or 0,
-            PKA_HighestMultiKill or 0
-        ))
-    end
 end
 
 function PKA_UpdateConfigUI()
@@ -590,7 +583,7 @@ function PKA_UpdateConfigUI()
     end
 
     if configFrame.killMilestone then
-        configFrame.killMilestone:SetChecked(PKA_ShowKillMilestone)
+        configFrame.killMilestone:SetChecked(PKA_KillMilestoneNotificationsEnabled)
     end
 
     if configFrame.milestoneSlider then
@@ -608,8 +601,6 @@ function PKA_UpdateConfigUI()
             getglobal(sliderName .. "Text"):SetText("Milestone Interval: Every " .. PKA_MilestoneInterval .. " kills")
         end
     end
-
-    PKA_UpdateConfigStats()
 end
 
 local function CreateTabSystem(parent)
@@ -710,26 +701,26 @@ local function CreateAboutTab(parent)
     -- Create a header
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOP", parent, "TOP", 0, -20)
-    header:SetText("PlayerKillAnnounce")
+    header:SetText("PvP Stats Classic")
     header:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
-
-    -- Create logo/icon - increased size by 25%
-    local logo = parent:CreateTexture(nil, "ARTWORK")
-    logo:SetSize(128, 128)
-    logo:SetPoint("TOP", header, "BOTTOM", 0, -10)
-    logo:SetTexture("Interface\\AddOns\\PlayerKillAnnounce\\img\\RedridgePoliceLogo.blp")
 
     -- Create version text
     local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    versionText:SetPoint("TOP", logo, "BOTTOM", 0, -5)
+    versionText:SetPoint("TOP", header, "BOTTOM", 0, -5)
     versionText:SetText("Version: 0.9.0")
     versionText:SetTextColor(1, 1, 1)
 
     -- Create credits section
     local creditsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    creditsHeader:SetPoint("TOP", versionText, "BOTTOM", 0, -20)
+    creditsHeader:SetPoint("TOP", header, "BOTTOM", 0, -40)
     creditsHeader:SetText("Credits")
     creditsHeader:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
+
+    -- Create logo/icon - increased size by 25%
+    local logo = parent:CreateTexture(nil, "ARTWORK")
+    logo:SetSize(220, 220)
+    logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
+    logo:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
 
     -- Get hunter class color for developers' names
     local hunterColor = RAID_CLASS_COLORS["HUNTER"] or {r = 0.67, g = 0.83, b = 0.45}
@@ -738,7 +729,7 @@ local function CreateAboutTab(parent)
     local contentWidth = 300
     local creditsContainer = CreateFrame("Frame", nil, parent)
     creditsContainer:SetSize(contentWidth, 200)
-    creditsContainer:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
+    creditsContainer:SetPoint("TOP", logo, "BOTTOM", 0, -10)
 
     -- Use a consistent left margin for all text
     local leftMargin = (parent:GetWidth() - contentWidth) / 2
