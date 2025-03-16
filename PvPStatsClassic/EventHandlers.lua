@@ -617,14 +617,14 @@ end
 local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
     local level, englishClass, race, gender, guild, rank = PKA_GetPlayerInfo(destName, destGUID)
 
-    if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
-        print("Kill of " .. destName .. " not counted (incomplete data: " ..
-              (race == "Unknown" and "race" or "") ..
-              (gender == "Unknown" and (race == "Unknown" and ", gender" or "gender") or "") ..
-              (englishClass == "Unknown" and ((race == "Unknown" or gender == "Unknown") and ", class" or "class") or "") ..
-              " unknown)")
-        return
-    end
+    -- if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
+    --     print("Kill of " .. destName .. " not counted (incomplete data: " ..
+    --           (race == "Unknown" and "race" or "") ..
+    --           (gender == "Unknown" and (race == "Unknown" and ", gender" or "gender") or "") ..
+    --           (englishClass == "Unknown" and ((race == "Unknown" or gender == "Unknown") and ", class" or "class") or "") ..
+    --           " unknown)")
+    --     return
+    -- end
 
     RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName, rank)
 end
