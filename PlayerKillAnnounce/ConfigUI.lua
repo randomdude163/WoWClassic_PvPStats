@@ -62,9 +62,10 @@ local function ShowResetDefaultsConfirmation()
             PKA_MultiKillThreshold = 3
             PKA_ShowTooltipKillInfo = true
 
-            -- Reset Last Kill Preview settings
-            PKA_ShowLastKillPreview = true
-            PKA_LastKillAutoHideTime = 5
+            -- Reset Kill Milestone settings (renamed from Last Kill Preview)
+            PKA_ShowKillMilestone = true
+            PKA_MilestoneAutoHideTime = 5
+            PKA_MilestoneInterval = 5
 
             -- Update UI with reset values
             if configFrame then
@@ -179,6 +180,7 @@ local function EnsureDefaultValues()
     if PKA_ShowTooltipKillInfo == nil then PKA_ShowTooltipKillInfo = true end
 end
 
+-- Update the config UI to use the new name and add the milestone interval slider
 local function CreateAnnouncementSection(parent, yOffset)
     local header, line = CreateSectionHeader(parent, "Announcement Settings", 20, yOffset)
     local currentY = yOffset
@@ -204,7 +206,6 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Show()
     end)
     autoBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
 
     local manualBGMode, manualBGModeLabel = CreateCheckbox(parent, "Force Battleground Mode",
         PKA_BattlegroundMode, function(checked)
@@ -248,65 +249,87 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     tooltipKillInfo:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Add Last Kill Preview checkbox
-    local lastKillPreview, lastKillPreviewLabel = CreateCheckbox(parent,
-        "Show Last Kill Preview frame",
-        PKA_ShowLastKillPreview,
+    -- Add Kill Milestone checkbox (renamed from Last Kill Preview)
+    local killMilestone, killMilestoneLabel = CreateCheckbox(parent,
+        "Show Kill Milestone frame",
+        PKA_ShowKillMilestone,
         function(checked)
-            PKA_ShowLastKillPreview = checked
+            PKA_ShowKillMilestone = checked
             PKA_SaveSettings()
         end)
-    lastKillPreview:SetPoint("TOPLEFT", tooltipKillInfo, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.lastKillPreview = lastKillPreview
+    killMilestone:SetPoint("TOPLEFT", tooltipKillInfo, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.killMilestone = killMilestone
 
-    -- Add tooltip explanation for Last Kill Preview
-    lastKillPreview:SetScript("OnEnter", function(self)
+    -- Add tooltip explanation for Kill Milestone
+    killMilestone:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Last Kill Preview")
+        GameTooltip:AddLine("Kill Milestone")
         GameTooltip:AddLine("Shows a small draggable frame with details about milestone kills.", 1, 1, 1, true)
-        GameTooltip:AddLine("• Displays on 1st, 5th, and 10th kills of a player", 1, 1, 1, true)
+        GameTooltip:AddLine("• Displays on 1st kill and every " .. PKA_MilestoneInterval .. " kills", 1, 1, 1, true)
         GameTooltip:AddLine("• Shows player name, level, rank, and class", 1, 1, 1, true)
-        GameTooltip:AddLine("• Auto-hides after " .. PKA_LastKillAutoHideTime .. " seconds", 1, 1, 1, true)
+        GameTooltip:AddLine("• Auto-hides after " .. PKA_MilestoneAutoHideTime .. " seconds", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    lastKillPreview:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    killMilestone:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Add Last Kill Preview auto-hide time slider
-    local lastKillSlider = CreateFrame("Slider", "PKA_LastKillTimeSlider", parent, "OptionsSliderTemplate")
-    lastKillSlider:SetWidth(200)
-    lastKillSlider:SetHeight(16)
-    lastKillSlider:SetPoint("TOPLEFT", lastKillPreview, "BOTTOMLEFT", 40, -20)
-    lastKillSlider:SetOrientation("HORIZONTAL")
-    lastKillSlider:SetMinMaxValues(1, 15)
-    lastKillSlider:SetValueStep(1)
-    lastKillSlider:SetValue(PKA_LastKillAutoHideTime or 5)
-    getglobal(lastKillSlider:GetName() .. "Low"):SetText("1 sec")
-    getglobal(lastKillSlider:GetName() .. "High"):SetText("15 sec")
-    getglobal(lastKillSlider:GetName() .. "Text"):SetText("Auto-Hide Time: " .. (PKA_LastKillAutoHideTime or 5) .. " seconds")
-    parent.lastKillSlider = lastKillSlider
+    -- Add Milestone Interval slider (new)
+    local intervalSlider = CreateFrame("Slider", "PKA_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
+    intervalSlider:SetWidth(200)
+    intervalSlider:SetHeight(16)
+    intervalSlider:SetPoint("TOPLEFT", killMilestone, "BOTTOMLEFT", 40, -20)
+    intervalSlider:SetOrientation("HORIZONTAL")
+    intervalSlider:SetMinMaxValues(3, 10)
+    intervalSlider:SetValueStep(1)
+    intervalSlider:SetValue(PKA_MilestoneInterval or 5)
+    getglobal(intervalSlider:GetName() .. "Low"):SetText("3")
+    getglobal(intervalSlider:GetName() .. "High"):SetText("10")
+    getglobal(intervalSlider:GetName() .. "Text"):SetText("Milestone Interval: Every " .. (PKA_MilestoneInterval or 5) .. " kills")
+    parent.intervalSlider = intervalSlider
 
-    lastKillSlider:SetScript("OnValueChanged", function(self, value)
+    intervalSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value + 0.5)
+        self:SetValue(value)
+        getglobal(self:GetName() .. "Text"):SetText("Milestone Interval: Every " .. value .. " kills")
+        PKA_MilestoneInterval = value
+        PKA_SaveSettings()
+    end)
+
+    -- Add Kill Milestone auto-hide time slider (renamed from Last Kill Preview)
+    local milestoneSlider = CreateFrame("Slider", "PKA_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
+    milestoneSlider:SetWidth(200)
+    milestoneSlider:SetHeight(16)
+    milestoneSlider:SetPoint("TOPLEFT", intervalSlider, "BOTTOMLEFT", 0, -20)
+    milestoneSlider:SetOrientation("HORIZONTAL")
+    milestoneSlider:SetMinMaxValues(1, 15)
+    milestoneSlider:SetValueStep(1)
+    milestoneSlider:SetValue(PKA_MilestoneAutoHideTime or 5)
+    getglobal(milestoneSlider:GetName() .. "Low"):SetText("1 sec")
+    getglobal(milestoneSlider:GetName() .. "High"):SetText("15 sec")
+    getglobal(milestoneSlider:GetName() .. "Text"):SetText("Auto-Hide Time: " .. (PKA_MilestoneAutoHideTime or 5) .. " seconds")
+    parent.milestoneSlider = milestoneSlider
+
+    milestoneSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
         self:SetValue(value)
         getglobal(self:GetName() .. "Text"):SetText("Auto-Hide Time: " .. value .. " seconds")
-        PKA_LastKillAutoHideTime = value
+        PKA_MilestoneAutoHideTime = value
         PKA_SaveSettings()
     end)
 
     -- Add a test button
-    local testButton = CreateButton(parent, "Test Last Kill Preview", 160, 22, function()
-        -- Test with sample data for all three milestone kill counts
-        local testKillCounts = {1, 5, 10}
+    local testButton = CreateButton(parent, "Test Milestone", 160, 22, function()
+        -- Test with sample data for milestone kill counts
+        local testKillCounts = {1, PKA_MilestoneInterval, PKA_MilestoneInterval * 2}
         local index = math.random(1, 3)
 
         -- Create a sample kill event with random class
         local classes = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID"}
         local randomClass = classes[math.random(1, #classes)]
 
-        PKA_ShowLastKill("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", math.random(0, 14), testKillCounts[index])
+        PKA_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", math.random(0, 14), testKillCounts[index])
     end)
-    testButton:SetPoint("TOPLEFT", lastKillSlider, "BOTTOMLEFT", -20, -10)
-    parent.lastKillTestButton = testButton
+    testButton:SetPoint("TOPLEFT", milestoneSlider, "BOTTOMLEFT", -20, -10)
+    parent.milestoneTestButton = testButton
 
     -- Now continue with the original checkboxes
     local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements to party chat",
@@ -334,7 +357,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     parent.enableKillSounds = enableKillSounds
 
     -- Return a slightly increased height to accommodate the new elements
-    return 300
+    return 320
 end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
@@ -542,16 +565,24 @@ function PKA_UpdateConfigUI()
         configFrame.tooltipKillInfo:SetChecked(PKA_ShowTooltipKillInfo)
     end
 
-    -- Update Last Kill Preview settings
-    if configFrame.lastKillPreview then
-        configFrame.lastKillPreview:SetChecked(PKA_ShowLastKillPreview)
+    -- Update Kill Milestone settings (renamed from Last Kill Preview)
+    if configFrame.killMilestone then
+        configFrame.killMilestone:SetChecked(PKA_ShowKillMilestone)
     end
 
-    if configFrame.lastKillSlider then
-        configFrame.lastKillSlider:SetValue(PKA_LastKillAutoHideTime)
-        local sliderName = configFrame.lastKillSlider:GetName()
+    if configFrame.milestoneSlider then
+        configFrame.milestoneSlider:SetValue(PKA_MilestoneAutoHideTime)
+        local sliderName = configFrame.milestoneSlider:GetName()
         if sliderName then
-            getglobal(sliderName .. "Text"):SetText("Auto-Hide Time: " .. PKA_LastKillAutoHideTime .. " seconds")
+            getglobal(sliderName .. "Text"):SetText("Auto-Hide Time: " .. PKA_MilestoneAutoHideTime .. " seconds")
+        end
+    end
+
+    if configFrame.intervalSlider then
+        configFrame.intervalSlider:SetValue(PKA_MilestoneInterval)
+        local sliderName = configFrame.intervalSlider:GetName()
+        if sliderName then
+            getglobal(sliderName .. "Text"):SetText("Milestone Interval: Every " .. PKA_MilestoneInterval .. " kills")
         end
     end
 

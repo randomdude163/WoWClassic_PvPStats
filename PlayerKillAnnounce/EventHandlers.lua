@@ -47,6 +47,13 @@ PKA_ShowLastKillPreview = true  -- Default enabled
 PKA_LastKillAutoHideTime = 5    -- Hide after 5 seconds
 PKA_LastKillTimer = nil
 
+-- Add these variables at the top with your other addon variables
+PKA_MilestoneFrame = nil
+PKA_ShowKillMilestone = true  -- Default enabled
+PKA_MilestoneAutoHideTime = 5    -- Hide after 5 seconds
+PKA_MilestoneTimer = nil
+PKA_MilestoneInterval = 5      -- Default milestone interval (1, 5, 10, etc)
+
 -- Functions to identify pets and pet owners
 local function IsPetGUID(guid)
     if not guid then return false end
@@ -416,9 +423,9 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
         print(debugMsg)
     end
 
-    -- Show last kill preview with the player's kill count
+    -- Show kill milestone with the player's kill count (changed from PKA_ShowLastKill)
     local killCount = PKA_KillCounts[nameWithLevel].kills
-    PKA_ShowLastKill(playerName, level, englishClass, race, gender, guild, rank, killCount)
+    PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
 
     PKA_SaveSettings()
 end
@@ -981,9 +988,10 @@ function PKA_SaveSettings()
     PlayerKillAnnounceDB.BattlegroundMode = PKA_BattlegroundMode
     PlayerKillAnnounceDB.EnableKillSounds = PKA_EnableKillSounds
 
-    -- Save Last Kill Preview settings
-    PlayerKillAnnounceDB.ShowLastKillPreview = PKA_ShowLastKillPreview
-    PlayerKillAnnounceDB.LastKillAutoHideTime = PKA_LastKillAutoHideTime
+    -- Save Kill Milestone settings (renamed from Last Kill Preview)
+    PlayerKillAnnounceDB.ShowKillMilestone = PKA_ShowKillMilestone
+    PlayerKillAnnounceDB.MilestoneAutoHideTime = PKA_MilestoneAutoHideTime
+    PlayerKillAnnounceDB.MilestoneInterval = PKA_MilestoneInterval
     -- Position is saved when frame is moved
 end
 
@@ -1009,9 +1017,10 @@ function PKA_LoadSettings()
     PKA_EnableKillSounds = PlayerKillAnnounceDB.EnableKillSounds
     if PKA_EnableKillSounds == nil then PKA_EnableKillSounds = true end  -- Default to enabled
 
-    -- Load Last Kill Preview settings
-    PKA_ShowLastKillPreview = PlayerKillAnnounceDB.ShowLastKillPreview ~= false -- Default to enabled
-    PKA_LastKillAutoHideTime = PlayerKillAnnounceDB.LastKillAutoHideTime or 5
+    -- Load Kill Milestone settings (renamed from Last Kill Preview)
+    PKA_ShowKillMilestone = PlayerKillAnnounceDB.ShowKillMilestone ~= false -- Default to enabled
+    PKA_MilestoneAutoHideTime = PlayerKillAnnounceDB.MilestoneAutoHideTime or 5
+    PKA_MilestoneInterval = PlayerKillAnnounceDB.MilestoneInterval or 5
 end
 
 -- Add this function near your other debug functions
@@ -1446,4 +1455,172 @@ function PKA_AddLastKillPreviewOptions(parent)
     end)
 
     return lastKillPreviewCheckbox
+end
+
+-- Function to create and set up the Kill Milestone frame
+function PKA_CreateMilestoneFrame()
+    if PKA_MilestoneFrame then return PKA_MilestoneFrame end
+
+    -- Create the main frame
+    local frame = CreateFrame("Frame", "PKA_KillMilestoneFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
+    frame:SetSize(250, 80)  -- Wider to accommodate longer PvP rank names
+    frame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
+    frame:SetFrameStrata("MEDIUM")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:SetClampedToScreen(true)
+
+    -- Create backdrop for Classic compatibility
+    local backdrop = {
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 },
+    }
+
+    -- Apply backdrop using the appropriate method for the client version
+    if frame.SetBackdrop then
+        frame:SetBackdrop(backdrop)
+    else
+        -- Create background texture
+        local bg = frame:CreateTexture(nil, "BACKGROUND")
+        bg:SetTexture(backdrop.bgFile)
+        bg:SetAllPoints(frame)
+        bg:SetTexCoord(0, 1, 0, 1)
+
+        -- Create border textures (simplified approach)
+        local border = frame:CreateTexture(nil, "BORDER")
+        border:SetTexture(backdrop.edgeFile)
+        border:SetPoint("TOPLEFT", frame, "TOPLEFT", -backdrop.edgeSize/2, backdrop.edgeSize/2)
+        border:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", backdrop.edgeSize/2, -backdrop.edgeSize/2)
+    end
+
+    -- Make it draggable
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        -- Save position for future sessions
+        local point, _, relativePoint, xOfs, yOfs = self:GetPoint()
+        PlayerKillAnnounceDB.MilestoneFramePosition = {
+            point = point,
+            relativePoint = relativePoint,
+            xOfs = xOfs,
+            yOfs = yOfs
+        }
+    end)
+
+    -- Title
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    title:SetPoint("TOP", frame, "TOP", 0, -15)
+    title:SetText("Kill Milestone")
+    title:SetTextColor(1, 0.82, 0)
+    frame.title = title
+
+    -- Class icon
+    local classIcon = frame:CreateTexture(nil, "ARTWORK")
+    classIcon:SetSize(24, 24)
+    classIcon:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -30)
+    frame.classIcon = classIcon
+
+    -- Player name
+    local nameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    nameText:SetPoint("TOPLEFT", classIcon, "TOPRIGHT", 5, 0)
+    nameText:SetWidth(190) -- Wider to accommodate long names
+    nameText:SetJustifyH("LEFT")
+    frame.nameText = nameText
+
+    -- Level and rank
+    local levelText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    levelText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -2)
+    levelText:SetTextColor(0.8, 0.8, 0.8)
+    frame.levelText = levelText
+
+    -- Kill count - now aligned left like the other rows and colored gold
+    local killText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    killText:SetPoint("TOPLEFT", levelText, "BOTTOMLEFT", 0, -5)
+    killText:SetTextColor(1, 0.82, 0) -- Gold color
+    killText:SetJustifyH("LEFT")
+    frame.killText = killText
+
+    -- Close button
+    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
+    close:SetSize(20, 20)
+    close:SetScript("OnClick", function()
+        frame:Hide()
+        if PKA_MilestoneTimer then
+            PKA_MilestoneTimer:Cancel()
+            PKA_MilestoneTimer = nil
+        end
+    end)
+
+    frame:Hide()
+    PKA_MilestoneFrame = frame
+    return frame
+end
+
+-- Function to update and show the milestone frame
+function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
+    if not PKA_ShowKillMilestone then return end
+
+    local frame = PKA_CreateMilestoneFrame()
+
+    -- Update position if saved
+    if PlayerKillAnnounceDB and PlayerKillAnnounceDB.MilestoneFramePosition then
+        local pos = PlayerKillAnnounceDB.MilestoneFramePosition
+        frame:ClearAllPoints()
+        frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.xOfs, pos.yOfs)
+    end
+
+    -- Only show for milestone kills (1st, or every X kills based on interval)
+    if killCount ~= 1 and killCount % PKA_MilestoneInterval ~= 0 then
+        return
+    end
+
+    -- Set class icon
+    local classIconCoords = CLASS_ICON_TCOORDS[englishClass or "WARRIOR"]
+    if classIconCoords then
+        frame.classIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+        frame.classIcon:SetTexCoord(unpack(classIconCoords))
+    else
+        frame.classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+    end
+
+    -- Set name with color by class
+    local classColor = RAID_CLASS_COLORS[englishClass] or RAID_CLASS_COLORS["WARRIOR"]
+    frame.nameText:SetText(playerName)
+    frame.nameText:SetTextColor(classColor.r, classColor.g, classColor.b)
+
+    -- Set level and rank if applicable
+    local levelString = "Level " .. (level > 0 and level or "??")
+    if rank and rank > 0 then
+        levelString = levelString .. " - " .. PKA_GetRankName(rank)
+    end
+    frame.levelText:SetText(levelString)
+
+    -- Set milestone message
+    local killMessage
+    if killCount == 1 then
+        killMessage = "First Kill! Entry added"
+    else
+        killMessage = killCount .. "th kill!"
+    end
+    frame.killText:SetText(killMessage)
+
+    -- Show the frame
+    frame:Show()
+
+    -- Cancel existing timer if any
+    if PKA_MilestoneTimer then
+        PKA_MilestoneTimer:Cancel()
+    end
+
+    -- Set auto-hide timer
+    PKA_MilestoneTimer = C_Timer.NewTimer(PKA_MilestoneAutoHideTime, function()
+        frame:Hide()
+        PKA_MilestoneTimer = nil
+    end)
 end
