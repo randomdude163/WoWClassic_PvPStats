@@ -49,7 +49,7 @@ PKA_LastKillTimer = nil
 
 -- Add these variables at the top with your other addon variables
 PKA_MilestoneFrame = nil
-PKA_ShowKillMilestone = true  -- Default enabled
+PKA_KillMilestoneNotificationsEnabled = true  -- Default enabled
 PKA_MilestoneAutoHideTime = 5    -- Hide after 5 seconds
 PKA_MilestoneTimer = nil
 PKA_MilestoneInterval = 5      -- Default milestone interval (1, 5, 10, etc)
@@ -989,7 +989,7 @@ function PKA_SaveSettings()
     PlayerKillAnnounceDB.EnableKillSounds = PKA_EnableKillSounds
 
     -- Save Kill Milestone settings (renamed from Last Kill Preview)
-    PlayerKillAnnounceDB.ShowKillMilestone = PKA_ShowKillMilestone
+    PlayerKillAnnounceDB.ShowKillMilestone = PKA_KillMilestoneNotificationsEnabled
     PlayerKillAnnounceDB.MilestoneAutoHideTime = PKA_MilestoneAutoHideTime
     PlayerKillAnnounceDB.MilestoneInterval = PKA_MilestoneInterval
     -- Position is saved when frame is moved
@@ -1018,7 +1018,7 @@ function PKA_LoadSettings()
     if PKA_EnableKillSounds == nil then PKA_EnableKillSounds = true end  -- Default to enabled
 
     -- Load Kill Milestone settings (renamed from Last Kill Preview)
-    PKA_ShowKillMilestone = PlayerKillAnnounceDB.ShowKillMilestone ~= false -- Default to enabled
+    PKA_KillMilestoneNotificationsEnabled = PlayerKillAnnounceDB.ShowKillMilestone ~= false -- Default to enabled
     PKA_MilestoneAutoHideTime = PlayerKillAnnounceDB.MilestoneAutoHideTime or 5
     PKA_MilestoneInterval = PlayerKillAnnounceDB.MilestoneInterval or 5
 end
@@ -1434,55 +1434,6 @@ function PKA_GetRankName(rank, faction)
     return factionTable[rank] or "Rank " .. rank
 end
 
--- Add to config UI code if you have one
--- This would go in your PKA_CreateConfigUI function
-function PKA_AddLastKillPreviewOptions(parent)
-    -- Create a checkbox for enabling/disabling Last Kill Preview
-    local lastKillPreviewCheckbox = CreateFrame("CheckButton", "PKA_LastKillPreviewCheckbox", parent, "InterfaceOptionsCheckButtonTemplate")
-    lastKillPreviewCheckbox:SetPoint("TOPLEFT", 20, -200)  -- Adjust position as needed
-    lastKillPreviewCheckbox.Text:SetText("Show Last Kill Preview")
-    lastKillPreviewCheckbox.tooltipText = "Shows a small frame with details about your last kill when you score the 1st, 5th, or 10th kill of a player."
-    lastKillPreviewCheckbox:SetChecked(PKA_ShowLastKillPreview)
-    lastKillPreviewCheckbox:SetScript("OnClick", function(self)
-        PKA_ShowLastKillPreview = self:GetChecked()
-        PKA_SaveSettings()
-    end)
-
-    -- Create a slider for auto-hide time
-    local lastKillTimeSlider = CreateFrame("Slider", "PKA_LastKillTimeSlider", parent, "OptionsSliderTemplate")
-    lastKillTimeSlider:SetPoint("TOPLEFT", lastKillPreviewCheckbox, "BOTTOMLEFT", 20, -30)
-    lastKillTimeSlider:SetWidth(200)
-    lastKillTimeSlider:SetHeight(20)
-    lastKillTimeSlider:SetMinMaxValues(1, 15)
-    lastKillTimeSlider:SetValueStep(1)
-    lastKillTimeSlider:SetValue(PKA_LastKillAutoHideTime)
-    lastKillTimeSlider:SetObeyStepOnDrag(true)
-
-    _G[lastKillTimeSlider:GetName() .. "Text"]:SetText("Auto-Hide Time: " .. PKA_LastKillAutoHideTime .. " seconds")
-    _G[lastKillTimeSlider:GetName() .. "Low"]:SetText("1")
-    _G[lastKillTimeSlider:GetName() .. "High"]:SetText("15")
-
-    lastKillTimeSlider:SetScript("OnValueChanged", function(self, value)
-        value = floor(value + 0.5)
-        PKA_LastKillAutoHideTime = value
-        _G[self:GetName() .. "Text"]:SetText("Auto-Hide Time: " .. value .. " seconds")
-        PKA_SaveSettings()
-    end)
-
-    -- Test button
-    local testButton = CreateFrame("Button", "PKA_TestLastKillButton", parent, "UIPanelButtonTemplate")
-    testButton:SetSize(100, 22)
-    testButton:SetPoint("TOPLEFT", lastKillTimeSlider, "BOTTOMLEFT", 0, -20)
-    testButton:SetText("Test Preview")
-    testButton:SetScript("OnClick", function()
-        -- Test with sample data for all three milestone kill counts
-        local testKillCounts = {1, 5, 10}
-        local index = math.random(1, 3)
-        PKA_ShowLastKill("TestPlayer", 60, "WARRIOR", "Human", 1, "Test Guild", 5, testKillCounts[index])
-    end)
-
-    return lastKillPreviewCheckbox
-end
 
 -- Function to create and set up the Kill Milestone frame
 function PKA_CreateMilestoneFrame()
@@ -1594,7 +1545,7 @@ end
 
 -- Function to update and show the milestone frame
 function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount, faction)
-    if not PKA_ShowKillMilestone then return end
+    if not PKA_KillMilestoneNotificationsEnabled then return end
 
     local frame = PKA_CreateMilestoneFrame()
 
@@ -1640,7 +1591,7 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     -- Set kill message
     local killMessage
     if killCount == 1 then
-        killMessage = "First kill!"
+        killMessage = "1st kill!"
     else
         killMessage = killCount .. "th kill!"
     end
