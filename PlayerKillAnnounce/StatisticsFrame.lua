@@ -579,44 +579,122 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     return yPosition - 20
 end
 
+-- Replace this function to remove the credits section
 local function addCreditsSection(container, yPosition)
-    local creditsHeader = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    creditsHeader:SetPoint("TOPLEFT", 0, yPosition)
-    creditsHeader:SetText("Credits:")
-    creditsHeader:SetTextColor(1.0, 0.82, 0.0)
+    -- Credits have been moved to the Config UI About tab
+    -- This function remains as a stub to avoid breaking references
+end
 
-    local hunterColor = getClassColor("HUNTER")
+local function createSummaryStats(parent, x, y, width, height)
+    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
-    local devsText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    devsText:SetPoint("TOPLEFT", 0, yPosition - 20)
-    devsText:SetText("Developed by: ")
+    -- Call the global calculateStatistics function
+    local stats = calculateStatistics()
+    local statY = -30
 
-    local firstAuthorText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    firstAuthorText:SetPoint("TOPLEFT", devsText, "TOPRIGHT", 0, 0)
-    firstAuthorText:SetText("Severussnipe")
-    firstAuthorText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
+    statY = addSummaryStatLine(container, "Total Player Kills:", stats.totalKills, statY)
+    statY = addSummaryStatLine(container, "Unique Players Killed:", stats.uniqueKills, statY)
+    statY = addSummaryStatLine(container, "Level ?? Kills:", stats.unknownLevelKills, statY)
+    statY = addSummaryStatLine(container, "Average Kill Level:", string.format("%.1f", stats.avgLevel), statY)
+    statY = addSummaryStatLine(container, "Your Average Level:", string.format("%.1f", stats.avgPlayerLevel), statY)
 
-    local andText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    andText:SetPoint("TOPLEFT", firstAuthorText, "TOPRIGHT", 0, 0)
-    andText:SetText(" & ")
+    local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
+        (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
+    statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY)
 
-    local secondAuthorText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    secondAuthorText:SetPoint("TOPLEFT", andText, "TOPRIGHT", 0, 0)
-    secondAuthorText:SetText("Hkfarmer")
-    secondAuthorText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
+    statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer), statY)
 
-    local realmText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    realmText:SetPoint("TOPLEFT", 0, yPosition - 35)
-    realmText:SetText("Realm: Spineshatter")
+    -- Add the line for most killed player
+    local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
+    statY = addSummaryStatLine(container, "Most Killed Player:", mostKilledText, statY,
+        "Click to filter kill list to show only kills of this player")
 
-    local guildText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    guildText:SetPoint("TOPLEFT", 0, yPosition - 50)
-    guildText:SetText("Guild: <Redridge Police>")
+    -- Add click handler to the most killed player stat line
+    if stats.mostKilledPlayer ~= "None" then
+        local tooltipFrame = container:GetChildren()
+        for _, child in pairs({container:GetChildren()}) do
+            if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
+                -- This is likely our tooltip frame for the most killed player
+                child:SetScript("OnMouseUp", function()
+                    PKA_CreateKillStatsFrame()
+                    C_Timer.After(0.05, function()
+                        PKA_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
+                        PKA_FrameManager:BringToFront("KillsList")
+                    end)
+                end)
+                break
+            end
+        end
+    end
 
-    local githubText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    githubText:SetPoint("TOPLEFT", 0, yPosition - 70)
-    githubText:SetText("https://github.com/randomdude163/WoWClassic_PlayerKillAnnounce")
-    githubText:SetTextHeight(11)
+    statY = addSummaryStatLine(container, "Current Kill Streak:", PKA_CurrentKillStreak or 0, statY,
+        "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
+    statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY,
+        "This record persists through logouts and can only be reset manually through the Reset tab in the Addon Settings.")
+    statY = addSummaryStatLine(container, "Highest Multi-Kill:", PKA_HighestMultiKill or 0, statY)
+
+    return container
+end
+
+-- Move calculateStatistics to the top as a global function
+function calculateStatistics()
+    local totalKills = 0
+    local uniqueKills = 0
+    local totalLevels = 0
+    local totalPlayerLevels = 0
+    local killsWithLevelData = 0
+    local unknownLevelKills = 0
+    local mostKilledPlayer = nil
+    local mostKilledCount = 0
+
+    if PKA_KillCounts then
+        for nameWithLevel, data in pairs(PKA_KillCounts) do
+            if data then
+                uniqueKills = uniqueKills + 1
+                local kills = data.kills or 0
+                totalKills = totalKills + kills
+
+                -- Track most killed player
+                if kills > mostKilledCount then
+                    local playerName = nameWithLevel:match("([^:]+)")
+                    mostKilledPlayer = playerName
+                    mostKilledCount = kills
+                end
+
+                local level = nameWithLevel:match(":(%S+)")
+                local levelNum = tonumber(level or "0") or 0
+
+                if levelNum == -1 then
+                    unknownLevelKills = unknownLevelKills + kills
+                else
+                    totalLevels = totalLevels + levelNum * kills
+                end
+
+                if data.playerLevel then
+                    totalPlayerLevels = totalPlayerLevels + (data.playerLevel * kills)
+                    killsWithLevelData = killsWithLevelData + kills
+                end
+            end
+        end
+    end
+
+    local knownLevelKills = totalKills - unknownLevelKills
+    local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
+    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData) or UnitLevel("player")
+    local avgLevelDiff = avgPlayerLevel - avgLevel
+    local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
+
+    return {
+        totalKills = totalKills,
+        uniqueKills = uniqueKills,
+        unknownLevelKills = unknownLevelKills,
+        avgLevel = avgLevel,
+        avgPlayerLevel = avgPlayerLevel,
+        avgLevelDiff = avgLevelDiff,
+        avgKillsPerPlayer = avgKillsPerPlayer,
+        mostKilledPlayer = mostKilledPlayer or "None",
+        mostKilledCount = mostKilledCount
+    }
 end
 
 -- Update the calculateStatistics function to include most killed player
@@ -678,60 +756,6 @@ local function calculateStatistics()
         mostKilledPlayer = mostKilledPlayer or "None",
         mostKilledCount = mostKilledCount
     }
-end
-
-local function createSummaryStats(parent, x, y, width, height)
-    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
-
-    local stats = calculateStatistics()
-    local statY = -30
-
-    statY = addSummaryStatLine(container, "Total Player Kills:", stats.totalKills, statY)
-    statY = addSummaryStatLine(container, "Unique Players Killed:", stats.uniqueKills, statY)
-    statY = addSummaryStatLine(container, "Level ?? Kills:", stats.unknownLevelKills, statY)
-    statY = addSummaryStatLine(container, "Average Kill Level:", string.format("%.1f", stats.avgLevel), statY)
-    statY = addSummaryStatLine(container, "Your Average Level:", string.format("%.1f", stats.avgPlayerLevel), statY)
-
-    local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
-        (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
-    statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY)
-
-    statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer), statY)
-
-    -- Add the new line for most killed player
-    local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
-    statY = addSummaryStatLine(container, "Most Killed Player:", mostKilledText, statY,
-        "Click to filter kill list to show only kills of this player")
-
-    -- Add click handler to the most killed player stat line
-    if stats.mostKilledPlayer ~= "None" then
-        local tooltipFrame = container:GetChildren()
-        for _, child in pairs({container:GetChildren()}) do
-            if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
-                -- This is likely our tooltip frame for the most killed player
-                child:SetScript("OnMouseUp", function()
-                    PKA_CreateKillStatsFrame()
-                    C_Timer.After(0.05, function()
-                        PKA_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
-                        PKA_FrameManager:BringToFront("KillsList")
-                    end)
-                end)
-                break
-            end
-        end
-    end
-
-    statY = addSummaryStatLine(container, "Current Kill Streak:", PKA_CurrentKillStreak or 0, statY,
-        "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY,
-        "This record persists through logouts and can only be reset manually through the Reset tab in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Multi-Kill:", PKA_HighestMultiKill or 0, statY)
-
-    -- Increase spacing before credits section
-    statY = statY - 30  -- Changed from -55 to reduce the space
-    addCreditsSection(container, statY)
-
-    return container
 end
 
 -- Update the gatherStatistics function to remove unknownLevel check
