@@ -10,7 +10,7 @@ local PlayerKillMessageDefault = PlayerKillMessageDefault or "Enemyplayername ki
 local KillStreakEndedMessageDefault = KillStreakEndedMessageDefault or "My kill streak of STREAKCOUNT has ended!"
 local NewStreakRecordMessageDefault = NewStreakRecordMessageDefault or "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
 local NewMultiKillRecordMessageDefault = NewMultiKillRecordMessageDefault or
-    "NEW PERSONAL BEST: Multi-kill of MULTIKILLCOUNT!"
+    "NEW PERSONAL BEST: MULTIKILLTEXT!"
 
 local PKA_CONFIG_HEADER_R = 1.0
 local PKA_CONFIG_HEADER_G = 0.82
@@ -259,7 +259,7 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     -- Add Kill Milestone checkbox (renamed from Last Kill Preview)
     local killMilestone, killMilestoneLabel = CreateCheckbox(parent,
-        "Show Kill Milestones",
+        "Show kill milestones",
         PKA_KillMilestoneNotificationsEnabled,
         function(checked)
             PKA_KillMilestoneNotificationsEnabled = checked
@@ -288,13 +288,13 @@ local function CreateAnnouncementSection(parent, yOffset)
     intervalSlider:SetValue(PKA_MilestoneInterval or 5)
     getglobal(intervalSlider:GetName() .. "Low"):SetText("3")
     getglobal(intervalSlider:GetName() .. "High"):SetText("10")
-    getglobal(intervalSlider:GetName() .. "Text"):SetText("Milestone Interval: Every " .. (PKA_MilestoneInterval or 5) .. " kills")
+    getglobal(intervalSlider:GetName() .. "Text"):SetText("Milestone interval: Every " .. (PKA_MilestoneInterval or 5) .. " kills")
     parent.intervalSlider = intervalSlider
 
     intervalSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
         self:SetValue(value)
-        getglobal(self:GetName() .. "Text"):SetText("Milestone Interval: Every " .. value .. " kills")
+        getglobal(self:GetName() .. "Text"):SetText("Milestone interval: Every " .. value .. " kills")
         PKA_MilestoneInterval = value
         PKA_SaveSettings()
     end)
@@ -303,7 +303,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     local milestoneSlider = CreateFrame("Slider", "PKA_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
     milestoneSlider:SetWidth(200)
     milestoneSlider:SetHeight(16)
-    milestoneSlider:SetPoint("TOPLEFT", intervalSlider, "BOTTOMLEFT", 0, -20)
+    milestoneSlider:SetPoint("TOPLEFT", intervalSlider, "BOTTOMLEFT", 0, -30)
     milestoneSlider:SetOrientation("HORIZONTAL")
     milestoneSlider:SetMinMaxValues(1, 15)
     milestoneSlider:SetValueStep(1)
@@ -353,10 +353,9 @@ local function CreateAnnouncementSection(parent, yOffset)
             end
         end
 
-        local prefix = useHorde and "Horde" or "Alliance"
-        PKA_ShowKillMilestone(prefix .. "TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
+        PKA_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
     end)
-    testButton:SetPoint("TOPLEFT", milestoneSlider, "BOTTOMLEFT", -20, -10)
+    testButton:SetPoint("TOPLEFT", milestoneSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
 
     -- Now continue with the original checkboxes
@@ -365,7 +364,7 @@ local function CreateAnnouncementSection(parent, yOffset)
             PKA_EnableKillAnnounce = checked
             PKA_SaveSettings()
         end)
-    enableKillAnnounce:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", -20, -10)
+    enableKillAnnounce:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", -38, -CHECKBOX_SPACING - 5)
     parent.enableKillAnnounce = enableKillAnnounce
 
     local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new personal bests to party chat",
@@ -390,7 +389,7 @@ end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
     -- Add extra spacing before the Party Messages section
-    yOffset = yOffset - 35
+    yOffset = yOffset
 
     local header, line = CreateSectionHeader(parent, "Party Messages", 20, yOffset)
 
@@ -420,7 +419,7 @@ local function CreateMessageTemplatesSection(parent, yOffset)
 
     local newStreakContainer, newStreakEditBox = CreateInputField(
         parent,
-        "New streak record message (\"STREAKCOUNT\" will be replaced with the streak count):",
+        "New streak personal best message (\"STREAKCOUNT\" will be replaced with the streak count):",
         560,
         PKA_NewStreakRecordMessage,
         function(text)
@@ -432,7 +431,7 @@ local function CreateMessageTemplatesSection(parent, yOffset)
 
     local multiKillContainer, multiKillEditBox = CreateInputField(
         parent,
-        "New multi-kill record message (\"MULTIKILLCOUNT\" will be replaced with the count):",
+        "New multi-kill personal best message (\"MULTIKILLTEXT\" will be \"Double/Triple/...-Kill\"):",
         560,
         PKA_NewMultiKillRecordMessage,
         function(text)
@@ -445,36 +444,36 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     -- Add section header for Multi-Kill settings
     local multiKillHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     multiKillHeader:SetPoint("TOPLEFT", multiKillContainer, "BOTTOMLEFT", 0, -20)
-    multiKillHeader:SetText("Multi-Kill Announce")
+    multiKillHeader:SetText("Multi-Kill Announcements")
 
     -- Add the threshold slider and description
     local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(16)
-    slider:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 40, -20)
+    slider:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 5, -25)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(2, 10)
     slider:SetValueStep(1)
     slider:SetValue(PKA_MultiKillThreshold or 3)
     getglobal(slider:GetName() .. "Low"):SetText("Double")
     getglobal(slider:GetName() .. "High"):SetText("Deca")
-    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. (PKA_MultiKillThreshold or 3))
+    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PKA_MultiKillThreshold or 3))
     parent.multiKillSlider = slider
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
         self:SetValue(value)
-        getglobal(self:GetName() .. "Text"):SetText("Multi-Kill Announce Threshold: " .. value)
+        getglobal(self:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. value)
         PKA_MultiKillThreshold = value
         PKA_SaveSettings()
     end)
 
     -- Slider description
-    local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    desc:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -5)
-    desc:SetText("Set the minimum multi-kill count to announce in party chat")
-    desc:SetJustifyH("LEFT")
-    desc:SetWidth(350)
+    -- local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    -- desc:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -15)
+    -- desc:SetText("Minimum multi-kill count to announce in party chat")
+    -- desc:SetJustifyH("LEFT")
+    -- desc:SetWidth(350)
 
     -- Return UI elements for potential updates
     return {
@@ -483,7 +482,7 @@ local function CreateMessageTemplatesSection(parent, yOffset)
         newStreak = newStreakEditBox,
         multiKill = multiKillEditBox,
         multiKillSlider = slider,
-        multiKillDesc = desc
+        -- multiKillDesc = desc
     }
 end
 

@@ -96,7 +96,7 @@ local UI = {
     BAR = { HEIGHT = 16,
             SPACING = 3,
             TEXT_OFFSET = 5 },
-    GUILD_LIST = { WIDTH = 350, HEIGHT = 235 },
+    GUILD_LIST = { WIDTH = 375, HEIGHT = 302 },
     TITLE_SPACING = 3,
     TOP_PADDING = 40,
     LEFT_SCROLL_PADDING = 20,

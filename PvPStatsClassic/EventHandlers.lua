@@ -3,7 +3,7 @@
 local PlayerKillMessageDefault = "Enemyplayername killed!"
 local KillStreakEndedMessageDefault = "My kill streak of STREAKCOUNT has ended!"
 local NewStreakRecordMessageDefault = "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
-local NewMultiKillRecordMessageDefault = "NEW PERSONAL BEST: Multi-kill of MULTIKILLCOUNT!"
+local NewMultiKillRecordMessageDefault = "NEW PERSONAL BEST: MULTIKILLTEXT!"
 ------------------------------------------------------------------------
 
 local playerKillAnnounceFrame = CreateFrame("Frame", "PlayerKillAnnounceFrame", UIParent)
@@ -271,48 +271,15 @@ local function UpdateKillStreak()
     end
 end
 
-local function UpdateMultiKill()
-    if UnitAffectingCombat("player") then
-        if not inCombat then
-            inCombat = true
-        end
-
-        PKA_MultiKillCount = PKA_MultiKillCount + 1
-    else
-        PKA_MultiKillCount = 1
-        inCombat = false
-    end
-
-    if PKA_MultiKillCount > PKA_HighestMultiKill then
-        PKA_HighestMultiKill = PKA_MultiKillCount
-
-        if PKA_HighestMultiKill > 1 then
-            print("NEW MULTI-KILL RECORD: " .. PKA_HighestMultiKill .. "!")
-
-            if PKA_HighestMultiKill >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
-                local newMultiKillMsg = string.gsub(PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault, "MULTIKILLCOUNT", PKA_HighestMultiKill)
-                SendChatMessage(newMultiKillMsg, "PARTY")
-            end
-
-            if PKA_UpdateConfigStats then
-                PKA_UpdateConfigStats()
-            end
-        end
-    end
-end
-
 local function GetMultiKillText(count)
+    print("GetMultiKillText called with count: " .. count)
     if count < 2 then return "" end
 
     local killTexts = {
         "DOUBLE KILL!",
         "TRIPLE KILL!",
         "QUADRA KILL!",
-        "PENTA KILL!",
-        "HEXA KILL!",
-        "HEPTA KILL!",
-        "OCTA KILL!",
-        "NONA KILL!"
+        "PENTA KILL!"
     }
 
     -- Play sound based on kill count if enabled
@@ -333,10 +300,40 @@ local function GetMultiKillText(count)
         end
     end
 
-    if count <= 9 then
+    if count <= 5 then
         return killTexts[count - 1]
+    end
+
+    return "Multi-kill of " .. count
+end
+
+local function UpdateMultiKill()
+    if UnitAffectingCombat("player") then
+        if not inCombat then
+            inCombat = true
+        end
+
+        PKA_MultiKillCount = PKA_MultiKillCount + 1
     else
-        return "DECA KILL!"
+        PKA_MultiKillCount = 1
+        inCombat = false
+    end
+
+    if PKA_MultiKillCount > PKA_HighestMultiKill then
+        PKA_HighestMultiKill = PKA_MultiKillCount
+
+        if PKA_HighestMultiKill > 1 then
+            print("NEW MULTI-KILL RECORD: " .. PKA_HighestMultiKill .. "!")
+
+            if PKA_HighestMultiKill >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
+                local newMultiKillMsg = string.gsub(PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault, "MULTIKILLTEXT", GetMultiKillText(PKA_HighestMultiKill))
+                SendChatMessage(newMultiKillMsg, "PARTY")
+            end
+
+            if PKA_UpdateConfigStats then
+                PKA_UpdateConfigStats()
+            end
+        end
     end
 end
 
@@ -409,12 +406,9 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
 
     UpdateKillStreak()
     PKA_ShowKillStreakMilestone(PKA_CurrentKillStreak)
-
-    UpdateMultiKill()
-
     InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
     UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
-
+    UpdateMultiKill()
     AnnounceKill(playerName, level, nameWithLevel)
 
     -- Print debug message using the new function
@@ -1444,7 +1438,7 @@ function PKA_CreateMilestoneFrame()
 
     -- Create the main frame
     local frame = CreateFrame("Frame", "PKA_KillMilestoneFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(250, 82)  -- Base size - will be adjusted dynamically
+    frame:SetSize(200, 82)  -- Base size - will be adjusted dynamically
     frame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
     frame:SetFrameStrata("MEDIUM")
     frame:SetMovable(true)
@@ -1621,7 +1615,7 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     local frameWidth = 20 + 24 + 5 + requiredContentWidth + 20
 
     -- Apply minimum and maximum width constraints
-    local minWidth = 180   -- Minimum width
+    local minWidth = 140   -- Minimum width
     local maxWidth = 300   -- Maximum width cap
     frameWidth = math.min(maxWidth, math.max(minWidth, frameWidth))
 
