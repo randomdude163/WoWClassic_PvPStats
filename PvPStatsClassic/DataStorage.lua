@@ -203,7 +203,7 @@ function PKA_CleanupDatabase()
     end
 
     if PKA_Debug then
-        print("PlayerKillAnnounce: Database cleaned up.")
+        print("PvPStatsClassic: Database cleaned up.")
     end
 end
 

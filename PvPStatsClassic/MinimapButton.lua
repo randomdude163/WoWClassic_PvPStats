@@ -20,7 +20,7 @@ end
 minimapButton.texture = minimapButton:CreateTexture(nil, "ARTWORK")
 minimapButton.texture:SetSize(20, 20)            -- Standard minimap icon size
 minimapButton.texture:SetPoint("TOPLEFT", 6, -6) -- Blizzard's standard offset
-minimapButton.texture:SetTexture("Interface\\AddOns\\PlayerKillAnnounce\\img\\minimap")
+minimapButton.texture:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\minimap")
 
 minimapButton.border = minimapButton:CreateTexture(nil, "OVERLAY")
 minimapButton.border:SetSize(53, 53)     -- Standard Blizzard border size
