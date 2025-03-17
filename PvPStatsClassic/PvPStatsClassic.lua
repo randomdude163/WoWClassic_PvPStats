@@ -5,7 +5,7 @@ local function RegisterSlashCommands()
 end
 
 local function Main()
-    RegisterEvents()
+    PKA_RegisterEvents()
     RegisterSlashCommands()
 end
 

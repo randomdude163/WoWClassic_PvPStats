@@ -4,6 +4,8 @@ local configFrame = nil
 
 -- Add this near other default settings
 PKA_ShowTooltipKillInfo = true -- New default setting
+PKA_EnableMilestoneSounds = true -- Default enabled
+PKA_HideFirstKillMilestone = false -- Default disabled
 
 -- Default messages as fallbacks
 local PlayerKillMessageDefault = PlayerKillMessageDefault or "Enemyplayername killed!"
@@ -187,6 +189,8 @@ local function EnsureDefaultValues()
     if PKA_EnableRecordAnnounce == nil then PKA_EnableRecordAnnounce = true end
     if PKA_MultiKillThreshold == nil then PKA_MultiKillThreshold = 3 end
     if PKA_ShowTooltipKillInfo == nil then PKA_ShowTooltipKillInfo = true end
+    if PKA_EnableMilestoneSounds == nil then PKA_EnableMilestoneSounds = true end
+    if PKA_HideFirstKillMilestone == nil then PKA_HideFirstKillMilestone = false end
 end
 
 -- Update the config UI to use the new name and add the milestone interval slider
@@ -277,11 +281,42 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     killMilestone:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- NEW: Add milestone sound checkbox
+    local milestoneSounds, milestoneSoundsLabel = CreateCheckbox(parent,
+        "Play milestone sound effects",
+        PKA_EnableMilestoneSounds,
+        function(checked)
+            PKA_EnableMilestoneSounds = checked
+            PKA_SaveSettings()
+        end)
+    milestoneSounds:SetPoint("TOPLEFT", killMilestone, "BOTTOMLEFT", 20, -CHECKBOX_SPACING)
+    parent.milestoneSounds = milestoneSounds
+
+    -- NEW: Add show first kill checkbox (inverted logic)
+    local showFirstKill, showFirstKillLabel = CreateCheckbox(parent,
+        "Show milestone for first kill",
+        not PKA_HideFirstKillMilestone, -- Invert the default value
+        function(checked)
+            PKA_HideFirstKillMilestone = not checked -- Invert the stored value
+            PKA_SaveSettings()
+        end)
+    showFirstKill:SetPoint("TOPLEFT", milestoneSounds, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.showFirstKill = showFirstKill
+
+    -- Add tooltip explanation for show first kill
+    showFirstKill:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show First Kill Milestones")
+        GameTooltip:AddLine("When checked, you'll see a notification for your first kill of each player.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showFirstKill:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Add Milestone Interval slider (new)
     local intervalSlider = CreateFrame("Slider", "PKA_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
     intervalSlider:SetWidth(200)
     intervalSlider:SetHeight(16)
-    intervalSlider:SetPoint("TOPLEFT", killMilestone, "BOTTOMLEFT", 40, -20)
+    intervalSlider:SetPoint("TOPLEFT", showFirstKill, "BOTTOMLEFT", 20, -20)
     intervalSlider:SetOrientation("HORIZONTAL")
     intervalSlider:SetMinMaxValues(3, 10)
     intervalSlider:SetValueStep(1)
@@ -327,6 +362,12 @@ local function CreateAnnouncementSection(parent, yOffset)
         local testKillCounts = {1, PKA_MilestoneInterval, PKA_MilestoneInterval * 2}
         local index = math.random(1, 3)
 
+        -- Skip first kill milestone test if hide first kill is enabled and we rolled a "1"
+        if PKA_HideFirstKillMilestone and testKillCounts[index] == 1 then
+            -- Instead of 1, use the milestone interval value
+            index = 2
+        end
+
         -- Create a sample kill event with random class
         local classes = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID"}
         local randomClass = classes[math.random(1, #classes)]
@@ -353,6 +394,7 @@ local function CreateAnnouncementSection(parent, yOffset)
             end
         end
 
+        -- The milestone display function will be called with the proper sound settings
         PKA_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
     end)
     testButton:SetPoint("TOPLEFT", milestoneSlider, "BOTTOMLEFT", -2, -20)
@@ -569,6 +611,14 @@ function PKA_UpdateConfigUI()
 
     if configFrame.killMilestone then
         configFrame.killMilestone:SetChecked(PKA_KillMilestoneNotificationsEnabled)
+    end
+
+    if configFrame.milestoneSounds then
+        configFrame.milestoneSounds:SetChecked(PKA_EnableMilestoneSounds)
+    end
+
+    if configFrame.hideFirstKill then
+        configFrame.hideFirstKill:SetChecked(PKA_HideFirstKillMilestone)
     end
 
     if configFrame.milestoneSlider then
