@@ -348,7 +348,7 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel)
     local levelDifference = level - playerLevel
     local levelDisplay = level == -1 and "??" or tostring(level)
 
-    if level == -1 or (level > 0 and levelDifference >= 5) then
+    if level == -1 or (level > 0 and levelDifference >= 6) then
         killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
     end
 
