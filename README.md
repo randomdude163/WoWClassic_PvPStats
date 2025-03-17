@@ -19,7 +19,7 @@ PvP Stats Classic tracks your PvP kills and provides detailed statistics and cus
 
 
 ## Screenshots
-### Party announce messages:
+### Customizable Party announce messages:
 Kills:
 
 <img src="PvPStatsClassic/img/party_kill_announcement.png" width="500">
@@ -41,7 +41,7 @@ Kill streaks / multi-kills:
 
 ### Mouseover tooltips:
 
-<img src="PvPStatsClassic/img/alive_tooltip.png" width="180">
+<img src="PvPStatsClassic/img/alive_wow_standard_tooltip.png" width="220">
 <img src="PvPStatsClassic/img/corpse_tooltip.png" width="180">
 
 
