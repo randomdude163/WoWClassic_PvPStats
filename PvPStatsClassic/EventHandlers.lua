@@ -646,7 +646,7 @@ local function CleanupRecentPetDamage()
 end
 
 -- Add this function to record pet damage
-local function RecordPetDamage(petGUID, petName, targetGUID, targetName, amount)
+local function RecordPetDamage(petGUID, petName, targetGUID, amount)
     if not petGUID or not targetGUID then return end
 
     local ownerGUID = GetPetOwnerGUID(petGUID)
@@ -666,6 +666,13 @@ local function RecordPetDamage(petGUID, petName, targetGUID, targetName, amount)
     --         print("Recorded damage from your pet to: " .. targetName)
     --     end
     -- end
+end
+
+
+local function CombatLogDestFlagsEnemyPlayer(destFlags)
+    return true
+    -- return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+    --        bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
 end
 
 
@@ -722,15 +729,9 @@ local function RecordPlayerDamage(sourceGUID, sourceName, targetGUID, targetName
     end
 end
 
-local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, param1, param4, destFlags)
+local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, param1, param4)
     -- Only track player damage to enemy players
     if sourceGUID ~= PlayerGUID then return end
-
-    -- Check if destination is an enemy player
-    -- if bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == 0 or
-    --    bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == 0 then
-    --     return
-    -- end
 
     local damageAmount = param1 or param4 or 0
     if damageAmount <= 0 then return end
@@ -752,9 +753,7 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
     end
 
     -- Only process damage to enemy players
-    if damageAmount > 0 then -- and
-    --    bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-    --    bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+    if damageAmount > 0 then
         HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, damageAmount, nil, destFlags)
     end
 end
@@ -872,20 +871,16 @@ local function HandleCombatLogEvent()
     local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
           destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
 
-    CleanupRecentlyCountedKillsDict()
-    CleanupRecentPlayerDamage()  -- Add this line
-    HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
-    HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)  -- Add this line
+    if CombatLogDestFlagsEnemyPlayer(destFlags) then
+        HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
+        HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)  -- Add this line
+    end
 
-    if combatEvent == "PARTY_KILL" then -- and
-    --    bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-    --    bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+    if combatEvent == "PARTY_KILL" and CombatLogDestFlagsEnemyPlayer(destFlags) then
         HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     end
 
-    if combatEvent == "UNIT_DIED" then -- and
-    --    bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-    --    bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+    if combatEvent == "UNIT_DIED" and CombatLogDestFlagsEnemyPlayer(destFlags) then
         HandleUnitDiedEvent(destGUID, destName)
     end
 end
@@ -1018,6 +1013,8 @@ function PKA_RegisterEvents()
         elseif event == "PLAYER_REGEN_ENABLED" then
             HandleCombatState(false)
             CleanupRecentPetDamage()
+            CleanupRecentlyCountedKillsDict()
+            CleanupRecentPlayerDamage()
         elseif event == "PLAYER_LOGOUT" then
             PKA_CleanupDatabase()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
@@ -1203,8 +1200,7 @@ function PKA_DebugPetKills()
                 print("This target was damaged by your pet " .. (petDamage.petName or "Unknown") ..
                       " " .. string.format("%.6f", GetTime() - petDamage.timestamp) .. " seconds ago")
 
-                if bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-                   bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+                if CombatLogDestFlagsEnemyPlayer(destFlags) then
                     print("This was an enemy player kill!")
                 else
                     print("This was NOT an enemy player")
