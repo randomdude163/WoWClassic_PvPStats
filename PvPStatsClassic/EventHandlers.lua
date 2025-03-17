@@ -54,6 +54,8 @@ PKA_MilestoneAutoHideTime = 5    -- Hide after 5 seconds
 PKA_MilestoneTimer = nil
 PKA_MilestoneInterval = 5      -- Default milestone interval (1, 5, 10, etc)
 
+local PlayerGUID = nil
+
 -- Functions to identify pets and pet owners
 local function IsPetGUID(guid)
     if not guid then return false end
@@ -67,7 +69,7 @@ local function GetPetOwnerGUID(petGUID)
 
     -- Check if it's the player's pet
     if UnitExists("pet") and UnitGUID("pet") == petGUID then
-        return UnitGUID("player")
+        return PlayerGUID
     end
 
     -- For party/raid members' pets
@@ -101,7 +103,7 @@ local function GetNameFromGUID(guid)
     if name then return name end
 
     -- If that fails, check if it's the player
-    if guid == UnitGUID("player") then
+    if guid == PlayerGUID then
         return UnitName("player")
     end
 
@@ -657,7 +659,7 @@ local function RecordPetDamage(petGUID, petName, targetGUID, targetName, amount)
     }
 
     -- if PKA_Debug then
-    --     local playerGUID = UnitGUID("player")
+    --     local playerGUID = PlayerGUID
     --     if ownerGUID == playerGUID then
     --         print("Recorded damage from your pet to: " .. targetName)
     --     end
@@ -699,16 +701,15 @@ local function HandleCombatLogEvent()
        bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
        bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
 
-        local playerGUID = UnitGUID("player")
         local countKill = false
 
         if PKA_InBattleground then
-            if sourceGUID == playerGUID then
+            if sourceGUID == PlayerGUID then
                 countKill = true
                 if PKA_Debug then print("BG Mode: Player killing blow") end
             end
         else
-            if sourceGUID == playerGUID then
+            if sourceGUID == PlayerGUID then
                 countKill = true
                 if PKA_Debug then print("Normal Mode: Player killing blow") end
             elseif UnitInParty(sourceName) or UnitInRaid(sourceName) then
@@ -742,12 +743,11 @@ local function HandleCombatLogEvent()
         local petDamage = PKA_RecentPetDamage[destGUID]
 
         if petDamage and (GetTime() - petDamage.timestamp) <= PKA_PET_DAMAGE_WINDOW then
-            local playerGUID = UnitGUID("player")
             local countKill = false
 
             -- In BG mode, only count the player's own pet kills
             if PKA_InBattleground then
-                if petDamage.ownerGUID == playerGUID then
+                if petDamage.ownerGUID == PlayerGUID then
                     countKill = true
                     if PKA_Debug then
                         print("BG Mode: Pet killing blow detected (via recent damage)")
@@ -756,7 +756,7 @@ local function HandleCombatLogEvent()
                 end
             -- In normal mode, also accept party/raid member pets
             else
-                if petDamage.ownerGUID == playerGUID then
+                if petDamage.ownerGUID == PlayerGUID then
                     countKill = true
                     if PKA_Debug then
                         print("Normal Mode: Your pet killing blow detected")
@@ -898,6 +898,7 @@ function RegisterEvents()
             if UnitIsDeadOrGhost("player") then
                 HandlePlayerDeath()
             end
+            PlayerGUID = PlayerGUID
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -1069,9 +1070,8 @@ function PKA_DebugPetKills()
         -- Track all pet damage events
         if IsPetGUID(sourceGUID) then
             local ownerGUID = GetPetOwnerGUID(sourceGUID)
-            local playerGUID = UnitGUID("player")
 
-            if ownerGUID == playerGUID then
+            if ownerGUID == PlayerGUID then
                 -- Log all pet damage events
                 if combatEvent:find("_DAMAGE") or combatEvent == "SWING_DAMAGE" then
                     local amount = combatEvent == "SWING_DAMAGE" and param1 or (combatEvent == "SPELL_DAMAGE" and param4 or 0)
