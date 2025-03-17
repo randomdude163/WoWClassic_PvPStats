@@ -1192,8 +1192,9 @@ function PKA_SetupTooltip()
         -- Look up player in our database (check at all levels)
         local kills = GetKillsByPlayerName(playerName)
 
-        -- Always add the kill count, even if 0
-        AddKillsToTooltip(tooltip, kills)
+        if kills > 0 then
+            AddKillsToTooltip(tooltip, kills)
+        end
     end
 
     -- Hook into various tooltip events for better coverage
