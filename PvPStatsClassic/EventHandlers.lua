@@ -53,6 +53,8 @@ PKA_KillMilestoneNotificationsEnabled = true  -- Default enabled
 PKA_MilestoneAutoHideTime = 5    -- Hide after 5 seconds
 PKA_MilestoneTimer = nil
 PKA_MilestoneInterval = 5      -- Default milestone interval (1, 5, 10, etc)
+PKA_EnableMilestoneSounds = true -- Default enabled
+PKA_HideFirstKillMilestone = false -- Default disabled
 
 local PlayerGUID = nil
 
@@ -424,9 +426,14 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
         print(debugMsg)
     end
 
-    -- Show kill milestone with the player's kill count (changed from PKA_ShowLastKill)
+    -- Get the kill count before showing milestone
     local killCount = PKA_KillCounts[nameWithLevel].kills
-    PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
+
+    -- Only show milestone if it's not the first kill or if first kill milestones are enabled
+    if not (killCount == 1 and PKA_HideFirstKillMilestone) then
+        PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
+    end
+
     PKA_SaveSettings()
 end
 
@@ -621,14 +628,14 @@ end
 local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
     local level, englishClass, race, gender, guild, rank = PKA_GetPlayerInfo(destName, destGUID)
 
-    if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
-        print("Kill of " .. destName .. " not counted (incomplete data: " ..
-              (race == "Unknown" and "race" or "") ..
-              (gender == "Unknown" and (race == "Unknown" and ", gender" or "gender") or "") ..
-              (englishClass == "Unknown" and ((race == "Unknown" or gender == "Unknown") and ", class" or "class") or "") ..
-              " unknown)")
-        return
-    end
+    -- if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
+    --     print("Kill of " .. destName .. " not counted (incomplete data: " ..
+    --           (race == "Unknown" and "race" or "") ..
+    --           (gender == "Unknown" and (race == "Unknown" and ", gender" or "gender") or "") ..
+    --           (englishClass == "Unknown" and ((race == "Unknown" or gender == "Unknown") and ", class" or "class") or "") ..
+    --           " unknown)")
+    --     return
+    -- end
 
     RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName, rank)
 end
@@ -1084,10 +1091,12 @@ function PKA_SaveSettings()
     PlayerKillAnnounceDB.BattlegroundMode = PKA_BattlegroundMode
     PlayerKillAnnounceDB.EnableKillSounds = PKA_EnableKillSounds
 
-    -- Save Kill Milestone settings (renamed from Last Kill Preview)
+    -- Save Kill Milestone settings
     PlayerKillAnnounceDB.ShowKillMilestone = PKA_KillMilestoneNotificationsEnabled
     PlayerKillAnnounceDB.MilestoneAutoHideTime = PKA_MilestoneAutoHideTime
     PlayerKillAnnounceDB.MilestoneInterval = PKA_MilestoneInterval
+    PlayerKillAnnounceDB.EnableMilestoneSounds = PKA_EnableMilestoneSounds
+    PlayerKillAnnounceDB.HideFirstKillMilestone = PKA_HideFirstKillMilestone
     -- Position is saved when frame is moved
 end
 
@@ -1117,6 +1126,8 @@ function PKA_LoadSettings()
     PKA_KillMilestoneNotificationsEnabled = PlayerKillAnnounceDB.ShowKillMilestone ~= false -- Default to enabled
     PKA_MilestoneAutoHideTime = PlayerKillAnnounceDB.MilestoneAutoHideTime or 5
     PKA_MilestoneInterval = PlayerKillAnnounceDB.MilestoneInterval or 5
+    PKA_EnableMilestoneSounds = PlayerKillAnnounceDB.EnableMilestoneSounds ~= false -- Default to enabled
+    PKA_HideFirstKillMilestone = PlayerKillAnnounceDB.HideFirstKillMilestone or false -- Default to disabled
 
     -- Load minimap button position
     PKA_MinimapPosition = PlayerKillAnnounceDB.PKA_MinimapPosition or 195
@@ -1645,6 +1656,9 @@ end
 function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount, faction)
     if not PKA_KillMilestoneNotificationsEnabled then return end
 
+    -- Check for "hide first kill" setting
+    if PKA_HideFirstKillMilestone and killCount == 1 then return end
+
     local frame = PKA_CreateMilestoneFrame()
 
     -- Update position if saved
@@ -1732,7 +1746,11 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     frame:Show()
     local animGroup = SetupKillstreakMilestoneAnimation(frame, PKA_MilestoneAutoHideTime)
     animGroup:Play()
-    PlaySound(8213) -- PVPFlagCapturedHorde
+
+    -- Only play sound if milestone sounds are enabled
+    if PKA_EnableMilestoneSounds then
+        PlaySound(8213) -- PVPFlagCapturedHorde
+    end
 
     -- Cancel existing timer if any
     if PKA_MilestoneTimer then
