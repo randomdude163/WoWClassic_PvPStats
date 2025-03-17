@@ -898,7 +898,7 @@ function RegisterEvents()
             if UnitIsDeadOrGhost("player") then
                 HandlePlayerDeath()
             end
-            PlayerGUID = PlayerGUID
+            PlayerGUID = UnitGUID("player")
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
