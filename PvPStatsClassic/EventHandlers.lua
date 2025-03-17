@@ -134,7 +134,7 @@ function PKA_Print(message)
 end
 
 local function PrintSlashCommandUsage()
-    PKA_Print("Usage: /pka config - Open configuration UI")
+    PKA_Print("Usage: /pka settings - Open settings UI")
     PKA_Print("Usage: /pka stats - Show kills list")
     PKA_Print("Usage: /pka status - Show current settings")
     PKA_Print("Usage: /pka debug - Show current streak values")
@@ -575,7 +575,7 @@ function PKA_SlashCommandHandler(msg)
         PKA_DebugCombatLogEvents()
     elseif command == "debugpet" then
         PKA_DebugPetKills()
-    elseif command == "config" or command == "options" or command == "settings" then
+    elseif command == "options" or command == "settings" then
             PKA_CreateConfigUI()
     else
         PrintSlashCommandUsage()

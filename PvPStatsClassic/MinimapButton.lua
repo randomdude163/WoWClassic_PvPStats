@@ -86,7 +86,7 @@ minimapButton:SetScript("OnEnter", function(self)
     GameTooltip:AddLine(" ")
     GameTooltip:AddLine("Left-Click: Statistics")
     GameTooltip:AddLine("Right-Click: Kills List")
-    GameTooltip:AddLine("Ctrl + Left-Click: Configuration")
+    GameTooltip:AddLine("Ctrl + Left-Click: Settings")
     GameTooltip:Show()
 end)
 
