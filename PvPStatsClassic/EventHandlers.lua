@@ -28,7 +28,7 @@ PKA_InBattleground = false       -- Current BG state
 -- State tracking variables
 local inCombat = false
 local killStreakMilestoneFrame = nil
-PKA_Debug = false  -- Debug mode for extra messages
+PKA_Debug = true  -- Debug mode for extra messages
 
 -- Add these variables at the top
 local PKA_RecentPetDamage = {}  -- Track recent pet damage
@@ -54,6 +54,11 @@ PKA_MilestoneAutoHideTime = 5    -- Hide after 5 seconds
 PKA_MilestoneTimer = nil
 PKA_MilestoneInterval = 5      -- Default milestone interval (1, 5, 10, etc)
 
+local PlayerGUID = nil
+
+local PKA_RecentPlayerDamage = {}  -- Track recent damage from player to enemies
+local PKA_ASSIST_DAMAGE_WINDOW = 30.0  -- 60 second window for assist credit
+
 -- Functions to identify pets and pet owners
 local function IsPetGUID(guid)
     if not guid then return false end
@@ -67,7 +72,7 @@ local function GetPetOwnerGUID(petGUID)
 
     -- Check if it's the player's pet
     if UnitExists("pet") and UnitGUID("pet") == petGUID then
-        return UnitGUID("player")
+        return PlayerGUID
     end
 
     -- For party/raid members' pets
@@ -101,7 +106,7 @@ local function GetNameFromGUID(guid)
     if name then return name end
 
     -- If that fails, check if it's the player
-    if guid == UnitGUID("player") then
+    if guid == PlayerGUID then
         return UnitName("player")
     end
 
@@ -124,7 +129,6 @@ local function GetNameFromGUID(guid)
 
     return nil
 end
-
 
 function PKA_Print(message)
     local PKA_CHAT_MESSAGE_R = 1.0
@@ -272,7 +276,6 @@ local function UpdateKillStreak()
 end
 
 local function GetMultiKillText(count)
-    print("GetMultiKillText called with count: " .. count)
     if count < 2 then return "" end
 
     local killTexts = {
@@ -390,9 +393,11 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
     debugMsg = debugMsg .. " - Current streak: " .. PKA_CurrentKillStreak
     debugMsg = debugMsg .. " - Zone: " .. (PKA_KillCounts[nameWithLevel].zone or "Unknown")
 
-    -- Rest of function remains unchanged...
+    -- Check what kind of kill this was
     if killerGUID and IsPetGUID(killerGUID) then
         debugMsg = debugMsg .. " - Kill by: Your Pet (" .. (killerName or "Unknown") .. ")"
+    elseif killerName == "Assist" then
+        debugMsg = debugMsg .. " - Assist Kill (mob/environment finished target)"
     end
 
     if PKA_MultiKillCount >= 2 then
@@ -422,7 +427,6 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     -- Show kill milestone with the player's kill count (changed from PKA_ShowLastKill)
     local killCount = PKA_KillCounts[nameWithLevel].kills
     PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
-
     PKA_SaveSettings()
 end
 
@@ -657,19 +661,15 @@ local function RecordPetDamage(petGUID, petName, targetGUID, targetName, amount)
     }
 
     -- if PKA_Debug then
-    --     local playerGUID = UnitGUID("player")
+    --     local playerGUID = PlayerGUID
     --     if ownerGUID == playerGUID then
     --         print("Recorded damage from your pet to: " .. targetName)
     --     end
     -- end
 end
 
--- Replace the HandleCombatLogEvent function with this streamlined version
-local function HandleCombatLogEvent()
-    local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
-          destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
 
-    -- Clean up recently counted kills
+local function CleanupRecentlyCountedKillsDict()
     local now = GetTime()
     local cutoff = now - PKA_KILL_TRACKING_WINDOW
     for guid, timestamp in pairs(PKA_RecentlyCountedKills) do
@@ -677,7 +677,9 @@ local function HandleCombatLogEvent()
             PKA_RecentlyCountedKills[guid] = nil
         end
     end
+end
 
+local function HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
     if IsPetGUID(sourceGUID) and destGUID then
         local damageAmount = 0
 
@@ -694,93 +696,197 @@ local function HandleCombatLogEvent()
             RecordPetDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
         end
     end
+end
 
-    if combatEvent == "PARTY_KILL" and
-       bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-       bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+local function RecordPlayerDamage(sourceGUID, sourceName, targetGUID, targetName, amount)
+    if not sourceGUID or not targetGUID then return end
 
-        local playerGUID = UnitGUID("player")
-        local countKill = false
+    -- Only track the player's own damage
+    if sourceGUID ~= PlayerGUID then return end
 
-        if PKA_InBattleground then
-            if sourceGUID == playerGUID then
-                countKill = true
-                if PKA_Debug then print("BG Mode: Player killing blow") end
-            end
+    -- Get existing record or create new one
+    local existingRecord = PKA_RecentPlayerDamage[targetGUID] or {
+        timestamp = 0,
+        totalDamage = 0
+    }
+
+    -- Update with new damage information
+    existingRecord.timestamp = GetTime()
+    existingRecord.totalDamage = existingRecord.totalDamage + amount
+
+    -- Store the updated record
+    PKA_RecentPlayerDamage[targetGUID] = existingRecord
+
+    if PKA_Debug then
+        print(string.format("You dealt %d damage to %s", amount, targetName))
+    end
+end
+
+local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, param1, param4, destFlags)
+    -- Only track player damage to enemy players
+    if sourceGUID ~= PlayerGUID then return end
+
+    -- Check if destination is an enemy player
+    -- if bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == 0 or
+    --    bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == 0 then
+    --     return
+    -- end
+
+    local damageAmount = param1 or param4 or 0
+    if damageAmount <= 0 then return end
+
+     RecordPlayerDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
+end
+
+local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
+    if sourceGUID ~= PlayerGUID then return end
+
+    local damageAmount = 0
+
+    if combatEvent == "SWING_DAMAGE" then
+        damageAmount = param1 or 0
+    elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
+        damageAmount = param4 or 0
+    elseif combatEvent == "RANGE_DAMAGE" then
+        damageAmount = param4 or 0
+    end
+
+    -- Only process damage to enemy players
+    if damageAmount > 0 then -- and
+    --    bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+    --    bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+        HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, damageAmount, nil, destFlags)
+    end
+end
+
+-- Add this function to clean up old damage records
+local function CleanupRecentPlayerDamage()
+    local now = GetTime()
+    local cutoff = now - PKA_ASSIST_DAMAGE_WINDOW
+
+    for guid, info in pairs(PKA_RecentPlayerDamage) do
+        if info.timestamp < cutoff then
+            PKA_RecentPlayerDamage[guid] = nil
+        end
+    end
+end
+
+local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
+    local countKill = false
+
+    -- print("Party Kill Event: " .. sourceName .. " (" .. sourceGUID .. ") killed " .. destName .. " (" .. destGUID .. ")")
+    if PKA_InBattleground then
+        if sourceGUID == PlayerGUID then
+            countKill = true
+            if PKA_Debug then print("BG Mode: Player killing blow") end
         else
-            if sourceGUID == playerGUID then
+            if PKA_Debug then print("BG Mode: Party/Raid member killing blow ignored") end
+        end
+    else
+        if sourceGUID == PlayerGUID then
+            countKill = true
+            if PKA_Debug then print("Normal Mode: Player killing blow") end
+        elseif UnitInParty(sourceName) or UnitInRaid(sourceName) then
+            countKill = true
+            if PKA_Debug then print("Normal Mode: Party/Raid member killing blow") end
+        end
+    end
+
+    if countKill then
+        PKA_RecentlyCountedKills[destGUID] = GetTime()
+        ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
+    end
+end
+
+local function HandleUnitDiedEvent(destGUID, destName)
+    if PKA_RecentlyCountedKills[destGUID] then
+        if PKA_Debug then
+            print("Skipping duplicate kill for: " .. destName)
+        end
+        return
+    end
+
+    local countKill = false
+
+    -- Check if this player was recently damaged by a pet
+    local petDamage = PKA_RecentPetDamage[destGUID]
+
+    if petDamage and (GetTime() - petDamage.timestamp) <= PKA_PET_DAMAGE_WINDOW then
+        -- In BG mode, only count the player's own pet kills
+        if PKA_InBattleground then
+            if petDamage.ownerGUID == PlayerGUID then
                 countKill = true
-                if PKA_Debug then print("Normal Mode: Player killing blow") end
-            elseif UnitInParty(sourceName) or UnitInRaid(sourceName) then
+                if PKA_Debug then
+                    print("BG Mode: Pet killing blow detected (via recent damage)")
+                    print("Pet: " .. (petDamage.petName or "Unknown"))
+                end
+            else
+                if PKA_Debug then print("BG Mode: Pet killing blow ignored (not your pet)") end
+            end
+        -- In normal mode, also accept party/raid member pets
+        else
+            if petDamage.ownerGUID == PlayerGUID then
                 countKill = true
-                if PKA_Debug then print("Normal Mode: Party/Raid member killing blow") end
+                if PKA_Debug then
+                    print("Normal Mode: Your pet killing blow detected")
+                end
+            else
+                -- Check if owner is in party/raid
+                local ownerName = GetNameFromGUID(petDamage.ownerGUID)
+                if ownerName and (UnitInParty(ownerName) or UnitInRaid(ownerName)) then
+                    countKill = true
+                    if PKA_Debug then
+                        print("Normal Mode: Party/raid member's pet kill detected")
+                    end
+                end
             end
         end
 
         if countKill then
-            -- Mark this kill as already counted to prevent duplicates
             PKA_RecentlyCountedKills[destGUID] = GetTime()
-
-            ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
+            ProcessEnemyPlayerDeath(destName, destGUID, petDamage.petGUID, petDamage.petName)
+            PKA_RecentPetDamage[destGUID] = nil  -- Clear the record after processing
         end
     end
 
-    -- Handle pet kills via UNIT_DIED and recent pet damage
-    if combatEvent == "UNIT_DIED" and
-       bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-       bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+    if countKill then return end
 
-        -- Skip if this kill was already counted recently (preventing double counts)
-        if PKA_RecentlyCountedKills[destGUID] then
+    -- If not a pet kill, check for assist kill
+    local playerDamage = PKA_RecentPlayerDamage[destGUID]
+    if playerDamage and (GetTime() - playerDamage.timestamp) <= PKA_ASSIST_DAMAGE_WINDOW then
+        -- Check if enough damage was done for assist credit
+        if playerDamage.totalDamage > 0 then
             if PKA_Debug then
-                print("Skipping duplicate kill count for: " .. destName)
+                print("Assist kill detected for: " .. destName)
             end
-            return
+
+            PKA_RecentlyCountedKills[destGUID] = GetTime()
+            ProcessEnemyPlayerDeath(destName, destGUID, nil, "Assist")
+            PKA_RecentPlayerDamage[destGUID] = nil  -- Clear the record after processing
         end
+    end
+end
 
-        -- Check if this player was recently damaged by a pet
-        local petDamage = PKA_RecentPetDamage[destGUID]
+-- Replace the HandleCombatLogEvent function with this updated version
+local function HandleCombatLogEvent()
+    local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
+          destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
 
-        if petDamage and (GetTime() - petDamage.timestamp) <= PKA_PET_DAMAGE_WINDOW then
-            local playerGUID = UnitGUID("player")
-            local countKill = false
+    CleanupRecentlyCountedKillsDict()
+    CleanupRecentPlayerDamage()  -- Add this line
+    HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
+    HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)  -- Add this line
 
-            -- In BG mode, only count the player's own pet kills
-            if PKA_InBattleground then
-                if petDamage.ownerGUID == playerGUID then
-                    countKill = true
-                    if PKA_Debug then
-                        print("BG Mode: Pet killing blow detected (via recent damage)")
-                        print("Pet: " .. (petDamage.petName or "Unknown"))
-                    end
-                end
-            -- In normal mode, also accept party/raid member pets
-            else
-                if petDamage.ownerGUID == playerGUID then
-                    countKill = true
-                    if PKA_Debug then
-                        print("Normal Mode: Your pet killing blow detected")
-                    end
-                else
-                    -- Check if owner is in party/raid
-                    local ownerName = GetNameFromGUID(petDamage.ownerGUID)
-                    if ownerName and (UnitInParty(ownerName) or UnitInRaid(ownerName)) then
-                        countKill = true
-                        if PKA_Debug then
-                            print("Normal Mode: Party/raid member's pet kill detected")
-                        end
-                    end
-                end
-            end
+    if combatEvent == "PARTY_KILL" then -- and
+    --    bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+    --    bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+        HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
+    end
 
-            if countKill then
-                -- Mark this kill as counted
-                PKA_RecentlyCountedKills[destGUID] = GetTime()
-
-                ProcessEnemyPlayerDeath(destName, destGUID, petDamage.petGUID, petDamage.petName)
-                PKA_RecentPetDamage[destGUID] = nil  -- Clear the record after processing
-            end
-        end
+    if combatEvent == "UNIT_DIED" then -- and
+    --    bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+    --    bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+        HandleUnitDiedEvent(destGUID, destName)
     end
 end
 
@@ -878,7 +984,7 @@ function PKA_ShowKillStreakMilestone(killCount)
     animGroup:Play()
 end
 
-function RegisterEvents()
+function PKA_RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     playerKillAnnounceFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -898,6 +1004,7 @@ function RegisterEvents()
             if UnitIsDeadOrGhost("player") then
                 HandlePlayerDeath()
             end
+            PlayerGUID = UnitGUID("player")
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -934,8 +1041,8 @@ function PKA_CheckBattlegroundStatus()
         "Warsong Gulch",
         "Arathi Basin",
         "Alterac Valley",
-        "Elwynn Forest",
-        "Duskwood"
+        -- "Elwynn Forest",
+        -- "Duskwood"
     }
 
     -- Check if current zone is a battleground
@@ -1069,9 +1176,8 @@ function PKA_DebugPetKills()
         -- Track all pet damage events
         if IsPetGUID(sourceGUID) then
             local ownerGUID = GetPetOwnerGUID(sourceGUID)
-            local playerGUID = UnitGUID("player")
 
-            if ownerGUID == playerGUID then
+            if ownerGUID == PlayerGUID then
                 -- Log all pet damage events
                 if combatEvent:find("_DAMAGE") or combatEvent == "SWING_DAMAGE" then
                     local amount = combatEvent == "SWING_DAMAGE" and param1 or (combatEvent == "SPELL_DAMAGE" and param4 or 0)
