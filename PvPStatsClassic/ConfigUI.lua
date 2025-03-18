@@ -731,45 +731,71 @@ local function CreateTabSystem(parent)
     return tabFrames
 end
 
--- Create About Tab with Credits
+local function CreateCopyableField(parent, label, text, anchorTo, yOffset)
+    -- Create the label
+    local labelText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    labelText:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, yOffset)
+    labelText:SetText(label .. ":")
+
+    -- Create the EditBox
+    local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    editBox:SetAutoFocus(false)
+    editBox:SetSize(300, 20)
+    -- Increased horizontal spacing to 10 pixels and adjusted vertical position of label
+    editBox:SetPoint("TOPLEFT", labelText, "TOPLEFT", labelText:GetStringWidth() + 10, 5)
+    editBox:SetText(text)
+    editBox:SetTextColor(0.3, 0.6, 1.0)
+
+    -- Make it read-only but copyable
+    editBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+    editBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
+    editBox:SetScript("OnTextChanged", function(self, userInput)
+        if userInput then
+            self:SetText(text)
+            self:HighlightText()
+        end
+    end)
+    editBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+
+    return labelText, editBox
+end
+
 local function CreateAboutTab(parent)
-    -- Create a header
+    -- Keep existing header and logo code
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOP", parent, "TOP", 0, -20)
     header:SetText("PvP Stats Classic")
     header:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
 
-    -- Create version text
     local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     versionText:SetPoint("TOP", header, "BOTTOM", 0, -5)
     versionText:SetText("Version: 0.9.0")
     versionText:SetTextColor(1, 1, 1)
 
-    -- Create credits section
     local creditsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     creditsHeader:SetPoint("TOP", header, "BOTTOM", 0, -40)
     creditsHeader:SetText("Credits")
     creditsHeader:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
 
-    -- Create logo/icon - increased size by 25%
     local logo = parent:CreateTexture(nil, "ARTWORK")
     logo:SetSize(220, 220)
     logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
     logo:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
 
-    -- Get hunter class color for developers' names
     local hunterColor = RAID_CLASS_COLORS["HUNTER"] or {r = 0.67, g = 0.83, b = 0.45}
 
-    -- Create a better formatted credits section with left alignment
     local contentWidth = 300
     local creditsContainer = CreateFrame("Frame", nil, parent)
     creditsContainer:SetSize(contentWidth, 200)
     creditsContainer:SetPoint("TOP", logo, "BOTTOM", 0, -10)
 
-    -- Use a consistent left margin for all text
-    local leftMargin = (parent:GetWidth() - contentWidth) / 2
-
-    -- Developers - all left aligned
+    -- Developers section (keep existing code)
     local devsLabel = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     devsLabel:SetPoint("TOPLEFT", creditsContainer, "TOPLEFT", 0, 0)
     devsLabel:SetText("Developed by:")
@@ -788,26 +814,19 @@ local function CreateAboutTab(parent)
     secondAuthorText:SetText("Hkfarmer")
     secondAuthorText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
 
-    -- Realm - left aligned
+    -- Realm and Guild info (keep existing code)
     local realmText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     realmText:SetPoint("TOPLEFT", devsLabel, "BOTTOMLEFT", 0, -15)
     realmText:SetText("Realm: Spineshatter")
 
-    -- Guild - left aligned
     local guildText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     guildText:SetPoint("TOPLEFT", realmText, "BOTTOMLEFT", 0, -10)
     guildText:SetText("Guild: <Redridge Police>")
 
-    -- Email - left aligned (NEW)
-    local emailText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    emailText:SetPoint("TOPLEFT", guildText, "BOTTOMLEFT", 0, -20)
-    emailText:SetText("Contact: redridgepolice@outlook.com")
-
-    -- GitHub link - left aligned
-    local githubText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    githubText:SetPoint("TOPLEFT", emailText, "BOTTOMLEFT", 0, -10)
-    githubText:SetText("GitHub: github.com/randomdude163/WoWClassic_PlayerKillAnnounce")
-    githubText:SetTextColor(0.3, 0.6, 1.0)
+    -- New copyable fields
+    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact", "redridgepolice@outlook.com", guildText, -20)
+    local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub", "github.com/randomdude163/WoWClassic_PvPStats", contactLabel, -25)
+    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord", "https://discord.gg/ZBaN2xk5h3", githubLabel, -25)
 
     return parent
 end
