@@ -1,4 +1,4 @@
-local minimapButton = CreateFrame("Button", "PKAMinimapButton", Minimap)
+local minimapButton = CreateFrame("Button", "PSC_MinimapButton", Minimap)
 minimapButton:SetSize(31, 31) -- Standard size for minimap buttons
 minimapButton:SetFrameStrata("MEDIUM")
 minimapButton:SetMovable(false)
@@ -50,12 +50,12 @@ minimapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 minimapButton:SetScript("OnClick", function(self, button)
     if button == "LeftButton" then
         if IsControlKeyDown() then
-            PKA_CreateConfigFrame()
+            PSC_CreateConfigFrame()
         else
-            PKA_CreateStatisticsFrame()
+            PSC_CreateStatisticsFrame()
         end
     elseif button == "RightButton" then
-        PKA_CreateKillStatsFrame()
+        PSC_CreateKillStatsFrame()
     end
 end)
 

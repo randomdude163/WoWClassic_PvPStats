@@ -1,7 +1,7 @@
 local statisticsFrame = nil
 
-if not PKA_ActiveFrameLevel then
-    PKA_ActiveFrameLevel = 100
+if not PSC_ActiveFrameLevel then
+    PSC_ActiveFrameLevel = 100
 end
 
 local function CreateGoldHighlight(parent, height)
@@ -271,34 +271,34 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     -- Add click handler
     barButton:SetScript("OnClick", function()
         -- First open the kills list frame
-        PKA_CreateKillStatsFrame()
+        PSC_CreateKillStatsFrame()
 
         -- Wait a short time to ensure the frame is created and registered
         C_Timer.After(0.05, function()
             -- Set appropriate search text based on bar type
             if titleType == "class" or titleType == "unknownLevelClass" then
-                PKA_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
+                PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
             elseif titleType == "zone" then
-                PKA_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
+                PSC_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
             elseif titleType == "level" then
                 if entry.key == "??" then
                     -- Special handling for unknown level - explicitly set to -1
-                    PKA_SetKillListLevelRange(-1, -1, true)
+                    PSC_SetKillListLevelRange(-1, -1, true)
                 else
                     -- Individual level filter
                     local level = tonumber(entry.key)
                     if level then
-                        PKA_SetKillListLevelRange(level, level, true)
+                        PSC_SetKillListLevelRange(level, level, true)
                     end
                 end
             elseif titleType == raceColors then
-                PKA_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
+                PSC_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
             elseif titleType == genderColors then
-                PKA_SetKillListSearch("", nil, nil, nil, entry.key, nil, true)
+                PSC_SetKillListSearch("", nil, nil, nil, entry.key, nil, true)
             end
 
             -- Ensure the kills list frame is in front
-            PKA_FrameManager:BringToFront("KillsList")
+            PSC_FrameManager:BringToFront("KillsList")
         end)
     end)
 
@@ -442,7 +442,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     -- Add click handler for guild rows
     rowButton:SetScript("OnClick", function()
         -- First open the kills list frame
-        PKA_CreateKillStatsFrame()
+        PSC_CreateKillStatsFrame()
 
         -- Ensure it's on top
         if PSC_KillsListFrame then
@@ -452,7 +452,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
         end
 
         -- Then use our function to set the search text, reset other filters
-        PKA_SetKillListSearch(guildName, nil, nil, nil, nil, nil, true)
+        PSC_SetKillListSearch(guildName, nil, nil, nil, nil, nil, true)
     end)
 
     local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -554,10 +554,10 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             button:SetScript("OnMouseUp", function()
                 if value ~= "None (0)" then
                     local playerName = value:match("([^%(]+)"):trim()
-                    PKA_CreateKillStatsFrame()
+                    PSC_CreateKillStatsFrame()
                     C_Timer.After(0.05, function()
-                        PKA_SetKillListSearch(playerName, nil, nil, nil, nil, nil, true)
-                        PKA_FrameManager:BringToFront("KillsList")
+                        PSC_SetKillListSearch(playerName, nil, nil, nil, nil, nil, true)
+                        PSC_FrameManager:BringToFront("KillsList")
                     end)
                 end
             end)
@@ -658,10 +658,10 @@ local function createSummaryStats(parent, x, y, width, height)
                 -- This is likely our tooltip frame for the most killed player
 ---@diagnostic disable-next-line: undefined-field
                 child:SetScript("OnMouseUp", function()
-                    PKA_CreateKillStatsFrame()
+                    PSC_CreateKillStatsFrame()
                     C_Timer.After(0.05, function()
-                        PKA_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
-                        PKA_FrameManager:BringToFront("KillsList")
+                        PSC_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
+                        PSC_FrameManager:BringToFront("KillsList")
                     end)
                 end)
                 break
@@ -768,14 +768,14 @@ local function createScrollableLeftPanel(parent)
 end
 
 local function setupMainFrame()
-    local frame = CreateFrame("Frame", "PKAStatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "PSC_StatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(UI.FRAME.WIDTH, UI.FRAME.HEIGHT)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
 
-    tinsert(UISpecialFrames, "PKAStatisticsFrame")
+    tinsert(UISpecialFrames, "PSC_StatisticsFrame")
 
     frame:EnableKeyboard(true)
     frame:SetPropagateKeyboardInput(true)
@@ -792,7 +792,7 @@ local function setupMainFrame()
         frame:Hide()
     end)
 
-    frame.TitleText:SetText("Player Kill Statistics")
+    frame.TitleText:SetText("PvP Statistics")
 
     -- Add a vertical separator line
     local separator = frame:CreateTexture(nil, "ARTWORK")
@@ -819,7 +819,7 @@ local function enoughPlayerKillsRecorded()
 end
 
 local function createEmptyStatsFrame()
-    local frame = CreateFrame("Frame", "PKAStatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "PSC_StatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(UI.FRAME.WIDTH, 200)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
@@ -829,7 +829,7 @@ local function createEmptyStatsFrame()
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
     -- Remove this as it's handled by the frame manager now
-    -- tinsert(UISpecialFrames, "PKAStatisticsFrame")
+    -- tinsert(UISpecialFrames, "PSC_StatisticsFrame")
 
     frame.TitleText:SetText("Player Kill Statistics")
 
@@ -843,16 +843,16 @@ local function createEmptyStatsFrame()
 end
 
 -- Modify the createStatisticsFrame function to include the new chart
-function PKA_CreateStatisticsFrame()
+function PSC_CreateStatisticsFrame()
     if statisticsFrame then
         statisticsFrame:Hide()
-        PKA_FrameManager:HideFrame("Statistics")
+        PSC_FrameManager:HideFrame("Statistics")
         statisticsFrame = nil
     end
 
     -- Remove from UISpecialFrames if present
     for i = #UISpecialFrames, 1, -1 do
-        if (UISpecialFrames[i] == "PKAStatisticsFrame") then
+        if (UISpecialFrames[i] == "PSC_StatisticsFrame") then
             table.remove(UISpecialFrames, i)
             break
         end
@@ -860,13 +860,13 @@ function PKA_CreateStatisticsFrame()
 
     if not enoughPlayerKillsRecorded() then
         statisticsFrame = createEmptyStatsFrame()
-        PKA_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
+        PSC_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
         return
     end
 
     statisticsFrame = setupMainFrame()
     statisticsFrame:SetScript("OnKeyDown", nil) -- Remove ESC key handling from setupMainFrame
-    PKA_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
+    PSC_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
 
     PSC_UpdateStatisticsFrame(statisticsFrame)
 end

@@ -1,15 +1,15 @@
 -- FrameManager.lua - Handles frame level management across the addon
 
 -- Global frame stack management
-PKA_FrameManager = PKA_FrameManager or {}
-PKA_FrameManager.frames = PKA_FrameManager.frames or {}
-PKA_FrameManager.frameOrder = PKA_FrameManager.frameOrder or {}
-PKA_FrameManager.baseLevel = 100
-PKA_FrameManager.levelStep = 10
-PKA_FrameManager.maxFrames = 10  -- Maximum number of frames to track (more than we'll ever need)
+PSC_FrameManager = {}
+PSC_FrameManager.frames = {}
+PSC_FrameManager.frameOrder = {}
+PSC_FrameManager.baseLevel = 100
+PSC_FrameManager.levelStep = 10
+PSC_FrameManager.maxFrames = 10  -- Maximum number of frames to track (more than we'll ever need)
 
 -- Register a frame with the manager
-function PKA_FrameManager:RegisterFrame(frame, frameName)
+function PSC_FrameManager:RegisterFrame(frame, frameName)
     if not frame or not frameName then return end
 
     -- Store the frame reference
@@ -22,7 +22,7 @@ function PKA_FrameManager:RegisterFrame(frame, frameName)
     -- Replace the frame's OnMouseDown handler
     frame:SetScript("OnMouseDown", function(self, button)
         if button == "LeftButton" then
-            PKA_FrameManager:BringToFront(frameName)
+            PSC_FrameManager:BringToFront(frameName)
         end
     end)
 
@@ -55,9 +55,9 @@ function PKA_FrameManager:RegisterFrame(frame, frameName)
     frame:SetScript("OnKeyDown", function(self, key)
         if key == "ESCAPE" then
             -- Don't propagate ESC key if this is the top-most frame
-            if PKA_FrameManager:IsTopMostVisibleFrame(frameName) then
+            if PSC_FrameManager:IsTopMostVisibleFrame(frameName) then
                 self:SetPropagateKeyboardInput(false)
-                PKA_FrameManager:HideFrame(frameName)
+                PSC_FrameManager:HideFrame(frameName)
                 return
             end
         end
@@ -80,7 +80,7 @@ function PKA_FrameManager:RegisterFrame(frame, frameName)
 end
 
 -- Checks if the frame is the top-most visible frame
-function PKA_FrameManager:IsTopMostVisibleFrame(frameName)
+function PSC_FrameManager:IsTopMostVisibleFrame(frameName)
     if #self.frameOrder == 0 then return false end
 
     -- Check if this frame is the last (top-most) in our visible stack
@@ -89,7 +89,7 @@ function PKA_FrameManager:IsTopMostVisibleFrame(frameName)
 end
 
 -- Bring a specific frame to the front
-function PKA_FrameManager:BringToFront(frameName)
+function PSC_FrameManager:BringToFront(frameName)
     local frame = self.frames[frameName]
     if not frame then return end
 
@@ -120,7 +120,7 @@ function PKA_FrameManager:BringToFront(frameName)
 end
 
 -- Reassign frame levels based on current order
-function PKA_FrameManager:ReassignFrameLevels()
+function PSC_FrameManager:ReassignFrameLevels()
     local level = self.baseLevel
 
     -- Assign levels to all frames in order (oldest to newest)
@@ -134,7 +134,7 @@ function PKA_FrameManager:ReassignFrameLevels()
 end
 
 -- Show a frame and bring it to front
-function PKA_FrameManager:ShowFrame(frameName)
+function PSC_FrameManager:ShowFrame(frameName)
     local frame = self.frames[frameName]
     if frame then
         self:BringToFront(frameName)
@@ -144,7 +144,7 @@ function PKA_FrameManager:ShowFrame(frameName)
 end
 
 -- Hide a frame and remove from ordering
-function PKA_FrameManager:HideFrame(frameName)
+function PSC_FrameManager:HideFrame(frameName)
     local frame = self.frames[frameName]
     if frame then
         frame:Hide()

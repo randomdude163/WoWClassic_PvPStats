@@ -1,6 +1,6 @@
 PSC_DB = nil
 
-function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild, rank)
+function PSC_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild, rank)
     if not name then return end
 
     PSC_DB.PlayerInfoCache[name] = PSC_DB.PlayerInfoCache[name] or {}
@@ -13,7 +13,7 @@ function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild
     if gender and gender ~= nil then playerData.gender = gender end
     if guild and guild ~= "" then playerData.guild = guild end
     if rank then playerData.rank = rank end
-    -- if PKA_Debug then
+    -- if PSC_Debug then
     --     print("Player info updated for " .. name)
     --     print("GUID: " .. (playerData.guid or "N/A"))
     --     print("Level: " .. (playerData.level or "N/A"))
@@ -40,7 +40,7 @@ local function GetHonorRank(unit)
     return 0
 end
 
-function PKA_StorePlayerInfo(unit)
+function PSC_StorePlayerInfo(unit)
     if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
 
     if UnitIsFriend("player", unit) then return end
@@ -56,10 +56,10 @@ function PKA_StorePlayerInfo(unit)
     local guildName = GetGuildInfo(unit)
     local rank = GetHonorRank(unit)
 
-    PKA_UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName, rank)
+    PSC_UpdatePlayerInfoCache(name, guid, level, englishClass, englishRace, gender, guildName, rank)
 end
 
-function PKA_GetInfoFromCachedPlayer(name)
+function PSC_GetInfoFromCachedPlayer(name)
     if not PSC_DB.PlayerInfoCache[name] then
         print("Player info not found in cache for " .. name)
         return 0, "Unknown", "Unknown", 0, "", 0
@@ -74,7 +74,7 @@ function PKA_GetInfoFromCachedPlayer(name)
         data.rank or 0
 end
 
-function PKA_GetInfoFromActiveUnit(name, unitId)
+function PSC_GetInfoFromActiveUnit(name, unitId)
     if not UnitExists(unitId) or UnitName(unitId) ~= name then
         return 0, "Unknown", "Unknown", 0, "", 0
     end
@@ -94,7 +94,7 @@ function PKA_GetInfoFromActiveUnit(name, unitId)
     return level, englishClass, englishRace, gender, guildName, rank
 end
 
-function PKA_GetInfoFromGuid(guid)
+function PSC_GetInfoFromGuid(guid)
     if not guid or guid == "" then
         return "Unknown"
     end
@@ -103,7 +103,7 @@ function PKA_GetInfoFromGuid(guid)
     return englishClass or "Unknown"
 end
 
-function PKA_ConvertGenderToString(genderCode)
+function PSC_ConvertGenderToString(genderCode)
     if genderCode == 2 then
         return "Male"
     elseif genderCode == 3 then
@@ -114,40 +114,39 @@ function PKA_ConvertGenderToString(genderCode)
 end
 
 function PSC_GetPlayerInfoFromCache(name)
-    local level, class, race, gender, guild, rank = PKA_GetInfoFromCachedPlayer(name)
+    local level, class, race, gender, guild, rank = PSC_GetInfoFromCachedPlayer(name)
     if level == 0 then level = -1 end
-    return level, class, race, PKA_ConvertGenderToString(gender), guild, rank
+    return level, class, race, PSC_ConvertGenderToString(gender), guild, rank
 end
 
 
-function PKA_IsValidPlayerData(data)
+function PSC_IsValidPlayerData(data)
     return data.kills and data.kills > 0 and
         data.race and data.race ~= "Unknown" and
         data.gender and data.gender ~= "Unknown" and
         data.class and data.class ~= "Unknown"
 end
 
-function PKA_IsUsefulCacheEntry(data)
+function PSC_IsUsefulCacheEntry(data)
     return (data.race and data.race ~= "") and
         (data.gender and data.gender > 0) and
         (data.class and data.class ~= "")
 end
 
-function PKA_CleanupKillCounts()
+function PSC_CleanupKillCounts()
     local cleanedKillCounts = {}
 
     for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
         -- Only keep entries that have valid player data AND have kills
-        if PKA_IsValidPlayerData(data) and data.kills and data.kills > 0 then
+        if PSC_IsValidPlayerData(data) and data.kills and data.kills > 0 then
             cleanedKillCounts[nameWithLevel] = data
         end
     end
 
-    PlayerKillAnnounceDB["PSC_DB.PlayerKillCounts"] = cleanedKillCounts
     PSC_DB.PlayerKillCounts = cleanedKillCounts
 end
 
-function PKA_CleanupPlayerInfoCache()
+function PSC_CleanupPlayerInfoCache()
     local cleanedInfoCache = {}
     local playersWithKills = {}
 
@@ -164,34 +163,24 @@ function PKA_CleanupPlayerInfoCache()
 
     -- Now only keep players who either have kills or have useful data
     for name, data in pairs(PSC_DB.PlayerInfoCache) do
-        if playersWithKills[name] or PKA_IsUsefulCacheEntry(data) then
+        if playersWithKills[name] or PSC_IsUsefulCacheEntry(data) then
             cleanedInfoCache[name] = data
         end
     end
 
-    PlayerKillAnnounceDB.PlayerInfoCache = cleanedInfoCache
     PSC_DB.PlayerInfoCache = cleanedInfoCache
 end
 
-function PKA_CleanupDatabase()
-    if not PlayerKillAnnounceDB then
-        PlayerKillAnnounceDB = {}
-    end
+function PSC_CleanupDatabase()
+    PSC_CleanupKillCounts()
+    PSC_CleanupPlayerInfoCache()
 
-    PKA_CleanupKillCounts()
-    PKA_CleanupPlayerInfoCache()
-
-    if PSC_DB.MinimapButtonPosition then
-        PlayerKillAnnounceDB["PSC_DB.MinimapButtonPosition"] = PSC_DB.MinimapButtonPosition
-    end
-
-    if PKA_Debug then
+    if PSC_Debug then
         print("PvPStatsClassic: Database cleaned up.")
     end
 end
 
-function PSC_InitializeDefaults()
-    PSC_DB = {}
+function PSC_LoadDefaultSettings()
     PSC_DB.AutoBattlegroundMode = true
     PSC_DB.ForceBattlegroundMode = false
 
@@ -202,6 +191,12 @@ function PSC_InitializeDefaults()
     PSC_DB.ShowMilestoneForFirstKill = true
     PSC_DB.KillMilestoneInterval = 5
     PSC_DB.KillMilestoneAutoHideTime = 5
+    PSC_DB.MilestoneFramePosition = {
+        point="TOP",
+        relativePoint="TOP",
+        xOfs=0,
+        yOfs=-100
+    }
 
 
     PSC_DB.EnableKillAnnounceMessages = true
@@ -212,26 +207,18 @@ function PSC_InitializeDefaults()
     PSC_DB.KillStreakEndedMessage = "My kill streak of STREAKCOUNT has ended!"
     PSC_DB.NewKillStreakRecordMessage = "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
     PSC_DB.NewMultiKillRecordMessage = "NEW PERSONAL BEST: MULTIKILLTEXT!"
-
     PSC_DB.MultiKillThreshold = 3
 
-    PSC_DB.PlayerInfoCache = {}
     PSC_DB.MinimapButtonPosition = 195
-
-    PSC_DB.PlayerKillCounts = {}
-    PSC_DB.CurrentKillStreak = 0
-    PSC_DB.HighestKillStreak = 0
-    PSC_DB.HighestMultiKill = 0
-
-    PKA_LastCombatTime = 0
 end
 
 
 function ResetAllStatsToDefault()
+    PSC_DB.PlayerInfoCache = {}
+    PSC_DB.PlayerKillCounts = {}
     PSC_DB.CurrentKillStreak = 0
     PSC_DB.HighestKillStreak = 0
-    PSC_MultiKillCount = 0
     PSC_DB.HighestMultiKill = 0
-    PSC_DB.PlayerKillCounts = {}
+
     print("All kill statistics have been reset!")
 end

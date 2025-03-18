@@ -1,5 +1,5 @@
-if not PKA_ActiveFrameLevel then
-    PKA_ActiveFrameLevel = 100
+if not PSC_ActiveFrameLevel then
+    PSC_ActiveFrameLevel = 100
 end
 
 PSC_KillsListFrame = nil
@@ -16,8 +16,8 @@ local minRankSearch = nil
 local maxRankSearch = nil
 local sortBy = "lastKill"
 local sortAscending = false
-local PKA_KILLS_FRAME_WIDTH = 1020  -- Increased from 900
-local PKA_KILLS_FRAME_HEIGHT = 550  -- Increased from 500
+local PSC_KILLS_FRAME_WIDTH = 1020  -- Increased from 900
+local PSC_KILLS_FRAME_HEIGHT = 550  -- Increased from 500
 
 local colWidths = {
     name = 100,
@@ -1399,15 +1399,15 @@ local function CreateScrollFrame(parent)
     scrollFrame:SetPoint("BOTTOMRIGHT", -30, 45) -- Increased bottom margin to make room for search bar
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(PKA_KILLS_FRAME_WIDTH - 40, PKA_KILLS_FRAME_HEIGHT * 2)
+    content:SetSize(PSC_KILLS_FRAME_WIDTH - 40, PSC_KILLS_FRAME_HEIGHT * 2)
     scrollFrame:SetScrollChild(content)
 
     return content
 end
 
 local function CreateMainFrame()
-    local frame = CreateFrame("Frame", "PKAKillStatsFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(PKA_KILLS_FRAME_WIDTH, PKA_KILLS_FRAME_HEIGHT)
+    local frame = CreateFrame("Frame", "PSC_KillStatsFrame", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(PSC_KILLS_FRAME_WIDTH, PSC_KILLS_FRAME_HEIGHT)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -1418,7 +1418,7 @@ local function CreateMainFrame()
     -- frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     -- frame:SetScript("OnMouseDown", function(self) ... end)
 
-    table.insert(UISpecialFrames, "PKAKillStatsFrame")
+    table.insert(UISpecialFrames, "PSC_KillStatsFrame")
     frame.TitleText:SetText("Player Kills List")
 
     return frame
@@ -1436,12 +1436,12 @@ function RefreshKillList()
     local sortedEntries = FilterAndSortEntries()
     local finalYOffset, entryCount = DisplayEntries(content, sortedEntries, yOffset)
 
-    content:SetHeight(math.max((-finalYOffset + 20), PKA_KILLS_FRAME_HEIGHT - 50))
+    content:SetHeight(math.max((-finalYOffset + 20), PSC_KILLS_FRAME_HEIGHT - 50))
 end
 
-function PKA_CreateKillStatsFrame()
+function PSC_CreateKillStatsFrame()
     if (PSC_KillsListFrame) then
-        PKA_FrameManager:ShowFrame("KillsList")
+        PSC_FrameManager:ShowFrame("KillsList")
         RefreshKillList()
         return
     end
@@ -1451,11 +1451,11 @@ function PKA_CreateKillStatsFrame()
     CreateSearchBar(PSC_KillsListFrame)
 
     -- Register with frame manager
-    PKA_FrameManager:RegisterFrame(PSC_KillsListFrame, "KillsList")
+    PSC_FrameManager:RegisterFrame(PSC_KillsListFrame, "KillsList")
 
     -- Remove from UISpecialFrames since FrameManager handles ESC key
     for i = #UISpecialFrames, 1, -1 do
-        if (UISpecialFrames[i] == "PKAKillStatsFrame") then
+        if (UISpecialFrames[i] == "PSC_KillStatsFrame") then
             table.remove(UISpecialFrames, i)
             break
         end
@@ -1465,7 +1465,7 @@ function PKA_CreateKillStatsFrame()
 end
 
 -- Make the searchText variable accessible to external functions
-function PKA_SetKillListSearch(text, levelText, classText, raceText, genderText, zoneText, resetOtherFilters)
+function PSC_SetKillListSearch(text, levelText, classText, raceText, genderText, zoneText, resetOtherFilters)
     if PSC_KillsListFrame then
         -- Reset all filters first if requested (when clicking on bars in statistics)
         if resetOtherFilters then
@@ -1521,7 +1521,7 @@ function PKA_SetKillListSearch(text, levelText, classText, raceText, genderText,
 end
 
 -- New function to set level range filter
-function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
+function PSC_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
     if PSC_KillsListFrame then
         -- Reset all filters first if requested
         if resetOtherFilters then
@@ -1575,12 +1575,12 @@ function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
         RefreshKillList()
 
         -- Bring the kills list frame to front if it's not already
-        PKA_FrameManager:BringToFront("KillsList")
+        PSC_FrameManager:BringToFront("KillsList")
     end
 end
 
 -- Add a new function to set rank range filter (similar to level range)
-function PKA_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
+function PSC_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
     if PSC_KillsListFrame then
         -- Reset all filters first if requested
         if resetOtherFilters then
@@ -1634,6 +1634,6 @@ function PKA_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
         RefreshKillList()
 
         -- Bring the kills list frame to front if it's not already
-        PKA_FrameManager:BringToFront("KillsList")
+        PSC_FrameManager:BringToFront("KillsList")
     end
 end

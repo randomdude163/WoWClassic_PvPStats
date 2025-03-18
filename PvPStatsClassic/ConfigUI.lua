@@ -2,16 +2,16 @@
 -- This adds a graphical user interface for all settings of the addon
 local configFrame = nil
 
-local PKA_CONFIG_HEADER_R = 1.0
-local PKA_CONFIG_HEADER_G = 0.82
-local PKA_CONFIG_HEADER_B = 0.0
+local PSC_CONFIG_HEADER_R = 1.0
+local PSC_CONFIG_HEADER_G = 0.82
+local PSC_CONFIG_HEADER_B = 0.0
 
 local HEADER_ELEMENT_SPACING = 15
 local CHECKBOX_SPACING = 5
 local FIELD_SPACING = 5
 
 local function ShowResetStatsConfirmation()
-    StaticPopupDialogs["PKA_RESET_STATS"] = {
+    StaticPopupDialogs["PSC_RESET_STATS"] = {
         text = "Are you sure you want to reset all kill statistics? This cannot be undone.",
         button1 = "Yes",
         button2 = "No",
@@ -22,16 +22,16 @@ local function ShowResetStatsConfirmation()
         whileDead = true,
         hideOnEscape = true,
     }
-    StaticPopup_Show("PKA_RESET_STATS")
+    StaticPopup_Show("PSC_RESET_STATS")
 end
 
 local function ResetAllSettingsToDefault()
-    PSC_InitializeDefaults()
+    PSC_LoadDefaultSettings()
     ReloadUI()
 end
 
 local function ShowResetDefaultsConfirmation()
-    StaticPopupDialogs["PKA_RESET_DEFAULTS"] = {
+    StaticPopupDialogs["PSC_RESET_DEFAULTS"] = {
         text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
         button1 = "Yes",
         button2 = "No",
@@ -42,14 +42,14 @@ local function ShowResetDefaultsConfirmation()
         whileDead = true,
         hideOnEscape = true,
     }
-    StaticPopup_Show("PKA_RESET_DEFAULTS")
+    StaticPopup_Show("PSC_RESET_DEFAULTS")
 end
 
 local function CreateSectionHeader(parent, text, xOffset, yOffset)
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
     header:SetText(text)
-    header:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
+    header:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
 
     local line = parent:CreateTexture(nil, "ARTWORK")
@@ -140,7 +140,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode (No announcements, only your own killing blows are tracked)",
         PSC_DB.AutoBattlegroundMode, function(checked)
             PSC_DB.AutoBattlegroundMode = checked
-            PKA_CheckBattlegroundStatus()
+            PSC_CheckBattlegroundStatus()
         end)
     autoBGModeCheckbox:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
     parent.autoBGModeCheckbox = autoBGModeCheckbox
@@ -159,7 +159,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     local manualBGModeCheckbox, _ = CreateCheckbox(parent, "Force Enable Battleground Mode",
         PSC_DB.ForceBattlegroundMode, function(checked)
             PSC_DB.ForceBattlegroundMode = checked
-            PKA_CheckBattlegroundStatus()
+            PSC_CheckBattlegroundStatus()
         end)
     manualBGModeCheckbox:SetPoint("TOPLEFT", autoBGModeCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.manualBGModeCheckbox = manualBGModeCheckbox
@@ -235,7 +235,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     showMilestoneForFirstKillCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local milestoneIntervalSlider = CreateFrame("Slider", "PKA_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
+    local milestoneIntervalSlider = CreateFrame("Slider", "PSC_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
     milestoneIntervalSlider:SetWidth(200)
     milestoneIntervalSlider:SetHeight(16)
     milestoneIntervalSlider:SetPoint("TOPLEFT", showMilestoneForFirstKillCheckbox, "BOTTOMLEFT", 20, -20)
@@ -255,7 +255,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.KillMilestoneInterval = value
     end)
 
-    local milestoneAutoHideTimeSlider = CreateFrame("Slider", "PKA_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
+    local milestoneAutoHideTimeSlider = CreateFrame("Slider", "PSC_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
     milestoneAutoHideTimeSlider:SetWidth(200)
     milestoneAutoHideTimeSlider:SetHeight(16)
     milestoneAutoHideTimeSlider:SetPoint("TOPLEFT", milestoneIntervalSlider, "BOTTOMLEFT", 0, -30)
@@ -312,7 +312,7 @@ local function CreateAnnouncementSection(parent, yOffset)
             end
         end
 
-        PKA_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
+        PSC_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
     end)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
@@ -397,7 +397,7 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     multiKillHeader:SetText("Multi-Kill Announcements")
 
     -- Add the threshold slider and description
-    local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
+    local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(16)
     slider:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 5, -25)
@@ -464,7 +464,7 @@ local function CreateActionButtons(parent)
 end
 
 local function CreateMainFrame()
-    local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(600, 600) -- Reduced from 650 to 600
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
@@ -478,14 +478,14 @@ local function CreateMainFrame()
         frame:Hide()
     end)
 
-    tinsert(UISpecialFrames, "PKAConfigFrame")
+    tinsert(UISpecialFrames, "PSC_ConfigFrame")
 
     frame.TitleText:SetText("PvP Stats Classic Settings")
 
     return frame
 end
 
-function PKA_UpdateConfigUI()
+function PSC_UpdateConfigUI()
     if not configFrame then return end
 
     -- Update checkboxes
@@ -657,7 +657,7 @@ local function CreateAboutTab(parent)
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOP", parent, "TOP", 0, -20)
     header:SetText("PvP Stats Classic")
-    header:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
+    header:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
     local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     versionText:SetPoint("TOP", header, "BOTTOM", 0, -5)
@@ -667,7 +667,7 @@ local function CreateAboutTab(parent)
     local creditsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     creditsHeader:SetPoint("TOP", header, "BOTTOM", 0, -40)
     creditsHeader:SetText("Credits")
-    creditsHeader:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
+    creditsHeader:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
     local logo = parent:CreateTexture(nil, "ARTWORK")
     logo:SetSize(220, 220)
@@ -717,14 +717,14 @@ local function CreateAboutTab(parent)
     return parent
 end
 
-function PKA_CreateConfigFrame()
+function PSC_CreateConfigFrame()
     if configFrame then
         configFrame:Show()
         return
     end
 
     configFrame = CreateMainFrame()
-    PKA_FrameManager:RegisterFrame(configFrame, "ConfigUI")
+    PSC_FrameManager:RegisterFrame(configFrame, "ConfigUI")
 
     -- Create tab system
     local tabFrames = CreateTabSystem(configFrame)
@@ -760,16 +760,16 @@ function PKA_CreateConfigFrame()
     PanelTemplates_SetTab(configFrame, 1)
     tabFrames[1]:Show()
 
-    PKA_UpdateConfigUI()
+    PSC_UpdateConfigUI()
 
     return configFrame
 end
 
-function PKA_CreateConfigUI()
+function PSC_CreateConfigUI()
     if configFrame then
-        PKA_FrameManager:ShowFrame("Config")
+        PSC_FrameManager:ShowFrame("Config")
         return
     end
 
-    PKA_CreateConfigFrame()
+    PSC_CreateConfigFrame()
 end
