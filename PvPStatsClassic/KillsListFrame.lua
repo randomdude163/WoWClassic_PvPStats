@@ -32,10 +32,10 @@ local colWidths = {
     gender = 80,
     level = 70,
     rank = 70,    -- New rank column
-    guild = 140,
+    guild = 150,
     zone = 150,
-    kills = 60,
-    lastKill = 130
+    kills = 50,
+    lastKill = 160
 }
 
 
@@ -612,10 +612,34 @@ local function CreateKillsCell(content, anchorTo, kills, width)
     return killsText
 end
 
+local function FormatLastKillDate(dateString)
+    -- Check if dateString is valid
+    if not dateString or dateString == "" then
+        return ""
+    end
+
+    -- Parse the full date format (YYYY-MM-DD HH:MM:SS)...
+    local year, month, day, hour, min, sec = dateString:match("(%d+)-(%d+)-(%d+)%s+(%d+):(%d+):(%d+)")
+
+    if not year then
+        return dateString -- Return original if pattern doesn't match
+    end
+
+    -- ... to DD/MM/YY HH:MM:SS
+    local shortYear = year:sub(-2)
+    return string.format("%02d/%02d/%02s %02d:%02d:%02d",
+        tonumber(day),
+        tonumber(month),
+        shortYear,
+        tonumber(hour),
+        tonumber(min),
+        tonumber(sec))
+end
+
 local function CreateLastKillCell(content, anchorTo, lastKill, width)
     local lastKillText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     lastKillText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
-    lastKillText:SetText(lastKill)
+    lastKillText:SetText(FormatLastKillDate(lastKill))
     lastKillText:SetWidth(width)
     lastKillText:SetJustifyH("LEFT")
     return lastKillText
