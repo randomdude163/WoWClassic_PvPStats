@@ -1,12 +1,10 @@
-local PlayerInfoCache = {}
-PlayerKillAnnounceDB = {}
-
+PSC_DB = nil
 
 function PKA_UpdatePlayerInfoCache(name, guid, level, class, race, gender, guild, rank)
     if not name then return end
 
-    PlayerInfoCache[name] = PlayerInfoCache[name] or {}
-    local playerData = PlayerInfoCache[name]
+    PSC_DB.PlayerInfoCache[name] = PSC_DB.PlayerInfoCache[name] or {}
+    local playerData = PSC_DB.PlayerInfoCache[name]
 
     if guid and guid ~= "" then playerData.guid = guid end
     if level and level > 0 then playerData.level = level end
@@ -62,12 +60,12 @@ function PKA_StorePlayerInfo(unit)
 end
 
 function PKA_GetInfoFromCachedPlayer(name)
-    if not PlayerInfoCache[name] then
+    if not PSC_DB.PlayerInfoCache[name] then
         print("Player info not found in cache for " .. name)
         return 0, "Unknown", "Unknown", 0, "", 0
     end
 
-    local data = PlayerInfoCache[name]
+    local data = PSC_DB.PlayerInfoCache[name]
     return data.level or 0,
         data.class or "Unknown",
         data.race or "Unknown",
@@ -115,27 +113,12 @@ function PKA_ConvertGenderToString(genderCode)
     end
 end
 
-function PKA_GetPlayerInfo(name)
+function PSC_GetPlayerInfoFromCache(name)
     local level, class, race, gender, guild, rank = PKA_GetInfoFromCachedPlayer(name)
     if level == 0 then level = -1 end
     return level, class, race, PKA_ConvertGenderToString(gender), guild, rank
 end
 
-function PKA_SaveSettings()
-    PlayerKillAnnounceDB.PKA_EnableKillAnnounce = PKA_EnableKillAnnounce
-    PlayerKillAnnounceDB.PKA_KillAnnounceMessage = PKA_KillAnnounceMessage
-    PlayerKillAnnounceDB.PKA_KillCounts = PKA_KillCounts
-    PlayerKillAnnounceDB.PKA_CurrentKillStreak = PKA_CurrentKillStreak
-    PlayerKillAnnounceDB.PKA_HighestKillStreak = PKA_HighestKillStreak
-    PlayerKillAnnounceDB.PKA_HighestMultiKill = PKA_HighestMultiKill
-    PlayerKillAnnounceDB.PKA_KillStreakEndedMessage = PKA_KillStreakEndedMessage
-    PlayerKillAnnounceDB.PKA_NewStreakRecordMessage = PKA_NewStreakRecordMessage
-    PlayerKillAnnounceDB.PKA_NewMultiKillRecordMessage = PKA_NewMultiKillRecordMessage
-    PlayerKillAnnounceDB.PKA_EnableRecordAnnounce = PKA_EnableRecordAnnounce
-    PlayerKillAnnounceDB.PKA_MultiKillThreshold = PKA_MultiKillThreshold
-    PlayerKillAnnounceDB.PlayerInfoCache = PlayerInfoCache
-    PlayerKillAnnounceDB.PKA_MinimapPosition = PKA_MinimapPosition
-end
 
 function PKA_IsValidPlayerData(data)
     return data.kills and data.kills > 0 and
@@ -153,23 +136,23 @@ end
 function PKA_CleanupKillCounts()
     local cleanedKillCounts = {}
 
-    for nameWithLevel, data in pairs(PKA_KillCounts) do
+    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
         -- Only keep entries that have valid player data AND have kills
         if PKA_IsValidPlayerData(data) and data.kills and data.kills > 0 then
             cleanedKillCounts[nameWithLevel] = data
         end
     end
 
-    PlayerKillAnnounceDB.PKA_KillCounts = cleanedKillCounts
-    PKA_KillCounts = cleanedKillCounts
+    PlayerKillAnnounceDB["PSC_DB.PlayerKillCounts"] = cleanedKillCounts
+    PSC_DB.PlayerKillCounts = cleanedKillCounts
 end
 
 function PKA_CleanupPlayerInfoCache()
     local cleanedInfoCache = {}
     local playersWithKills = {}
 
-    if PKA_KillCounts then
-        for nameWithLevel, data in pairs(PKA_KillCounts) do
+    if PSC_DB.PlayerKillCounts then
+        for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
             if data.kills and data.kills > 0 then
                 local name = string.match(nameWithLevel, "([^:]+)")
                 if name then
@@ -180,14 +163,14 @@ function PKA_CleanupPlayerInfoCache()
     end
 
     -- Now only keep players who either have kills or have useful data
-    for name, data in pairs(PlayerInfoCache) do
+    for name, data in pairs(PSC_DB.PlayerInfoCache) do
         if playersWithKills[name] or PKA_IsUsefulCacheEntry(data) then
             cleanedInfoCache[name] = data
         end
     end
 
     PlayerKillAnnounceDB.PlayerInfoCache = cleanedInfoCache
-    PlayerInfoCache = cleanedInfoCache
+    PSC_DB.PlayerInfoCache = cleanedInfoCache
 end
 
 function PKA_CleanupDatabase()
@@ -198,8 +181,8 @@ function PKA_CleanupDatabase()
     PKA_CleanupKillCounts()
     PKA_CleanupPlayerInfoCache()
 
-    if PKA_MinimapPosition then
-        PlayerKillAnnounceDB.PKA_MinimapPosition = PKA_MinimapPosition
+    if PSC_DB.MinimapButtonPosition then
+        PlayerKillAnnounceDB["PSC_DB.MinimapButtonPosition"] = PSC_DB.MinimapButtonPosition
     end
 
     if PKA_Debug then
@@ -207,46 +190,45 @@ function PKA_CleanupDatabase()
     end
 end
 
-function PKA_InitializeDefaults()
-    PKA_EnableKillAnnounce = true
-    PKA_KillAnnounceMessage = PlayerKillMessageDefault
-    PKA_KillCounts = {}
-    PKA_CurrentKillStreak = 0
-    PKA_HighestKillStreak = 0
-    PKA_HighestMultiKill = 0
-    PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault
-    PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
-    PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
-    PKA_EnableRecordAnnounce = true
-    PKA_MultiKillThreshold = 3
-    PlayerInfoCache = {}
-end
+function PSC_InitializeDefaults()
+    PSC_DB = {}
+    PSC_DB.AutoBattlegroundMode = true
+    PSC_DB.ForceBattlegroundMode = false
 
-function PKA_LoadSettingsFromDB()
-    local db = PlayerKillAnnounceDB
+    PSC_DB.EnableKillAnnounceMessages = true
+    PSC_DB.KillAnnounceMessage = "Enemyplayername killed!"
+    PSC_DB.PlayerKillCounts = {}
+    PSC_DB.CurrentKillStreak = 0
+    PSC_DB.HighestKillStreak = 0
+    PSC_DB.HighestMultiKill = 0
+    PSC_DB.KillStreakEndedMessage = "My kill streak of STREAKCOUNT has ended!"
+    PSC_DB.NewKillStreakRecordMessage = "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
+    PSC_DB.NewMultiKillRecordMessage = "NEW PERSONAL BEST: MULTIKILLTEXT!"
+    PSC_DB.EnableRecordAnnounceMessages = true
+    PSC_DB.MultiKillThreshold = 3
+    PSC_DB.PlayerInfoCache = {}
+    PSC_DB.MinimapButtonPosition = 195
 
-    PKA_EnableKillAnnounce = db.PKA_EnableKillAnnounce ~= nil and db.PKA_EnableKillAnnounce or true
-    PKA_KillAnnounceMessage = db.PKA_KillAnnounceMessage or PlayerKillMessageDefault
-    PKA_KillCounts = db.PKA_KillCounts or {}
-    PKA_CurrentKillStreak = db.PKA_CurrentKillStreak or 0
-    PKA_HighestKillStreak = db.PKA_HighestKillStreak or 0
-    PKA_HighestMultiKill = db.PKA_HighestMultiKill or 0
-    PKA_KillStreakEndedMessage = db.PKA_KillStreakEndedMessage or KillStreakEndedMessageDefault
-    PKA_NewStreakRecordMessage = db.PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault
-    PKA_NewMultiKillRecordMessage = db.PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault
-    PKA_EnableRecordAnnounce = db.PKA_EnableRecordAnnounce ~= nil and db.PKA_EnableRecordAnnounce or true
-    PKA_MultiKillThreshold = db.PKA_MultiKillThreshold or 3
-    PlayerInfoCache = db.PlayerInfoCache or {}
-    PKA_MinimapPosition = db.PKA_MinimapPosition or 195
-end
 
-function PKA_LoadSettings()
-    if PlayerKillAnnounceDB then
-        PKA_LoadSettingsFromDB()
-    else
-        PKA_InitializeDefaults()
-    end
+    PSC_DB.EnableMultiKillSounds = true
+    PSC_DB.ShowKillMilestones = true
+    PSC_DB.KillMilestoneAutoHideTime = 5
+    PSC_DB.KillMilestoneInterval = 5
+    PSC_DB.EnableKillMilestoneSounds = true
+    PSC_DB.ShowMilestoneForFirstKill = false
+    PSC_DB.KillMilestoneNotificationsEnabled = true
+    PSC_DB.ShowTooltipKillInfo = true
 
-    PKA_MultiKillCount = 0
+
     PKA_LastCombatTime = 0
+end
+
+
+function ResetAllStatsToDefault()
+    PSC_DB.CurrentKillStreak = 0
+    PSC_DB.HighestKillStreak = 0
+    PSC_MultiKillCount = 0
+    PSC_DB.HighestMultiKill = 0
+    PSC_DB.PlayerKillCounts = {}
+    print("All kill statistics have been reset!")
 end

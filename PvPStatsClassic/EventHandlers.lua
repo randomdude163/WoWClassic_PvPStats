@@ -1,67 +1,28 @@
--- PvPStatsClassic EventHandlers.lua
--- Tracks and announces player kills with streak tracking and statistics
-local PlayerKillMessageDefault = "Enemyplayername killed!"
-local KillStreakEndedMessageDefault = "My kill streak of STREAKCOUNT has ended!"
-local NewStreakRecordMessageDefault = "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
-local NewMultiKillRecordMessageDefault = "NEW PERSONAL BEST: MULTIKILLTEXT!"
-------------------------------------------------------------------------
-
 local playerKillAnnounceFrame = CreateFrame("Frame", "PlayerKillAnnounceFrame", UIParent)
-PKA_EnableKillAnnounce = true
-PKA_KillAnnounceMessage = PlayerKillMessageDefault
-PKA_KillCounts = {}
-PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault
-PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
-PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
-PKA_CurrentKillStreak = 0
-PKA_HighestKillStreak = 0
-PKA_MultiKillCount = 0
-PKA_HighestMultiKill = 0
-PKA_LastCombatTime = 0
-PKA_EnableRecordAnnounce = true
-PKA_MultiKillThreshold = 3
-PKA_MILESTONE_STREAKS = {25, 50, 75, 100, 150, 200, 250, 300}
-PKA_AutoBattlegroundMode = true  -- Auto-detect BGs
-PKA_BattlegroundMode = false     -- Manual override for BG mode
-PKA_InBattleground = false       -- Current BG state
+PSC_MultiKillCount = 0
 
--- State tracking variables
+PSC_KILLSTREAK_MILESTONES = {25, 50, 75, 100, 150, 200, 250, 300}
+PSC_CurrentlyInBattleground = false       -- Current BG state
+PSC_LastInBattlegroundValue = false
+
 local inCombat = false
 local killStreakMilestoneFrame = nil
-PKA_Debug = true  -- Debug mode for extra messages
+PKA_Debug = true
 
--- Add these variables at the top
-local PKA_RecentPetDamage = {}  -- Track recent pet damage
-local PKA_PET_DAMAGE_WINDOW = 0.05   -- 1.0 second window for pet damage (more reliable)
 
--- Add this variable near the other state tracking variables
-local PKA_RecentlyCountedKills = {}  -- Track recently counted kills to prevent duplicates
-local PKA_KILL_TRACKING_WINDOW = 1.0
-
--- Add this variable at the top with your other variables
-local tooltipHookSetup = false
-
--- Add these variables at the top with your other addon variables
-PKA_LastKillFrame = nil
-PKA_ShowLastKillPreview = true  -- Default enabled
-PKA_LastKillAutoHideTime = 5    -- Hide after 5 seconds
-PKA_LastKillTimer = nil
-
--- Add these variables at the top with your other addon variables
-PKA_MilestoneFrame = nil
-PKA_KillMilestoneNotificationsEnabled = true  -- Default enabled
-PKA_MilestoneAutoHideTime = 5    -- Hide after 5 seconds
-PKA_MilestoneTimer = nil
-PKA_MilestoneInterval = 5      -- Default milestone interval (1, 5, 10, etc)
-PKA_EnableMilestoneSounds = true -- Default enabled
-PKA_HideFirstKillMilestone = false -- Default disabled
-
-local PlayerGUID = nil
+local PKA_RecentPetDamage = {}
+local PKA_PET_DAMAGE_WINDOW = 0.05
 
 local PKA_RecentPlayerDamage = {}  -- Track recent damage from player to enemies
 local PKA_ASSIST_DAMAGE_WINDOW = 30.0  -- 60 second window for assist credit
 
--- Functions to identify pets and pet owners
+local PKA_RecentlyCountedKills = {}
+local PKA_KILL_TRACKING_WINDOW = 1.0
+
+local killMilestoneFrame = nil
+local killMilestoneAutoHideTimer = nil
+
+
 local function IsPetGUID(guid)
     if not guid then return false end
 
@@ -72,12 +33,10 @@ end
 local function GetPetOwnerGUID(petGUID)
     if not petGUID or not IsPetGUID(petGUID) then return nil end
 
-    -- Check if it's the player's pet
     if UnitExists("pet") and UnitGUID("pet") == petGUID then
-        return PlayerGUID
+        return PSC_PlayerGUID
     end
 
-    -- For party/raid members' pets
     local numMembers = IsInRaid() and GetNumGroupMembers() or GetNumGroupMembers()
     local prefix = IsInRaid() and "raid" or "party"
 
@@ -99,7 +58,6 @@ local function GetPetOwnerGUID(petGUID)
     return nil
 end
 
--- Add this helper function
 local function GetNameFromGUID(guid)
     if not guid then return nil end
 
@@ -108,7 +66,7 @@ local function GetNameFromGUID(guid)
     if name then return name end
 
     -- If that fails, check if it's the player
-    if guid == PlayerGUID then
+    if guid == PSC_PlayerGUID then
         return UnitName("player")
     end
 
@@ -152,35 +110,35 @@ local function PrintSlashCommandUsage()
 end
 
 local function PrintStatus()
-    local statusMessage = "Kill announce messages are " .. (PKA_EnableKillAnnounce and "ENABLED" or "DISABLED") .. "."
+    local statusMessage = "Kill announce messages are " .. (PSC_DB.EnableKillAnnounceMessages and "ENABLED" or "DISABLED") .. "."
     PKA_Print(statusMessage)
-    PKA_Print("Current kill announce message: " .. PKA_KillAnnounceMessage)
-    PKA_Print("Streak ended message: " .. PKA_KillStreakEndedMessage)
-    PKA_Print("New streak record message: " .. PKA_NewStreakRecordMessage)
-    PKA_Print("New multi-kill record message: " .. PKA_NewMultiKillRecordMessage)
-    PKA_Print("Multi-kill announcement threshold: " .. PKA_MultiKillThreshold)
-    PKA_Print("Record announcements: " .. (PKA_EnableRecordAnnounce and "ENABLED" or "DISABLED"))
-    PKA_Print("Battleground Mode: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"))
-    PKA_Print("Auto BG Detection: " .. (PKA_AutoBattlegroundMode and "ENABLED" or "DISABLED"))
-    PKA_Print("Manual BG Mode: " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"))
+    PKA_Print("Current kill announce message: " .. PSC_DB.KillAnnounceMessage)
+    PKA_Print("Streak ended message: " .. PSC_DB.KillStreakEndedMessage)
+    PKA_Print("New streak record message: " .. PSC_DB.NewKillStreakRecordMessage)
+    PKA_Print("New multi-kill record message: " .. PSC_DB.NewMultiKillRecordMessage)
+    PKA_Print("Multi-kill announcement threshold: " .. PSC_DB.MultiKillThreshold)
+    PKA_Print("Record announcements: " .. (PSC_DB.EnableRecordAnnounceMessages and "ENABLED" or "DISABLED"))
+    PKA_Print("Battleground Mode: " .. (PSC_CurrentlyInBattleground and "ACTIVE" or "INACTIVE"))
+    PKA_Print("Auto BG Detection: " .. (PSC_DB.AutoBattlegroundMode and "ENABLED" or "DISABLED"))
+    PKA_Print("Manual BG Mode: " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
 end
 
 local function ShowDebugInfo()
-    PKA_Print("Current Kill Streak: " .. PKA_CurrentKillStreak)
-    PKA_Print("Highest Kill Streak: " .. PKA_HighestKillStreak)
-    PKA_Print("Current Multi-kill Count: " .. PKA_MultiKillCount)
-    PKA_Print("Highest Multi-kill: " .. PKA_HighestMultiKill)
-    PKA_Print("Multi-kill Announcement Threshold: " .. PKA_MultiKillThreshold)
-    PKA_Print("Battleground Mode: " .. (PKA_InBattleground and "ACTIVE" or "INACTIVE"))
-    PKA_Print("Auto BG Detection: " .. (PKA_AutoBattlegroundMode and "ENABLED" or "DISABLED"))
-    PKA_Print("Manual BG Mode: " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"))
+    PKA_Print("Current Kill Streak: " .. PSC_DB.CurrentKillStreak)
+    PKA_Print("Highest Kill Streak: " .. PSC_DB.HighestKillStreak)
+    PKA_Print("Current Multi-kill Count: " .. PSC_MultiKillCount)
+    PKA_Print("Highest Multi-kill: " .. PSC_DB.HighestMultiKill)
+    PKA_Print("Multi-kill Announcement Threshold: " .. PSC_DB.MultiKillThreshold)
+    PKA_Print("Battleground Mode: " .. (PSC_CurrentlyInBattleground and "ACTIVE" or "INACTIVE"))
+    PKA_Print("Auto BG Detection: " .. (PSC_DB.AutoBattlegroundMode and "ENABLED" or "DISABLED"))
+    PKA_Print("Manual BG Mode: " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
 end
 
 local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
-    if not PKA_KillCounts[nameWithLevel] then
+    if not PSC_DB.PlayerKillCounts[nameWithLevel] then
         local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
-        PKA_KillCounts[nameWithLevel] = {
+        PSC_DB.PlayerKillCounts[nameWithLevel] = {
             kills = 0,
             class = englishClass or "Unknown",
             race = race or "Unknown",
@@ -198,20 +156,20 @@ end
 
 -- Update UpdateKillCacheEntry to include rank
 local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
-    PKA_KillCounts[nameWithLevel].kills = PKA_KillCounts[nameWithLevel].kills + 1
+    PSC_DB.PlayerKillCounts[nameWithLevel].kills = PSC_DB.PlayerKillCounts[nameWithLevel].kills + 1
     local timestamp = date("%Y-%m-%d %H:%M:%S")
-    PKA_KillCounts[nameWithLevel].lastKill = timestamp
-    PKA_KillCounts[nameWithLevel].playerLevel = playerLevel or -1
+    PSC_DB.PlayerKillCounts[nameWithLevel].lastKill = timestamp
+    PSC_DB.PlayerKillCounts[nameWithLevel].playerLevel = playerLevel or -1
 
     -- Always update rank if provided (even if 0)
     if rank ~= nil then
-        PKA_KillCounts[nameWithLevel].rank = rank
+        PSC_DB.PlayerKillCounts[nameWithLevel].rank = rank
     end
 
     -- Rest of the function remains the same...
     -- Ensure zone is captured correctly
     local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
-    PKA_KillCounts[nameWithLevel].zone = currentZone
+    PSC_DB.PlayerKillCounts[nameWithLevel].zone = currentZone
 
     -- Get current map position
     local mapID = C_Map.GetBestMapForUnit("player")
@@ -226,16 +184,16 @@ local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLe
         local y = position.y * 100
 
         -- Ensure the killLocations array exists
-        PKA_KillCounts[nameWithLevel].killLocations = PKA_KillCounts[nameWithLevel].killLocations or {}
+        PSC_DB.PlayerKillCounts[nameWithLevel].killLocations = PSC_DB.PlayerKillCounts[nameWithLevel].killLocations or {}
 
         -- Add new location record
-        table.insert(PKA_KillCounts[nameWithLevel].killLocations, {
+        table.insert(PSC_DB.PlayerKillCounts[nameWithLevel].killLocations, {
             timestamp = timestamp,
             zone = currentZone,
             mapID = mapID,
             x = x,
             y = y,
-            killNumber = PKA_KillCounts[nameWithLevel].kills
+            killNumber = PSC_DB.PlayerKillCounts[nameWithLevel].kills
         })
 
         -- Debug info
@@ -251,27 +209,23 @@ local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLe
     end
 
     -- Update other player information if available
-    if race and race ~= "Unknown" then PKA_KillCounts[nameWithLevel].race = race end
-    if gender and gender ~= "Unknown" then PKA_KillCounts[nameWithLevel].gender = gender end
-    if guild and guild ~= "" then PKA_KillCounts[nameWithLevel].guild = guild end
+    if race and race ~= "Unknown" then PSC_DB.PlayerKillCounts[nameWithLevel].race = race end
+    if gender and gender ~= "Unknown" then PSC_DB.PlayerKillCounts[nameWithLevel].gender = gender end
+    if guild and guild ~= "" then PSC_DB.PlayerKillCounts[nameWithLevel].guild = guild end
 end
 
 local function UpdateKillStreak()
-    PKA_CurrentKillStreak = PKA_CurrentKillStreak + 1
+    PSC_DB.CurrentKillStreak = PSC_DB.CurrentKillStreak + 1
 
-    if PKA_CurrentKillStreak > PKA_HighestKillStreak then
-        PKA_HighestKillStreak = PKA_CurrentKillStreak
+    if PSC_DB.CurrentKillStreak > PSC_DB.HighestKillStreak then
+        PSC_DB.HighestKillStreak = PSC_DB.CurrentKillStreak
 
-        if PKA_HighestKillStreak > 1 then
-            print("New kill streak personal best: " .. PKA_HighestKillStreak .. "!")
+        if PSC_DB.HighestKillStreak > 1 then
+            print("New kill streak personal best: " .. PSC_DB.HighestKillStreak .. "!")
 
-            if PKA_HighestKillStreak >= 10 and PKA_HighestKillStreak % 5 == 0 and PKA_EnableRecordAnnounce and IsInGroup() then
-                local newRecordMsg = string.gsub(PKA_NewStreakRecordMessage or NewStreakRecordMessageDefault, "STREAKCOUNT", PKA_HighestKillStreak)
+            if PSC_DB.HighestKillStreak >= 10 and PSC_DB.HighestKillStreak % 5 == 0 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+                local newRecordMsg = string.gsub(PSC_DB.NewKillStreakRecordMessage , "STREAKCOUNT", PSC_DB.HighestKillStreak)
                 SendChatMessage(newRecordMsg, "PARTY")
-            end
-
-            if PKA_UpdateConfigStats then
-                PKA_UpdateConfigStats()
             end
         end
     end
@@ -300,22 +254,22 @@ local function UpdateMultiKill()
             inCombat = true
         end
 
-        PKA_MultiKillCount = PKA_MultiKillCount + 1
+        PSC_MultiKillCount = PSC_MultiKillCount + 1
     else
-        PKA_MultiKillCount = 1
+        PSC_MultiKillCount = 1
         inCombat = false
     end
 
     -- Play sound based on kill count if enabled
-    if PKA_EnableKillSounds then
+    if PSC_DB.EnableMultiKillSounds then
         local soundFile
-        if PKA_MultiKillCount == 2 then
+        if PSC_MultiKillCount == 2 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\double_kill.mp3"
-        elseif PKA_MultiKillCount == 3 then
+        elseif PSC_MultiKillCount == 3 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\triple_kill.mp3"
-        elseif PKA_MultiKillCount == 4 then
+        elseif PSC_MultiKillCount == 4 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\quadra_kill.mp3"
-        elseif PKA_MultiKillCount == 5 then
+        elseif PSC_MultiKillCount == 5 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\penta_kill.mp3"
         end
 
@@ -324,19 +278,15 @@ local function UpdateMultiKill()
         end
     end
 
-    if PKA_MultiKillCount > PKA_HighestMultiKill then
-        PKA_HighestMultiKill = PKA_MultiKillCount
+    if PSC_MultiKillCount > PSC_DB.HighestMultiKill then
+        PSC_DB.HighestMultiKill = PSC_MultiKillCount
 
-        if PKA_HighestMultiKill > 1 then
-            print("NEW MULTI-KILL RECORD: " .. PKA_HighestMultiKill .. "!")
+        if PSC_DB.HighestMultiKill > 1 then
+            print("NEW MULTI-KILL RECORD: " .. PSC_DB.HighestMultiKill .. "!")
 
-            if PKA_HighestMultiKill >= 3 and PKA_EnableRecordAnnounce and IsInGroup() then
-                local newMultiKillMsg = string.gsub(PKA_NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault, "MULTIKILLTEXT", GetMultiKillText(PKA_HighestMultiKill))
+            if PSC_DB.HighestMultiKill >= 3 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+                local newMultiKillMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(PSC_DB.HighestMultiKill))
                 SendChatMessage(newMultiKillMsg, "PARTY")
-            end
-
-            if PKA_UpdateConfigStats then
-                PKA_UpdateConfigStats()
             end
         end
     end
@@ -344,10 +294,9 @@ end
 
 local function AnnounceKill(killedPlayer, level, nameWithLevel)
     -- Don't announce in battleground mode or if announcements are disabled
-    if PKA_InBattleground or not PKA_EnableKillAnnounce or not IsInGroup() then return end
+    if PSC_CurrentlyInBattleground or not PSC_DB.EnableKillAnnounceMessages or not IsInGroup() then return end
 
-    local killMessage = PKA_KillAnnounceMessage and string.gsub(PKA_KillAnnounceMessage, "Enemyplayername", killedPlayer) or
-                        string.gsub(PlayerKillMessageDefault, "Enemyplayername", killedPlayer)
+    local killMessage = string.gsub(PSC_DB.KillAnnounceMessage, "Enemyplayername", killedPlayer)
 
     local playerLevel = UnitLevel("player")
     local levelDifference = level - playerLevel
@@ -357,18 +306,18 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel)
         killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
     end
 
-    if PKA_KillCounts[nameWithLevel].kills >= 2 then
-        killMessage = killMessage .. " x" .. PKA_KillCounts[nameWithLevel].kills
+    if PSC_DB.PlayerKillCounts[nameWithLevel].kills >= 2 then
+        killMessage = killMessage .. " x" .. PSC_DB.PlayerKillCounts[nameWithLevel].kills
     end
 
-    if PKA_CurrentKillStreak >= 10 and PKA_CurrentKillStreak % 5 == 0 then
-        killMessage = killMessage .. " - Kill Streak: " .. PKA_CurrentKillStreak
+    if PSC_DB.CurrentKillStreak >= 10 and PSC_DB.CurrentKillStreak % 5 == 0 then
+        killMessage = killMessage .. " - Kill Streak: " .. PSC_DB.CurrentKillStreak
     end
 
     SendChatMessage(killMessage, "PARTY")
 
-    if PKA_MultiKillCount >= PKA_MultiKillThreshold then
-        SendChatMessage(GetMultiKillText(PKA_MultiKillCount), "PARTY")
+    if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold then
+        SendChatMessage(GetMultiKillText(PSC_MultiKillCount), "PARTY")
     end
 end
 
@@ -386,14 +335,14 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
     debugMsg = debugMsg .. englishClass .. ", " .. race .. ")"
 
     -- Add rank info to debug message
-    local rank = PKA_KillCounts[nameWithLevel].rank or 0
+    local rank = PSC_DB.PlayerKillCounts[nameWithLevel].rank or 0
     if rank > 0 then
         debugMsg = debugMsg .. " [Rank: " .. rank .. "]"
     end
 
-    debugMsg = debugMsg .. " - Total kills: " .. PKA_KillCounts[nameWithLevel].kills
-    debugMsg = debugMsg .. " - Current streak: " .. PKA_CurrentKillStreak
-    debugMsg = debugMsg .. " - Zone: " .. (PKA_KillCounts[nameWithLevel].zone or "Unknown")
+    debugMsg = debugMsg .. " - Total kills: " .. PSC_DB.PlayerKillCounts[nameWithLevel].kills
+    debugMsg = debugMsg .. " - Current streak: " .. PSC_DB.CurrentKillStreak
+    debugMsg = debugMsg .. " - Zone: " .. (PSC_DB.PlayerKillCounts[nameWithLevel].zone or "Unknown")
 
     -- Check what kind of kill this was
     if killerGUID and IsPetGUID(killerGUID) then
@@ -402,8 +351,8 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
         debugMsg = debugMsg .. " - Assist Kill (mob/environment finished target)"
     end
 
-    if PKA_MultiKillCount >= 2 then
-        debugMsg = debugMsg .. " - " .. GetMultiKillText(PKA_MultiKillCount)
+    if PSC_MultiKillCount >= 2 then
+        debugMsg = debugMsg .. " - " .. GetMultiKillText(PSC_MultiKillCount)
     end
 
     return debugMsg
@@ -414,7 +363,7 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     local nameWithLevel = playerName .. ":" .. level
 
     UpdateKillStreak()
-    PKA_ShowKillStreakMilestone(PKA_CurrentKillStreak)
+    PKA_ShowKillStreakMilestone(PSC_DB.CurrentKillStreak)
     InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
     UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
     UpdateMultiKill()
@@ -427,28 +376,25 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     end
 
     -- Get the kill count before showing milestone
-    local killCount = PKA_KillCounts[nameWithLevel].kills
+    local killCount = PSC_DB.PlayerKillCounts[nameWithLevel].kills
 
     -- Only show milestone if it's not the first kill or if first kill milestones are enabled
-    if not (killCount == 1 and PKA_HideFirstKillMilestone) then
+    if not (killCount == 1 and PSC_DB.ShowMilestoneForFirstKill) then
         PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
     end
-
-    PKA_SaveSettings()
 end
 
 local function SimulatePlayerDeath()
     PKA_Print("Simulating player death...")
 
-    if PKA_CurrentKillStreak >= 10 and PKA_EnableRecordAnnounce and IsInGroup() then
-        local streakEndedMsg = string.gsub(PKA_KillStreakEndedMessage, "STREAKCOUNT", PKA_CurrentKillStreak)
+    if PSC_DB.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+        local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", PSC_DB.CurrentKillStreak)
         SendChatMessage(streakEndedMsg, "PARTY")
     end
 
-    PKA_CurrentKillStreak = 0
-    PKA_MultiKillCount = 0
+    PSC_DB.CurrentKillStreak = 0
+    PSC_MultiKillCount = 0
     inCombat = false
-    PKA_SaveSettings()
     PKA_Print("Death simulated! Kill streak reset.")
 end
 
@@ -536,6 +482,7 @@ local function SimulatePlayerKills(killCount)
 
         -- Override C_Map.GetPlayerMapPosition for this simulation
         local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
+---@diagnostic disable-next-line: duplicate-set-field
         C_Map.GetPlayerMapPosition = function(mapID, unit)
             return {x = randomX/100, y = randomY/100}
         end
@@ -578,10 +525,9 @@ function PKA_SlashCommandHandler(msg)
     elseif command == "death" then
         SimulatePlayerDeath()
     elseif command == "bgmode" then
-        PKA_BattlegroundMode = not PKA_BattlegroundMode
+        PSC_DB.ForceBattlegroundMode = not PSC_DB.ForceBattlegroundMode
         PKA_CheckBattlegroundStatus()
-        PKA_Print("Manual Battleground Mode " .. (PKA_BattlegroundMode and "ENABLED" or "DISABLED"))
-        PKA_SaveSettings()
+        PKA_Print("Manual Battleground Mode " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
     elseif command == "debugevents" then
         PKA_DebugCombatLogEvents()
     elseif command == "debugpet" then
@@ -604,43 +550,43 @@ end
 
 local function HandleCombatState(inCombatNow)
     if inCombat and not inCombatNow then
-        PKA_MultiKillCount = 0
+        PSC_MultiKillCount = 0
         inCombat = false
     elseif not inCombat and inCombatNow then
-        PKA_MultiKillCount = 0
+        PSC_MultiKillCount = 0
         inCombat = true
     end
 end
 
 local function HandlePlayerDeath()
-    if PKA_CurrentKillStreak >= 10 and PKA_EnableRecordAnnounce and IsInGroup() then
-        local streakEndedMsg = string.gsub(PKA_KillStreakEndedMessage, "STREAKCOUNT", PKA_CurrentKillStreak)
+    if PSC_DB.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+        local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", PSC_DB.CurrentKillStreak)
         SendChatMessage(streakEndedMsg, "PARTY")
     end
 
-    PKA_CurrentKillStreak = 0
-    PKA_MultiKillCount = 0
+    PSC_DB.CurrentKillStreak = 0
+    PSC_MultiKillCount = 0
     inCombat = false
-    PKA_SaveSettings()
     print("You died! Kill streak reset.")
 end
 
-local function ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
-    local level, englishClass, race, gender, guild, rank = PKA_GetPlayerInfo(destName, destGUID)
+local function ProcessEnemyPlayerDeath(destName, sourceGUID, sourceName)
+    local level, englishClass, race, gender, guild, rank = PSC_GetPlayerInfoFromCache(destName)
 
-    -- if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
-    --     print("Kill of " .. destName .. " not counted (incomplete data: " ..
-    --           (race == "Unknown" and "race" or "") ..
-    --           (gender == "Unknown" and (race == "Unknown" and ", gender" or "gender") or "") ..
-    --           (englishClass == "Unknown" and ((race == "Unknown" or gender == "Unknown") and ", class" or "class") or "") ..
-    --           " unknown)")
-    --     return
-    -- end
+    if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
+        if PKA_Debug then
+            print("Kill of " .. destName .. " not counted (incomplete data: " ..
+                (race == "Unknown" and "race" or "") ..
+                (gender == "Unknown" and (race == "Unknown" and ", gender" or "gender") or "") ..
+                (englishClass == "Unknown" and ((race == "Unknown" or gender == "Unknown") and ", class" or "class") or "") ..
+                " unknown)")
+        end
+        return
+    end
 
     RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName, rank)
 end
 
--- Add this function to clean up old damage records
 local function CleanupRecentPetDamage()
     local now = GetTime()
     local cutoff = now - PKA_PET_DAMAGE_WINDOW
@@ -707,7 +653,7 @@ local function HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName,
 
         -- Only record if there was actual damage
         if damageAmount > 0 then
-            RecordPetDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
+            RecordPetDamage(sourceGUID, sourceName, destGUID, damageAmount)
         end
     end
 end
@@ -716,7 +662,7 @@ local function RecordPlayerDamage(sourceGUID, sourceName, targetGUID, targetName
     if not sourceGUID or not targetGUID then return end
 
     -- Only track the player's own damage
-    if sourceGUID ~= PlayerGUID then return end
+    if sourceGUID ~= PSC_PlayerGUID then return end
 
     -- Get existing record or create new one
     local existingRecord = PKA_RecentPlayerDamage[targetGUID] or {
@@ -738,7 +684,7 @@ end
 
 local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, param1, param4)
     -- Only track player damage to enemy players
-    if sourceGUID ~= PlayerGUID then return end
+    if sourceGUID ~= PSC_PlayerGUID then return end
 
     local damageAmount = param1 or param4 or 0
     if damageAmount <= 0 then return end
@@ -747,7 +693,7 @@ local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destNam
 end
 
 local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
-    if sourceGUID ~= PlayerGUID then return end
+    if sourceGUID ~= PSC_PlayerGUID then return end
 
     local damageAmount = 0
 
@@ -761,7 +707,7 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
 
     -- Only process damage to enemy players
     if damageAmount > 0 then
-        HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, damageAmount, nil, destFlags)
+        HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, damageAmount, nil)
     end
 end
 
@@ -781,15 +727,15 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     local countKill = false
 
     -- print("Party Kill Event: " .. sourceName .. " (" .. sourceGUID .. ") killed " .. destName .. " (" .. destGUID .. ")")
-    if PKA_InBattleground then
-        if sourceGUID == PlayerGUID then
+    if PSC_CurrentlyInBattleground then
+        if sourceGUID == PSC_PlayerGUID then
             countKill = true
             if PKA_Debug then print("BG Mode: Player killing blow") end
         else
             if PKA_Debug then print("BG Mode: Party/Raid member killing blow ignored") end
         end
     else
-        if sourceGUID == PlayerGUID then
+        if sourceGUID == PSC_PlayerGUID then
             countKill = true
             if PKA_Debug then print("Normal Mode: Player killing blow") end
         elseif UnitInParty(sourceName) or UnitInRaid(sourceName) then
@@ -800,7 +746,7 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
 
     if countKill then
         PKA_RecentlyCountedKills[destGUID] = GetTime()
-        ProcessEnemyPlayerDeath(destName, destGUID, sourceGUID, sourceName)
+        ProcessEnemyPlayerDeath(destName, sourceGUID, sourceName)
     end
 end
 
@@ -819,8 +765,8 @@ local function HandleUnitDiedEvent(destGUID, destName)
 
     if petDamage and (GetTime() - petDamage.timestamp) <= PKA_PET_DAMAGE_WINDOW then
         -- In BG mode, only count the player's own pet kills
-        if PKA_InBattleground then
-            if petDamage.ownerGUID == PlayerGUID then
+        if PSC_CurrentlyInBattleground then
+            if petDamage.ownerGUID == PSC_PlayerGUID then
                 countKill = true
                 if PKA_Debug then
                     print("BG Mode: Pet killing blow detected (via recent damage)")
@@ -831,7 +777,7 @@ local function HandleUnitDiedEvent(destGUID, destName)
             end
         -- In normal mode, also accept party/raid member pets
         else
-            if petDamage.ownerGUID == PlayerGUID then
+            if petDamage.ownerGUID == PSC_PlayerGUID then
                 countKill = true
                 if PKA_Debug then
                     print("Normal Mode: Your pet killing blow detected")
@@ -850,7 +796,7 @@ local function HandleUnitDiedEvent(destGUID, destName)
 
         if countKill then
             PKA_RecentlyCountedKills[destGUID] = GetTime()
-            ProcessEnemyPlayerDeath(destName, destGUID, petDamage.petGUID, petDamage.petName)
+            ProcessEnemyPlayerDeath(destName, petDamage.petGUID, petDamage.petName)
             PKA_RecentPetDamage[destGUID] = nil  -- Clear the record after processing
         end
     end
@@ -867,7 +813,7 @@ local function HandleUnitDiedEvent(destGUID, destName)
             end
 
             PKA_RecentlyCountedKills[destGUID] = GetTime()
-            ProcessEnemyPlayerDeath(destName, destGUID, nil, "Assist")
+            ProcessEnemyPlayerDeath(destName, nil, "Assist")
             PKA_RecentPlayerDamage[destGUID] = nil  -- Clear the record after processing
         end
     end
@@ -893,7 +839,7 @@ local function HandleCombatLogEvent()
 end
 
 local function IsKillStreakMilestone(count)
-    for _, milestone in ipairs(PKA_MILESTONE_STREAKS) do
+    for _, milestone in ipairs(PSC_KILLSTREAK_MILESTONES) do
         if count == milestone then
             return true
         end
@@ -995,18 +941,22 @@ function PKA_RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_LOGOUT")
-    playerKillAnnounceFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")  -- Add zone change event
+    playerKillAnnounceFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
     playerKillAnnounceFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_ENTERING_WORLD" then
-            PKA_LoadSettings()
+            print("PSC_DB: " .. tostring(PSC_DB == nil))
+            if not PSC_DB then
+                PSC_InitializeDefaults()
+            end
+            PSC_UpdateMinimapButtonPosition()
             PKA_SetupTooltip() -- Add this line to call the tooltip setup
             inCombat = UnitAffectingCombat("player")
             PKA_CheckBattlegroundStatus()  -- Check BG status on login/reload
             if UnitIsDeadOrGhost("player") then
                 HandlePlayerDeath()
             end
-            PlayerGUID = UnitGUID("player")
+            PSC_PlayerGUID = UnitGUID("player")
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -1032,106 +982,37 @@ end
 
 -- Add after the RegisterEvents function
 function PKA_CheckBattlegroundStatus()
-    if not PKA_AutoBattlegroundMode then
-        PKA_InBattleground = PKA_BattlegroundMode
-        return PKA_InBattleground
+    if PSC_DB.ForceBattlegroundMode then
+        PSC_CurrentlyInBattleground = true
     end
 
-    -- Get current zone
     local currentZone = GetRealZoneText() or ""
-
-    -- List of battleground zones
     local battlegroundZones = {
         "Warsong Gulch",
         "Arathi Basin",
         "Alterac Valley",
-        -- "Elwynn Forest",
-        -- "Duskwood"
+        "Elwynn Forest",
+        "Duskwood"
     }
 
-    -- Check if current zone is a battleground
     for _, bgName in ipairs(battlegroundZones) do
         if (currentZone == bgName) then
-            PKA_InBattleground = true
-            if PKA_Debug and not PKA_LastBattlegroundState then
-                print("PvPStatsClassic: Entered battleground. Only direct kills will be counted.")
+            if PKA_Debug and not PSC_LastInBattlegroundValue then
+                print("PvPStatsClassic: Entered battleground. Only your own killing blows will be tracked.")
             end
-            PKA_LastBattlegroundState = true
-            return true
+            PSC_CurrentlyInBattleground = true
+            PSC_LastInBattlegroundValue = true
+            return
         end
     end
 
-    -- Not in a battleground
-    if PKA_Debug and PKA_LastBattlegroundState then
+    if PKA_Debug and PSC_LastInBattlegroundValue then
         print("PvPStatsClassic: Left battleground. Normal kill tracking active.")
     end
-    PKA_LastBattlegroundState = false
-    PKA_InBattleground = PKA_BattlegroundMode
-    return PKA_InBattleground
+    PSC_LastInBattlegroundValue = false
+    PSC_CurrentlyInBattleground = false
 end
 
-function PKA_SaveSettings()
-    -- Save existing settings
-    PlayerKillAnnounceDB = PlayerKillAnnounceDB or {}
-    PlayerKillAnnounceDB.KillAnnounceMessage = PKA_KillAnnounceMessage
-    PlayerKillAnnounceDB.KillCounts = PKA_KillCounts
-    PlayerKillAnnounceDB.CurrentKillStreak = PKA_CurrentKillStreak
-    PlayerKillAnnounceDB.HighestKillStreak = PKA_HighestKillStreak
-    PlayerKillAnnounceDB.EnableKillAnnounce = PKA_EnableKillAnnounce
-    PlayerKillAnnounceDB.KillStreakEndedMessage = PKA_KillStreakEndedMessage
-    PlayerKillAnnounceDB.NewStreakRecordMessage = PKA_NewStreakRecordMessage
-    PlayerKillAnnounceDB.NewMultiKillRecordMessage = PKA_NewMultiKillRecordMessage
-    PlayerKillAnnounceDB.EnableRecordAnnounce = PKA_EnableRecordAnnounce
-    PlayerKillAnnounceDB.MultiKillThreshold = PKA_MultiKillThreshold
-    PlayerKillAnnounceDB.MultiKillCount = PKA_MultiKillCount
-    PlayerKillAnnounceDB.HighestMultiKill = PKA_HighestMultiKill
-
-    -- Save new battleground settings
-    PlayerKillAnnounceDB.AutoBattlegroundMode = PKA_AutoBattlegroundMode
-    PlayerKillAnnounceDB.BattlegroundMode = PKA_BattlegroundMode
-    PlayerKillAnnounceDB.EnableKillSounds = PKA_EnableKillSounds
-
-    -- Save Kill Milestone settings
-    PlayerKillAnnounceDB.ShowKillMilestone = PKA_KillMilestoneNotificationsEnabled
-    PlayerKillAnnounceDB.MilestoneAutoHideTime = PKA_MilestoneAutoHideTime
-    PlayerKillAnnounceDB.MilestoneInterval = PKA_MilestoneInterval
-    PlayerKillAnnounceDB.EnableMilestoneSounds = PKA_EnableMilestoneSounds
-    PlayerKillAnnounceDB.HideFirstKillMilestone = PKA_HideFirstKillMilestone
-    -- Position is saved when frame is moved
-end
-
-function PKA_LoadSettings()
-    -- Load existing settings
-    PlayerKillAnnounceDB = PlayerKillAnnounceDB or {}
-    PKA_KillAnnounceMessage = PlayerKillAnnounceDB.KillAnnounceMessage or PlayerKillMessageDefault
-    PKA_KillCounts = PlayerKillAnnounceDB.KillCounts or {}
-    PKA_CurrentKillStreak = PlayerKillAnnounceDB.CurrentKillStreak or 0
-    PKA_HighestKillStreak = PlayerKillAnnounceDB.HighestKillStreak or 0
-    PKA_EnableKillAnnounce = PlayerKillAnnounceDB.EnableKillAnnounce ~= false
-    PKA_KillStreakEndedMessage = PlayerKillAnnounceDB.KillStreakEndedMessage or KillStreakEndedMessageDefault
-    PKA_NewStreakRecordMessage = PlayerKillAnnounceDB.NewStreakRecordMessage or NewStreakRecordMessageDefault
-    PKA_NewMultiKillRecordMessage = PlayerKillAnnounceDB.NewMultiKillRecordMessage or NewMultiKillRecordMessageDefault
-    PKA_EnableRecordAnnounce = PlayerKillAnnounceDB.EnableRecordAnnounce ~= false
-    PKA_MultiKillThreshold = PlayerKillAnnounceDB.MultiKillThreshold or 3
-    PKA_MultiKillCount = PlayerKillAnnounceDB.MultiKillCount or 0
-    PKA_HighestMultiKill = PlayerKillAnnounceDB.HighestMultiKill or 0
-
-    -- Load new battleground settings
-    PKA_AutoBattlegroundMode = PlayerKillAnnounceDB.AutoBattlegroundMode ~= false
-    PKA_BattlegroundMode = PlayerKillAnnounceDB.BattlegroundMode ~= false
-    PKA_EnableKillSounds = PlayerKillAnnounceDB.EnableKillSounds
-    if PKA_EnableKillSounds == nil then PKA_EnableKillSounds = true end  -- Default to enabled
-
-    -- Load Kill Milestone settings (renamed from Last Kill Preview)
-    PKA_KillMilestoneNotificationsEnabled = PlayerKillAnnounceDB.ShowKillMilestone ~= false -- Default to enabled
-    PKA_MilestoneAutoHideTime = PlayerKillAnnounceDB.MilestoneAutoHideTime or 5
-    PKA_MilestoneInterval = PlayerKillAnnounceDB.MilestoneInterval or 5
-    PKA_EnableMilestoneSounds = PlayerKillAnnounceDB.EnableMilestoneSounds ~= false -- Default to enabled
-    PKA_HideFirstKillMilestone = PlayerKillAnnounceDB.HideFirstKillMilestone or false -- Default to disabled
-
-    -- Load minimap button position
-    PKA_MinimapPosition = PlayerKillAnnounceDB.PKA_MinimapPosition or 195
-end
 
 -- Add this function near your other debug functions
 function PKA_DebugCombatLogEvents()
@@ -1185,7 +1066,7 @@ function PKA_DebugPetKills()
         if IsPetGUID(sourceGUID) then
             local ownerGUID = GetPetOwnerGUID(sourceGUID)
 
-            if ownerGUID == PlayerGUID then
+            if ownerGUID == PSC_PlayerGUID then
                 -- Log all pet damage events
                 if combatEvent:find("_DAMAGE") or combatEvent == "SWING_DAMAGE" then
                     local amount = combatEvent == "SWING_DAMAGE" and param1 or (combatEvent == "SPELL_DAMAGE" and param4 or 0)
@@ -1230,8 +1111,6 @@ end
 -- Add this function after PKA_LoadSettings but before RegisterEvents
 
 function PKA_SetupTooltip()
-    if tooltipHookSetup then return end
-
     -- Helper function to check if a kills line already exists in the tooltip
     local function HasKillsLineInTooltip(tooltip)
         for i = 1, tooltip:NumLines() do
@@ -1253,7 +1132,7 @@ function PKA_SetupTooltip()
 
     -- Helper function to get kills for a player by name (checking all level entries)
     local function GetKillsByPlayerName(playerName)
-        for nameWithLevel, data in pairs(PKA_KillCounts) do
+        for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
             local storedName = nameWithLevel:match("^(.+):")
             if storedName == playerName then
                 return data.kills
@@ -1265,7 +1144,7 @@ function PKA_SetupTooltip()
     -- Handle live player tooltips
     local function OnTooltipSetUnit(tooltip)
         -- Check if tooltip info is enabled
-        if not PKA_ShowTooltipKillInfo then return end
+        if not PSC_DB.ShowTooltipKillInfo then return end
 
         -- Get unit from tooltip
         local name, unit = tooltip:GetUnit()
@@ -1281,8 +1160,8 @@ function PKA_SetupTooltip()
 
         -- Find kill count in our database
         local kills = 0
-        if PKA_KillCounts[nameWithLevel] then
-            kills = PKA_KillCounts[nameWithLevel].kills
+        if PSC_DB.PlayerKillCounts[nameWithLevel] then
+            kills = PSC_DB.PlayerKillCounts[nameWithLevel].kills
         end
 
         AddKillsToTooltip(tooltip, kills)
@@ -1322,177 +1201,6 @@ function PKA_SetupTooltip()
             end
         end)
     end)
-
-    tooltipHookSetup = true
-end
-
--- Function to create and set up the Last Kill Preview frame
-function PKA_CreateLastKillFrame()
-    if PKA_LastKillFrame then return PKA_LastKillFrame end
-
-    -- Create the main frame
-    local frame = CreateFrame("Frame", "PKA_LastKillPreviewFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(200, 80)
-    frame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
-    frame:SetFrameStrata("MEDIUM")
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:SetClampedToScreen(true)
-
-    -- Create backdrop for Classic compatibility
-    local backdrop = {
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
-        tile = true,
-        tileSize = 32,
-        edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
-    }
-
-    -- Apply backdrop using the appropriate method for the client version
-    if frame.SetBackdrop then
-        frame:SetBackdrop(backdrop)
-    else
-        -- Create background texture
-        local bg = frame:CreateTexture(nil, "BACKGROUND")
-        bg:SetTexture(backdrop.bgFile)
-        bg:SetAllPoints(frame)
-        bg:SetTexCoord(0, 1, 0, 1)
-
-        -- Create border textures (simplified approach)
-        local border = frame:CreateTexture(nil, "BORDER")
-        border:SetTexture(backdrop.edgeFile)
-        border:SetPoint("TOPLEFT", frame, "TOPLEFT", -backdrop.edgeSize/2, backdrop.edgeSize/2)
-        border:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", backdrop.edgeSize/2, -backdrop.edgeSize/2)
-    end
-
-    -- Make it draggable
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    frame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        -- Save position for future sessions
-        local point, _, relativePoint, xOfs, yOfs = self:GetPoint()
-        PlayerKillAnnounceDB.LastKillFramePosition = {
-            point = point,
-            relativePoint = relativePoint,
-            xOfs = xOfs,
-            yOfs = yOfs
-        }
-    end)
-
-    -- Title
-    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetPoint("TOP", frame, "TOP", 0, -15)
-    title:SetText("Kill Preview")
-    title:SetTextColor(1, 0.82, 0)
-    frame.title = title
-
-    -- Class icon
-    local classIcon = frame:CreateTexture(nil, "ARTWORK")
-    classIcon:SetSize(24, 24)
-    classIcon:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -30)
-    frame.classIcon = classIcon
-
-    -- Player name
-    local nameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    nameText:SetPoint("TOPLEFT", classIcon, "TOPRIGHT", 5, 0)
-    nameText:SetWidth(140)
-    nameText:SetJustifyH("LEFT")
-    frame.nameText = nameText
-
-    -- Level and rank
-    local levelText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -2)
-    levelText:SetTextColor(0.8, 0.8, 0.8)
-    frame.levelText = levelText
-
-    -- Kill count
-    local killText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killText:SetPoint("BOTTOM", frame, "BOTTOM", 0, 15)
-    killText:SetTextColor(1, 0.5, 0)
-    frame.killText = killText
-
-    -- Close button
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
-    close:SetSize(20, 20)
-    close:SetScript("OnClick", function()
-        frame:Hide()
-        if PKA_LastKillTimer then
-            PKA_LastKillTimer:Cancel()
-            PKA_LastKillTimer = nil
-        end
-    end)
-
-    frame:Hide()
-    PKA_LastKillFrame = frame
-    return frame
-end
-
--- Function to update and show the last kill frame
-function PKA_ShowLastKill(playerName, level, englishClass, race, gender, guild, rank, killCount)
-    if not PKA_ShowLastKillPreview then return end
-
-    local frame = PKA_CreateLastKillFrame()
-
-    -- Update position if saved
-    if PlayerKillAnnounceDB and PlayerKillAnnounceDB.LastKillFramePosition then
-        local pos = PlayerKillAnnounceDB.LastKillFramePosition
-        frame:ClearAllPoints()
-        frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.xOfs, pos.yOfs)
-    end
-
-    -- Only show for milestone kills (1st, 5th, 10th)
-    if killCount ~= 1 and killCount ~= 5 and killCount ~= 10 then
-        return
-    end
-
-    -- Set class icon
-    local classIconCoords = CLASS_ICON_TCOORDS[englishClass or "WARRIOR"]
-    if classIconCoords then
-        frame.classIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
-        frame.classIcon:SetTexCoord(unpack(classIconCoords))
-    else
-        frame.classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-    end
-
-    -- Set name with color by class
-    local classColor = RAID_CLASS_COLORS[englishClass] or RAID_CLASS_COLORS["WARRIOR"]
-    frame.nameText:SetText(playerName)
-    frame.nameText:SetTextColor(classColor.r, classColor.g, classColor.b)
-
-    -- Set level and rank if applicable
-    local levelString = "Level " .. (level > 0 and level or "??")
-    if rank and rank > 0 then
-        levelString = levelString .. " - " .. PKA_GetRankName(rank)
-    end
-    frame.levelText:SetText(levelString)
-
-    -- Set milestone message
-    local killMessage
-    if killCount == 1 then
-        killMessage = "First Kill! Entry added"
-    elseif killCount == 5 then
-        killMessage = "5th kill!"
-    elseif killCount == 10 then
-        killMessage = "10th kill!"
-    end
-    frame.killText:SetText(killMessage)
-
-    -- Show the frame
-    frame:Show()
-
-    -- Cancel existing timer if any
-    if PKA_LastKillTimer then
-        PKA_LastKillTimer:Cancel()
-    end
-
-    -- Set auto-hide timer
-    PKA_LastKillTimer = C_Timer.NewTimer(PKA_LastKillAutoHideTime, function()
-        frame:Hide()
-        PKA_LastKillTimer = nil
-    end)
 end
 
 -- Helper function to get PvP rank name based on rank number and faction
@@ -1501,7 +1209,6 @@ function PKA_GetRankName(rank, faction)
         return nil
     end
 
-    -- Default to Alliance ranks if faction not specified
     faction = faction or UnitFactionGroup("player") or "Alliance"
 
     local rankNames = {
@@ -1540,22 +1247,22 @@ function PKA_GetRankName(rank, faction)
     }
 
     local factionTable = rankNames[faction] or rankNames["Alliance"]
-    return factionTable[rank] or "Rank " .. rank
+    return factionTable[rank] or ("Rank " .. rank)
 end
 
 
 -- Function to create and set up the Kill Milestone frame
-function PKA_CreateMilestoneFrame()
-    if PKA_MilestoneFrame then return PKA_MilestoneFrame end
+local function PKA_CreateKillMilestoneFrame()
+    if killMilestoneFrame then return killMilestoneFrame end
 
     -- Create the main frame
-    local frame = CreateFrame("Frame", "PKA_KillMilestoneFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(200, 82)  -- Base size - will be adjusted dynamically
-    frame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
-    frame:SetFrameStrata("MEDIUM")
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:SetClampedToScreen(true)
+    local milestoneFrame = CreateFrame("Frame", "PKA_KillMilestoneFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
+    milestoneFrame:SetSize(200, 82)  -- Base size - will be adjusted dynamically
+    milestoneFrame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
+    milestoneFrame:SetFrameStrata("MEDIUM")
+    milestoneFrame:SetMovable(true)
+    milestoneFrame:EnableMouse(true)
+    milestoneFrame:SetClampedToScreen(true)
 
     -- Create backdrop for Classic compatibility
     local backdrop = {
@@ -1568,26 +1275,27 @@ function PKA_CreateMilestoneFrame()
     }
 
     -- Apply backdrop using the appropriate method for the client version
-    if frame.SetBackdrop then
-        frame:SetBackdrop(backdrop)
+    if milestoneFrame.SetBackdrop then
+        milestoneFrame:SetBackdrop(backdrop)
     else
         -- Create background texture
-        local bg = frame:CreateTexture(nil, "BACKGROUND")
+        local bg = milestoneFrame:CreateTexture(nil, "BACKGROUND")
         bg:SetTexture(backdrop.bgFile)
-        bg:SetAllPoints(frame)
+---@diagnostic disable-next-line: param-type-mismatch
+        bg:SetAllPoints(milestoneFrame)
         bg:SetTexCoord(0, 1, 0, 1)
 
         -- Create border textures (simplified approach)
-        local border = frame:CreateTexture(nil, "BORDER")
+        local border = milestoneFrame:CreateTexture(nil, "BORDER")
         border:SetTexture(backdrop.edgeFile)
-        border:SetPoint("TOPLEFT", frame, "TOPLEFT", -backdrop.edgeSize/2, backdrop.edgeSize/2)
-        border:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", backdrop.edgeSize/2, -backdrop.edgeSize/2)
+        border:SetPoint("TOPLEFT", milestoneFrame, "TOPLEFT", -backdrop.edgeSize/2, backdrop.edgeSize/2)
+        border:SetPoint("BOTTOMRIGHT", milestoneFrame, "BOTTOMRIGHT", backdrop.edgeSize/2, -backdrop.edgeSize/2)
     end
 
     -- Make it draggable
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    frame:SetScript("OnDragStop", function(self)
+    milestoneFrame:RegisterForDrag("LeftButton")
+    milestoneFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    milestoneFrame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         -- Save position for future sessions
         local point, _, relativePoint, xOfs, yOfs = self:GetPoint()
@@ -1600,92 +1308,91 @@ function PKA_CreateMilestoneFrame()
     end)
 
     -- Title
-    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetPoint("TOP", frame, "TOP", 0, -15)
+    local title = milestoneFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    title:SetPoint("TOP", milestoneFrame, "TOP", 0, -15)
     title:SetText("Kill Milestone")
     title:SetTextColor(1, 0.82, 0)
-    frame.title = title
+    milestoneFrame.title = title
 
     -- Define left margin for consistent spacing
     local leftMargin = 20
 
     -- Class icon
-    local classIcon = frame:CreateTexture(nil, "ARTWORK")
+    local classIcon = milestoneFrame:CreateTexture(nil, "ARTWORK")
     classIcon:SetSize(24, 24)
-    classIcon:SetPoint("TOPLEFT", frame, "TOPLEFT", leftMargin, -30)
-    frame.classIcon = classIcon
+    classIcon:SetPoint("TOPLEFT", milestoneFrame, "TOPLEFT", leftMargin, -30)
+    milestoneFrame.classIcon = classIcon
 
     -- Player name
-    local nameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local nameText = milestoneFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     nameText:SetPoint("TOPLEFT", classIcon, "TOPRIGHT", 5, 0)
     nameText:SetJustifyH("LEFT")
-    frame.nameText = nameText
+    milestoneFrame.nameText = nameText
 
     -- Level and rank - aligned left like the player name
-    local levelText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    local levelText = milestoneFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     levelText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -2)
     levelText:SetTextColor(0.8, 0.8, 0.8)
     levelText:SetJustifyH("LEFT")  -- Explicit left justification
-    frame.levelText = levelText
+    milestoneFrame.levelText = levelText
 
     -- Kill count - aligned left like the others
-    local killText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local killText = milestoneFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     killText:SetPoint("TOPLEFT", levelText, "BOTTOMLEFT", 0, -2)
     killText:SetTextColor(1, 0.82, 0) -- Gold color
     killText:SetJustifyH("LEFT")
-    frame.killText = killText
+    milestoneFrame.killText = killText
 
     -- Close button
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
+    local close = CreateFrame("Button", nil, milestoneFrame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", milestoneFrame, "TOPRIGHT", -5, -5)
     close:SetSize(20, 20)
     close:SetScript("OnClick", function()
-        frame:Hide()
-        if PKA_MilestoneTimer then
-            PKA_MilestoneTimer:Cancel()
-            PKA_MilestoneTimer = nil
+        milestoneFrame:Hide()
+        if killMilestoneAutoHideTimer then
+            killMilestoneAutoHideTimer:Cancel()
+            killMilestoneAutoHideTimer = nil
         end
     end)
 
-    frame:Hide()
-    PKA_MilestoneFrame = frame
-    return frame
+    milestoneFrame:Hide()
+    killMilestoneFrame = milestoneFrame
+    return milestoneFrame
 end
 
 -- Function to update and show the milestone frame
 function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount, faction)
-    if not PKA_KillMilestoneNotificationsEnabled then return end
+    if not PSC_DB.KillMilestoneNotificationsEnabled then return end
 
-    -- Check for "hide first kill" setting
-    if PKA_HideFirstKillMilestone and killCount == 1 then return end
+    if not PSC_DB.ShowMilestoneForFirstKill and killCount == 1 then return end
 
-    local frame = PKA_CreateMilestoneFrame()
+    local milestoneFrame = PKA_CreateKillMilestoneFrame()
 
     -- Update position if saved
     if PlayerKillAnnounceDB and PlayerKillAnnounceDB.MilestoneFramePosition then
         local pos = PlayerKillAnnounceDB.MilestoneFramePosition
-        frame:ClearAllPoints()
-        frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.xOfs, pos.yOfs)
+        milestoneFrame:ClearAllPoints()
+        milestoneFrame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.xOfs, pos.yOfs)
     end
 
     -- Only show for milestone kills (1st, or every X kills based on interval)
-    if killCount ~= 1 and killCount % PKA_MilestoneInterval ~= 0 then
+    if killCount ~= 1 and killCount % PSC_DB.KillMilestoneInterval ~= 0 then
         return
     end
 
     -- Set class icon
     local classIconCoords = CLASS_ICON_TCOORDS[englishClass or "WARRIOR"]
     if classIconCoords then
-        frame.classIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
-        frame.classIcon:SetTexCoord(unpack(classIconCoords))
+        milestoneFrame.classIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+        milestoneFrame.classIcon:SetTexCoord(unpack(classIconCoords))
     else
-        frame.classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+        milestoneFrame.classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
     end
 
     -- Set name with color by class
     local classColor = RAID_CLASS_COLORS[englishClass] or RAID_CLASS_COLORS["WARRIOR"]
-    frame.nameText:SetText(playerName)
-    frame.nameText:SetTextColor(classColor.r, classColor.g, classColor.b)
+    milestoneFrame.nameText:SetText(playerName)
+    milestoneFrame.nameText:SetTextColor(classColor.r, classColor.g, classColor.b)
 
     -- Get rank name if applicable
     local rankName = nil
@@ -1698,7 +1405,7 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     if rankName then
         levelString = levelString .. " - " .. rankName
     end
-    frame.levelText:SetText(levelString)
+    milestoneFrame.levelText:SetText(levelString)
 
     -- Set kill message
     local killMessage
@@ -1707,20 +1414,20 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     else
         killMessage = killCount .. "th kill!"
     end
-    frame.killText:SetText(killMessage)
+    milestoneFrame.killText:SetText(killMessage)
 
     -- Calculate required width for content
     -- 1. Get the text width of the level string (most likely to be longest)
-    frame.levelText:SetWidth(0) -- Reset width constraint to get natural width
-    local levelTextWidth = frame.levelText:GetStringWidth()
+    milestoneFrame.levelText:SetWidth(0) -- Reset width constraint to get natural width
+    local levelTextWidth = milestoneFrame.levelText:GetStringWidth()
 
     -- 2. Get the text width of the player name
-    frame.nameText:SetWidth(0) -- Reset width constraint to get natural width
-    local nameTextWidth = frame.nameText:GetStringWidth()
+    milestoneFrame.nameText:SetWidth(0) -- Reset width constraint to get natural width
+    local nameTextWidth = milestoneFrame.nameText:GetStringWidth()
 
     -- 3. Get width of kill message
-    frame.killText:SetWidth(0)
-    local killTextWidth = frame.killText:GetStringWidth()
+    milestoneFrame.killText:SetWidth(0)
+    local killTextWidth = milestoneFrame.killText:GetStringWidth()
 
     -- 4. Calculate the needed width (add padding for icon and margins)
     local requiredContentWidth = math.max(levelTextWidth, nameTextWidth, killTextWidth)
@@ -1735,31 +1442,31 @@ function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     frameWidth = math.min(maxWidth, math.max(minWidth, frameWidth))
 
     -- Apply the calculated width to the frame
-    frame:SetWidth(frameWidth)
+    milestoneFrame:SetWidth(frameWidth)
 
     -- Set text element widths to match the frame with proper margins
     local textWidth = frameWidth - (20 + 24 + 5 + 20) -- Left margin + icon + spacing + right margin
-    frame.nameText:SetWidth(textWidth)
-    frame.levelText:SetWidth(textWidth)
-    frame.killText:SetWidth(textWidth)
+    milestoneFrame.nameText:SetWidth(textWidth)
+    milestoneFrame.levelText:SetWidth(textWidth)
+    milestoneFrame.killText:SetWidth(textWidth)
 
-    frame:Show()
-    local animGroup = SetupKillstreakMilestoneAnimation(frame, PKA_MilestoneAutoHideTime)
+    milestoneFrame:Show()
+    local animGroup = SetupKillstreakMilestoneAnimation(milestoneFrame, PSC_DB.KillMilestoneAutoHideTime)
     animGroup:Play()
 
     -- Only play sound if milestone sounds are enabled
-    if PKA_EnableMilestoneSounds then
+    if PSC_DB.EnableKillMilestoneSounds then
         PlaySound(8213) -- PVPFlagCapturedHorde
     end
 
     -- Cancel existing timer if any
-    if PKA_MilestoneTimer then
-        PKA_MilestoneTimer:Cancel()
+    if killMilestoneAutoHideTimer then
+        killMilestoneAutoHideTimer:Cancel()
     end
 
     -- Set auto-hide timer
-    PKA_MilestoneTimer = C_Timer.NewTimer(PKA_MilestoneAutoHideTime + 1.0, function()
-        frame:Hide()
-        PKA_MilestoneTimer = nil
+    killMilestoneAutoHideTimer = C_Timer.NewTimer(PSC_DB.KillMilestoneAutoHideTime + 1.0, function()
+        milestoneFrame:Hide()
+        killMilestoneAutoHideTimer = nil
     end)
 end
