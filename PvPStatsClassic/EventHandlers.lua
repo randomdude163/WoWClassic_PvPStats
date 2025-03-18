@@ -358,12 +358,106 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
     return debugMsg
 end
 
+local function IsKillStreakMilestone(count)
+    for _, milestone in ipairs(PSC_KILLSTREAK_MILESTONES) do
+        if count == milestone then
+            return true
+        end
+    end
+    return false
+end
+
+local function SetupKillstreakMilestoneAnimation(frame, duration)
+    if frame.animGroup then
+        frame.animGroup:Stop()
+        frame.animGroup:SetScript("OnPlay", nil)
+        frame.animGroup:SetScript("OnFinished", nil)
+        frame.animGroup:SetScript("OnStop", nil)
+    end
+
+    local animGroup = frame:CreateAnimationGroup()
+    animGroup:SetLooping("NONE")
+
+    local fadeIn = animGroup:CreateAnimation("Alpha")
+    fadeIn:SetFromAlpha(0)
+    fadeIn:SetToAlpha(1)
+    fadeIn:SetDuration(0.01)
+    fadeIn:SetOrder(1)
+
+    local hold = animGroup:CreateAnimation("Alpha")
+    hold:SetFromAlpha(1)
+    hold:SetToAlpha(1)
+    hold:SetDuration(duration)
+    hold:SetOrder(2)
+
+    local fadeOut = animGroup:CreateAnimation("Alpha")
+    fadeOut:SetFromAlpha(1)
+    fadeOut:SetToAlpha(0)
+    fadeOut:SetDuration(0.5)
+    fadeOut:SetOrder(3)
+
+    animGroup:SetScript("OnFinished", function()
+        frame:Hide()
+    end)
+
+    frame.animGroup = animGroup
+    return animGroup
+end
+
+local function CreateKillstreakMilestoneFrameIfNeeded()
+    if killStreakMilestoneFrame then return killStreakMilestoneFrame end
+
+    local frame = CreateFrame("Frame", "PKA_MilestoneFrame", UIParent)
+    frame:SetSize(400, 200)
+    frame:SetPoint("TOP", 0, -60)
+    frame:SetFrameStrata("HIGH")
+
+    local icon = frame:CreateTexture("PKA_MilestoneIcon", "ARTWORK")
+    icon:SetSize(200, 200)
+    icon:SetPoint("TOP", 0, 0)
+    icon:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
+    frame.icon = icon
+
+    local text = frame:CreateFontString("PKA_MilestoneText", "OVERLAY", "SystemFont_Huge1")
+    text:SetPoint("TOP", icon, "BOTTOM", 0, -10)
+    text:SetTextColor(1, 0, 0)
+    text:SetTextHeight(30)
+    frame.text = text
+
+    frame:Hide()
+    killStreakMilestoneFrame = frame
+    return frame
+end
+
+local function PlayKillstreakMilestoneSound()
+    PlaySound(8454) -- Warsong horde win sound
+    PlaySound(8574) -- Cheer sound
+end
+
+local function ShowKillStreakMilestone(killCount)
+    if not IsKillStreakMilestone(killCount) then
+        return
+    end
+
+    local frame = CreateKillstreakMilestoneFrameIfNeeded()
+
+    frame.text:SetText(killCount .. " KILL STREAK")
+
+    frame:Show()
+    frame:SetAlpha(0)
+
+    local animGroup = SetupKillstreakMilestoneAnimation(frame, 9.0)
+    PlayKillstreakMilestoneSound()
+    DoEmote("CHEER")
+    animGroup:Play()
+end
+
 local function RegisterPlayerKill(playerName, level, englishClass, race, gender, guild, killerGUID, killerName, rank)
     local playerLevel = UnitLevel("player")
     local nameWithLevel = playerName .. ":" .. level
 
     UpdateKillStreak()
-    PKA_ShowKillStreakMilestone(PSC_DB.CurrentKillStreak)
+    ShowKillStreakMilestone(PSC_DB.CurrentKillStreak)
     InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
     UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
     UpdateMultiKill()
@@ -838,101 +932,8 @@ local function HandleCombatLogEvent()
     end
 end
 
-local function IsKillStreakMilestone(count)
-    for _, milestone in ipairs(PSC_KILLSTREAK_MILESTONES) do
-        if count == milestone then
-            return true
-        end
-    end
-    return false
-end
 
-local function CreateMilestoneFrameIfNeeded()
-    if killStreakMilestoneFrame then return killStreakMilestoneFrame end
-
-    local frame = CreateFrame("Frame", "PKA_MilestoneFrame", UIParent)
-    frame:SetSize(400, 200)
-    frame:SetPoint("TOP", 0, -60)
-    frame:SetFrameStrata("HIGH")
-
-    local icon = frame:CreateTexture("PKA_MilestoneIcon", "ARTWORK")
-    icon:SetSize(200, 200)
-    icon:SetPoint("TOP", 0, 0)
-    icon:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
-    frame.icon = icon
-
-    local text = frame:CreateFontString("PKA_MilestoneText", "OVERLAY", "SystemFont_Huge1")
-    text:SetPoint("TOP", icon, "BOTTOM", 0, -10)
-    text:SetTextColor(1, 0, 0)
-    text:SetTextHeight(30)
-    frame.text = text
-
-    frame:Hide()
-    killStreakMilestoneFrame = frame
-    return frame
-end
-
-local function SetupKillstreakMilestoneAnimation(frame, duration)
-    if frame.animGroup then
-        frame.animGroup:Stop()
-        frame.animGroup:SetScript("OnPlay", nil)
-        frame.animGroup:SetScript("OnFinished", nil)
-        frame.animGroup:SetScript("OnStop", nil)
-    end
-
-    local animGroup = frame:CreateAnimationGroup()
-    animGroup:SetLooping("NONE")
-
-    local fadeIn = animGroup:CreateAnimation("Alpha")
-    fadeIn:SetFromAlpha(0)
-    fadeIn:SetToAlpha(1)
-    fadeIn:SetDuration(0.01)
-    fadeIn:SetOrder(1)
-
-    local hold = animGroup:CreateAnimation("Alpha")
-    hold:SetFromAlpha(1)
-    hold:SetToAlpha(1)
-    hold:SetDuration(duration)
-    hold:SetOrder(2)
-
-    local fadeOut = animGroup:CreateAnimation("Alpha")
-    fadeOut:SetFromAlpha(1)
-    fadeOut:SetToAlpha(0)
-    fadeOut:SetDuration(0.5)
-    fadeOut:SetOrder(3)
-
-    animGroup:SetScript("OnFinished", function()
-        frame:Hide()
-    end)
-
-    frame.animGroup = animGroup
-    return animGroup
-end
-
-local function PlayMilestoneSound()
-    PlaySound(8454) -- Warsong horde win sound
-    PlaySound(8574) -- Cheer sound
-end
-
-function PKA_ShowKillStreakMilestone(killCount)
-    if not IsKillStreakMilestone(killCount) then
-        return
-    end
-
-    local frame = CreateMilestoneFrameIfNeeded()
-
-    frame.text:SetText(killCount .. " KILL STREAK")
-
-    frame:Show()
-    frame:SetAlpha(0)
-
-    local animGroup = SetupKillstreakMilestoneAnimation(frame, 9.0)
-    PlayMilestoneSound()
-    DoEmote("CHEER")
-    animGroup:Play()
-end
-
-function PKA_RegisterEvents()
+function PSC_RegisterEvents()
     playerKillAnnounceFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     playerKillAnnounceFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     playerKillAnnounceFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -1362,7 +1363,7 @@ end
 
 -- Function to update and show the milestone frame
 function PKA_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount, faction)
-    if not PSC_DB.KillMilestoneNotificationsEnabled then return end
+    if not PSC_DB.ShowKillMilestones then return end
 
     if not PSC_DB.ShowMilestoneForFirstKill and killCount == 1 then return end
 

@@ -176,7 +176,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     manualBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent,
-        "Show kill statistics in enemy player tooltips",
+        "Show kills in mouseover tooltips",
         PSC_DB.ShowTooltipKillInfo,
         function(checked)
             PSC_DB.ShowTooltipKillInfo = checked
@@ -194,9 +194,9 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     local showKillMilestonesCheckbox, _ = CreateCheckbox(parent,
         "Show kill milestones",
-        PSC_DB.KillMilestoneNotificationsEnabled,
+        PSC_DB.ShowKillMilestones,
         function(checked)
-            PSC_DB.KillMilestoneNotificationsEnabled = checked
+            PSC_DB.ShowKillMilestones = checked
         end)
     showKillMilestonesCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.showKillMilestonesCheckbox = showKillMilestonesCheckbox
@@ -488,48 +488,40 @@ end
 function PKA_UpdateConfigUI()
     if not configFrame then return end
 
--- Make sure these match the actual field names used in CreateAnnouncementSection
+    -- Update checkboxes
     configFrame.autoBGModeCheckbox:SetChecked(PSC_DB.AutoBattlegroundMode)
     configFrame.manualBGModeCheckbox:SetChecked(PSC_DB.ForceBattlegroundMode)
     configFrame.tooltipKillInfoCheckbox:SetChecked(PSC_DB.ShowTooltipKillInfo)
-    configFrame.showKillMilestonesCheckbox:SetChecked(PSC_DB.KillMilestoneNotificationsEnabled)
+    configFrame.showKillMilestonesCheckbox:SetChecked(PSC_DB.ShowKillMilestones)
     configFrame.killMilestoneSoundsCheckbox:SetChecked(PSC_DB.EnableKillMilestoneSounds)
     configFrame.showMilestoneForFirstKillCheckbox:SetChecked(PSC_DB.ShowMilestoneForFirstKill)
     configFrame.enableKillAnnounceCheckbox:SetChecked(PSC_DB.EnableKillAnnounceMessages)
-
     configFrame.enableRecordAnnounceCheckbox:SetChecked(PSC_DB.EnableRecordAnnounceMessages)
+    configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
 
-    configFrame.multiKillSliderCheckbox:SetValue(PSC_DB.MultiKillThreshold)
-    -- Also update the slider text
-    local sliderName = configFrame.multiKillSlider:GetName()
-    if sliderName then
-        getglobal(sliderName .. "Text"):SetText("Multi-Kill Announce Threshold: " .. PSC_DB.MultiKillThreshold)
+    -- Update multi-kill slider
+    if configFrame.multiKillSlider and configFrame.multiKillSlider:GetName() then
+        configFrame.multiKillSlider:SetValue(PSC_DB.MultiKillThreshold or 3)
+        getglobal(configFrame.multiKillSlider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
     end
 
+    -- Update milestone interval slider
+    if configFrame.milestoneIntervalSlider and configFrame.milestoneIntervalSlider:GetName() then
+        configFrame.milestoneIntervalSlider:SetValue(PSC_DB.KillMilestoneInterval or 5)
+        getglobal(configFrame.milestoneIntervalSlider:GetName() .. "Text"):SetText("Milestone interval: Every " .. (PSC_DB.KillMilestoneInterval or 5) .. " kills")
+    end
+
+    -- Update milestone auto-hide time slider
+    if configFrame.milestoneAutoHideTimeSlider and configFrame.milestoneAutoHideTimeSlider:GetName() then
+        configFrame.milestoneAutoHideTimeSlider:SetValue(PSC_DB.KillMilestoneAutoHideTime or 5)
+        getglobal(configFrame.milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText("Hide notification after: " .. (PSC_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
+    end
+
+    -- Update message templates
     configFrame.editBoxes.killMsg:SetText(PSC_DB.KillAnnounceMessage)
     configFrame.editBoxes.streakEnded:SetText(PSC_DB.KillStreakEndedMessage)
     configFrame.editBoxes.newStreak:SetText(PSC_DB.NewKillStreakRecordMessage)
     configFrame.editBoxes.multiKill:SetText(PSC_DB.NewMultiKillRecordMessage)
-
-    configFrame.tooltipKillInfo:SetChecked(PSC_DB.ShowTooltipKillInfo)
-
-    configFrame.killMilestone:SetChecked(PSC_DB.KillMilestoneNotificationsEnabled)
-
-    configFrame.milestoneSounds:SetChecked(PSC_DB.EnableKillMilestoneSounds)
-
-    configFrame.hideFirstKill:SetChecked(PSC_DB.ShowMilestoneForFirstKill)
-
-    configFrame.milestoneSlider:SetValue(PSC_DB.KillMilestoneAutoHideTime)
-    local sliderName = configFrame.milestoneSlider:GetName()
-    if sliderName then
-        getglobal(sliderName .. "Text"):SetText("Auto-Hide Time: " .. PSC_DB.KillMilestoneAutoHideTime .. " seconds")
-    end
-
-    configFrame.intervalSlider:SetValue(PSC_DB.KillMilestoneInterval)
-    local sliderName = configFrame.intervalSlider:GetName()
-    if sliderName then
-        getglobal(sliderName .. "Text"):SetText("Milestone Interval: Every " .. PSC_DB.KillMilestoneInterval .. " kills")
-    end
 end
 
 local function CreateTabSystem(parent)
@@ -741,14 +733,27 @@ function PKA_CreateConfigFrame()
     local currentY = -10
     local announcementHeight = CreateAnnouncementSection(tabFrames[1], currentY)
 
+    -- Copy references from the tab frame to the config frame
+    configFrame.autoBGModeCheckbox = tabFrames[1].autoBGModeCheckbox
+    configFrame.manualBGModeCheckbox = tabFrames[1].manualBGModeCheckbox
+    configFrame.tooltipKillInfoCheckbox = tabFrames[1].tooltipKillInfoCheckbox
+    configFrame.showKillMilestonesCheckbox = tabFrames[1].showKillMilestonesCheckbox
+    configFrame.killMilestoneSoundsCheckbox = tabFrames[1].killMilestoneSoundsCheckbox
+    configFrame.showMilestoneForFirstKillCheckbox = tabFrames[1].showMilestoneForFirstKillCheckbox
+    configFrame.enableKillAnnounceCheckbox = tabFrames[1].enableKillAnnounceCheckbox
+    configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
+    configFrame.enableKillSoundsCheckbox = tabFrames[1].enableKillSoundsCheckbox
+    configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
+    configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
+
     -- Messages Tab (Tab 2)
     configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
 
-    -- Reset Tab (Tab 3) - Add this section
+    -- Reset Tab (Tab 3)
     local resetButtons = CreateActionButtons(tabFrames[3])
     configFrame.resetButtons = resetButtons
 
-    -- About Tab (Tab 4) - Add new tab
+    -- About Tab (Tab 4)
     CreateAboutTab(tabFrames[4])
 
     -- Initialize first tab
