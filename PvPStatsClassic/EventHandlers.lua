@@ -744,18 +744,32 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
     if sourceGUID ~= PSC_PlayerGUID then return end
 
     local damageAmount = 0
+    local isUtilitySpell = false
 
+    -- Handle damage events
     if combatEvent == "SWING_DAMAGE" then
         damageAmount = param1 or 0
     elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
         damageAmount = param4 or 0
     elseif combatEvent == "RANGE_DAMAGE" then
         damageAmount = param4 or 0
+    elseif combatEvent == "SPELL_DISPEL" or
+           combatEvent == "SPELL_INTERRUPT" or
+           combatEvent == "SPELL_AURA_APPLIED" or
+           combatEvent == "SPELL_AURA_APPLIED_DOSE" or
+           combatEvent == "SPELL_AURA_REFRESH" or
+           combatEvent == "SPELL_AURA_REMOVED" then
+        isUtilitySpell = true
+        damageAmount = 1  -- Treat utility spells as minimal damage for assist tracking
     end
 
-    -- Only process damage to enemy players
-    if damageAmount > 0 then
+    -- Process damage or utility spell
+    if damageAmount > 0 or isUtilitySpell then
         HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, damageAmount, nil)
+
+        if isUtilitySpell and PSC_Debug then
+            print("Utility spell (" .. combatEvent .. ") on " .. destName .. " counted for assist credit")
+        end
     end
 end
 
