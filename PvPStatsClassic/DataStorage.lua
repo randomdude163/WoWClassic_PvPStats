@@ -190,9 +190,9 @@ function PSC_LoadDefaultSettings()
         yOfs=-100
     }
 
-
     PSC_DB.EnableKillAnnounceMessages = true
     PSC_DB.EnableRecordAnnounceMessages = true
+    PSC_DB.EnableMultiKillAnnounceMessages = true
     PSC_DB.EnableMultiKillSounds = true
 
     PSC_DB.KillAnnounceMessage = "Enemyplayername x# killed!"

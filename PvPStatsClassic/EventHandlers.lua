@@ -151,6 +151,7 @@ end
 local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     PSC_DB.PlayerKillCounts[nameWithLevel].kills = PSC_DB.PlayerKillCounts[nameWithLevel].kills + 1
     local timestamp = date("%Y-%m-%d %H:%M:%S")
+---@diagnostic disable-next-line: assign-type-mismatch
     PSC_DB.PlayerKillCounts[nameWithLevel].lastKill = timestamp
     PSC_DB.PlayerKillCounts[nameWithLevel].playerLevel = playerLevel
     local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
@@ -293,7 +294,8 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
 
     SendChatMessage(killMessage, "PARTY")
 
-    if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold then
+    -- Only announce multi-kills if the option is enabled
+    if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold and PSC_DB.EnableMultiKillAnnounceMessages then
         SendChatMessage(GetMultiKillText(PSC_MultiKillCount), "PARTY")
     end
 end
@@ -682,9 +684,9 @@ end
 
 
 local function CombatLogDestFlagsEnemyPlayer(destFlags)
-    -- return true
-    return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-           bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
+    return true
+    -- return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+    --        bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
 end
 
 

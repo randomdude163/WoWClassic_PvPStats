@@ -8,7 +8,7 @@ local PSC_CONFIG_HEADER_B = 0.0
 
 local HEADER_ELEMENT_SPACING = 15
 local CHECKBOX_SPACING = 5
-local FIELD_SPACING = 30
+local MESSAGE_TEXTFIELD_SPACING = 40
 
 local function ShowResetStatsConfirmation()
     StaticPopupDialogs["PSC_RESET_STATS"] = {
@@ -147,10 +147,39 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.EnableRecordAnnounceMessages, function(checked)
             PSC_DB.EnableRecordAnnounceMessages = checked
         end)
-    enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
+    enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
     parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
 
-    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -130)
+    -- Add new checkbox for multi-kill announcements
+    local enableMultiKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce multi-kills",
+        PSC_DB.EnableMultiKillAnnounceMessages, function(checked)
+            PSC_DB.EnableMultiKillAnnounceMessages = checked
+        end)
+    enableMultiKillAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "TOPLEFT", 300, 0)
+    parent.enableMultiKillAnnounceCheckbox = enableMultiKillAnnounceCheckbox
+
+    -- Add multi-kill threshold slider to the right side of announcements section
+    local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
+    slider:SetWidth(200)
+    slider:SetHeight(16)
+    slider:SetPoint("TOPLEFT", announcementSettingsHeader, "TOPLEFT", 305, -CHECKBOX_SPACING - 78)
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetMinMaxValues(2, 10)
+    slider:SetValueStep(1)
+    slider:SetValue(PSC_DB.MultiKillThreshold or 3)
+    getglobal(slider:GetName() .. "Low"):SetText("Double")
+    getglobal(slider:GetName() .. "High"):SetText("Deca")
+    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
+    parent.multiKillSlider = slider
+
+    slider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value + 0.5)
+        self:SetValue(value)
+        getglobal(self:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. value)
+        PSC_DB.MultiKillThreshold = value
+    end)
+
+    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -140)
 
     local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode",
         PSC_DB.AutoBattlegroundMode, function(checked)
@@ -203,7 +232,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     manualBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -280)
+    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -295)
 
     local showKillMilestonesCheckbox, _ = CreateCheckbox(parent,
         "Show kill milestones",
@@ -329,7 +358,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
 
-    local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -445)
+    local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -460)
 
     local enableKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
         PSC_DB.EnableMultiKillSounds, function(checked)
@@ -373,7 +402,7 @@ local function CreateMessageTemplatesSection(parent, yOffset)
             PSC_DB.KillAnnounceMessage = text
         end
     )
-    killMsgContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    killMsgContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING - 10)
 
     -- Kill message placeholder description with highlighted placeholders
     local killAnnounceMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -390,7 +419,7 @@ local function CreateMessageTemplatesSection(parent, yOffset)
             PSC_DB.KillStreakEndedMessage = text
         end
     )
-    streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
+    streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
 
     -- Streak ended message placeholder description
     local streakEndedMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -407,7 +436,7 @@ local function CreateMessageTemplatesSection(parent, yOffset)
             PSC_DB.NewKillStreakRecordMessage = text
         end
     )
-    newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
+    newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
 
     -- New streak record message placeholder description
     local newStreakMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -424,7 +453,7 @@ local function CreateMessageTemplatesSection(parent, yOffset)
             PSC_DB.NewMultiKillRecordMessage = text
         end
     )
-    multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
+    multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
 
     -- Multi-kill record message placeholder description
     local multiKillMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -432,37 +461,12 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     multiKillMessageDesc:SetText("Placeholder: |cFFFFFFFFMULTIKILLTEXT|r for the multi-kill description ('Double-Kill', 'Triple-Kill', etc).")
     multiKillMessageDesc:SetJustifyH("LEFT")
 
-    -- Add section header for Multi-Kill settings
-    local multiKillHeader = CreateSectionHeader(parent, "Multi-Kill Announcements", 20, -390)
-
-    -- Add the threshold slider and description
-    local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
-    slider:SetWidth(200)
-    slider:SetHeight(16)
-    slider:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 5, -30)
-    slider:SetOrientation("HORIZONTAL")
-    slider:SetMinMaxValues(2, 10)
-    slider:SetValueStep(1)
-    slider:SetValue(PSC_DB.MultiKillThreshold or 3)
-    getglobal(slider:GetName() .. "Low"):SetText("Double")
-    getglobal(slider:GetName() .. "High"):SetText("Deca")
-    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
-    parent.multiKillSlider = slider
-
-    slider:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value + 0.5)
-        self:SetValue(value)
-        getglobal(self:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. value)
-        PSC_DB.MultiKillThreshold = value
-    end)
-
     -- Return UI elements for potential updates
     return {
         killMsg = killMsgEditBox,
         streakEnded = streakEndedEditBox,
         newStreak = newStreakEditBox,
         multiKill = multiKillEditBox,
-        multiKillSlider = slider,
     }
 end
 
@@ -529,9 +533,11 @@ function PSC_UpdateConfigUI()
     configFrame.showMilestoneForFirstKillCheckbox:SetChecked(PSC_DB.ShowMilestoneForFirstKill)
     configFrame.enableKillAnnounceCheckbox:SetChecked(PSC_DB.EnableKillAnnounceMessages)
     configFrame.enableRecordAnnounceCheckbox:SetChecked(PSC_DB.EnableRecordAnnounceMessages)
+    configFrame.enableMultiKillAnnounceCheckbox:SetChecked(PSC_DB.EnableMultiKillAnnounceMessages)
     configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
 
-    -- Update multi-kill slider
+
+    -- Update multi-kill slider in its new location (General tab)
     if configFrame.multiKillSlider and configFrame.multiKillSlider:GetName() then
         configFrame.multiKillSlider:SetValue(PSC_DB.MultiKillThreshold or 3)
         getglobal(configFrame.multiKillSlider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
@@ -775,9 +781,11 @@ function PSC_CreateConfigFrame()
     configFrame.showMilestoneForFirstKillCheckbox = tabFrames[1].showMilestoneForFirstKillCheckbox
     configFrame.enableKillAnnounceCheckbox = tabFrames[1].enableKillAnnounceCheckbox
     configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
+    configFrame.enableMultiKillAnnounceCheckbox = tabFrames[1].enableMultiKillAnnounceCheckbox
     configFrame.enableKillSoundsCheckbox = tabFrames[1].enableKillSoundsCheckbox
     configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
     configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
+    configFrame.multiKillSlider = tabFrames[1].multiKillSlider
 
     -- Messages Tab (Tab 2)
     configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)

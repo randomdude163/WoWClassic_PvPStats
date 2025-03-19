@@ -347,6 +347,7 @@ local function FilterAndSortEntries()
                 local nameLower = nameWithoutLevel:lower()
                 local guildLower = guild:lower()
 
+---@diagnostic disable-next-line: cast-local-type
                 searchMatch = nameLower:find(searchText, 1, true) or
                              (guild ~= "" and guildLower:find(searchText, 1, true))
             end
@@ -364,11 +365,13 @@ local function FilterAndSortEntries()
 
             -- Class filter
             if classSearchText ~= "" then
+---@diagnostic disable-next-line: cast-local-type
                 classMatch = class:lower():find(classSearchText:lower(), 1, true)
             end
 
             -- Race filter
             if raceSearchText ~= "" then
+---@diagnostic disable-next-line: cast-local-type
                 raceMatch = race:lower():find(raceSearchText:lower(), 1, true)
             end
 
@@ -385,12 +388,14 @@ local function FilterAndSortEntries()
                 elseif compareText == "u" or compareText == "unknown" or compareText == "?" then
                     genderMatch = (genderLower == "unknown")
                 else
+---@diagnostic disable-next-line: cast-local-type
                     genderMatch = genderLower:find(compareText, 1, true)
                 end
             end
 
             -- Zone filter
             if zoneSearchText ~= "" then
+---@diagnostic disable-next-line: cast-local-type
                 zoneMatch = (data.zone or "Unknown"):lower():find(zoneSearchText:lower(), 1, true)
             end
 
