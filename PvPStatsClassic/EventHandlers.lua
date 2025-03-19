@@ -267,15 +267,24 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
 
     local killMessage = string.gsub(PSC_DB.KillAnnounceMessage, "Enemyplayername", killedPlayer)
 
+    local killCount = PSC_DB.PlayerKillCounts[nameWithLevel].kills
+    if string.find(killMessage, "x#") then
+        if killCount >= 2 then
+            killMessage = string.gsub(killMessage, "x#", "x" .. killCount)
+        else
+            killMessage = string.gsub(killMessage, "x#", "")
+            killMessage = string.gsub(killMessage, "%s+", " ")
+            killMessage = string.gsub(killMessage, "%s+$", "")
+        end
+    elseif killCount >= 2 then
+        killMessage = killMessage .. " x" .. killCount
+    end
+
     local levelDifference = level - playerLevel
     local levelDisplay = level == -1 and "??" or tostring(level)
 
     if level == -1 or (level > 0 and levelDifference >= 6) then
         killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
-    end
-
-    if PSC_DB.PlayerKillCounts[nameWithLevel].kills >= 2 then
-        killMessage = killMessage .. " x" .. PSC_DB.PlayerKillCounts[nameWithLevel].kills
     end
 
     if PSC_DB.CurrentKillStreak >= 10 and PSC_DB.CurrentKillStreak % 5 == 0 then
@@ -466,11 +475,12 @@ local function SimulatePlayerKills(killCount)
     PSC_Print("Registering " .. killCount .. " random test kill(s)...")
 
     local randomNames = {
-        "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter", "Campmaster",
-        "Roguenstein", "Sneakattack", "Huntard", "Faceroller", "Dotspammer",
-        "Moonbender", "Healnoob", "Ragequitter", "Imbalanced", "Critmaster",
-        "Zerglord", "Epicfail", "Oneshot", "Griefer", "Farmville",
-        "Stunlock", "Procmaster", "Noobslayer", "Bodycamper", "Flagrunner"
+        "Testplayer"
+        -- "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter", "Campmaster",
+        -- "Roguenstein", "Sneakattack", "Huntard", "Faceroller", "Dotspammer",
+        -- "Moonbender", "Healnoob", "Ragequitter", "Imbalanced", "Critmaster",
+        -- "Zerglord", "Epicfail", "Oneshot", "Griefer", "Farmville",
+        -- "Stunlock", "Procmaster", "Noobslayer", "Bodycamper", "Flagrunner"
     }
 
     local randomGuilds = {
@@ -552,6 +562,7 @@ local function SimulatePlayerKills(killCount)
         end
 
         -- Register the kill with random data including rank
+        randomLevel = 60
         PSC_StorePlayerInfo(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, randomRank)
         RegisterPlayerKill(randomName)
 
@@ -671,9 +682,9 @@ end
 
 
 local function CombatLogDestFlagsEnemyPlayer(destFlags)
-    return true
-    -- return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-    --        bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
+    -- return true
+    return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+           bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
 end
 
 
@@ -767,9 +778,9 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
     if damageAmount > 0 or isUtilitySpell then
         HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, damageAmount, nil)
 
-        if isUtilitySpell and PSC_Debug then
-            print("Utility spell (" .. combatEvent .. ") on " .. destName .. " counted for assist credit")
-        end
+        -- if isUtilitySpell and PSC_Debug then
+        --     print("Utility spell (" .. combatEvent .. ") on " .. destName .. " counted for assist credit")
+        -- end
     end
 end
 
