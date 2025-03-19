@@ -694,7 +694,6 @@ local function gatherStatistics()
     for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
         if data then
             local nameWithoutLevel = nameWithLevel:match("([^:]+)")
-            print(nameWithoutLevel)
             local class = PSC_DB.PlayerInfoCache[nameWithoutLevel].class
             classData[class] = (classData[class] or 0) + 1
 
