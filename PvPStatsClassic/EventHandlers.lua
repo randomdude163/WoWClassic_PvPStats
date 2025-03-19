@@ -249,6 +249,11 @@ local function GetMultiKillText(count)
 end
 
 local function UpdateMultiKill()
+    if not inCombat then
+        PSC_MultiKillCount = 0
+        return
+    end
+
     PSC_MultiKillCount = PSC_MultiKillCount + 1
 
     -- Play sound based on kill count if enabled
