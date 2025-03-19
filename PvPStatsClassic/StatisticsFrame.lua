@@ -1,13 +1,13 @@
-if not PKA_ActiveFrameLevel then
-    PKA_ActiveFrameLevel = 100
+local statisticsFrame = nil
+
+if not PSC_ActiveFrameLevel then
+    PSC_ActiveFrameLevel = 100
 end
 
--- Add this helper function at the top of StatisticsFrame.lua
 local function CreateGoldHighlight(parent, height)
     local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
     highlight:SetAllPoints(true)
 
-    -- Check if SetGradient with table parameters is available (newer API)
     local useNewAPI = highlight.SetGradient and
                       type(highlight.SetGradient) == "function" and
                       pcall(function()
@@ -16,7 +16,6 @@ local function CreateGoldHighlight(parent, height)
                       end)
 
     if useNewAPI then
-        -- Use the newer API version with table parameters (WoW 10.0+)
         highlight:SetColorTexture(1, 0.82, 0, 0.6)  -- Significantly increased alpha
         -- Try to set gradient in a safe way
         pcall(function()
@@ -26,8 +25,6 @@ local function CreateGoldHighlight(parent, height)
             )
         end)
     else
-        -- For older clients, create two separate textures for the gradient
-        -- First, clear the main highlight
         highlight:SetColorTexture(1, 0.82, 0, 0.5)  -- Increased from 0 to 0.5
 
         -- Create left half with gradient fade in
@@ -80,14 +77,6 @@ local function CreateGoldHighlight(parent, height)
 
     return highlight
 end
-
--- Get next frame level and increment the counter
-local function PKA_GetNextFrameLevel()
-    PKA_ActiveFrameLevel = PKA_ActiveFrameLevel + 10
-    return PKA_ActiveFrameLevel
-end
-
-local statsFrame = nil
 
 local UI = {
     FRAME = { WIDTH = 850, HEIGHT = 680 },
@@ -282,34 +271,34 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     -- Add click handler
     barButton:SetScript("OnClick", function()
         -- First open the kills list frame
-        PKA_CreateKillStatsFrame()
+        PSC_CreateKillStatsFrame()
 
         -- Wait a short time to ensure the frame is created and registered
         C_Timer.After(0.05, function()
             -- Set appropriate search text based on bar type
             if titleType == "class" or titleType == "unknownLevelClass" then
-                PKA_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
+                PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
             elseif titleType == "zone" then
-                PKA_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
+                PSC_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
             elseif titleType == "level" then
                 if entry.key == "??" then
                     -- Special handling for unknown level - explicitly set to -1
-                    PKA_SetKillListLevelRange(-1, -1, true)
+                    PSC_SetKillListLevelRange(-1, -1, true)
                 else
                     -- Individual level filter
                     local level = tonumber(entry.key)
                     if level then
-                        PKA_SetKillListLevelRange(level, level, true)
+                        PSC_SetKillListLevelRange(level, level, true)
                     end
                 end
             elseif titleType == raceColors then
-                PKA_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
+                PSC_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
             elseif titleType == genderColors then
-                PKA_SetKillListSearch("", nil, nil, nil, entry.key, nil, true)
+                PSC_SetKillListSearch("", nil, nil, nil, entry.key, nil, true)
             end
 
             -- Ensure the kills list frame is in front
-            PKA_FrameManager:BringToFront("KillsList")
+            PSC_FrameManager:BringToFront("KillsList")
         end)
     end)
 
@@ -453,16 +442,17 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     -- Add click handler for guild rows
     rowButton:SetScript("OnClick", function()
         -- First open the kills list frame
-        PKA_CreateKillStatsFrame()
+        PSC_CreateKillStatsFrame()
 
         -- Ensure it's on top
-        if killStatsFrame then
+        if PSC_KillsListFrame then
             -- Keep DIALOG strata but ensure higher frame level
-            killStatsFrame:SetFrameLevel(statsFrame:GetFrameLevel() + 10)
+---@diagnostic disable-next-line: need-check-nil, undefined-field
+            PSC_KillsListFrame:SetFrameLevel(statisticsFrame:GetFrameLevel() + 10)
         end
 
         -- Then use our function to set the search text, reset other filters
-        PKA_SetKillListSearch(guildName, nil, nil, nil, nil, nil, true)
+        PSC_SetKillListSearch(guildName, nil, nil, nil, nil, nil, true)
     end)
 
     local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -498,14 +488,11 @@ local function createGuildTable(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Guild Kills", x, y, width, height)
 
     local guildKills = {}
-    if PKA_KillCounts then
-        for _, data in pairs(PKA_KillCounts) do
-            if data then
-                local guild = data.guild or ""
-                -- Only count players who are in a guild
-                if guild ~= "" then
-                    guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
-                end
+    for _, data in pairs(PSC_DB.PlayerKillCounts) do
+        if data then
+            local guild = data.guild or ""
+            if guild ~= "" then
+                guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
             end
         end
     end
@@ -557,6 +544,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
         if label == "Most Killed Player:" then
             -- Create a button-like appearance
             local button = CreateFrame("Button", nil, tooltipFrame)
+---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
 
             -- Create gold highlight with gradient fade effect
@@ -566,10 +554,10 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             button:SetScript("OnMouseUp", function()
                 if value ~= "None (0)" then
                     local playerName = value:match("([^%(]+)"):trim()
-                    PKA_CreateKillStatsFrame()
+                    PSC_CreateKillStatsFrame()
                     C_Timer.After(0.05, function()
-                        PKA_SetKillListSearch(playerName, nil, nil, nil, nil, nil, true)
-                        PKA_FrameManager:BringToFront("KillsList")
+                        PSC_SetKillListSearch(playerName, nil, nil, nil, nil, nil, true)
+                        PSC_FrameManager:BringToFront("KillsList")
                     end)
                 end
             end)
@@ -579,16 +567,68 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     return yPosition - 20
 end
 
--- Replace this function to remove the credits section
-local function addCreditsSection(container, yPosition)
-    -- Credits have been moved to the Config UI About tab
-    -- This function remains as a stub to avoid breaking references
+
+local function calculateStatistics()
+    local totalKills = 0
+    local uniqueKills = 0
+    local totalLevels = 0
+    local totalPlayerLevels = 0
+    local killsWithLevelData = 0
+    local unknownLevelKills = 0
+    local mostKilledPlayer = nil
+    local mostKilledCount = 0
+
+    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
+        if data then
+            uniqueKills = uniqueKills + 1
+            local kills = data.kills or 0
+            totalKills = totalKills + kills
+
+            -- Track most killed player
+            if kills > mostKilledCount then
+                local playerName = nameWithLevel:match("([^:]+)")
+                mostKilledPlayer = playerName
+                mostKilledCount = kills
+            end
+
+            local level = nameWithLevel:match(":(%S+)")
+            local levelNum = tonumber(level or "0") or 0
+
+            if levelNum == -1 then
+                unknownLevelKills = unknownLevelKills + kills
+            else
+                totalLevels = totalLevels + levelNum * kills
+            end
+
+            if data.playerLevel then
+                totalPlayerLevels = totalPlayerLevels + (data.playerLevel * kills)
+                killsWithLevelData = killsWithLevelData + kills
+            end
+        end
+    end
+
+    local knownLevelKills = totalKills - unknownLevelKills
+    local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
+    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData) or UnitLevel("player")
+    local avgLevelDiff = avgPlayerLevel - avgLevel
+    local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
+
+    return {
+        totalKills = totalKills,
+        uniqueKills = uniqueKills,
+        unknownLevelKills = unknownLevelKills,
+        avgLevel = avgLevel,
+        avgPlayerLevel = avgPlayerLevel,
+        avgLevelDiff = avgLevelDiff,
+        avgKillsPerPlayer = avgKillsPerPlayer,
+        mostKilledPlayer = mostKilledPlayer or "None",
+        mostKilledCount = mostKilledCount
+    }
 end
 
 local function createSummaryStats(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
-    -- Call the global calculateStatistics function
     local stats = calculateStatistics()
     local statY = -30
 
@@ -613,13 +653,15 @@ local function createSummaryStats(parent, x, y, width, height)
     if stats.mostKilledPlayer ~= "None" then
         local tooltipFrame = container:GetChildren()
         for _, child in pairs({container:GetChildren()}) do
+---@diagnostic disable-next-line: undefined-field
             if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
                 -- This is likely our tooltip frame for the most killed player
+---@diagnostic disable-next-line: undefined-field
                 child:SetScript("OnMouseUp", function()
-                    PKA_CreateKillStatsFrame()
+                    PSC_CreateKillStatsFrame()
                     C_Timer.After(0.05, function()
-                        PKA_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
-                        PKA_FrameManager:BringToFront("KillsList")
+                        PSC_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
+                        PSC_FrameManager:BringToFront("KillsList")
                     end)
                 end)
                 break
@@ -627,136 +669,15 @@ local function createSummaryStats(parent, x, y, width, height)
         end
     end
 
-    statY = addSummaryStatLine(container, "Current Kill Streak:", PKA_CurrentKillStreak or 0, statY,
+    statY = addSummaryStatLine(container, "Current Kill Streak:", PSC_DB.CurrentKillStreak or 0, statY,
         "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Kill Streak:", PKA_HighestKillStreak or 0, statY,
+    statY = addSummaryStatLine(container, "Highest Kill Streak:", PSC_DB.HighestKillStreak or 0, statY,
         "This record persists through logouts and can only be reset manually through the Reset tab in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Multi-Kill:", PKA_HighestMultiKill or 0, statY)
+    statY = addSummaryStatLine(container, "Highest Multi-Kill:", PSC_DB.HighestMultiKill or 0, statY)
 
     return container
 end
 
--- Move calculateStatistics to the top as a global function
-function calculateStatistics()
-    local totalKills = 0
-    local uniqueKills = 0
-    local totalLevels = 0
-    local totalPlayerLevels = 0
-    local killsWithLevelData = 0
-    local unknownLevelKills = 0
-    local mostKilledPlayer = nil
-    local mostKilledCount = 0
-
-    if PKA_KillCounts then
-        for nameWithLevel, data in pairs(PKA_KillCounts) do
-            if data then
-                uniqueKills = uniqueKills + 1
-                local kills = data.kills or 0
-                totalKills = totalKills + kills
-
-                -- Track most killed player
-                if kills > mostKilledCount then
-                    local playerName = nameWithLevel:match("([^:]+)")
-                    mostKilledPlayer = playerName
-                    mostKilledCount = kills
-                end
-
-                local level = nameWithLevel:match(":(%S+)")
-                local levelNum = tonumber(level or "0") or 0
-
-                if levelNum == -1 then
-                    unknownLevelKills = unknownLevelKills + kills
-                else
-                    totalLevels = totalLevels + levelNum * kills
-                end
-
-                if data.playerLevel then
-                    totalPlayerLevels = totalPlayerLevels + (data.playerLevel * kills)
-                    killsWithLevelData = killsWithLevelData + kills
-                end
-            end
-        end
-    end
-
-    local knownLevelKills = totalKills - unknownLevelKills
-    local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
-    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData) or UnitLevel("player")
-    local avgLevelDiff = avgPlayerLevel - avgLevel
-    local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
-
-    return {
-        totalKills = totalKills,
-        uniqueKills = uniqueKills,
-        unknownLevelKills = unknownLevelKills,
-        avgLevel = avgLevel,
-        avgPlayerLevel = avgPlayerLevel,
-        avgLevelDiff = avgLevelDiff,
-        avgKillsPerPlayer = avgKillsPerPlayer,
-        mostKilledPlayer = mostKilledPlayer or "None",
-        mostKilledCount = mostKilledCount
-    }
-end
-
--- Update the calculateStatistics function to include most killed player
-local function calculateStatistics()
-    local totalKills = 0
-    local uniqueKills = 0
-    local totalLevels = 0
-    local totalPlayerLevels = 0
-    local killsWithLevelData = 0
-    local unknownLevelKills = 0
-    local mostKilledPlayer = nil
-    local mostKilledCount = 0
-
-    if PKA_KillCounts then
-        for nameWithLevel, data in pairs(PKA_KillCounts) do
-            if data then
-                uniqueKills = uniqueKills + 1
-                local kills = data.kills or 0
-                totalKills = totalKills + kills
-
-                -- Track most killed player
-                if kills > mostKilledCount then
-                    local playerName = nameWithLevel:match("([^:]+)")
-                    mostKilledPlayer = playerName
-                    mostKilledCount = kills
-                end
-
-                local level = nameWithLevel:match(":(%S+)")
-                local levelNum = tonumber(level or "0") or 0
-
-                if levelNum == -1 then
-                    unknownLevelKills = unknownLevelKills + kills
-                else
-                    totalLevels = totalLevels + levelNum * kills
-                end
-
-                if data.playerLevel then
-                    totalPlayerLevels = totalPlayerLevels + (data.playerLevel * kills)
-                    killsWithLevelData = killsWithLevelData + kills
-                end
-            end
-        end
-    end
-
-    local knownLevelKills = totalKills - unknownLevelKills
-    local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
-    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData) or UnitLevel("player")
-    local avgLevelDiff = avgPlayerLevel - avgLevel
-    local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
-
-    return {
-        totalKills = totalKills,
-        uniqueKills = uniqueKills,
-        unknownLevelKills = unknownLevelKills,
-        avgLevel = avgLevel,
-        avgPlayerLevel = avgPlayerLevel,
-        avgLevelDiff = avgLevelDiff,
-        avgKillsPerPlayer = avgKillsPerPlayer,
-        mostKilledPlayer = mostKilledPlayer or "None",
-        mostKilledCount = mostKilledCount
-    }
-end
 
 -- Update the gatherStatistics function to remove unknownLevel check
 local function gatherStatistics()
@@ -771,11 +692,7 @@ local function gatherStatistics()
         ["No Guild"] = 0
     }
 
-    if not PKA_KillCounts then
-        return {}, {}, {}, {}, {}, {}, {}  -- Add an extra return value
-    end
-
-    for nameWithLevel, data in pairs(PKA_KillCounts) do
+    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
         if data then
             local class = data.class or "Unknown"
             classData[class] = (classData[class] or 0) + 1
@@ -851,14 +768,14 @@ local function createScrollableLeftPanel(parent)
 end
 
 local function setupMainFrame()
-    local frame = CreateFrame("Frame", "PKAStatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "PSC_StatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(UI.FRAME.WIDTH, UI.FRAME.HEIGHT)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
 
-    tinsert(UISpecialFrames, "PKAStatisticsFrame")
+    tinsert(UISpecialFrames, "PSC_StatisticsFrame")
 
     frame:EnableKeyboard(true)
     frame:SetPropagateKeyboardInput(true)
@@ -875,7 +792,7 @@ local function setupMainFrame()
         frame:Hide()
     end)
 
-    frame.TitleText:SetText("Player Kill Statistics")
+    frame.TitleText:SetText("PvP Statistics")
 
     -- Add a vertical separator line
     local separator = frame:CreateTexture(nil, "ARTWORK")
@@ -887,16 +804,14 @@ local function setupMainFrame()
     return frame
 end
 
-local function hasEnoughData()
+local function enoughPlayerKillsRecorded()
     local totalKills = 0
     local uniqueKills = 0
 
-    if PKA_KillCounts then
-        for _, data in pairs(PKA_KillCounts) do
-            if data then
-                uniqueKills = uniqueKills + 1
-                totalKills = totalKills + (data.kills or 1)
-            end
+    for _, data in pairs(PSC_DB.PlayerKillCounts) do
+        if data then
+            uniqueKills = uniqueKills + 1
+            totalKills = totalKills + (data.kills or 1)
         end
     end
 
@@ -904,7 +819,7 @@ local function hasEnoughData()
 end
 
 local function createEmptyStatsFrame()
-    local frame = CreateFrame("Frame", "PKAStatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "PSC_StatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(UI.FRAME.WIDTH, 200)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
@@ -914,7 +829,7 @@ local function createEmptyStatsFrame()
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
     -- Remove this as it's handled by the frame manager now
-    -- tinsert(UISpecialFrames, "PKAStatisticsFrame")
+    -- tinsert(UISpecialFrames, "PSC_StatisticsFrame")
 
     frame.TitleText:SetText("Player Kill Statistics")
 
@@ -928,42 +843,36 @@ local function createEmptyStatsFrame()
 end
 
 -- Modify the createStatisticsFrame function to include the new chart
-function PKA_CreateStatisticsFrame()
-    -- Check if we should destroy and recreate the frame based on data status
-    local hasData = hasEnoughData()
-
-    -- Always recreate the frame when it's reopened to prevent crashes
-    if statsFrame then
-        statsFrame:Hide()
-        PKA_FrameManager:HideFrame("Statistics")
-        statsFrame = nil
+function PSC_CreateStatisticsFrame()
+    if statisticsFrame then
+        statisticsFrame:Hide()
+        PSC_FrameManager:HideFrame("Statistics")
+        statisticsFrame = nil
     end
 
     -- Remove from UISpecialFrames if present
     for i = #UISpecialFrames, 1, -1 do
-        if (UISpecialFrames[i] == "PKAStatisticsFrame") then
+        if (UISpecialFrames[i] == "PSC_StatisticsFrame") then
             table.remove(UISpecialFrames, i)
             break
         end
     end
 
-    if not hasData then
-        statsFrame = createEmptyStatsFrame()
-        PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
+    if not enoughPlayerKillsRecorded() then
+        statisticsFrame = createEmptyStatsFrame()
+        PSC_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
         return
     end
 
-    -- Create the main statistics frame
-    statsFrame = setupMainFrame()
-    statsFrame:SetScript("OnKeyDown", nil) -- Remove ESC key handling from setupMainFrame
-    PKA_FrameManager:RegisterFrame(statsFrame, "Statistics")
+    statisticsFrame = setupMainFrame()
+    statisticsFrame:SetScript("OnKeyDown", nil) -- Remove ESC key handling from setupMainFrame
+    PSC_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
 
-    -- Fill the frame with content
-    PKA_UpdateStatisticsFrame(statsFrame)
+    PSC_UpdateStatisticsFrame(statisticsFrame)
 end
 
 -- New function to update statistics frame content
-function PKA_UpdateStatisticsFrame(frame)
+function PSC_UpdateStatisticsFrame(frame)
     if not frame then return end
 
     -- Clear existing content if any

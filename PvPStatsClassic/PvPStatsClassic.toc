@@ -1,8 +1,8 @@
 ## Interface: 11506
 ## Title: PvP Stats Classic
 ## Author: Severussnipe, Hkfarmer <Redridge Police>
-## Notes: Announces player kills in party chat.
-## SavedVariables: PlayerKillAnnounceDB
+## Notes: Tracks PvP kills and provides detailed statistics.
+## SavedVariables: PSC_DB
 FrameManager.lua
 EventHandlers.lua
 DataStorage.lua

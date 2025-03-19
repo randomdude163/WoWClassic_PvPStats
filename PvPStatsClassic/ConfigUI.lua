@@ -2,44 +2,16 @@
 -- This adds a graphical user interface for all settings of the addon
 local configFrame = nil
 
--- Add this near other default settings
-PKA_ShowTooltipKillInfo = true -- New default setting
-PKA_EnableMilestoneSounds = true -- Default enabled
-PKA_HideFirstKillMilestone = false -- Default disabled
+local PSC_CONFIG_HEADER_R = 1.0
+local PSC_CONFIG_HEADER_G = 0.82
+local PSC_CONFIG_HEADER_B = 0.0
 
--- Default messages as fallbacks
-local PlayerKillMessageDefault = PlayerKillMessageDefault or "Enemyplayername killed!"
-local KillStreakEndedMessageDefault = KillStreakEndedMessageDefault or "My kill streak of STREAKCOUNT has ended!"
-local NewStreakRecordMessageDefault = NewStreakRecordMessageDefault or "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
-local NewMultiKillRecordMessageDefault = NewMultiKillRecordMessageDefault or
-    "NEW PERSONAL BEST: MULTIKILLTEXT!"
-
-local PKA_CONFIG_HEADER_R = 1.0
-local PKA_CONFIG_HEADER_G = 0.82
-local PKA_CONFIG_HEADER_B = 0.0
-
-local SECTION_TOP_MARGIN = 30
-local SECTION_SPACING = 40
 local HEADER_ELEMENT_SPACING = 15
 local CHECKBOX_SPACING = 5
 local FIELD_SPACING = 5
-local BUTTON_BOTTOM_MARGIN = 20
-
-PKA_EnableKillSounds = true
-
-
-local function ResetAllStatsToDefault()
-    PKA_CurrentKillStreak = 0
-    PKA_HighestKillStreak = 0
-    PKA_MultiKillCount = 0
-    PKA_HighestMultiKill = 0
-    PKA_KillCounts = {}
-    PKA_SaveSettings()
-    print("All kill statistics have been reset!")
-end
 
 local function ShowResetStatsConfirmation()
-    StaticPopupDialogs["PKA_RESET_STATS"] = {
+    StaticPopupDialogs["PSC_RESET_STATS"] = {
         text = "Are you sure you want to reset all kill statistics? This cannot be undone.",
         button1 = "Yes",
         button2 = "No",
@@ -50,36 +22,16 @@ local function ShowResetStatsConfirmation()
         whileDead = true,
         hideOnEscape = true,
     }
-    StaticPopup_Show("PKA_RESET_STATS")
+    StaticPopup_Show("PSC_RESET_STATS")
 end
 
 local function ResetAllSettingsToDefault()
-    PKA_KillAnnounceMessage = PlayerKillMessageDefault
-    PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault
-    PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault
-    PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault
-    PKA_EnableKillAnnounce = true
-    PKA_EnableRecordAnnounce = true
-    PKA_MultiKillThreshold = 3
-    PKA_ShowTooltipKillInfo = true
-
-    -- Reset Kill Milestone settings
-    PKA_KillMilestoneNotificationsEnabled = true
-    PKA_MilestoneAutoHideTime = 5
-    PKA_MilestoneInterval = 5
-
-    -- Update UI with reset values
-    if configFrame then
-        PKA_UpdateConfigUI()
-    end
-
-    PKA_SaveSettings()
+    PSC_LoadDefaultSettings()
     ReloadUI()
-    print("All settings have been reset to default values!")
 end
 
 local function ShowResetDefaultsConfirmation()
-    StaticPopupDialogs["PKA_RESET_DEFAULTS"] = {
+    StaticPopupDialogs["PSC_RESET_DEFAULTS"] = {
         text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
         button1 = "Yes",
         button2 = "No",
@@ -90,14 +42,14 @@ local function ShowResetDefaultsConfirmation()
         whileDead = true,
         hideOnEscape = true,
     }
-    StaticPopup_Show("PKA_RESET_DEFAULTS")
+    StaticPopup_Show("PSC_RESET_DEFAULTS")
 end
 
 local function CreateSectionHeader(parent, text, xOffset, yOffset)
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
     header:SetText(text)
-    header:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
+    header:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
 
     local line = parent:CreateTexture(nil, "ARTWORK")
@@ -105,7 +57,7 @@ local function CreateSectionHeader(parent, text, xOffset, yOffset)
     line:SetSize(parent:GetWidth() - (xOffset * 2), 1)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.7)
 
-    return header, line
+    return header
 end
 
 local function CreateInputField(parent, labelText, width, initialValue, onTextChangedFunc)
@@ -180,36 +132,20 @@ local function CreateButton(parent, text, width, height, onClickFunc)
     return button
 end
 
-local function EnsureDefaultValues()
-    if not PKA_KillAnnounceMessage then PKA_KillAnnounceMessage = PlayerKillMessageDefault end
-    if not PKA_KillStreakEndedMessage then PKA_KillStreakEndedMessage = KillStreakEndedMessageDefault end
-    if not PKA_NewStreakRecordMessage then PKA_NewStreakRecordMessage = NewStreakRecordMessageDefault end
-    if not PKA_NewMultiKillRecordMessage then PKA_NewMultiKillRecordMessage = NewMultiKillRecordMessageDefault end
-    if PKA_EnableKillAnnounce == nil then PKA_EnableKillAnnounce = true end
-    if PKA_EnableRecordAnnounce == nil then PKA_EnableRecordAnnounce = true end
-    if PKA_MultiKillThreshold == nil then PKA_MultiKillThreshold = 3 end
-    if PKA_ShowTooltipKillInfo == nil then PKA_ShowTooltipKillInfo = true end
-    if PKA_EnableMilestoneSounds == nil then PKA_EnableMilestoneSounds = true end
-    if PKA_HideFirstKillMilestone == nil then PKA_HideFirstKillMilestone = false end
-end
-
 -- Update the config UI to use the new name and add the milestone interval slider
 local function CreateAnnouncementSection(parent, yOffset)
-    local header, line = CreateSectionHeader(parent, "Announcement Settings", 20, yOffset)
-    local currentY = yOffset
+    local header = CreateSectionHeader(parent, "Announcement Settings", 20, yOffset)
 
     -- Auto BG Mode checkbox with tooltip
-    local autoBGMode, autoBGModeLabel = CreateCheckbox(parent, "Auto Battleground Mode (No announcements, only your own killing blows are tracked)",
-        PKA_AutoBattlegroundMode, function(checked)
-            PKA_AutoBattlegroundMode = checked
-            PKA_SaveSettings()
-            PKA_CheckBattlegroundStatus()
+    local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode (No announcements, only your own killing blows are tracked)",
+        PSC_DB.AutoBattlegroundMode, function(checked)
+            PSC_DB.AutoBattlegroundMode = checked
+            PSC_CheckBattlegroundStatus()
         end)
-    autoBGMode:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
-    parent.autoBGMode = autoBGMode
+    autoBGModeCheckbox:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    parent.autoBGModeCheckbox = autoBGModeCheckbox
 
-    -- Add tooltip for Auto BG Mode
-    autoBGMode:SetScript("OnEnter", function(self)
+    autoBGModeCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Auto Battleground Mode")
         GameTooltip:AddLine("Automatically detects when you enter battlegrounds.", 1, 1, 1, true)
@@ -218,19 +154,17 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("• No messages are posted to group chat", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    autoBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    autoBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local manualBGMode, manualBGModeLabel = CreateCheckbox(parent, "Force Enable Battleground Mode",
-        PKA_BattlegroundMode, function(checked)
-            PKA_BattlegroundMode = checked
-            PKA_SaveSettings()
-            PKA_CheckBattlegroundStatus()
+    local manualBGModeCheckbox, _ = CreateCheckbox(parent, "Force Enable Battleground Mode",
+        PSC_DB.ForceBattlegroundMode, function(checked)
+            PSC_DB.ForceBattlegroundMode = checked
+            PSC_CheckBattlegroundStatus()
         end)
-    manualBGMode:SetPoint("TOPLEFT", autoBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.manualBGMode = manualBGMode
+    manualBGModeCheckbox:SetPoint("TOPLEFT", autoBGModeCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.manualBGModeCheckbox = manualBGModeCheckbox
 
-    -- Add tooltip for manual BG Mode
-    manualBGMode:SetScript("OnEnter", function(self)
+    manualBGModeCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Force Battleground Mode")
         GameTooltip:AddLine("Enable battleground conditions anywhere in the world.", 1, 1, 1, true)
@@ -239,131 +173,115 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("• Prevents chat spam in crowded PvP situations", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    manualBGMode:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    manualBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Add tooltip checkbox right after battleground mode
-    local tooltipKillInfo, tooltipKillInfoLabel = CreateCheckbox(parent,
-        "Show kill statistics in enemy player tooltips",
-        PKA_ShowTooltipKillInfo,
+    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent,
+        "Show kills in mouseover tooltips",
+        PSC_DB.ShowTooltipKillInfo,
         function(checked)
-            PKA_ShowTooltipKillInfo = checked
-            PKA_SaveSettings()
+            PSC_DB.ShowTooltipKillInfo = checked
         end)
-    tooltipKillInfo:SetPoint("TOPLEFT", manualBGMode, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.tooltipKillInfo = tooltipKillInfo
+    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", manualBGModeCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
 
-    -- Add tooltip explanation
-    tooltipKillInfo:SetScript("OnEnter", function(self)
+    tooltipKillInfoCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Enemy Player Tooltips")
         GameTooltip:AddLine("Shows how often you killed players while you mouseover them.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    tooltipKillInfo:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    tooltipKillInfoCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Add Kill Milestone checkbox (renamed from Last Kill Preview)
-    local killMilestone, killMilestoneLabel = CreateCheckbox(parent,
+    local showKillMilestonesCheckbox, _ = CreateCheckbox(parent,
         "Show kill milestones",
-        PKA_KillMilestoneNotificationsEnabled,
+        PSC_DB.ShowKillMilestones,
         function(checked)
-            PKA_KillMilestoneNotificationsEnabled = checked
-            PKA_SaveSettings()
+            PSC_DB.ShowKillMilestones = checked
         end)
-    killMilestone:SetPoint("TOPLEFT", tooltipKillInfo, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.killMilestone = killMilestone
+    showKillMilestonesCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.showKillMilestonesCheckbox = showKillMilestonesCheckbox
 
-    -- Add tooltip explanation for Kill Milestone
-    killMilestone:SetScript("OnEnter", function(self)
+    showKillMilestonesCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Kill Milestone")
         GameTooltip:AddLine("Shows movable notification for kill milestones.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    killMilestone:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    showKillMilestonesCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- NEW: Add milestone sound checkbox
-    local milestoneSounds, milestoneSoundsLabel = CreateCheckbox(parent,
+    local killMilestoneSoundsCheckbox, _ = CreateCheckbox(parent,
         "Play milestone sound effects",
-        PKA_EnableMilestoneSounds,
+        PSC_DB.EnableKillMilestoneSounds,
         function(checked)
-            PKA_EnableMilestoneSounds = checked
-            PKA_SaveSettings()
+            PSC_DB.EnableKillMilestoneSounds = checked
         end)
-    milestoneSounds:SetPoint("TOPLEFT", killMilestone, "BOTTOMLEFT", 20, -CHECKBOX_SPACING)
-    parent.milestoneSounds = milestoneSounds
+    killMilestoneSoundsCheckbox:SetPoint("TOPLEFT", showKillMilestonesCheckbox, "BOTTOMLEFT", 20, -CHECKBOX_SPACING)
+    parent.killMilestoneSoundsCheckbox = killMilestoneSoundsCheckbox
 
-    -- NEW: Add show first kill checkbox (inverted logic)
-    local showFirstKill, showFirstKillLabel = CreateCheckbox(parent,
+    local showMilestoneForFirstKillCheckbox, _ = CreateCheckbox(parent,
         "Show milestone for first kill",
-        not PKA_HideFirstKillMilestone, -- Invert the default value
+        PSC_DB.ShowMilestoneForFirstKill, -- Invert the default value
         function(checked)
-            PKA_HideFirstKillMilestone = not checked -- Invert the stored value
-            PKA_SaveSettings()
+            PSC_DB.ShowMilestoneForFirstKill = checked -- Invert the stored value
         end)
-    showFirstKill:SetPoint("TOPLEFT", milestoneSounds, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
-    parent.showFirstKill = showFirstKill
+    showMilestoneForFirstKillCheckbox:SetPoint("TOPLEFT", killMilestoneSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.showMilestoneForFirstKillCheckbox = showMilestoneForFirstKillCheckbox
 
-    -- Add tooltip explanation for show first kill
-    showFirstKill:SetScript("OnEnter", function(self)
+    showMilestoneForFirstKillCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Show First Kill Milestones")
         GameTooltip:AddLine("When checked, you'll see a notification for your first kill of each player.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    showFirstKill:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    showMilestoneForFirstKillCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Add Milestone Interval slider (new)
-    local intervalSlider = CreateFrame("Slider", "PKA_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
-    intervalSlider:SetWidth(200)
-    intervalSlider:SetHeight(16)
-    intervalSlider:SetPoint("TOPLEFT", showFirstKill, "BOTTOMLEFT", 20, -20)
-    intervalSlider:SetOrientation("HORIZONTAL")
-    intervalSlider:SetMinMaxValues(3, 10)
-    intervalSlider:SetValueStep(1)
-    intervalSlider:SetValue(PKA_MilestoneInterval or 5)
-    getglobal(intervalSlider:GetName() .. "Low"):SetText("3")
-    getglobal(intervalSlider:GetName() .. "High"):SetText("10")
-    getglobal(intervalSlider:GetName() .. "Text"):SetText("Milestone interval: Every " .. (PKA_MilestoneInterval or 5) .. " kills")
-    parent.intervalSlider = intervalSlider
+    local milestoneIntervalSlider = CreateFrame("Slider", "PSC_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
+    milestoneIntervalSlider:SetWidth(200)
+    milestoneIntervalSlider:SetHeight(16)
+    milestoneIntervalSlider:SetPoint("TOPLEFT", showMilestoneForFirstKillCheckbox, "BOTTOMLEFT", 20, -20)
+    milestoneIntervalSlider:SetOrientation("HORIZONTAL")
+    milestoneIntervalSlider:SetMinMaxValues(3, 10)
+    milestoneIntervalSlider:SetValueStep(1)
+    milestoneIntervalSlider:SetValue(PSC_DB.KillMilestoneInterval or 5)
+    getglobal(milestoneIntervalSlider:GetName() .. "Low"):SetText("3")
+    getglobal(milestoneIntervalSlider:GetName() .. "High"):SetText("10")
+    getglobal(milestoneIntervalSlider:GetName() .. "Text"):SetText("Milestone interval: Every " .. (PSC_DB.KillMilestoneInterval or 5) .. " kills")
+    parent.milestoneIntervalSlider = milestoneIntervalSlider
 
-    intervalSlider:SetScript("OnValueChanged", function(self, value)
+    milestoneIntervalSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
         self:SetValue(value)
         getglobal(self:GetName() .. "Text"):SetText("Milestone interval: Every " .. value .. " kills")
-        PKA_MilestoneInterval = value
-        PKA_SaveSettings()
+        PSC_DB.KillMilestoneInterval = value
     end)
 
-    -- Add Kill Milestone auto-hide time slider (renamed from Last Kill Preview)
-    local milestoneSlider = CreateFrame("Slider", "PKA_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
-    milestoneSlider:SetWidth(200)
-    milestoneSlider:SetHeight(16)
-    milestoneSlider:SetPoint("TOPLEFT", intervalSlider, "BOTTOMLEFT", 0, -30)
-    milestoneSlider:SetOrientation("HORIZONTAL")
-    milestoneSlider:SetMinMaxValues(1, 15)
-    milestoneSlider:SetValueStep(1)
-    milestoneSlider:SetValue(PKA_MilestoneAutoHideTime or 5)
-    getglobal(milestoneSlider:GetName() .. "Low"):SetText("1 sec")
-    getglobal(milestoneSlider:GetName() .. "High"):SetText("15 sec")
-    getglobal(milestoneSlider:GetName() .. "Text"):SetText("Hide notification after: " .. (PKA_MilestoneAutoHideTime or 5) .. " seconds")
-    parent.milestoneSlider = milestoneSlider
+    local milestoneAutoHideTimeSlider = CreateFrame("Slider", "PSC_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
+    milestoneAutoHideTimeSlider:SetWidth(200)
+    milestoneAutoHideTimeSlider:SetHeight(16)
+    milestoneAutoHideTimeSlider:SetPoint("TOPLEFT", milestoneIntervalSlider, "BOTTOMLEFT", 0, -30)
+    milestoneAutoHideTimeSlider:SetOrientation("HORIZONTAL")
+    milestoneAutoHideTimeSlider:SetMinMaxValues(1, 15)
+    milestoneAutoHideTimeSlider:SetValueStep(1)
+    milestoneAutoHideTimeSlider:SetValue(PSC_DB.KillMilestoneAutoHideTime or 5)
+    getglobal(milestoneAutoHideTimeSlider:GetName() .. "Low"):SetText("1 sec")
+    getglobal(milestoneAutoHideTimeSlider:GetName() .. "High"):SetText("15 sec")
+    getglobal(milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText("Hide notification after: " .. (PSC_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
+    parent.milestoneAutoHideTimeSlider = milestoneAutoHideTimeSlider
 
-    milestoneSlider:SetScript("OnValueChanged", function(self, value)
+    milestoneAutoHideTimeSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
         self:SetValue(value)
         getglobal(self:GetName() .. "Text"):SetText("Hide notification after: " .. value .. " seconds")
-        PKA_MilestoneAutoHideTime = value
-        PKA_SaveSettings()
+        PSC_DB.KillMilestoneAutoHideTime = value
     end)
 
-    -- Add a test button
     local testButton = CreateButton(parent, "Show Kill Milestone", 160, 22, function()
         -- Test with sample data for milestone kill counts
-        local testKillCounts = {1, PKA_MilestoneInterval, PKA_MilestoneInterval * 2}
+        local testKillCounts = {1, PSC_DB.KillMilestoneInterval, PSC_DB.KillMilestoneInterval * 2}
         local index = math.random(1, 3)
 
         -- Skip first kill milestone test if hide first kill is enabled and we rolled a "1"
-        if PKA_HideFirstKillMilestone and testKillCounts[index] == 1 then
+        if not PSC_DB.ShowMilestoneForFirstKill and testKillCounts[index] == 1 then
             -- Instead of 1, use the milestone interval value
             index = 2
         end
@@ -394,38 +312,32 @@ local function CreateAnnouncementSection(parent, yOffset)
             end
         end
 
-        -- The milestone display function will be called with the proper sound settings
-        PKA_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
+        PSC_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
     end)
-    testButton:SetPoint("TOPLEFT", milestoneSlider, "BOTTOMLEFT", -2, -20)
+    testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
 
-    -- Now continue with the original checkboxes
-    local enableKillAnnounce, enableKillAnnounceLabel = CreateCheckbox(parent, "Enable kill announcements to party chat",
-        PKA_EnableKillAnnounce, function(checked)
-            PKA_EnableKillAnnounce = checked
-            PKA_SaveSettings()
+    local enableKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Enable kill announcements to party chat",
+        PSC_DB.EnableKillAnnounceMessages, function(checked)
+            PSC_DB.EnableKillAnnounceMessages = checked
         end)
-    enableKillAnnounce:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", -38, -CHECKBOX_SPACING - 5)
-    parent.enableKillAnnounce = enableKillAnnounce
+    enableKillAnnounceCheckbox:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", -38, -CHECKBOX_SPACING - 5)
+    parent.enableKillAnnounceCheckbox = enableKillAnnounceCheckbox
 
-    local enableRecordAnnounce, enableRecordAnnounceLabel = CreateCheckbox(parent, "Announce new personal bests to party chat",
-        PKA_EnableRecordAnnounce, function(checked)
-            PKA_EnableRecordAnnounce = checked
-            PKA_SaveSettings()
+    local enableRecordAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce new personal bests to party chat",
+        PSC_DB.EnableRecordAnnounceMessages, function(checked)
+            PSC_DB.EnableRecordAnnounceMessages = checked
         end)
-    enableRecordAnnounce:SetPoint("TOPLEFT", enableKillAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.enableRecordAnnounce = enableRecordAnnounce
+    enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
 
-    local enableKillSounds, enableKillSoundsLabel = CreateCheckbox(parent, "Enable multi-kill sound effects",
-        PKA_EnableKillSounds, function(checked)
-            PKA_EnableKillSounds = checked
-            PKA_SaveSettings()
+    local enableKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
+        PSC_DB.EnableMultiKillSounds, function(checked)
+            PSC_DB.EnableMultiKillSounds = checked
         end)
-    enableKillSounds:SetPoint("TOPLEFT", enableRecordAnnounce, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.enableKillSounds = enableKillSounds
+    enableKillSoundsCheckbox:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.enableKillSoundsCheckbox = enableKillSoundsCheckbox
 
-    -- Return a slightly increased height to accommodate the new elements
     return 320
 end
 
@@ -439,10 +351,9 @@ local function CreateMessageTemplatesSection(parent, yOffset)
         parent,
         "Kill announcement message (\"Enemyplayername\" will be replaced with the player's name):",
         560,
-        PKA_KillAnnounceMessage,
+        PSC_DB.KillAnnounceMessage,
         function(text)
-            PKA_KillAnnounceMessage = text
-            PKA_SaveSettings()
+            PSC_DB.KillAnnounceMessage = text
         end
     )
     killMsgContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
@@ -451,10 +362,9 @@ local function CreateMessageTemplatesSection(parent, yOffset)
         parent,
         "Kill streak ended message (\"STREAKCOUNT\" will be replaced with the streak count):",
         560,
-        PKA_KillStreakEndedMessage,
+        PSC_DB.KillStreakEndedMessage,
         function(text)
-            PKA_KillStreakEndedMessage = text
-            PKA_SaveSettings()
+            PSC_DB.KillStreakEndedMessage = text
         end
     )
     streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
@@ -463,10 +373,9 @@ local function CreateMessageTemplatesSection(parent, yOffset)
         parent,
         "New streak personal best message (\"STREAKCOUNT\" will be replaced with the streak count):",
         560,
-        PKA_NewStreakRecordMessage,
+        PSC_DB.NewKillStreakRecordMessage,
         function(text)
-            PKA_NewStreakRecordMessage = text
-            PKA_SaveSettings()
+            PSC_DB.NewKillStreakRecordMessage = text
         end
     )
     newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
@@ -475,10 +384,9 @@ local function CreateMessageTemplatesSection(parent, yOffset)
         parent,
         "New multi-kill personal best message (\"MULTIKILLTEXT\" will be \"Double/Triple/...-Kill\"):",
         560,
-        PKA_NewMultiKillRecordMessage,
+        PSC_DB.NewMultiKillRecordMessage,
         function(text)
-            PKA_NewMultiKillRecordMessage = text
-            PKA_SaveSettings()
+            PSC_DB.NewMultiKillRecordMessage = text
         end
     )
     multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
@@ -489,25 +397,24 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     multiKillHeader:SetText("Multi-Kill Announcements")
 
     -- Add the threshold slider and description
-    local slider = CreateFrame("Slider", "PKA_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
+    local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(16)
     slider:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 5, -25)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(2, 10)
     slider:SetValueStep(1)
-    slider:SetValue(PKA_MultiKillThreshold or 3)
+    slider:SetValue(PSC_DB.MultiKillThreshold or 3)
     getglobal(slider:GetName() .. "Low"):SetText("Double")
     getglobal(slider:GetName() .. "High"):SetText("Deca")
-    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PKA_MultiKillThreshold or 3))
+    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
     parent.multiKillSlider = slider
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value + 0.5)
         self:SetValue(value)
         getglobal(self:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. value)
-        PKA_MultiKillThreshold = value
-        PKA_SaveSettings()
+        PSC_DB.MultiKillThreshold = value
     end)
 
     -- Slider description
@@ -557,7 +464,7 @@ local function CreateActionButtons(parent)
 end
 
 local function CreateMainFrame()
-    local frame = CreateFrame("Frame", "PKAConfigFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(600, 600) -- Reduced from 650 to 600
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
@@ -571,71 +478,50 @@ local function CreateMainFrame()
         frame:Hide()
     end)
 
-    tinsert(UISpecialFrames, "PKAConfigFrame")
+    tinsert(UISpecialFrames, "PSC_ConfigFrame")
 
     frame.TitleText:SetText("PvP Stats Classic Settings")
 
     return frame
 end
 
-function PKA_UpdateConfigUI()
+function PSC_UpdateConfigUI()
     if not configFrame then return end
 
-    if configFrame.enableKillAnnounce then
-        configFrame.enableKillAnnounce:SetChecked(PKA_EnableKillAnnounce)
+    -- Update checkboxes
+    configFrame.autoBGModeCheckbox:SetChecked(PSC_DB.AutoBattlegroundMode)
+    configFrame.manualBGModeCheckbox:SetChecked(PSC_DB.ForceBattlegroundMode)
+    configFrame.tooltipKillInfoCheckbox:SetChecked(PSC_DB.ShowTooltipKillInfo)
+    configFrame.showKillMilestonesCheckbox:SetChecked(PSC_DB.ShowKillMilestones)
+    configFrame.killMilestoneSoundsCheckbox:SetChecked(PSC_DB.EnableKillMilestoneSounds)
+    configFrame.showMilestoneForFirstKillCheckbox:SetChecked(PSC_DB.ShowMilestoneForFirstKill)
+    configFrame.enableKillAnnounceCheckbox:SetChecked(PSC_DB.EnableKillAnnounceMessages)
+    configFrame.enableRecordAnnounceCheckbox:SetChecked(PSC_DB.EnableRecordAnnounceMessages)
+    configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
+
+    -- Update multi-kill slider
+    if configFrame.multiKillSlider and configFrame.multiKillSlider:GetName() then
+        configFrame.multiKillSlider:SetValue(PSC_DB.MultiKillThreshold or 3)
+        getglobal(configFrame.multiKillSlider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
     end
 
-    if configFrame.enableRecordAnnounce then
-        configFrame.enableRecordAnnounce:SetChecked(PKA_EnableRecordAnnounce)
+    -- Update milestone interval slider
+    if configFrame.milestoneIntervalSlider and configFrame.milestoneIntervalSlider:GetName() then
+        configFrame.milestoneIntervalSlider:SetValue(PSC_DB.KillMilestoneInterval or 5)
+        getglobal(configFrame.milestoneIntervalSlider:GetName() .. "Text"):SetText("Milestone interval: Every " .. (PSC_DB.KillMilestoneInterval or 5) .. " kills")
     end
 
-    if configFrame.multiKillSlider then
-        configFrame.multiKillSlider:SetValue(PKA_MultiKillThreshold)
-        -- Also update the slider text
-        local sliderName = configFrame.multiKillSlider:GetName()
-        if sliderName then
-            getglobal(sliderName .. "Text"):SetText("Multi-Kill Announce Threshold: " .. PKA_MultiKillThreshold)
-        end
+    -- Update milestone auto-hide time slider
+    if configFrame.milestoneAutoHideTimeSlider and configFrame.milestoneAutoHideTimeSlider:GetName() then
+        configFrame.milestoneAutoHideTimeSlider:SetValue(PSC_DB.KillMilestoneAutoHideTime or 5)
+        getglobal(configFrame.milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText("Hide notification after: " .. (PSC_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
     end
 
-    if configFrame.editBoxes then
-        configFrame.editBoxes.killMsg:SetText(PKA_KillAnnounceMessage)
-        configFrame.editBoxes.streakEnded:SetText(PKA_KillStreakEndedMessage)
-        configFrame.editBoxes.newStreak:SetText(PKA_NewStreakRecordMessage)
-        configFrame.editBoxes.multiKill:SetText(PKA_NewMultiKillRecordMessage)
-    end
-
-    if configFrame.tooltipKillInfo then
-        configFrame.tooltipKillInfo:SetChecked(PKA_ShowTooltipKillInfo)
-    end
-
-    if configFrame.killMilestone then
-        configFrame.killMilestone:SetChecked(PKA_KillMilestoneNotificationsEnabled)
-    end
-
-    if configFrame.milestoneSounds then
-        configFrame.milestoneSounds:SetChecked(PKA_EnableMilestoneSounds)
-    end
-
-    if configFrame.hideFirstKill then
-        configFrame.hideFirstKill:SetChecked(PKA_HideFirstKillMilestone)
-    end
-
-    if configFrame.milestoneSlider then
-        configFrame.milestoneSlider:SetValue(PKA_MilestoneAutoHideTime)
-        local sliderName = configFrame.milestoneSlider:GetName()
-        if sliderName then
-            getglobal(sliderName .. "Text"):SetText("Auto-Hide Time: " .. PKA_MilestoneAutoHideTime .. " seconds")
-        end
-    end
-
-    if configFrame.intervalSlider then
-        configFrame.intervalSlider:SetValue(PKA_MilestoneInterval)
-        local sliderName = configFrame.intervalSlider:GetName()
-        if sliderName then
-            getglobal(sliderName .. "Text"):SetText("Milestone Interval: Every " .. PKA_MilestoneInterval .. " kills")
-        end
-    end
+    -- Update message templates
+    configFrame.editBoxes.killMsg:SetText(PSC_DB.KillAnnounceMessage)
+    configFrame.editBoxes.streakEnded:SetText(PSC_DB.KillStreakEndedMessage)
+    configFrame.editBoxes.newStreak:SetText(PSC_DB.NewKillStreakRecordMessage)
+    configFrame.editBoxes.multiKill:SetText(PSC_DB.NewMultiKillRecordMessage)
 end
 
 local function CreateTabSystem(parent)
@@ -771,7 +657,7 @@ local function CreateAboutTab(parent)
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOP", parent, "TOP", 0, -20)
     header:SetText("PvP Stats Classic")
-    header:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
+    header:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
     local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     versionText:SetPoint("TOP", header, "BOTTOM", 0, -5)
@@ -781,7 +667,7 @@ local function CreateAboutTab(parent)
     local creditsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     creditsHeader:SetPoint("TOP", header, "BOTTOM", 0, -40)
     creditsHeader:SetText("Credits")
-    creditsHeader:SetTextColor(PKA_CONFIG_HEADER_R, PKA_CONFIG_HEADER_G, PKA_CONFIG_HEADER_B)
+    creditsHeader:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
     local logo = parent:CreateTexture(nil, "ARTWORK")
     logo:SetSize(220, 220)
@@ -831,15 +717,14 @@ local function CreateAboutTab(parent)
     return parent
 end
 
-function PKA_CreateConfigFrame()
+function PSC_CreateConfigFrame()
     if configFrame then
         configFrame:Show()
         return
     end
 
-    EnsureDefaultValues()
     configFrame = CreateMainFrame()
-    PKA_FrameManager:RegisterFrame(configFrame, "ConfigUI")
+    PSC_FrameManager:RegisterFrame(configFrame, "ConfigUI")
 
     -- Create tab system
     local tabFrames = CreateTabSystem(configFrame)
@@ -848,28 +733,43 @@ function PKA_CreateConfigFrame()
     local currentY = -10
     local announcementHeight = CreateAnnouncementSection(tabFrames[1], currentY)
 
+    -- Copy references from the tab frame to the config frame
+    configFrame.autoBGModeCheckbox = tabFrames[1].autoBGModeCheckbox
+    configFrame.manualBGModeCheckbox = tabFrames[1].manualBGModeCheckbox
+    configFrame.tooltipKillInfoCheckbox = tabFrames[1].tooltipKillInfoCheckbox
+    configFrame.showKillMilestonesCheckbox = tabFrames[1].showKillMilestonesCheckbox
+    configFrame.killMilestoneSoundsCheckbox = tabFrames[1].killMilestoneSoundsCheckbox
+    configFrame.showMilestoneForFirstKillCheckbox = tabFrames[1].showMilestoneForFirstKillCheckbox
+    configFrame.enableKillAnnounceCheckbox = tabFrames[1].enableKillAnnounceCheckbox
+    configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
+    configFrame.enableKillSoundsCheckbox = tabFrames[1].enableKillSoundsCheckbox
+    configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
+    configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
+
     -- Messages Tab (Tab 2)
     configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
 
-    -- Reset Tab (Tab 3) - Add this section
+    -- Reset Tab (Tab 3)
     local resetButtons = CreateActionButtons(tabFrames[3])
     configFrame.resetButtons = resetButtons
 
-    -- About Tab (Tab 4) - Add new tab
+    -- About Tab (Tab 4)
     CreateAboutTab(tabFrames[4])
 
     -- Initialize first tab
     PanelTemplates_SetTab(configFrame, 1)
     tabFrames[1]:Show()
 
+    PSC_UpdateConfigUI()
+
     return configFrame
 end
 
-function PKA_CreateConfigUI()
+function PSC_CreateConfigUI()
     if configFrame then
-        PKA_FrameManager:ShowFrame("Config")
+        PSC_FrameManager:ShowFrame("Config")
         return
     end
 
-    PKA_CreateConfigFrame()
+    PSC_CreateConfigFrame()
 end

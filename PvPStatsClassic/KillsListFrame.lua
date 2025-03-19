@@ -1,14 +1,8 @@
-if not PKA_ActiveFrameLevel then
-    PKA_ActiveFrameLevel = 100
+if not PSC_ActiveFrameLevel then
+    PSC_ActiveFrameLevel = 100
 end
 
--- Get next frame level and increment the counter
-local function PKA_GetNextFrameLevel()
-    PKA_ActiveFrameLevel = PKA_ActiveFrameLevel + 10
-    return PKA_ActiveFrameLevel
-end
-
-local killStatsFrame = nil
+PSC_KillsListFrame = nil
 local searchText = ""
 local levelSearchText = ""
 local classSearchText = ""  -- New filter variable for class
@@ -22,8 +16,8 @@ local minRankSearch = nil
 local maxRankSearch = nil
 local sortBy = "lastKill"
 local sortAscending = false
-local PKA_KILLS_FRAME_WIDTH = 1020  -- Increased from 900
-local PKA_KILLS_FRAME_HEIGHT = 550  -- Increased from 500
+local PSC_KILLS_FRAME_WIDTH = 1020  -- Increased from 900
+local PSC_KILLS_FRAME_HEIGHT = 550  -- Increased from 500
 
 local colWidths = {
     name = 100,
@@ -156,6 +150,7 @@ local function CreateLevelSearchBox(parent, anchorTo)
     levelSearchBox:SetFontObject("ChatFontNormal")
 
     local searchBoxBg = levelSearchBox:CreateTexture(nil, "BACKGROUND")
+---@diagnostic disable-next-line: param-type-mismatch
     searchBoxBg:SetAllPoints(true)
     searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
 
@@ -306,211 +301,210 @@ end
 local function FilterAndSortEntries()
     local sortedEntries = {}
 
-    if PKA_KillCounts then
-        for nameWithLevel, data in pairs(PKA_KillCounts) do
-            local searchMatch = true
-            local levelMatch = true
-            local classMatch = true
-            local raceMatch = true
-            local genderMatch = true
-            local zoneMatch = true
-            local rankMatch = true  -- Add rank match variable
 
-            -- Player/Guild name search
-            if searchText ~= "" then
-                local name = string.gsub(nameWithLevel, ":[^:]*$", ""):lower()
-                local guild = (data.guild or ""):lower()
-                if not (string.find(name, searchText, 1, true) or string.find(guild, searchText, 1, true)) then
-                    searchMatch = false
-                end
-            end
+    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
+        local searchMatch = true
+        local levelMatch = true
+        local classMatch = true
+        local raceMatch = true
+        local genderMatch = true
+        local zoneMatch = true
+        local rankMatch = true  -- Add rank match variable
 
-            -- Level search
-            if minLevelSearch or maxLevelSearch then
-                local level = nameWithLevel:match(":(%S+)")
-                local levelNum = tonumber(level or "0") or 0
-
-                -- Special case for unknown level
-                if minLevelSearch == -1 and maxLevelSearch == -1 then
-                    -- Check if this is an unknown level (level == -1 or data.unknownLevel is true)
-                    if levelNum ~= -1 and not (data.unknownLevel or false) then
-                        levelMatch = false
-                    end
-                else
-                    -- Normal level range checking
-                    if levelNum == -1 or (data.unknownLevel or false) then
-                        levelMatch = false
-                    else
-                        if minLevelSearch and levelNum < minLevelSearch then
-                            levelMatch = false
-                        end
-                        if maxLevelSearch and levelNum > maxLevelSearch then
-                            levelMatch = false
-                        end
-                    end
-                end
-            end
-
-            -- Class filter
-            if classSearchText ~= "" then
-                local class = (data.class or "Unknown"):lower()
-                if not string.find(class:lower(), classSearchText:lower(), 1, true) then
-                    classMatch = false
-                end
-            end
-
-            -- Race filter
-            if raceSearchText ~= "" then
-                local race = (data.race or "Unknown"):lower()
-                if not string.find(race:lower(), raceSearchText:lower(), 1, true) then
-                    raceMatch = false
-                end
-            end
-
-            -- Gender filter - Make this exact match case insensitive
-            if genderSearchText ~= "" then
-                local normalizedSearch = genderSearchText:lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
-                local normalizedGender = (data.gender or "Unknown"):lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
-
-                -- Auto-complete for single-letter inputs
-                if normalizedSearch == "m" then
-                    normalizedSearch = "male"
-                elseif normalizedSearch == "f" then
-                    normalizedSearch = "female"
-                elseif normalizedSearch == "u" then
-                    normalizedSearch = "unknown"
-                end
-
-                if normalizedGender ~= normalizedSearch then
-                    genderMatch = false
-                end
-            end
-
-            -- Zone filter
-            if zoneSearchText ~= "" then
-                local zone = (data.zone or "Unknown"):lower()
-                if not string.find(zone:lower(), zoneSearchText:lower(), 1, true) then
-                    zoneMatch = false
-                end
-            end
-
-            -- Rank filter
-            if rankSearchText ~= "" then
-                local rank = data.rank or 0
-
-                if minRankSearch ~= nil and maxRankSearch ~= nil then
-                    -- Use the parsed range values
-                    if rank < minRankSearch or rank > maxRankSearch then
-                        rankMatch = false
-                    end
-                else
-                    -- Fallback to text-based matching if range parsing failed
-                    local rankStr = tostring(rank)
-                    if not string.find(rankStr, rankSearchText, 1, true) then
-                        rankMatch = false
-                    end
-                end
-            end
-
-            if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
-                -- Convert level -1 to "??" for display
-                local level = nameWithLevel:match(":(%S+)")
-                local levelDisplay = level
-                if level == "-1" or (data.unknownLevel or false) then
-                    levelDisplay = "??"
-                end
-
-                local entry = {
-                    name = nameWithLevel:gsub(":[^:]*$", ""),
-                    class = data.class or "Unknown",
-                    race = data.race or "Unknown",
-                    gender = data.gender or "Unknown",
-                    level = level, -- Keep the original numeric level
-                    levelDisplay = levelDisplay, -- Display level (shows ?? for unknown)
-                    guild = data.guild or "",
-                    kills = data.kills or 1,
-                    lastKill = data.lastKill or "",
-                    zone = data.zone or "Unknown",
-                    unknownLevel = data.unknownLevel or false,
-                    rank = data.rank or 0  -- Add the rank data
-                }
-
-                table.insert(sortedEntries, entry)
+        -- Player/Guild name search
+        if searchText ~= "" then
+            local name = string.gsub(nameWithLevel, ":[^:]*$", ""):lower()
+            local guild = (data.guild or ""):lower()
+            if not (string.find(name, searchText, 1, true) or string.find(guild, searchText, 1, true)) then
+                searchMatch = false
             end
         end
 
-        -- Sort the entries based on the selected sort method
-        table.sort(sortedEntries, function(a, b)
-            -- Safety check - always return a consistent value for any comparison
-            if not a or not b then
-                return false
-            end
+        -- Level search
+        if minLevelSearch or maxLevelSearch then
+            local level = nameWithLevel:match(":(%S+)")
+            local levelNum = tonumber(level or "0") or 0
 
-            -- For level sorting, handle the special cases first before looking at values
-            if sortBy == "level" then
-                -- Handle nil values
-                local aLevel = a.unknownLevel and -1 or tonumber(a.level) or -1
-                local bLevel = b.unknownLevel and -1 or tonumber(b.level) or -1
-
-                -- Unknown levels (-1) should appear at the end when ascending
-                -- and at the beginning when descending
-                if aLevel == -1 and bLevel ~= -1 then
-                    return not sortAscending
-                elseif aLevel ~= -1 and bLevel == -1 then
-                    return sortAscending
+            -- Special case for unknown level
+            if minLevelSearch == -1 and maxLevelSearch == -1 then
+                -- Check if this is an unknown level (level == -1 or data.unknownLevel is true)
+                if levelNum ~= -1 and not (data.unknownLevel or false) then
+                    levelMatch = false
+                end
+            else
+                -- Normal level range checking
+                if levelNum == -1 or (data.unknownLevel or false) then
+                    levelMatch = false
                 else
-                    -- Both are either unknown or known levels
-                    if sortAscending then
-                        return aLevel < bLevel
-                    else
-                        return aLevel > bLevel
+                    if minLevelSearch and levelNum < minLevelSearch then
+                        levelMatch = false
+                    end
+                    if maxLevelSearch and levelNum > maxLevelSearch then
+                        levelMatch = false
                     end
                 end
             end
+        end
 
-            -- For other fields, extract the values to compare
-            local aVal, bVal
+        -- Class filter
+        if classSearchText ~= "" then
+            local class = (data.class or "Unknown"):lower()
+            if not string.find(class:lower(), classSearchText:lower(), 1, true) then
+                classMatch = false
+            end
+        end
 
-            if sortBy == "name" then
-                aVal, bVal = a.name or "", b.name or ""
-            elseif sortBy == "class" then
-                aVal, bVal = a.class or "Unknown", b.class or "Unknown"
-            elseif sortBy == "race" then
-                aVal, bVal = a.race or "Unknown", b.race or "Unknown"
-            elseif sortBy == "gender" then
-                aVal, bVal = a.gender or "Unknown", b.gender or "Unknown"
-            elseif sortBy == "rank" then  -- Add rank sorting option
-                aVal, bVal = tonumber(a.rank) or 0, tonumber(b.rank) or 0
-            elseif sortBy == "guild" then
-                aVal, bVal = a.guild or "", b.guild or ""
-            elseif sortBy == "zone" then
-                aVal, bVal = a.zone or "Unknown", b.zone or "Unknown"
-            elseif sortBy == "kills" then
-                aVal, bVal = tonumber(a.kills) or 0, tonumber(b.kills) or 0
-            elseif sortBy == "lastKill" then
-                aVal, bVal = a.lastKill or "", b.lastKill or ""
-            else
-                -- Default to name if sort field is unrecognized
-                aVal, bVal = a.name or "", b.name or ""
+        -- Race filter
+        if raceSearchText ~= "" then
+            local race = (data.race or "Unknown"):lower()
+            if not string.find(race:lower(), raceSearchText:lower(), 1, true) then
+                raceMatch = false
+            end
+        end
+
+        -- Gender filter - Make this exact match case insensitive
+        if genderSearchText ~= "" then
+            local normalizedSearch = genderSearchText:lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
+            local normalizedGender = (data.gender or "Unknown"):lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
+
+            -- Auto-complete for single-letter inputs
+            if normalizedSearch == "m" then
+                normalizedSearch = "male"
+            elseif normalizedSearch == "f" then
+                normalizedSearch = "female"
+            elseif normalizedSearch == "u" then
+                normalizedSearch = "unknown"
             end
 
-            -- For numeric values like kills, use numeric comparison
-            if type(aVal) == "number" and type(bVal) == "number" then
-                if sortAscending then
-                    return aVal < bVal
-                else
-                    return aVal > bVal
+            if normalizedGender ~= normalizedSearch then
+                genderMatch = false
+            end
+        end
+
+        -- Zone filter
+        if zoneSearchText ~= "" then
+            local zone = (data.zone or "Unknown"):lower()
+            if not string.find(zone:lower(), zoneSearchText:lower(), 1, true) then
+                zoneMatch = false
+            end
+        end
+
+        -- Rank filter
+        if rankSearchText ~= "" then
+            local rank = data.rank or 0
+
+            if minRankSearch ~= nil and maxRankSearch ~= nil then
+                -- Use the parsed range values
+                if rank < minRankSearch or rank > maxRankSearch then
+                    rankMatch = false
                 end
             else
-                -- For strings and other values, convert to string for consistent comparison
-                if sortAscending then
-                    return tostring(aVal) < tostring(bVal)
-                else
-                    return tostring(aVal) > tostring(bVal)
+                -- Fallback to text-based matching if range parsing failed
+                local rankStr = tostring(rank)
+                if not string.find(rankStr, rankSearchText, 1, true) then
+                    rankMatch = false
                 end
             end
-        end)
+        end
+
+        if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
+            -- Convert level -1 to "??" for display
+            local level = nameWithLevel:match(":(%S+)")
+            local levelDisplay = level
+            if level == "-1" or (data.unknownLevel or false) then
+                levelDisplay = "??"
+            end
+
+            local entry = {
+                name = nameWithLevel:gsub(":[^:]*$", ""),
+                class = data.class or "Unknown",
+                race = data.race or "Unknown",
+                gender = data.gender or "Unknown",
+                level = level, -- Keep the original numeric level
+                levelDisplay = levelDisplay, -- Display level (shows ?? for unknown)
+                guild = data.guild or "",
+                kills = data.kills or 1,
+                lastKill = data.lastKill or "",
+                zone = data.zone or "Unknown",
+                unknownLevel = data.unknownLevel or false,
+                rank = data.rank or 0  -- Add the rank data
+            }
+
+            table.insert(sortedEntries, entry)
+        end
     end
+
+    -- Sort the entries based on the selected sort method
+    table.sort(sortedEntries, function(a, b)
+        -- Safety check - always return a consistent value for any comparison
+        if not a or not b then
+            return false
+        end
+
+        -- For level sorting, handle the special cases first before looking at values
+        if sortBy == "level" then
+            -- Handle nil values
+            local aLevel = a.unknownLevel and -1 or tonumber(a.level) or -1
+            local bLevel = b.unknownLevel and -1 or tonumber(b.level) or -1
+
+            -- Unknown levels (-1) should appear at the end when ascending
+            -- and at the beginning when descending
+            if aLevel == -1 and bLevel ~= -1 then
+                return not sortAscending
+            elseif aLevel ~= -1 and bLevel == -1 then
+                return sortAscending
+            else
+                -- Both are either unknown or known levels
+                if sortAscending then
+                    return aLevel < bLevel
+                else
+                    return aLevel > bLevel
+                end
+            end
+        end
+
+        -- For other fields, extract the values to compare
+        local aVal, bVal
+
+        if sortBy == "name" then
+            aVal, bVal = a.name or "", b.name or ""
+        elseif sortBy == "class" then
+            aVal, bVal = a.class or "Unknown", b.class or "Unknown"
+        elseif sortBy == "race" then
+            aVal, bVal = a.race or "Unknown", b.race or "Unknown"
+        elseif sortBy == "gender" then
+            aVal, bVal = a.gender or "Unknown", b.gender or "Unknown"
+        elseif sortBy == "rank" then  -- Add rank sorting option
+            aVal, bVal = tonumber(a.rank) or 0, tonumber(b.rank) or 0
+        elseif sortBy == "guild" then
+            aVal, bVal = a.guild or "", b.guild or ""
+        elseif sortBy == "zone" then
+            aVal, bVal = a.zone or "Unknown", b.zone or "Unknown"
+        elseif sortBy == "kills" then
+            aVal, bVal = tonumber(a.kills) or 0, tonumber(b.kills) or 0
+        elseif sortBy == "lastKill" then
+            aVal, bVal = a.lastKill or "", b.lastKill or ""
+        else
+            -- Default to name if sort field is unrecognized
+            aVal, bVal = a.name or "", b.name or ""
+        end
+
+        -- For numeric values like kills, use numeric comparison
+        if type(aVal) == "number" and type(bVal) == "number" then
+            if sortAscending then
+                return aVal < bVal
+            else
+                return aVal > bVal
+            end
+        else
+            -- For strings and other values, convert to string for consistent comparison
+            if sortAscending then
+                return tostring(aVal) < tostring(bVal)
+            else
+                return tostring(aVal) > tostring(bVal)
+            end
+        end
+    end)
 
     return sortedEntries
 end
@@ -822,6 +816,7 @@ local function CreateSearchBackground(parent)
         searchBg:SetBackdropColor(0, 0, 0, 0.4)
     else
         local bg = searchBg:CreateTexture(nil, "BACKGROUND")
+---@diagnostic disable-next-line: param-type-mismatch
         bg:SetAllPoints(true)
         bg:SetColorTexture(0, 0, 0, 0.4)
     end
@@ -846,6 +841,7 @@ local function CreateEditBox(parent, anchorTo)
     searchBox:SetFontObject("ChatFontNormal")
 
     local searchBoxBg = searchBox:CreateTexture(nil, "BACKGROUND")
+---@diagnostic disable-next-line: param-type-mismatch
     searchBoxBg:SetAllPoints(true)
     searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
 
@@ -905,6 +901,7 @@ local function CreateClassSearchBox(parent, anchorTo)
     classSearchBox:SetFontObject("ChatFontNormal")
 
     local searchBoxBg = classSearchBox:CreateTexture(nil, "BACKGROUND")
+---@diagnostic disable-next-line: param-type-mismatch
     searchBoxBg:SetAllPoints(true)
     searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
 
@@ -969,6 +966,7 @@ local function CreateRaceSearchBox(parent, anchorTo)
     raceSearchBox:SetFontObject("ChatFontNormal")
 
     local searchBoxBg = raceSearchBox:CreateTexture(nil, "BACKGROUND")
+---@diagnostic disable-next-line: param-type-mismatch
     searchBoxBg:SetAllPoints(true)
     searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
 
@@ -1033,6 +1031,7 @@ local function CreateGenderSearchBox(parent, anchorTo)
     genderSearchBox:SetFontObject("ChatFontNormal")
 
     local searchBoxBg = genderSearchBox:CreateTexture(nil, "BACKGROUND")
+---@diagnostic disable-next-line: param-type-mismatch
     searchBoxBg:SetAllPoints(true)
     searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
 
@@ -1149,6 +1148,7 @@ local function CreateZoneSearchBox(parent, anchorTo)
     zoneSearchBox:SetFontObject("ChatFontNormal")
 
     local searchBoxBg = zoneSearchBox:CreateTexture(nil, "BACKGROUND")
+---@diagnostic disable-next-line: param-type-mismatch
     searchBoxBg:SetAllPoints(true)
     searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
 
@@ -1213,6 +1213,7 @@ local function CreateRankSearchBox(parent, anchorTo)
     rankSearchBox:SetFontObject("ChatFontNormal")
 
     local searchBoxBg = rankSearchBox:CreateTexture(nil, "BACKGROUND")
+---@diagnostic disable-next-line: param-type-mismatch
     searchBoxBg:SetAllPoints(true)
     searchBoxBg:SetColorTexture(0, 0, 0, 0.5)
 
@@ -1398,15 +1399,15 @@ local function CreateScrollFrame(parent)
     scrollFrame:SetPoint("BOTTOMRIGHT", -30, 45) -- Increased bottom margin to make room for search bar
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(PKA_KILLS_FRAME_WIDTH - 40, PKA_KILLS_FRAME_HEIGHT * 2)
+    content:SetSize(PSC_KILLS_FRAME_WIDTH - 40, PSC_KILLS_FRAME_HEIGHT * 2)
     scrollFrame:SetScrollChild(content)
 
     return content
 end
 
 local function CreateMainFrame()
-    local frame = CreateFrame("Frame", "PKAKillStatsFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(PKA_KILLS_FRAME_WIDTH, PKA_KILLS_FRAME_HEIGHT)
+    local frame = CreateFrame("Frame", "PSC_KillStatsFrame", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(PSC_KILLS_FRAME_WIDTH, PSC_KILLS_FRAME_HEIGHT)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -1417,14 +1418,15 @@ local function CreateMainFrame()
     -- frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     -- frame:SetScript("OnMouseDown", function(self) ... end)
 
-    table.insert(UISpecialFrames, "PKAKillStatsFrame")
+    table.insert(UISpecialFrames, "PSC_KillStatsFrame")
     frame.TitleText:SetText("Player Kills List")
 
     return frame
 end
 
 function RefreshKillList()
-    local content = killStatsFrame.content
+    if PSC_KillsListFrame == nil then return end
+    local content = PSC_KillsListFrame.content
     if not content then return end
 
     CleanupFrameElements(content)
@@ -1434,26 +1436,26 @@ function RefreshKillList()
     local sortedEntries = FilterAndSortEntries()
     local finalYOffset, entryCount = DisplayEntries(content, sortedEntries, yOffset)
 
-    content:SetHeight(math.max((-finalYOffset + 20), PKA_KILLS_FRAME_HEIGHT - 50))
+    content:SetHeight(math.max((-finalYOffset + 20), PSC_KILLS_FRAME_HEIGHT - 50))
 end
 
-function PKA_CreateKillStatsFrame()
-    if (killStatsFrame) then
-        PKA_FrameManager:ShowFrame("KillsList")
+function PSC_CreateKillStatsFrame()
+    if (PSC_KillsListFrame) then
+        PSC_FrameManager:ShowFrame("KillsList")
         RefreshKillList()
         return
     end
 
-    killStatsFrame = CreateMainFrame()
-    killStatsFrame.content = CreateScrollFrame(killStatsFrame)
-    CreateSearchBar(killStatsFrame)
+    PSC_KillsListFrame = CreateMainFrame()
+    PSC_KillsListFrame.content = CreateScrollFrame(PSC_KillsListFrame)
+    CreateSearchBar(PSC_KillsListFrame)
 
     -- Register with frame manager
-    PKA_FrameManager:RegisterFrame(killStatsFrame, "KillsList")
+    PSC_FrameManager:RegisterFrame(PSC_KillsListFrame, "KillsList")
 
     -- Remove from UISpecialFrames since FrameManager handles ESC key
     for i = #UISpecialFrames, 1, -1 do
-        if (UISpecialFrames[i] == "PKAKillStatsFrame") then
+        if (UISpecialFrames[i] == "PSC_KillStatsFrame") then
             table.remove(UISpecialFrames, i)
             break
         end
@@ -1463,54 +1465,54 @@ function PKA_CreateKillStatsFrame()
 end
 
 -- Make the searchText variable accessible to external functions
-function PKA_SetKillListSearch(text, levelText, classText, raceText, genderText, zoneText, resetOtherFilters)
-    if killStatsFrame then
+function PSC_SetKillListSearch(text, levelText, classText, raceText, genderText, zoneText, resetOtherFilters)
+    if PSC_KillsListFrame then
         -- Reset all filters first if requested (when clicking on bars in statistics)
         if resetOtherFilters then
-            killStatsFrame.searchBox:SetText("")
+            PSC_KillsListFrame.searchBox:SetText("")
             searchText = ""
-            killStatsFrame.levelSearchBox:SetText("")
+            PSC_KillsListFrame.levelSearchBox:SetText("")
             levelSearchText = ""
-            killStatsFrame.classSearchBox:SetText("")
+            PSC_KillsListFrame.classSearchBox:SetText("")
             classSearchText = ""
-            killStatsFrame.raceSearchBox:SetText("")
+            PSC_KillsListFrame.raceSearchBox:SetText("")
             raceSearchText = ""
-            killStatsFrame.genderSearchBox:SetText("")
+            PSC_KillsListFrame.genderSearchBox:SetText("")
             genderSearchText = ""
-            killStatsFrame.zoneSearchBox:SetText("")
+            PSC_KillsListFrame.zoneSearchBox:SetText("")
             zoneSearchText = ""
             minLevelSearch = nil
             maxLevelSearch = nil
         end
 
-        if killStatsFrame.searchBox and text then
-            killStatsFrame.searchBox:SetText(text)
+        if PSC_KillsListFrame.searchBox and text then
+            PSC_KillsListFrame.searchBox:SetText(text)
             searchText = text:lower()
         end
 
-        if killStatsFrame.levelSearchBox and levelText then
-            killStatsFrame.levelSearchBox:SetText(levelText)
+        if PSC_KillsListFrame.levelSearchBox and levelText then
+            PSC_KillsListFrame.levelSearchBox:SetText(levelText)
             levelSearchText = levelText
             ParseLevelSearch(levelText)
         end
 
-        if killStatsFrame.classSearchBox and classText then
-            killStatsFrame.classSearchBox:SetText(classText)
+        if PSC_KillsListFrame.classSearchBox and classText then
+            PSC_KillsListFrame.classSearchBox:SetText(classText)
             classSearchText = classText
         end
 
-        if killStatsFrame.raceSearchBox and raceText then
-            killStatsFrame.raceSearchBox:SetText(raceText)
+        if PSC_KillsListFrame.raceSearchBox and raceText then
+            PSC_KillsListFrame.raceSearchBox:SetText(raceText)
             raceSearchText = raceText
         end
 
-        if killStatsFrame.genderSearchBox and genderText then
-            killStatsFrame.genderSearchBox:SetText(genderText)
+        if PSC_KillsListFrame.genderSearchBox and genderText then
+            PSC_KillsListFrame.genderSearchBox:SetText(genderText)
             genderSearchText = genderText
         end
 
-        if killStatsFrame.zoneSearchBox and zoneText then
-            killStatsFrame.zoneSearchBox:SetText(zoneText)
+        if PSC_KillsListFrame.zoneSearchBox and zoneText then
+            PSC_KillsListFrame.zoneSearchBox:SetText(zoneText)
             zoneSearchText = zoneText
         end
 
@@ -1519,19 +1521,19 @@ function PKA_SetKillListSearch(text, levelText, classText, raceText, genderText,
 end
 
 -- New function to set level range filter
-function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
-    if killStatsFrame then
+function PSC_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
+    if PSC_KillsListFrame then
         -- Reset all filters first if requested
         if resetOtherFilters then
-            killStatsFrame.searchBox:SetText("")
+            PSC_KillsListFrame.searchBox:SetText("")
             searchText = ""
-            killStatsFrame.classSearchBox:SetText("")
+            PSC_KillsListFrame.classSearchBox:SetText("")
             classSearchText = ""
-            killStatsFrame.raceSearchBox:SetText("")
+            PSC_KillsListFrame.raceSearchBox:SetText("")
             raceSearchText = ""
-            killStatsFrame.genderSearchBox:SetText("")
+            PSC_KillsListFrame.genderSearchBox:SetText("")
             genderSearchText = ""
-            killStatsFrame.zoneSearchBox:SetText("")
+            PSC_KillsListFrame.zoneSearchBox:SetText("")
             zoneSearchText = ""
         end
 
@@ -1540,23 +1542,23 @@ function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
         maxLevelSearch = maxLevel
 
         -- Update the level search box text
-        if killStatsFrame.levelSearchBox then
+        if PSC_KillsListFrame.levelSearchBox then
             if minLevel == -1 and maxLevel == -1 then
                 -- Special case for unknown level
-                killStatsFrame.levelSearchBox:SetText("??")
+                PSC_KillsListFrame.levelSearchBox:SetText("??")
                 levelSearchText = "??"
             elseif minLevel and maxLevel and minLevel == maxLevel then
                 -- Single level
-                killStatsFrame.levelSearchBox:SetText(tostring(minLevel))
+                PSC_KillsListFrame.levelSearchBox:SetText(tostring(minLevel))
                 levelSearchText = tostring(minLevel)
             elseif minLevel and maxLevel then
                 -- Level range
                 local rangeText = minLevel .. "-" .. maxLevel
-                killStatsFrame.levelSearchBox:SetText(rangeText)
+                PSC_KillsListFrame.levelSearchBox:SetText(rangeText)
                 levelSearchText = rangeText
             else
                 -- Clear the filter if something went wrong
-                killStatsFrame.levelSearchBox:SetText("")
+                PSC_KillsListFrame.levelSearchBox:SetText("")
                 levelSearchText = ""
                 minLevelSearch = nil
                 maxLevelSearch = nil
@@ -1564,37 +1566,37 @@ function PKA_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
         end
 
         -- Highlight the text with the proper color
-        if killStatsFrame.levelSearchBox then
+        if PSC_KillsListFrame.levelSearchBox then
             -- Always set to white - we've already validated the input
-            killStatsFrame.levelSearchBox:SetTextColor(1, 1, 1)
+            PSC_KillsListFrame.levelSearchBox:SetTextColor(1, 1, 1)
         end
 
         -- Refresh the kill list to apply the filter
         RefreshKillList()
 
         -- Bring the kills list frame to front if it's not already
-        PKA_FrameManager:BringToFront("KillsList")
+        PSC_FrameManager:BringToFront("KillsList")
     end
 end
 
 -- Add a new function to set rank range filter (similar to level range)
-function PKA_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
-    if killStatsFrame then
+function PSC_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
+    if PSC_KillsListFrame then
         -- Reset all filters first if requested
         if resetOtherFilters then
-            killStatsFrame.searchBox:SetText("")
+            PSC_KillsListFrame.searchBox:SetText("")
             searchText = ""
-            killStatsFrame.levelSearchBox:SetText("")
+            PSC_KillsListFrame.levelSearchBox:SetText("")
             levelSearchText = ""
             minLevelSearch = nil
             maxLevelSearch = nil
-            killStatsFrame.classSearchBox:SetText("")
+            PSC_KillsListFrame.classSearchBox:SetText("")
             classSearchText = ""
-            killStatsFrame.raceSearchBox:SetText("")
+            PSC_KillsListFrame.raceSearchBox:SetText("")
             raceSearchText = ""
-            killStatsFrame.genderSearchBox:SetText("")
+            PSC_KillsListFrame.genderSearchBox:SetText("")
             genderSearchText = ""
-            killStatsFrame.zoneSearchBox:SetText("")
+            PSC_KillsListFrame.zoneSearchBox:SetText("")
             zoneSearchText = ""
         end
 
@@ -1603,19 +1605,19 @@ function PKA_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
         maxRankSearch = maxRank
 
         -- Update the rank search box text
-        if killStatsFrame.rankSearchBox then
+        if PSC_KillsListFrame.rankSearchBox then
             if minRank and maxRank and minRank == maxRank then
                 -- Single rank
-                killStatsFrame.rankSearchBox:SetText(tostring(minRank))
+                PSC_KillsListFrame.rankSearchBox:SetText(tostring(minRank))
                 rankSearchText = tostring(minRank)
             elseif minRank and maxRank then
                 -- Rank range
                 local rangeText = minRank .. "-" .. maxRank
-                killStatsFrame.rankSearchBox:SetText(rangeText)
+                PSC_KillsListFrame.rankSearchBox:SetText(rangeText)
                 rankSearchText = rangeText
             else
                 -- Clear the filter if something went wrong
-                killStatsFrame.rankSearchBox:SetText("")
+                PSC_KillsListFrame.rankSearchBox:SetText("")
                 rankSearchText = ""
                 minRankSearch = nil
                 maxRankSearch = nil
@@ -1623,15 +1625,15 @@ function PKA_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
         end
 
         -- Highlight the text with the proper color
-        if killStatsFrame.rankSearchBox then
+        if PSC_KillsListFrame.rankSearchBox then
             -- Always set to white - we've already validated the input
-            killStatsFrame.rankSearchBox:SetTextColor(1, 1, 1)
+            PSC_KillsListFrame.rankSearchBox:SetTextColor(1, 1, 1)
         end
 
         -- Refresh the kill list to apply the filter
         RefreshKillList()
 
         -- Bring the kills list frame to front if it's not already
-        PKA_FrameManager:BringToFront("KillsList")
+        PSC_FrameManager:BringToFront("KillsList")
     end
 end
