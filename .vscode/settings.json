@@ -17,7 +17,9 @@
         "DEFAULT_CHAT_FRAME",
         "CLASS_ICON_TCOORDS",
         "BackdropTemplateMixin",
-        "COMBATLOG_OBJECT_TYPE_PLAYER"
+        "COMBATLOG_OBJECT_TYPE_PLAYER",
+        "UnitPVPRank",
+        "GetTargetHonorRank"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {
