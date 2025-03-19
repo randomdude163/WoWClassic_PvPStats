@@ -309,7 +309,7 @@ local function FilterAndSortEntries()
             local playerInfo = PSC_DB.PlayerInfoCache[nameWithoutLevel] or {}
             local class = playerInfo.class
             local race = playerInfo.race
-            local gender = playerInfo.gende
+            local gender = playerInfo.gender
             local guild = playerInfo.guild
             local rank = playerInfo.rank
 
@@ -523,7 +523,8 @@ end
 
 local function CreateNameCell(content, xPos, yPos, name, width)
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    nameText:SetPoint("LEFT", content, "LEFT", xPos + 10, 0)
+    -- Position at exactly the same left offset as the header (10px)
+    nameText:SetPoint("LEFT", content, "LEFT", 4, 0)
     nameText:SetText(name)
     nameText:SetWidth(width)
     nameText:SetJustifyH("LEFT")
@@ -532,6 +533,7 @@ end
 
 local function CreateClassCell(content, anchorTo, className, width)
     local classText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    -- Use consistent spacing as the headers (0px) rather than arbitrary value
     classText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
 
     classText:SetText(className)
@@ -548,10 +550,10 @@ end
 
 local function CreateRaceCell(content, anchorTo, raceName, width)
     local raceText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    raceText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    raceText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
 
     if raceName and raceName ~= "Unknown" then
-        raceName = raceName:sub(1, 1):upper() .. raceName:sub(2):lower()
+        raceName = raceName:gsub("(%w)(%w*)", function(first, rest) return first:upper()..rest:lower() end)
     end
 
     raceText:SetText(raceName)
@@ -740,6 +742,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     -- Create a row container to handle highlighting
     local rowContainer = CreateFrame("Button", nil, content)
     rowContainer:SetSize(content:GetWidth() - 20, 16)
+    -- Keep this at exactly the same left position as header columns start (10px)
     rowContainer:SetPoint("TOPLEFT", 10, yOffset)
 
     -- Add slight alternating row backgrounds for better readability
@@ -752,13 +755,14 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     -- Create highlight with gradient fade effect
     local highlightTexture = CreateGoldHighlight(rowContainer, 16)
 
+    -- Create each cell, starting at the exact same position as the headers
     local nameCell = CreateNameCell(rowContainer, 0, 0, entry.name, colWidths.name)
     local classCell = CreateClassCell(rowContainer, nameCell, entry.class, colWidths.class)
     local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
     local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
     local levelCell = CreateLevelCell(rowContainer, genderCell, entry.levelDisplay, colWidths.level)
-    local rankCell = CreateRankCell(rowContainer, levelCell, entry.rank, colWidths.rank)  -- Add rank cell
-    local guildCell = CreateGuildCell(rowContainer, rankCell, entry.guild, colWidths.guild)  -- Change anchor
+    local rankCell = CreateRankCell(rowContainer, levelCell, entry.rank, colWidths.rank)
+    local guildCell = CreateGuildCell(rowContainer, rankCell, entry.guild, colWidths.guild)
     local zoneCell = CreateZoneCell(rowContainer, guildCell, entry.zone, colWidths.zone)
     local killsCell = CreateKillsCell(rowContainer, zoneCell, entry.kills, colWidths.kills)
     local lastKillCell = CreateLastKillCell(rowContainer, killsCell, entry.lastKill, colWidths.lastKill)
