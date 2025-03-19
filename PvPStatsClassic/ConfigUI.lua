@@ -8,7 +8,7 @@ local PSC_CONFIG_HEADER_B = 0.0
 
 local HEADER_ELEMENT_SPACING = 15
 local CHECKBOX_SPACING = 5
-local FIELD_SPACING = 5
+local FIELD_SPACING = 30
 
 local function ShowResetStatsConfirmation()
     StaticPopupDialogs["PSC_RESET_STATS"] = {
@@ -329,13 +329,13 @@ local function CreateAnnouncementSection(parent, yOffset)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
 
-    local tooltipSectionHeader = CreateSectionHeader(parent, "General", 20, -445)
+    local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -445)
 
     local enableKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
         PSC_DB.EnableMultiKillSounds, function(checked)
             PSC_DB.EnableMultiKillSounds = checked
         end)
-    enableKillSoundsCheckbox:SetPoint("TOPLEFT", tooltipSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    enableKillSoundsCheckbox:SetPoint("TOPLEFT", generalSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillSoundsCheckbox = enableKillSoundsCheckbox
 
     local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent,
@@ -362,11 +362,11 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     -- Add extra spacing before the Party Messages section
     yOffset = yOffset
 
-    local header, line = CreateSectionHeader(parent, "Party Messages", 20, yOffset)
+    local header, line = CreateSectionHeader(parent, "Party Announcement Messages", 20, yOffset)
 
     local killMsgContainer, killMsgEditBox = CreateInputField(
         parent,
-        "Kill announcement message (\"Enemyplayername\" will be replaced with the player's name):",
+        "Kill announcement message:",
         560,
         PSC_DB.KillAnnounceMessage,
         function(text)
@@ -375,9 +375,15 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     )
     killMsgContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
 
+    -- Kill message placeholder description with highlighted placeholders
+    local killAnnounceMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    killAnnounceMessageDesc:SetPoint("TOPLEFT", killMsgEditBox, "BOTTOMLEFT", -4, -5)
+    killAnnounceMessageDesc:SetText("Placeholders: |cFFFFFFFFEnemyplayername|r for player name and |cFFFFFFFFx#|r for kill count (e.g. x3 for 3rd kill).")
+    killAnnounceMessageDesc:SetJustifyH("LEFT")
+
     local streakEndedContainer, streakEndedEditBox = CreateInputField(
         parent,
-        "Kill streak ended message (\"STREAKCOUNT\" will be replaced with the streak count):",
+        "Kill streak ended message:",
         560,
         PSC_DB.KillStreakEndedMessage,
         function(text)
@@ -386,9 +392,15 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     )
     streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
+    -- Streak ended message placeholder description
+    local streakEndedMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    streakEndedMessageDesc:SetPoint("TOPLEFT", streakEndedEditBox, "BOTTOMLEFT", -4, -5)
+    streakEndedMessageDesc:SetText("Placeholder: |cFFFFFFFFSTREAKCOUNT|r for the number of kills in your streak.")
+    streakEndedMessageDesc:SetJustifyH("LEFT")
+
     local newStreakContainer, newStreakEditBox = CreateInputField(
         parent,
-        "New streak personal best message (\"STREAKCOUNT\" will be replaced with the streak count):",
+        "New kill streak personal best message:",
         560,
         PSC_DB.NewKillStreakRecordMessage,
         function(text)
@@ -397,9 +409,15 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     )
     newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
+    -- New streak record message placeholder description
+    local newStreakMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    newStreakMessageDesc:SetPoint("TOPLEFT", newStreakEditBox, "BOTTOMLEFT", -4, -5)
+    newStreakMessageDesc:SetText("Placeholder: |cFFFFFFFFSTREAKCOUNT|r for the number of kills in your streak.")
+    newStreakMessageDesc:SetJustifyH("LEFT")
+
     local multiKillContainer, multiKillEditBox = CreateInputField(
         parent,
-        "New multi-kill personal best message (\"MULTIKILLTEXT\" will be \"Double/Triple/...-Kill\"):",
+        "New multi-kill personal best message:",
         560,
         PSC_DB.NewMultiKillRecordMessage,
         function(text)
@@ -408,8 +426,14 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     )
     multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
+    -- Multi-kill record message placeholder description
+    local multiKillMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    multiKillMessageDesc:SetPoint("TOPLEFT", multiKillEditBox, "BOTTOMLEFT", -4, -5)
+    multiKillMessageDesc:SetText("Placeholder: |cFFFFFFFFMULTIKILLTEXT|r for the multi-kill description ('Double-Kill', 'Triple-Kill', etc).")
+    multiKillMessageDesc:SetJustifyH("LEFT")
+
     -- Add section header for Multi-Kill settings
-    local multiKillHeader = CreateSectionHeader(parent, "Multi-Kill Announcements", 20, -300)
+    local multiKillHeader = CreateSectionHeader(parent, "Multi-Kill Announcements", 20, -390)
 
     -- Add the threshold slider and description
     local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
@@ -432,13 +456,6 @@ local function CreateMessageTemplatesSection(parent, yOffset)
         PSC_DB.MultiKillThreshold = value
     end)
 
-    -- Slider description
-    -- local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    -- desc:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -15)
-    -- desc:SetText("Minimum multi-kill count to announce in party chat")
-    -- desc:SetJustifyH("LEFT")
-    -- desc:SetWidth(350)
-
     -- Return UI elements for potential updates
     return {
         killMsg = killMsgEditBox,
@@ -446,7 +463,6 @@ local function CreateMessageTemplatesSection(parent, yOffset)
         newStreak = newStreakEditBox,
         multiKill = multiKillEditBox,
         multiKillSlider = slider,
-        -- multiKillDesc = desc
     }
 end
 

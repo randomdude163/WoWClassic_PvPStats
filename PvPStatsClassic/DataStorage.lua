@@ -195,7 +195,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.EnableRecordAnnounceMessages = true
     PSC_DB.EnableMultiKillSounds = true
 
-    PSC_DB.KillAnnounceMessage = "Enemyplayername killed!"
+    PSC_DB.KillAnnounceMessage = "Enemyplayername x# killed!"
     PSC_DB.KillStreakEndedMessage = "My kill streak of STREAKCOUNT has ended!"
     PSC_DB.NewKillStreakRecordMessage = "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
     PSC_DB.NewMultiKillRecordMessage = "NEW PERSONAL BEST: MULTIKILLTEXT!"
