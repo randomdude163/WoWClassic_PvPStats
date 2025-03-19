@@ -312,7 +312,7 @@ local function CreateAnnouncementSection(parent, yOffset)
             end
         end
 
-        PSC_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
+        PSC_ShowKillMilestone("TestPlayer", 60, randomClass, rank, testKillCounts[index], faction)
     end)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton

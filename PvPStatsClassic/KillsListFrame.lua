@@ -538,10 +538,6 @@ local function CreateClassCell(content, anchorTo, className, width)
     local classText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     classText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
 
-    if className and className ~= "Unknown" then
-        className = className:sub(1, 1):upper() .. className:sub(2):lower()
-    end
-
     classText:SetText(className)
     classText:SetWidth(width)
     classText:SetJustifyH("LEFT")

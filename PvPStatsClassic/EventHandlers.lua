@@ -134,59 +134,40 @@ local function ShowDebugInfo()
     PSC_Print("Manual BG Mode: " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
 end
 
-local function InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
+local function InitializeKillCountEntryForPlayer(nameWithLevel, guild, playerLevel)
     if not PSC_DB.PlayerKillCounts[nameWithLevel] then
-        local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
-
         PSC_DB.PlayerKillCounts[nameWithLevel] = {
             kills = 0,
-            class = englishClass or "Unknown",
-            race = race or "Unknown",
-            gender = gender or 1,
-            guild = guild or "Unknown",
+            guild = guild,
             lastKill = "",
-            playerLevel = playerLevel or -1,
-            unknownLevel = false,
-            zone = currentZone,
-            killLocations = {}, -- Initialize empty array for kill locations
-            rank = 0 -- Initialize rank
+            playerLevel = playerLevel,
+            zone = "",
+            killLocations = {},
+            rank = 0
         }
     end
 end
 
 -- Update UpdateKillCacheEntry to include rank
-local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
+local function UpdateKillCountEntry(nameWithLevel, playerLevel, guild)
     PSC_DB.PlayerKillCounts[nameWithLevel].kills = PSC_DB.PlayerKillCounts[nameWithLevel].kills + 1
     local timestamp = date("%Y-%m-%d %H:%M:%S")
     PSC_DB.PlayerKillCounts[nameWithLevel].lastKill = timestamp
-    PSC_DB.PlayerKillCounts[nameWithLevel].playerLevel = playerLevel or -1
-
-    -- Always update rank if provided (even if 0)
-    if rank ~= nil then
-        PSC_DB.PlayerKillCounts[nameWithLevel].rank = rank
-    end
-
-    -- Rest of the function remains the same...
-    -- Ensure zone is captured correctly
+    PSC_DB.PlayerKillCounts[nameWithLevel].playerLevel = playerLevel
+    PSC_DB.PlayerKillCounts[nameWithLevel].guild = guild
     local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
     PSC_DB.PlayerKillCounts[nameWithLevel].zone = currentZone
 
-    -- Get current map position
     local mapID = C_Map.GetBestMapForUnit("player")
     local position = nil
     if mapID then
         position = C_Map.GetPlayerMapPosition(mapID, "player")
     end
 
-    -- Create a location record with coordinates
     if mapID and position and position.x and position.y then
         local x = position.x * 100
         local y = position.y * 100
 
-        -- Ensure the killLocations array exists
-        PSC_DB.PlayerKillCounts[nameWithLevel].killLocations = PSC_DB.PlayerKillCounts[nameWithLevel].killLocations or {}
-
-        -- Add new location record
         table.insert(PSC_DB.PlayerKillCounts[nameWithLevel].killLocations, {
             timestamp = timestamp,
             zone = currentZone,
@@ -196,22 +177,16 @@ local function UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLe
             killNumber = PSC_DB.PlayerKillCounts[nameWithLevel].kills
         })
 
-        -- Debug info
         if PSC_Debug then
             print(string.format("Kill recorded at %s (%.4f, %.4f) in %s",
                 timestamp, x, y, currentZone))
         end
     else
-        -- Log error if we couldn't get position
         if PSC_Debug then
             print("Failed to get player position for kill location")
         end
     end
 
-    -- Update other player information if available
-    if race and race ~= "Unknown" then PSC_DB.PlayerKillCounts[nameWithLevel].race = race end
-    if gender and gender ~= "Unknown" then PSC_DB.PlayerKillCounts[nameWithLevel].gender = gender end
-    if guild and guild ~= "" then PSC_DB.PlayerKillCounts[nameWithLevel].guild = guild end
 end
 
 local function UpdateKillStreak()
@@ -330,7 +305,6 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
 
     debugMsg = debugMsg .. englishClass .. ", " .. race .. ")"
 
-    -- Add rank info to debug message
     local rank = PSC_DB.PlayerKillCounts[nameWithLevel].rank or 0
     if rank > 0 then
         debugMsg = debugMsg .. " [Rank: " .. rank .. "]"
@@ -448,20 +422,20 @@ local function ShowKillStreakMilestone(killCount)
     animGroup:Play()
 end
 
-local function RegisterPlayerKill(playerName, level, englishClass, race, gender, guild, killerGUID, killerName, rank)
+local function RegisterPlayerKill(playerName, level, class, race, gender, guild, killerGUID, killerName, rank)
     local playerLevel = UnitLevel("player")
     local nameWithLevel = playerName .. ":" .. level
 
     UpdateKillStreak()
     ShowKillStreakMilestone(PSC_DB.CurrentKillStreak)
-    InitializeCacheForPlayer(nameWithLevel, englishClass, race, gender, guild, playerLevel)
-    UpdateKillCacheEntry(nameWithLevel, race, gender, guild, playerLevel, rank)
+    InitializeKillCountEntryForPlayer(nameWithLevel, guild, playerLevel)
+    UpdateKillCountEntry(nameWithLevel, playerLevel, guild)
     UpdateMultiKill()
     AnnounceKill(playerName, level, nameWithLevel)
 
     -- Print debug message using the new function
     if PSC_Debug then
-        local debugMsg = CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel, killerGUID, killerName)
+        local debugMsg = CreateKillDebugMessage(playerName, level, class, race, nameWithLevel, killerGUID, killerName)
         print(debugMsg)
     end
 
@@ -469,7 +443,7 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     local killCount = PSC_DB.PlayerKillCounts[nameWithLevel].kills
 
     if (killCount == 1 and PSC_DB.ShowMilestoneForFirstKill) or killCount >= 2 then
-        PSC_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
+        PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
     end
 end
 
@@ -506,8 +480,8 @@ local function SimulatePlayerKills(killCount)
     }
 
     local classes = {
-        "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
-        "SHAMAN", "MAGE", "WARLOCK", "DRUID"
+        "Warrior", "Paladin", "Hunter", "Rogue", "Priest",
+        "Shaman", "Mage", "Warlock", "Druid"
     }
 
     local races = {
@@ -577,6 +551,7 @@ local function SimulatePlayerKills(killCount)
         end
 
         -- Register the kill with random data including rank
+        PSC_StorePlayerInfo(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, randomRank)
         RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, nil, nil, randomRank)
 
         -- Restore the original functions
@@ -629,12 +604,12 @@ function PSC_SlashCommandHandler(msg)
 end
 
 local function OnPlayerTargetChanged()
-    PSC_StorePlayerInfo("target")
-    PSC_StorePlayerInfo("targettarget")
+    PSC_GetAndStorePlayerInfoFromUnit("target")
+    PSC_GetAndStorePlayerInfoFromUnit("targettarget")
 end
 
 local function OnUpdateMouseoverUnit()
-    PSC_StorePlayerInfo("mouseover")
+    PSC_GetAndStorePlayerInfoFromUnit("mouseover")
 end
 
 local function HandleCombatState(inCombatNow)
@@ -660,20 +635,8 @@ local function HandlePlayerDeath()
 end
 
 local function ProcessEnemyPlayerDeath(destName, sourceGUID, sourceName)
-    local level, englishClass, race, gender, guild, rank = PSC_GetPlayerInfoFromCache(destName)
-
-    if race == "Unknown" or gender == "Unknown" or englishClass == "Unknown" then
-        if PSC_Debug then
-            print("Kill of " .. destName .. " not counted (incomplete data: " ..
-                (race == "Unknown" and "race" or "") ..
-                (gender == "Unknown" and (race == "Unknown" and ", gender" or "gender") or "") ..
-                (englishClass == "Unknown" and ((race == "Unknown" or gender == "Unknown") and ", class" or "class") or "") ..
-                " unknown)")
-        end
-        return
-    end
-
-    RegisterPlayerKill(destName, level, englishClass, race, gender, guild, sourceGUID, sourceName, rank)
+    local level, class, race, gender, guild, rank = PSC_GetPlayerInfoFromCache(destName)
+    RegisterPlayerKill(destName, level, class, race, gender, guild, sourceGUID, sourceName, rank)
 end
 
 local function CleanupRecentPetDamage()
@@ -1108,7 +1071,6 @@ end
 -- Add this function after PSC_LoadSettings but before RegisterEvents
 
 function PSC_SetupTooltip()
-    -- Helper function to check if a kills line already exists in the tooltip
     local function HasKillsLineInTooltip(tooltip)
         for i = 1, tooltip:NumLines() do
             local line = _G[tooltip:GetName() .. "TextLeft" .. i]
@@ -1119,7 +1081,6 @@ function PSC_SetupTooltip()
         return false
     end
 
-    -- Helper function to add kills to tooltip if not already present
     local function AddKillsToTooltip(tooltip, kills)
         if not HasKillsLineInTooltip(tooltip) then
             tooltip:AddLine("Kills: " .. kills, 1, 1, 1)
@@ -1127,7 +1088,6 @@ function PSC_SetupTooltip()
         end
     end
 
-    -- Helper function to get kills for a player by name (checking all level entries)
     local function GetKillsByPlayerName(playerName)
         for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
             local storedName = nameWithLevel:match("^(.+):")
@@ -1138,24 +1098,18 @@ function PSC_SetupTooltip()
         return 0
     end
 
-    -- Handle live player tooltips
     local function OnTooltipSetUnit(tooltip)
-        -- Check if tooltip info is enabled
         if not PSC_DB.ShowTooltipKillInfo then return end
 
-        -- Get unit from tooltip
-        local name, unit = tooltip:GetUnit()
+        local _, unit = tooltip:GetUnit()
         if not unit then return end
 
-        -- Only continue for enemy players
         if not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then return end
 
-        -- Get the player's name and level for lookup
         local playerName = UnitName(unit)
         local playerLevel = UnitLevel(unit)
         local nameWithLevel = playerName .. ":" .. playerLevel
 
-        -- Find kill count in our database
         local kills = 0
         if PSC_DB.PlayerKillCounts[nameWithLevel] then
             kills = PSC_DB.PlayerKillCounts[nameWithLevel].kills
@@ -1358,12 +1312,13 @@ local function PSC_CreateKillMilestoneFrame()
 end
 
 -- Function to update and show the milestone frame
-function PSC_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount, faction)
+function PSC_ShowKillMilestone(playerName, level, class, rank, killCount, faction)
     if not PSC_DB.ShowKillMilestones then return end
 
     if not PSC_DB.ShowMilestoneForFirstKill and killCount == 1 then return end
 
     local milestoneFrame = PSC_CreateKillMilestoneFrame()
+    local class_upper = class:upper()
 
     -- Update position if saved
     local pos = PSC_DB.MilestoneFramePosition
@@ -1376,7 +1331,7 @@ function PSC_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     end
 
     -- Set class icon
-    local classIconCoords = CLASS_ICON_TCOORDS[englishClass or "WARRIOR"]
+    local classIconCoords = CLASS_ICON_TCOORDS[class_upper or "WARRIOR"]
     if classIconCoords then
         milestoneFrame.classIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
         milestoneFrame.classIcon:SetTexCoord(unpack(classIconCoords))
@@ -1385,7 +1340,7 @@ function PSC_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
     end
 
     -- Set name with color by class
-    local classColor = RAID_CLASS_COLORS[englishClass] or RAID_CLASS_COLORS["WARRIOR"]
+    local classColor = RAID_CLASS_COLORS[class_upper] or RAID_CLASS_COLORS["WARRIOR"]
     milestoneFrame.nameText:SetText(playerName)
     milestoneFrame.nameText:SetTextColor(classColor.r, classColor.g, classColor.b)
 
