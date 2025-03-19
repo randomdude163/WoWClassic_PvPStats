@@ -463,8 +463,7 @@ local function RegisterPlayerKill(playerName, level, englishClass, race, gender,
     -- Get the kill count before showing milestone
     local killCount = PSC_DB.PlayerKillCounts[nameWithLevel].kills
 
-    -- Only show milestone if it's not the first kill or if first kill milestones are enabled
-    if not (killCount == 1 and PSC_DB.ShowMilestoneForFirstKill) then
+    if (killCount == 1 and PSC_DB.ShowMilestoneForFirstKill) or killCount >= 2 then
         PSC_ShowKillMilestone(playerName, level, englishClass, race, gender, guild, rank, killCount)
     end
 end
@@ -1400,11 +1399,22 @@ function PSC_ShowKillMilestone(playerName, level, englishClass, race, gender, gu
 
     -- Set kill message
     local killMessage
-    if killCount == 1 then
-        killMessage = "1st kill!"
+    local suffix
+    if killCount % 100 >= 11 and killCount % 100 <= 13 then
+        suffix = "th"
     else
-        killMessage = killCount .. "th kill!"
+        local lastDigit = killCount % 10
+        if lastDigit == 1 then
+            suffix = "st"
+        elseif lastDigit == 2 then
+            suffix = "nd"
+        elseif lastDigit == 3 then
+            suffix = "rd"
+        else
+            suffix = "th"
+        end
     end
+    killMessage = killCount .. suffix .. " kill!"
     milestoneFrame.killText:SetText(killMessage)
 
     -- Calculate required width for content
