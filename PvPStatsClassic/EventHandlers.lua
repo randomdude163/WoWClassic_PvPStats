@@ -134,11 +134,11 @@ local function ShowDebugInfo()
     PSC_Print("Manual BG Mode: " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
 end
 
-local function InitializeKillCountEntryForPlayer(nameWithLevel, guild, playerLevel)
+local function InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
     if not PSC_DB.PlayerKillCounts[nameWithLevel] then
         PSC_DB.PlayerKillCounts[nameWithLevel] = {
             kills = 0,
-            guild = guild,
+            guild = "",
             lastKill = "",
             playerLevel = playerLevel,
             zone = "",
@@ -149,12 +149,11 @@ local function InitializeKillCountEntryForPlayer(nameWithLevel, guild, playerLev
 end
 
 -- Update UpdateKillCacheEntry to include rank
-local function UpdateKillCountEntry(nameWithLevel, playerLevel, guild)
+local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     PSC_DB.PlayerKillCounts[nameWithLevel].kills = PSC_DB.PlayerKillCounts[nameWithLevel].kills + 1
     local timestamp = date("%Y-%m-%d %H:%M:%S")
     PSC_DB.PlayerKillCounts[nameWithLevel].lastKill = timestamp
     PSC_DB.PlayerKillCounts[nameWithLevel].playerLevel = playerLevel
-    PSC_DB.PlayerKillCounts[nameWithLevel].guild = guild
     local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
     PSC_DB.PlayerKillCounts[nameWithLevel].zone = currentZone
 
@@ -263,13 +262,12 @@ local function UpdateMultiKill()
     end
 end
 
-local function AnnounceKill(killedPlayer, level, nameWithLevel)
+local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     -- Don't announce in battleground mode or if announcements are disabled
     if PSC_CurrentlyInBattleground or not PSC_DB.EnableKillAnnounceMessages or not IsInGroup() then return end
 
     local killMessage = string.gsub(PSC_DB.KillAnnounceMessage, "Enemyplayername", killedPlayer)
 
-    local playerLevel = UnitLevel("player")
     local levelDifference = level - playerLevel
     local levelDisplay = level == -1 and "??" or tostring(level)
 
@@ -292,8 +290,12 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel)
     end
 end
 
-local function CreateKillDebugMessage(playerName, level, englishClass, race, nameWithLevel, killerGUID, killerName)
+local function CreateKillDebugMessage(playerName, nameWithLevel, killerName, killerGUID)
     local debugMsg = "Killed: " .. playerName
+
+    local level = PSC_DB.PlayerInfoCache[playerName].level
+    local class = PSC_DB.PlayerInfoCache[playerName].class
+    local race = PSC_DB.PlayerInfoCache[playerName].race
 
     local playerLevel = UnitLevel("player")
     local levelDifference = level > 0 and (level - playerLevel) or 0
@@ -303,7 +305,7 @@ local function CreateKillDebugMessage(playerName, level, englishClass, race, nam
         debugMsg = debugMsg .. " ("
     end
 
-    debugMsg = debugMsg .. englishClass .. ", " .. race .. ")"
+    debugMsg = debugMsg .. class .. ", " .. race .. ")"
 
     local rank = PSC_DB.PlayerKillCounts[nameWithLevel].rank or 0
     if rank > 0 then
@@ -422,28 +424,28 @@ local function ShowKillStreakMilestone(killCount)
     animGroup:Play()
 end
 
-local function RegisterPlayerKill(playerName, level, class, race, gender, guild, killerGUID, killerName, rank)
+local function RegisterPlayerKill(playerName, killerName, killerGUID)
     local playerLevel = UnitLevel("player")
+    local level = PSC_DB.PlayerInfoCache[playerName].level
     local nameWithLevel = playerName .. ":" .. level
 
     UpdateKillStreak()
     ShowKillStreakMilestone(PSC_DB.CurrentKillStreak)
-    InitializeKillCountEntryForPlayer(nameWithLevel, guild, playerLevel)
-    UpdateKillCountEntry(nameWithLevel, playerLevel, guild)
+    InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
+    UpdateKillCountEntry(nameWithLevel, playerLevel)
     UpdateMultiKill()
-    AnnounceKill(playerName, level, nameWithLevel)
+    AnnounceKill(playerName, level, nameWithLevel, playerLevel)
 
-    -- Print debug message using the new function
     if PSC_Debug then
-        local debugMsg = CreateKillDebugMessage(playerName, level, class, race, nameWithLevel, killerGUID, killerName)
+        local debugMsg = CreateKillDebugMessage(playerName, nameWithLevel)
         print(debugMsg)
     end
 
-    -- Get the kill count before showing milestone
     local killCount = PSC_DB.PlayerKillCounts[nameWithLevel].kills
-
+    local playerRank = PSC_DB.PlayerKillCounts[nameWithLevel].rank
+    local class = PSC_DB.PlayerInfoCache[playerName].class
     if (killCount == 1 and PSC_DB.ShowMilestoneForFirstKill) or killCount >= 2 then
-        PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
+        PSC_ShowKillMilestone(playerName, level, class, playerRank, killCount)
     end
 end
 
@@ -485,7 +487,7 @@ local function SimulatePlayerKills(killCount)
     }
 
     local races = {
-        "Human", "Dwarf", "NightElf", "Gnome",
+        "Human", "Dwarf", "Night Elf", "Gnome",
     }
 
     local genders = {"Male", "Female"}
@@ -552,7 +554,7 @@ local function SimulatePlayerKills(killCount)
 
         -- Register the kill with random data including rank
         PSC_StorePlayerInfo(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, randomRank)
-        RegisterPlayerKill(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, nil, nil, randomRank)
+        RegisterPlayerKill(randomName)
 
         -- Restore the original functions
         C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
@@ -634,11 +636,6 @@ local function HandlePlayerDeath()
     print("You died! Kill streak reset.")
 end
 
-local function ProcessEnemyPlayerDeath(destName, sourceGUID, sourceName)
-    local level, class, race, gender, guild, rank = PSC_GetPlayerInfoFromCache(destName)
-    RegisterPlayerKill(destName, level, class, race, gender, guild, sourceGUID, sourceName, rank)
-end
-
 local function CleanupRecentPetDamage()
     local now = GetTime()
     local cutoff = now - PSC_PET_DAMAGE_WINDOW
@@ -675,9 +672,9 @@ end
 
 
 local function CombatLogDestFlagsEnemyPlayer(destFlags)
-    return true
-    -- return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-    --        bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
+    -- return true
+    return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+           bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
 end
 
 
@@ -798,7 +795,7 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
 
     if countKill then
         PSC_RecentlyCountedKills[destGUID] = GetTime()
-        ProcessEnemyPlayerDeath(destName, sourceGUID, sourceName)
+        RegisterPlayerKill(destName, sourceName, sourceGUID)
     end
 end
 
@@ -848,7 +845,7 @@ local function HandleUnitDiedEvent(destGUID, destName)
 
         if countKill then
             PSC_RecentlyCountedKills[destGUID] = GetTime()
-            ProcessEnemyPlayerDeath(destName, petDamage.petGUID, petDamage.petName)
+            RegisterPlayerKill(destName, sourceName, sourceGUID)
             PSC_RecentPetDamage[destGUID] = nil  -- Clear the record after processing
         end
     end
@@ -865,8 +862,8 @@ local function HandleUnitDiedEvent(destGUID, destName)
             end
 
             PSC_RecentlyCountedKills[destGUID] = GetTime()
-            ProcessEnemyPlayerDeath(destName, nil, "Assist")
-            PSC_RecentPlayerDamage[destGUID] = nil  -- Clear the record after processing
+            RegisterPlayerKill(destName, sourceName, sourceGUID)
+            PSC_RecentPlayerDamage[destGUID] = nil
         end
     end
 end
@@ -1155,12 +1152,10 @@ function PSC_SetupTooltip()
 end
 
 -- Helper function to get PvP rank name based on rank number and faction
-function PSC_GetRankName(rank, faction)
+function PSC_GetRankName(rank)
     if not rank or rank <= 0 then
         return nil
     end
-
-    faction = faction or UnitFactionGroup("player") or "Alliance"
 
     local rankNames = {
         Alliance = {
@@ -1197,7 +1192,13 @@ function PSC_GetRankName(rank, faction)
         }
     }
 
-    local factionTable = rankNames[faction] or rankNames["Alliance"]
+    local player_faction = UnitFactionGroup("player")
+    local factionTable = nil
+    if player_faction == "Horde" then
+        factionTable = rankNames["Alliance"]
+    else
+        factionTable = rankNames["Horde"]
+    end
     return factionTable[rank] or ("Rank " .. rank)
 end
 
@@ -1312,7 +1313,7 @@ local function PSC_CreateKillMilestoneFrame()
 end
 
 -- Function to update and show the milestone frame
-function PSC_ShowKillMilestone(playerName, level, class, rank, killCount, faction)
+function PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
     if not PSC_DB.ShowKillMilestones then return end
 
     if not PSC_DB.ShowMilestoneForFirstKill and killCount == 1 then return end
@@ -1347,7 +1348,7 @@ function PSC_ShowKillMilestone(playerName, level, class, rank, killCount, factio
     -- Get rank name if applicable
     local rankName = nil
     if rank and rank > 0 then
-        rankName = PSC_GetRankName(rank, faction)
+        rankName = PSC_GetRankName(rank)
     end
 
     -- Set level and rank if applicable

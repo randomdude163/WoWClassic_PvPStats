@@ -307,11 +307,11 @@ local function FilterAndSortEntries()
 
             -- Get player info from cache instead of KillCounts
             local playerInfo = PSC_DB.PlayerInfoCache[nameWithoutLevel] or {}
-            local class = playerInfo.class or "Unknown"
-            local race = playerInfo.race or "Unknown"
-            local gender = playerInfo.gender or "Unknown"
-            local guild = playerInfo.guild or ""
-            local rank = playerInfo.rank or 0
+            local class = playerInfo.class
+            local race = playerInfo.race
+            local gender = playerInfo.gende
+            local guild = playerInfo.guild
+            local rank = playerInfo.rank
 
             -- Create entry object with all needed data
             local entry = {
@@ -939,14 +939,6 @@ local function SetupClassSearchBoxScripts(classSearchBox)
     classSearchBox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
-end
-
-local function CreateClassSearchLabel(parent, anchorTo)
-    local classLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    classLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
-    classLabel:SetText("Class:")
-    classLabel:SetTextColor(1, 0.82, 0)
-    return classLabel
 end
 
 local function CreateRaceSearchBox(parent, anchorTo)
