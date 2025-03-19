@@ -264,12 +264,7 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
             sortAscending = not sortAscending
         else
             sortBy = columnId
-            -- Set default sort direction based on column type
-            if columnId == "level" or columnId == "kills" then
-                sortAscending = false
-            else
-                sortAscending = true
-            end
+            sortAscending = false
         end
         RefreshKillList()
     end)
@@ -301,164 +296,141 @@ end
 local function FilterAndSortEntries()
     local sortedEntries = {}
 
-
     for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-        local searchMatch = true
-        local levelMatch = true
-        local classMatch = true
-        local raceMatch = true
-        local genderMatch = true
-        local zoneMatch = true
-        local rankMatch = true  -- Add rank match variable
+        if data then
+            -- Extract name from combined "name:level" format
+            local nameWithoutLevel = nameWithLevel:match("([^:]+)")
 
-        -- Player/Guild name search
-        if searchText ~= "" then
-            local name = string.gsub(nameWithLevel, ":[^:]*$", ""):lower()
-            local guild = (data.guild or ""):lower()
-            if not (string.find(name, searchText, 1, true) or string.find(guild, searchText, 1, true)) then
-                searchMatch = false
-            end
-        end
-
-        -- Level search
-        if minLevelSearch or maxLevelSearch then
+            -- Get stored level from the nameWithLevel string
             local level = nameWithLevel:match(":(%S+)")
             local levelNum = tonumber(level or "0") or 0
 
-            -- Special case for unknown level
-            if minLevelSearch == -1 and maxLevelSearch == -1 then
-                -- Check if this is an unknown level (level == -1 or data.unknownLevel is true)
-                if levelNum ~= -1 and not (data.unknownLevel or false) then
-                    levelMatch = false
-                end
-            else
-                -- Normal level range checking
-                if levelNum == -1 or (data.unknownLevel or false) then
-                    levelMatch = false
-                else
-                    if minLevelSearch and levelNum < minLevelSearch then
-                        levelMatch = false
-                    end
-                    if maxLevelSearch and levelNum > maxLevelSearch then
-                        levelMatch = false
-                    end
-                end
-            end
-        end
+            -- Get player info from cache instead of KillCounts
+            local playerInfo = PSC_DB.PlayerInfoCache[nameWithoutLevel] or {}
+            local class = playerInfo.class or "Unknown"
+            local race = playerInfo.race or "Unknown"
+            local gender = playerInfo.gender or "Unknown"
+            local guild = playerInfo.guild or ""
+            local rank = playerInfo.rank or 0
 
-        -- Class filter
-        if classSearchText ~= "" then
-            local class = (data.class or "Unknown"):lower()
-            if not string.find(class:lower(), classSearchText:lower(), 1, true) then
-                classMatch = false
-            end
-        end
-
-        -- Race filter
-        if raceSearchText ~= "" then
-            local race = (data.race or "Unknown"):lower()
-            if not string.find(race:lower(), raceSearchText:lower(), 1, true) then
-                raceMatch = false
-            end
-        end
-
-        -- Gender filter - Make this exact match case insensitive
-        if genderSearchText ~= "" then
-            local normalizedSearch = genderSearchText:lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
-            local normalizedGender = (data.gender or "Unknown"):lower():gsub("^%s*(.-)%s*$", "%1") -- trim whitespace
-
-            -- Auto-complete for single-letter inputs
-            if normalizedSearch == "m" then
-                normalizedSearch = "male"
-            elseif normalizedSearch == "f" then
-                normalizedSearch = "female"
-            elseif normalizedSearch == "u" then
-                normalizedSearch = "unknown"
-            end
-
-            if normalizedGender ~= normalizedSearch then
-                genderMatch = false
-            end
-        end
-
-        -- Zone filter
-        if zoneSearchText ~= "" then
-            local zone = (data.zone or "Unknown"):lower()
-            if not string.find(zone:lower(), zoneSearchText:lower(), 1, true) then
-                zoneMatch = false
-            end
-        end
-
-        -- Rank filter
-        if rankSearchText ~= "" then
-            local rank = data.rank or 0
-
-            if minRankSearch ~= nil and maxRankSearch ~= nil then
-                -- Use the parsed range values
-                if rank < minRankSearch or rank > maxRankSearch then
-                    rankMatch = false
-                end
-            else
-                -- Fallback to text-based matching if range parsing failed
-                local rankStr = tostring(rank)
-                if not string.find(rankStr, rankSearchText, 1, true) then
-                    rankMatch = false
-                end
-            end
-        end
-
-        if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
-            -- Convert level -1 to "??" for display
-            local level = nameWithLevel:match(":(%S+)")
-            local levelDisplay = level
-            if level == "-1" or (data.unknownLevel or false) then
-                levelDisplay = "??"
-            end
-
+            -- Create entry object with all needed data
             local entry = {
-                name = nameWithLevel:gsub(":[^:]*$", ""),
-                class = data.class or "Unknown",
-                race = data.race or "Unknown",
-                gender = data.gender or "Unknown",
-                level = level, -- Keep the original numeric level
-                levelDisplay = levelDisplay, -- Display level (shows ?? for unknown)
-                guild = data.guild or "",
+                name = nameWithoutLevel,
+                nameWithLevel = nameWithLevel,
+                class = class,
+                race = race,
+                gender = gender,
+                guild = guild,
+                zone = data.zone or "Unknown",
                 kills = data.kills or 1,
                 lastKill = data.lastKill or "",
-                zone = data.zone or "Unknown",
-                unknownLevel = data.unknownLevel or false,
-                rank = data.rank or 0  -- Add the rank data
+                levelNum = levelNum,
+                levelDisplay = levelNum,
+                rank = rank
             }
 
-            table.insert(sortedEntries, entry)
+            -- Special case for unknown level
+            if levelNum == -1 then
+                entry.levelDisplay = -1  -- Will be shown as "??"
+            end
+
+            local searchMatch = true
+            local levelMatch = true
+            local classMatch = true
+            local raceMatch = true
+            local genderMatch = true
+            local zoneMatch = true
+            local rankMatch = true
+
+            -- Player/Guild name search
+            if searchText ~= "" then
+                local nameLower = nameWithoutLevel:lower()
+                local guildLower = guild:lower()
+
+                searchMatch = nameLower:find(searchText, 1, true) or
+                             (guild ~= "" and guildLower:find(searchText, 1, true))
+            end
+
+            -- Level search
+            if minLevelSearch or maxLevelSearch then
+                if minLevelSearch == -1 and maxLevelSearch == -1 then
+                    -- Special case for unknown level search
+                    levelMatch = (levelNum == -1)
+                elseif minLevelSearch and maxLevelSearch then
+                    -- Range search
+                    levelMatch = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
+                end
+            end
+
+            -- Class filter
+            if classSearchText ~= "" then
+                classMatch = class:lower():find(classSearchText:lower(), 1, true)
+            end
+
+            -- Race filter
+            if raceSearchText ~= "" then
+                raceMatch = race:lower():find(raceSearchText:lower(), 1, true)
+            end
+
+            -- Gender filter - Make this exact match case insensitive
+            if genderSearchText ~= "" then
+                local compareText = genderSearchText:lower()
+                local genderLower = gender:lower()
+
+                -- Handle short forms of gender
+                if compareText == "m" or compareText == "male" then
+                    genderMatch = (genderLower == "male")
+                elseif compareText == "f" or compareText == "female" then
+                    genderMatch = (genderLower == "female")
+                elseif compareText == "u" or compareText == "unknown" or compareText == "?" then
+                    genderMatch = (genderLower == "unknown")
+                else
+                    genderMatch = genderLower:find(compareText, 1, true)
+                end
+            end
+
+            -- Zone filter
+            if zoneSearchText ~= "" then
+                zoneMatch = (data.zone or "Unknown"):lower():find(zoneSearchText:lower(), 1, true)
+            end
+
+            -- Rank filter
+            if minRankSearch or maxRankSearch then
+                if minRankSearch and maxRankSearch then
+                    rankMatch = (rank >= minRankSearch and rank <= maxRankSearch)
+                end
+            end
+
+            if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
+                table.insert(sortedEntries, entry)
+            end
         end
     end
 
     -- Sort the entries based on the selected sort method
     table.sort(sortedEntries, function(a, b)
         -- Safety check - always return a consistent value for any comparison
-        if not a or not b then
-            return false
-        end
+        if not a then return false end
+        if not b then return true end
+        if a == b then return false end
 
         -- For level sorting, handle the special cases first before looking at values
         if sortBy == "level" then
-            -- Handle nil values
-            local aLevel = a.unknownLevel and -1 or tonumber(a.level) or -1
-            local bLevel = b.unknownLevel and -1 or tonumber(b.level) or -1
-
-            -- Unknown levels (-1) should appear at the end when ascending
-            -- and at the beginning when descending
-            if aLevel == -1 and bLevel ~= -1 then
-                return not sortAscending
-            elseif aLevel ~= -1 and bLevel == -1 then
-                return sortAscending
-            else
-                -- Both are either unknown or known levels
+            -- Special handling for unknown levels (displayed as ??)
+            if a.levelNum == -1 and b.levelNum ~= -1 then
+                -- When sorting by level, place unknown levels at the END for ascending
+                -- and at the BEGINNING for descending
+                return not sortAscending  -- reversed logic for unknown levels
+            elseif a.levelNum ~= -1 and b.levelNum == -1 then
+                -- When sorting by level, place unknown levels at the END for ascending
+                -- and at the BEGINNING for descending
+                return sortAscending  -- normal logic for known vs unknown
+            elseif a.levelNum == -1 and b.levelNum == -1 then
+                -- Both unknown, use secondary sort (name)
                 if sortAscending then
-                    return aLevel < bLevel
+                    return a.name < b.name
                 else
-                    return aLevel > bLevel
+                    return a.name > b.name
                 end
             end
         end
@@ -474,34 +446,58 @@ local function FilterAndSortEntries()
             aVal, bVal = a.race or "Unknown", b.race or "Unknown"
         elseif sortBy == "gender" then
             aVal, bVal = a.gender or "Unknown", b.gender or "Unknown"
-        elseif sortBy == "rank" then  -- Add rank sorting option
-            aVal, bVal = tonumber(a.rank) or 0, tonumber(b.rank) or 0
+        elseif sortBy == "rank" then
+            aVal, bVal = tonumber(a.rank or 0), tonumber(b.rank or 0)
         elseif sortBy == "guild" then
             aVal, bVal = a.guild or "", b.guild or ""
         elseif sortBy == "zone" then
             aVal, bVal = a.zone or "Unknown", b.zone or "Unknown"
         elseif sortBy == "kills" then
-            aVal, bVal = tonumber(a.kills) or 0, tonumber(b.kills) or 0
+            aVal, bVal = tonumber(a.kills or 0), tonumber(b.kills or 0)
         elseif sortBy == "lastKill" then
             aVal, bVal = a.lastKill or "", b.lastKill or ""
+        elseif sortBy == "level" then
+            aVal, bVal = tonumber(a.levelNum or 0), tonumber(b.levelNum or 0)
         else
-            -- Default to name if sort field is unrecognized
+            -- Default to name if sortBy is not recognized
             aVal, bVal = a.name or "", b.name or ""
         end
 
+        -- Make sure we have valid values to compare
+        if aVal == nil then aVal = "" end
+        if bVal == nil then bVal = "" end
+
         -- For numeric values like kills, use numeric comparison
         if type(aVal) == "number" and type(bVal) == "number" then
-            if sortAscending then
-                return aVal < bVal
+            if aVal == bVal then
+                -- Secondary sort by name for identical values
+                if sortAscending then
+                    return a.name < b.name
+                else
+                    return a.name > b.name
+                end
             else
-                return aVal > bVal
+                if sortAscending then
+                    return aVal < bVal
+                else
+                    return aVal > bVal
+                end
             end
         else
-            -- For strings and other values, convert to string for consistent comparison
-            if sortAscending then
-                return tostring(aVal) < tostring(bVal)
+            -- For strings, use string comparison
+            if aVal == bVal then
+                -- Secondary sort by name for identical values
+                if sortAscending then
+                    return a.name < b.name
+                else
+                    return a.name > b.name
+                end
             else
-                return tostring(aVal) > tostring(bVal)
+                if sortAscending then
+                    return aVal < bVal
+                else
+                    return aVal > bVal
+                end
             end
         end
     end)
@@ -1285,7 +1281,7 @@ local function CreateSearchBar(frame)
     row1:SetSize(searchBg:GetWidth(), 20)
     row1:SetPoint("TOP", searchBg, "TOP", 0, -10)
 
-    -- Player/Guild search
+    -- Player/Guild search (matches Name column)
     local searchLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     searchLabel:SetPoint("LEFT", row1, "LEFT", 10, 0)
     searchLabel:SetText("Player/Guild:")
@@ -1298,9 +1294,48 @@ local function CreateSearchBar(frame)
     searchBox:SetText("")
     searchText = ""
 
-    -- Level search
+    -- Class search (second column)
+    local classLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    classLabel:SetPoint("LEFT", searchBox, "RIGHT", 15, 0)
+    classLabel:SetText("Class:")
+    classLabel:SetTextColor(1, 0.82, 0)
+
+    local classSearchBox = CreateClassSearchBox(searchBg, classLabel)
+    classSearchBox:SetSize(80, 20)
+    classSearchBox:SetPoint("LEFT", classLabel, "RIGHT", 5, 0)
+    SetupClassSearchBoxScripts(classSearchBox)
+    classSearchBox:SetText("")
+    classSearchText = ""
+
+    -- Race search (third column)
+    local raceLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    raceLabel:SetPoint("LEFT", classSearchBox, "RIGHT", 15, 0)
+    raceLabel:SetText("Race:")
+    raceLabel:SetTextColor(1, 0.82, 0)
+
+    local raceSearchBox = CreateRaceSearchBox(searchBg, raceLabel)
+    raceSearchBox:SetSize(80, 20)
+    raceSearchBox:SetPoint("LEFT", raceLabel, "RIGHT", 5, 0)
+    SetupRaceSearchBoxScripts(raceSearchBox)
+    raceSearchBox:SetText("")
+    raceSearchText = ""
+
+    -- Gender search (fourth column)
+    local genderLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    genderLabel:SetPoint("LEFT", raceSearchBox, "RIGHT", 15, 0)
+    genderLabel:SetText("Gender:")
+    genderLabel:SetTextColor(1, 0.82, 0)
+
+    local genderSearchBox = CreateGenderSearchBox(searchBg, genderLabel)
+    genderSearchBox:SetSize(55, 20)
+    genderSearchBox:SetPoint("LEFT", genderLabel, "RIGHT", 5, 0)
+    SetupGenderSearchBoxScripts(genderSearchBox)
+    genderSearchBox:SetText("")
+    genderSearchText = ""
+
+    -- Level search (fifth column)
     local levelLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelLabel:SetPoint("LEFT", searchBox, "RIGHT", 15, 0)
+    levelLabel:SetPoint("LEFT", genderSearchBox, "RIGHT", 15, 0)
     levelLabel:SetText("Level:")
     levelLabel:SetTextColor(1, 0.82, 0)
 
@@ -1311,71 +1346,31 @@ local function CreateSearchBar(frame)
     levelSearchBox:SetText("")
     levelSearchText = ""
 
-    -- Class search
-    local classLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    classLabel:SetPoint("LEFT", levelSearchBox, "RIGHT", 15, 0)
-    classLabel:SetText("Class:")
-    classLabel:SetTextColor(1, 0.82, 0)
-
-    -- Create the search fields with adjusted widths
-    local classSearchBox = CreateClassSearchBox(searchBg, classLabel)
-    classSearchBox:SetSize(80, 20)  -- Increased from 60
-    classSearchBox:SetPoint("LEFT", classLabel, "RIGHT", 5, 0)
-    SetupClassSearchBoxScripts(classSearchBox)
-    classSearchBox:SetText("")
-    classSearchText = ""
-
-    -- Race search
-    local raceLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    raceLabel:SetPoint("LEFT", classSearchBox, "RIGHT", 15, 0)
-    raceLabel:SetText("Race:")
-    raceLabel:SetTextColor(1, 0.82, 0)
-
-    local raceSearchBox = CreateRaceSearchBox(searchBg, raceLabel)
-    raceSearchBox:SetSize(80, 20)  -- Increased from 60
-    raceSearchBox:SetPoint("LEFT", raceLabel, "RIGHT", 5, 0)
-    SetupRaceSearchBoxScripts(raceSearchBox)
-    raceSearchBox:SetText("")
-    raceSearchText = ""
-
-    -- Gender search
-    local genderLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    genderLabel:SetPoint("LEFT", raceSearchBox, "RIGHT", 15, 0)
-    genderLabel:SetText("Gender:")
-    genderLabel:SetTextColor(1, 0.82, 0)
-
-    local genderSearchBox = CreateGenderSearchBox(searchBg, genderLabel)
-    genderSearchBox:SetSize(55, 20)  -- Unchanged
-    genderSearchBox:SetPoint("LEFT", genderLabel, "RIGHT", 5, 0)
-    SetupGenderSearchBoxScripts(genderSearchBox)
-    genderSearchBox:SetText("")
-    genderSearchText = ""
-
-    -- Zone search
-    local zoneLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    zoneLabel:SetPoint("LEFT", genderSearchBox, "RIGHT", 15, 0)
-    zoneLabel:SetText("Zone:")
-    zoneLabel:SetTextColor(1, 0.82, 0)
-
-    local zoneSearchBox = CreateZoneSearchBox(searchBg, zoneLabel)
-    zoneSearchBox:SetSize(130, 20)  -- Significantly increased from 60
-    zoneSearchBox:SetPoint("LEFT", zoneLabel, "RIGHT", 5, 0)
-    SetupZoneSearchBoxScripts(zoneSearchBox)
-    zoneSearchBox:SetText("")
-    zoneSearchText = ""
-
-    -- Rank search
+    -- Rank search (sixth column)
     local rankLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    rankLabel:SetPoint("LEFT", zoneSearchBox, "RIGHT", 15, 0)
+    rankLabel:SetPoint("LEFT", levelSearchBox, "RIGHT", 15, 0)
     rankLabel:SetText("Rank:")
     rankLabel:SetTextColor(1, 0.82, 0)
 
     local rankSearchBox = CreateRankSearchBox(searchBg, rankLabel)
-    rankSearchBox:SetSize(50, 20)  -- Reduced width
+    rankSearchBox:SetSize(50, 20)
     rankSearchBox:SetPoint("LEFT", rankLabel, "RIGHT", 5, 0)
     SetupRankSearchBoxScripts(rankSearchBox)
     rankSearchBox:SetText("")
     rankSearchText = ""
+
+    -- Zone search (eighth column - after Guild)
+    local zoneLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    zoneLabel:SetPoint("LEFT", rankSearchBox, "RIGHT", 15, 0)
+    zoneLabel:SetText("Zone:")
+    zoneLabel:SetTextColor(1, 0.82, 0)
+
+    local zoneSearchBox = CreateZoneSearchBox(searchBg, zoneLabel)
+    zoneSearchBox:SetSize(130, 20)
+    zoneSearchBox:SetPoint("LEFT", zoneLabel, "RIGHT", 5, 0)
+    SetupZoneSearchBoxScripts(zoneSearchBox)
+    zoneSearchBox:SetText("")
+    zoneSearchText = ""
 
     -- Store references in the frame for external access
     frame.searchBox = searchBox
@@ -1384,7 +1379,7 @@ local function CreateSearchBar(frame)
     frame.raceSearchBox = raceSearchBox
     frame.genderSearchBox = genderSearchBox
     frame.zoneSearchBox = zoneSearchBox
-    frame.rankSearchBox = rankSearchBox  -- Add this line
+    frame.rankSearchBox = rankSearchBox
 
     return searchBox
 end
