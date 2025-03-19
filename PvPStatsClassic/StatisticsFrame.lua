@@ -488,9 +488,10 @@ local function createGuildTable(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Guild Kills", x, y, width, height)
 
     local guildKills = {}
-    for _, data in pairs(PSC_DB.PlayerKillCounts) do
+    for playerNameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
+        local playerNameWithoutLevel = playerNameWithLevel:match("([^:]+)")
         if data then
-            local guild = data.guild or ""
+            local guild = PSC_DB.PlayerInfoCache[playerNameWithoutLevel].guild
             if guild ~= "" then
                 guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
             end
@@ -679,7 +680,6 @@ local function createSummaryStats(parent, x, y, width, height)
 end
 
 
--- Update the gatherStatistics function to remove unknownLevel check
 local function gatherStatistics()
     local classData = {}
     local raceData = {}
@@ -694,7 +694,8 @@ local function gatherStatistics()
 
     for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
         if data then
-            local class = data.class or "Unknown"
+            local nameWithoutLevel = nameWithLevel:match("([^:]+)")
+            local class = PSC_DB.PlayerInfoCache[nameWithoutLevel].class
             classData[class] = (classData[class] or 0) + 1
 
             local level = nameWithLevel:match(":(%S+)")
@@ -703,27 +704,23 @@ local function gatherStatistics()
 
             if levelNum == -1 then
                 unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
-                -- Add unknown levels to levelData for proper display in the level chart
                 levelData["??"] = (levelData["??"] or 0) + kills
             else
-                -- Track individual levels
                 if levelNum > 0 and levelNum <= 60 then
                     levelData[tostring(levelNum)] = (levelData[tostring(levelNum)] or 0) + kills
                 end
             end
 
-            local race = data.race or "Unknown"
+            local race = PSC_DB.PlayerInfoCache[nameWithoutLevel].race
             raceData[race] = (raceData[race] or 0) + 1
 
-            local gender = data.gender or "Unknown"
+            local gender = PSC_DB.PlayerInfoCache[nameWithoutLevel].gender
             genderData[gender] = (genderData[gender] or 0) + 1
 
-            -- Track zone data
-            local zone = data.zone or "Unknown"
+            local zone = data.zone
             zoneData[zone] = (zoneData[zone] or 0) + kills
 
-            -- Track guild status
-            local guild = data.guild or ""
+            local guild = PSC_DB.PlayerInfoCache[nameWithoutLevel].guild
             if guild ~= "" then
                 guildStatusData["In Guild"] = guildStatusData["In Guild"] + kills
             else

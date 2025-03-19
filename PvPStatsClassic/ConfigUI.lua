@@ -134,15 +134,30 @@ end
 
 -- Update the config UI to use the new name and add the milestone interval slider
 local function CreateAnnouncementSection(parent, yOffset)
-    local header = CreateSectionHeader(parent, "Announcement Settings", 20, yOffset)
+    local announcementSettingsHeader = CreateSectionHeader(parent, "Party Chat Announcements", 20, yOffset)
 
-    -- Auto BG Mode checkbox with tooltip
-    local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode (No announcements, only your own killing blows are tracked)",
+    local enableKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce kills",
+        PSC_DB.EnableKillAnnounceMessages, function(checked)
+            PSC_DB.EnableKillAnnounceMessages = checked
+        end)
+    enableKillAnnounceCheckbox:SetPoint("TOPLEFT", announcementSettingsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.enableKillAnnounceCheckbox = enableKillAnnounceCheckbox
+
+    local enableRecordAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce new personal bests",
+        PSC_DB.EnableRecordAnnounceMessages, function(checked)
+            PSC_DB.EnableRecordAnnounceMessages = checked
+        end)
+    enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
+    parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
+
+    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -125)
+
+    local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode",
         PSC_DB.AutoBattlegroundMode, function(checked)
             PSC_DB.AutoBattlegroundMode = checked
             PSC_CheckBattlegroundStatus()
         end)
-    autoBGModeCheckbox:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    autoBGModeCheckbox:SetPoint("TOPLEFT", battlegroundModeHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
     parent.autoBGModeCheckbox = autoBGModeCheckbox
 
     autoBGModeCheckbox:SetScript("OnEnter", function(self)
@@ -156,41 +171,39 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     autoBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Count Assists In BG checkbox (new)
+    local assistsInBGCheckbox, _ = CreateCheckbox(parent, "Count assist kills in Battleground Mode",
+        PSC_DB.CountAssistsInBattlegrounds, function(checked)
+            PSC_DB.CountAssistsInBattlegrounds = checked
+        end)
+    assistsInBGCheckbox:SetPoint("TOPLEFT", autoBGModeCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
+    parent.assistsInBGCheckbox = assistsInBGCheckbox
+
+    assistsInBGCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Count Assist Kills in Battlegrounds")
+        GameTooltip:AddLine("Kills count if you damaged a player and someone else does the killing blow.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    assistsInBGCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     local manualBGModeCheckbox, _ = CreateCheckbox(parent, "Force Enable Battleground Mode",
         PSC_DB.ForceBattlegroundMode, function(checked)
             PSC_DB.ForceBattlegroundMode = checked
             PSC_CheckBattlegroundStatus()
         end)
-    manualBGModeCheckbox:SetPoint("TOPLEFT", autoBGModeCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    manualBGModeCheckbox:SetPoint("TOPLEFT", assistsInBGCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
     parent.manualBGModeCheckbox = manualBGModeCheckbox
 
     manualBGModeCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Force Battleground Mode")
-        GameTooltip:AddLine("Enable battleground conditions anywhere in the world.", 1, 1, 1, true)
-        GameTooltip:AddLine("When enabled:", 1, 1, 1, true)
-        GameTooltip:AddLine("• Only your or your pet's killing blows are counted", 1, 1, 1, true)
-        GameTooltip:AddLine("• Prevents chat spam in crowded PvP situations", 1, 1, 1, true)
+        GameTooltip:AddLine("Enable battleground mode until you turn it off again.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     manualBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent,
-        "Show kills in mouseover tooltips",
-        PSC_DB.ShowTooltipKillInfo,
-        function(checked)
-            PSC_DB.ShowTooltipKillInfo = checked
-        end)
-    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", manualBGModeCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
-
-    tooltipKillInfoCheckbox:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Enemy Player Tooltips")
-        GameTooltip:AddLine("Shows how often you killed players while you mouseover them.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    tooltipKillInfoCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -270)
 
     local showKillMilestonesCheckbox, _ = CreateCheckbox(parent,
         "Show kill milestones",
@@ -198,7 +211,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         function(checked)
             PSC_DB.ShowKillMilestones = checked
         end)
-    showKillMilestonesCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    showKillMilestonesCheckbox:SetPoint("TOPLEFT", killMilestonesHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
     parent.showKillMilestonesCheckbox = showKillMilestonesCheckbox
 
     showKillMilestonesCheckbox:SetScript("OnEnter", function(self)
@@ -215,7 +228,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         function(checked)
             PSC_DB.EnableKillMilestoneSounds = checked
         end)
-    killMilestoneSoundsCheckbox:SetPoint("TOPLEFT", showKillMilestonesCheckbox, "BOTTOMLEFT", 20, -CHECKBOX_SPACING)
+    killMilestoneSoundsCheckbox:SetPoint("TOPLEFT", showKillMilestonesCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
     parent.killMilestoneSoundsCheckbox = killMilestoneSoundsCheckbox
 
     local showMilestoneForFirstKillCheckbox, _ = CreateCheckbox(parent,
@@ -224,7 +237,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         function(checked)
             PSC_DB.ShowMilestoneForFirstKill = checked -- Invert the stored value
         end)
-    showMilestoneForFirstKillCheckbox:SetPoint("TOPLEFT", killMilestoneSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    showMilestoneForFirstKillCheckbox:SetPoint("TOPLEFT", killMilestoneSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
     parent.showMilestoneForFirstKillCheckbox = showMilestoneForFirstKillCheckbox
 
     showMilestoneForFirstKillCheckbox:SetScript("OnEnter", function(self)
@@ -292,7 +305,6 @@ local function CreateAnnouncementSection(parent, yOffset)
 
         -- 50% chance to show Horde ranks instead of Alliance
         local useHorde = (math.random(1, 2) == 1)
-        local faction = useHorde and "Horde" or "Alliance"
 
         -- 30% chance of no rank
         local rank
@@ -312,31 +324,37 @@ local function CreateAnnouncementSection(parent, yOffset)
             end
         end
 
-        PSC_ShowKillMilestone("TestPlayer", 60, randomClass, "Human", 1, "Test Guild", rank, testKillCounts[index], faction)
+        PSC_ShowKillMilestone("TestPlayer", 60, randomClass, rank, testKillCounts[index])
     end)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
-
-    local enableKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Enable kill announcements to party chat",
-        PSC_DB.EnableKillAnnounceMessages, function(checked)
-            PSC_DB.EnableKillAnnounceMessages = checked
-        end)
-    enableKillAnnounceCheckbox:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", -38, -CHECKBOX_SPACING - 5)
-    parent.enableKillAnnounceCheckbox = enableKillAnnounceCheckbox
-
-    local enableRecordAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce new personal bests to party chat",
-        PSC_DB.EnableRecordAnnounceMessages, function(checked)
-            PSC_DB.EnableRecordAnnounceMessages = checked
-        end)
-    enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
 
     local enableKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
         PSC_DB.EnableMultiKillSounds, function(checked)
             PSC_DB.EnableMultiKillSounds = checked
         end)
-    enableKillSoundsCheckbox:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    enableKillSoundsCheckbox:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillSoundsCheckbox = enableKillSoundsCheckbox
+
+
+    local tooltipSectionHeader = CreateSectionHeader(parent, "Tooltips", 20, -580)
+
+    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent,
+        "Show kills in mouseover tooltips",
+        PSC_DB.ShowTooltipKillInfo,
+        function(checked)
+            PSC_DB.ShowTooltipKillInfo = checked
+        end)
+    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", tooltipSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
+
+    tooltipKillInfoCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enemy Player Tooltips")
+        GameTooltip:AddLine("Shows how often you killed players while you mouseover them.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    tooltipKillInfoCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     return 320
 end
@@ -465,7 +483,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 600) -- Reduced from 650 to 600
+    frame:SetSize(600, 700) -- Reduced from 650 to 600
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -490,6 +508,7 @@ function PSC_UpdateConfigUI()
 
     -- Update checkboxes
     configFrame.autoBGModeCheckbox:SetChecked(PSC_DB.AutoBattlegroundMode)
+    configFrame.assistsInBGCheckbox:SetChecked(PSC_DB.CountAssistsInBattlegrounds)
     configFrame.manualBGModeCheckbox:SetChecked(PSC_DB.ForceBattlegroundMode)
     configFrame.tooltipKillInfoCheckbox:SetChecked(PSC_DB.ShowTooltipKillInfo)
     configFrame.showKillMilestonesCheckbox:SetChecked(PSC_DB.ShowKillMilestones)
@@ -735,6 +754,7 @@ function PSC_CreateConfigFrame()
 
     -- Copy references from the tab frame to the config frame
     configFrame.autoBGModeCheckbox = tabFrames[1].autoBGModeCheckbox
+    configFrame.assistsInBGCheckbox = tabFrames[1].assistsInBGCheckbox
     configFrame.manualBGModeCheckbox = tabFrames[1].manualBGModeCheckbox
     configFrame.tooltipKillInfoCheckbox = tabFrames[1].tooltipKillInfoCheckbox
     configFrame.showKillMilestonesCheckbox = tabFrames[1].showKillMilestonesCheckbox

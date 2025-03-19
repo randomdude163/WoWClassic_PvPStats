@@ -19,7 +19,8 @@
         "BackdropTemplateMixin",
         "COMBATLOG_OBJECT_TYPE_PLAYER",
         "UnitPVPRank",
-        "GetTargetHonorRank"
+        "GetTargetHonorRank",
+        "class"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {
