@@ -329,15 +329,14 @@ local function CreateAnnouncementSection(parent, yOffset)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
 
+    local tooltipSectionHeader = CreateSectionHeader(parent, "General", 20, -545)
+
     local enableKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
         PSC_DB.EnableMultiKillSounds, function(checked)
             PSC_DB.EnableMultiKillSounds = checked
         end)
-    enableKillSoundsCheckbox:SetPoint("TOPLEFT", testButton, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    enableKillSoundsCheckbox:SetPoint("TOPLEFT", tooltipSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillSoundsCheckbox = enableKillSoundsCheckbox
-
-
-    local tooltipSectionHeader = CreateSectionHeader(parent, "Tooltips", 20, -580)
 
     local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent,
         "Show kills in mouseover tooltips",
@@ -345,7 +344,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         function(checked)
             PSC_DB.ShowTooltipKillInfo = checked
         end)
-    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", tooltipSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", enableKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
 
     tooltipKillInfoCheckbox:SetScript("OnEnter", function(self)
@@ -410,15 +409,13 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -FIELD_SPACING)
 
     -- Add section header for Multi-Kill settings
-    local multiKillHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    multiKillHeader:SetPoint("TOPLEFT", multiKillContainer, "BOTTOMLEFT", 0, -20)
-    multiKillHeader:SetText("Multi-Kill Announcements")
+    local multiKillHeader = CreateSectionHeader(parent, "Multi-Kill Announcements", 20, -300)
 
     -- Add the threshold slider and description
     local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(16)
-    slider:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 5, -25)
+    slider:SetPoint("TOPLEFT", multiKillHeader, "BOTTOMLEFT", 5, -30)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(2, 10)
     slider:SetValueStep(1)
