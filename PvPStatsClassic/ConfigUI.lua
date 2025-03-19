@@ -150,7 +150,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
     parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
 
-    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -125)
+    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -130)
 
     local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode",
         PSC_DB.AutoBattlegroundMode, function(checked)
@@ -203,7 +203,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     manualBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -270)
+    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -280)
 
     local showKillMilestonesCheckbox, _ = CreateCheckbox(parent,
         "Show kill milestones",
@@ -251,7 +251,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     local milestoneIntervalSlider = CreateFrame("Slider", "PSC_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
     milestoneIntervalSlider:SetWidth(200)
     milestoneIntervalSlider:SetHeight(16)
-    milestoneIntervalSlider:SetPoint("TOPLEFT", showMilestoneForFirstKillCheckbox, "BOTTOMLEFT", 20, -20)
+    milestoneIntervalSlider:SetPoint("TOPLEFT", killMilestonesHeader, "BOTTOMLEFT", 310, -CHECKBOX_SPACING - 25)
     milestoneIntervalSlider:SetOrientation("HORIZONTAL")
     milestoneIntervalSlider:SetMinMaxValues(3, 10)
     milestoneIntervalSlider:SetValueStep(1)
@@ -329,7 +329,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
 
-    local tooltipSectionHeader = CreateSectionHeader(parent, "General", 20, -545)
+    local tooltipSectionHeader = CreateSectionHeader(parent, "General", 20, -445)
 
     local enableKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
         PSC_DB.EnableMultiKillSounds, function(checked)
@@ -480,7 +480,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 700) -- Reduced from 650 to 600
+    frame:SetSize(600, 630) -- Reduced from 650 to 600
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
