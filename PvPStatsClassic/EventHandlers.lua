@@ -176,10 +176,10 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
             killNumber = PSC_DB.PlayerKillCounts[nameWithLevel].kills
         })
 
-        if PSC_Debug then
-            print(string.format("Kill recorded at %s (%.4f, %.4f) in %s",
-                timestamp, x, y, currentZone))
-        end
+        -- if PSC_Debug then
+        --     print(string.format("Kill recorded at %s (%.4f, %.4f) in %s",
+        --         timestamp, x, y, currentZone))
+        -- end
     else
         if PSC_Debug then
             print("Failed to get player position for kill location")
@@ -436,10 +436,10 @@ local function RegisterPlayerKill(playerName, killerName, killerGUID)
     UpdateMultiKill()
     AnnounceKill(playerName, level, nameWithLevel, playerLevel)
 
-    if PSC_Debug then
-        local debugMsg = CreateKillDebugMessage(playerName, nameWithLevel)
-        print(debugMsg)
-    end
+    -- if PSC_Debug then
+    --     local debugMsg = CreateKillDebugMessage(playerName, nameWithLevel, killerName, killerGUID)
+    --     print(debugMsg)
+    -- end
 
     local killCount = PSC_DB.PlayerKillCounts[nameWithLevel].kills
     local playerRank = PSC_DB.PlayerKillCounts[nameWithLevel].rank
@@ -672,9 +672,9 @@ end
 
 
 local function CombatLogDestFlagsEnemyPlayer(destFlags)
-    -- return true
-    return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-           bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
+    return true
+    -- return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+    --        bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
 end
 
 
@@ -726,9 +726,9 @@ local function RecordPlayerDamage(sourceGUID, sourceName, targetGUID, targetName
     -- Store the updated record
     PSC_RecentPlayerDamage[targetGUID] = existingRecord
 
-    if PSC_Debug then
-        print(string.format("You dealt %d damage to %s", amount, targetName))
-    end
+    -- if PSC_Debug then
+    --     print(string.format("You dealt %d damage to %s", amount, targetName))
+    -- end
 end
 
 local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, param1, param4)
@@ -801,9 +801,9 @@ end
 
 local function HandleUnitDiedEvent(destGUID, destName)
     if PSC_RecentlyCountedKills[destGUID] then
-        if PSC_Debug then
-            print("Skipping duplicate kill for: " .. destName)
-        end
+        -- if PSC_Debug then
+        --     print("Skipping duplicate kill for: " .. destName)
+        -- end
         return
     end
 
@@ -845,24 +845,31 @@ local function HandleUnitDiedEvent(destGUID, destName)
 
         if countKill then
             PSC_RecentlyCountedKills[destGUID] = GetTime()
-            RegisterPlayerKill(destName, sourceName, sourceGUID)
+            RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
             PSC_RecentPetDamage[destGUID] = nil  -- Clear the record after processing
+            return
         end
     end
-
-    if countKill then return end
 
     -- If not a pet kill, check for assist kill
     local playerDamage = PSC_RecentPlayerDamage[destGUID]
     if playerDamage and (GetTime() - playerDamage.timestamp) <= PSC_ASSIST_DAMAGE_WINDOW then
         -- Check if enough damage was done for assist credit
         if playerDamage.totalDamage > 0 then
+            -- In BG mode, only count assists if the setting is enabled
+            if PSC_CurrentlyInBattleground and not PSC_DB.CountAssistsInBattlegrounds then
+                if PSC_Debug then
+                    print("BG Mode: Assist kill ignored (assists disabled in BGs)")
+                end
+                return
+            end
+
             if PSC_Debug then
                 print("Assist kill detected for: " .. destName)
             end
 
             PSC_RecentlyCountedKills[destGUID] = GetTime()
-            RegisterPlayerKill(destName, sourceName, sourceGUID)
+            RegisterPlayerKill(destName, "Assist", nil)
             PSC_RecentPlayerDamage[destGUID] = nil
         end
     end
@@ -939,17 +946,24 @@ end
 
 -- Add after the RegisterEvents function
 function PSC_CheckBattlegroundStatus()
+    -- First check if battleground mode is being forced by the user
     if PSC_DB.ForceBattlegroundMode then
+        if PSC_Debug and not PSC_LastInBattlegroundValue then
+            print("PvPStatsClassic: Forced battleground mode enabled.")
+        end
         PSC_CurrentlyInBattleground = true
+        PSC_LastInBattlegroundValue = true
+        return
     end
 
+    -- If not forced, check if we're in an actual battleground
     local currentZone = GetRealZoneText() or ""
     local battlegroundZones = {
         "Warsong Gulch",
         "Arathi Basin",
         "Alterac Valley",
-        "Elwynn Forest",
-        "Duskwood"
+        -- "Elwynn Forest",
+        -- "Duskwood"
     }
 
     for _, bgName in ipairs(battlegroundZones) do

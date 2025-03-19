@@ -27,19 +27,38 @@ local function ConvertGenderToString(genderCode)
 end
 
 local function GetPlayerInfoFromUnit(unit)
-    if not UnitExists(unit) or not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then
+    if not UnitExists(unit) or UnitIsFriend("player", unit) then
         return
     end
 
-    local name = UnitName(unit)
-    local level = UnitLevel(unit)
-    local class, englishClass = UnitClass(unit)
-    class = class:sub(1, 1):upper() .. class:sub(2):lower()
-    local race, englishRace = UnitRace(unit)
-    local gender = ConvertGenderToString(UnitSex(unit))
-    local guildName = GetGuildInfo(unit)
-    if not guildName then guildName = "" end
-    local rank = GetHonorRank(unit)
+    local name = nil
+    local level = nil
+    local class = nil
+    local race = nil
+    local gender = nil
+    local guildName = nil
+    local rank = nil
+
+    if UnitIsPlayer(unit) then
+        name = UnitName(unit)
+        level = UnitLevel(unit)
+        class, _ = UnitClass(unit)
+        class = class:sub(1, 1):upper() .. class:sub(2):lower()
+        race, _ = UnitRace(unit)
+        gender = ConvertGenderToString(UnitSex(unit))
+        guildName = GetGuildInfo(unit)
+        if not guildName then guildName = "" end
+        rank = GetHonorRank(unit)
+    elseif not UnitIsPlayer(unit) then
+        -- Mob for testing purposes
+        name = UnitName(unit)
+        level = UnitLevel(unit)
+        class = "Unknown"
+        race = "Unknown"
+        gender = "Unknown"
+        guildName = ""
+        rank = GetHonorRank(unit)
+    end
 
     -- if PSC_Debug then
     --     print("Player info for " .. name)
@@ -171,6 +190,7 @@ end
 function PSC_LoadDefaultSettings()
     PSC_DB.AutoBattlegroundMode = true
     PSC_DB.ForceBattlegroundMode = false
+    PSC_DB.CountAssistsInBattlegrounds = false  -- New setting added
 
     PSC_DB.ShowTooltipKillInfo = true
 
