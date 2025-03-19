@@ -97,22 +97,6 @@ function PSC_GetAndStorePlayerInfoFromUnit(unit)
     PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
 end
 
-function PSC_GetPlayerInfoFromCache(name)
-    if not PSC_DB.PlayerInfoCache[name] then
-        if PSC_Debug then
-            print("Player info not found in cache for " .. name)
-        end
-        return 0, "Unknown", "Unknown", 0, "", 0
-    end
-
-    return PSC_DB.PlayerInfoCache[name].level,
-        PSC_DB.PlayerInfoCache[name].class,
-        PSC_DB.PlayerInfoCache[name].race,
-        PSC_DB.PlayerInfoCache[name].gender,
-        PSC_DB.PlayerInfoCache[name].guild,
-        PSC_DB.PlayerInfoCache[name].rank
-end
-
 function PSC_GetInfoFromActiveUnit(name, unitId)
     if not UnitExists(unitId) or UnitName(unitId) ~= name then
         return 0, "Unknown", "Unknown", 0, "", 0

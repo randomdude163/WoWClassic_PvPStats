@@ -138,7 +138,6 @@ local function InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
     if not PSC_DB.PlayerKillCounts[nameWithLevel] then
         PSC_DB.PlayerKillCounts[nameWithLevel] = {
             kills = 0,
-            guild = "",
             lastKill = "",
             playerLevel = playerLevel,
             zone = "",

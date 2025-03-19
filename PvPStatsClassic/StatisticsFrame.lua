@@ -490,7 +490,6 @@ local function createGuildTable(parent, x, y, width, height)
     local guildKills = {}
     for playerNameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
         local playerNameWithoutLevel = playerNameWithLevel:match("([^:]+)")
-        print(playerNameWithoutLevel)
         if data then
             local guild = PSC_DB.PlayerInfoCache[playerNameWithoutLevel].guild
             if guild ~= "" then
