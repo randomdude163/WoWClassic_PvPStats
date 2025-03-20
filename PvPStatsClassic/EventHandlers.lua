@@ -14,6 +14,9 @@ local ASSIST_DAMAGE_WINDOW = 45.0  -- 45 second window for kill assist credit
 local recentlyCountedKills = {}
 local KILL_TRACKING_WINDOW = 1.0
 
+local recentDamageFromPlayers = {}
+local PLAYER_DAMAGE_WINDOW = 30.0
+
 local killMilestoneFrame = nil
 local killMilestoneAutoHideTimer = nil
 
@@ -646,6 +649,146 @@ local function HandleCombatState(inCombatNow)
     end
 end
 
+local function GetKillerInfoOnDeath()
+    local now = GetTime()
+    local killers = {}
+    local mainKiller = nil
+    local highestDamage = 0
+
+    -- Find the player who did the most damage (main killer)
+    for sourceGUID, info in pairs(recentDamageFromPlayers) do
+        if (now - info.timestamp) <= PLAYER_DAMAGE_WINDOW then
+            if info.totalDamage > highestDamage then
+                highestDamage = info.totalDamage
+                mainKiller = {
+                    guid = sourceGUID,
+                    name = info.name,
+                    damage = info.totalDamage,
+                    isPet = IsPetGUID(sourceGUID)
+                }
+            end
+
+            -- Add to all killers list for assist tracking
+            table.insert(killers, {
+                guid = sourceGUID,
+                name = info.name,
+                damage = info.totalDamage,
+                isPet = IsPetGUID(sourceGUID)
+            })
+        end
+    end
+
+    -- If we found a main killer, return information
+    if mainKiller then
+        -- Handle pet owner as the actual killer
+        if mainKiller.isPet then
+            local ownerGUID = GetPetOwnerGUID(mainKiller.guid)
+            local ownerName = GetNameFromGUID(ownerGUID)
+
+            if ownerName then
+                mainKiller.name = ownerName
+                mainKiller.guid = ownerGUID
+                mainKiller.isPet = false
+            end
+        end
+
+        -- Find and add assists (any player who did damage but wasn't the main killer)
+        local assists = {}
+        for _, killer in ipairs(killers) do
+            -- Skip the main killer and their pets
+            if killer.guid ~= mainKiller.guid and not (killer.isPet and GetPetOwnerGUID(killer.guid) == mainKiller.guid) then
+                -- Check if it's a pet, convert to owner
+                if killer.isPet then
+                    local ownerGUID = GetPetOwnerGUID(killer.guid)
+                    local ownerName = GetNameFromGUID(ownerGUID)
+                    if ownerName and ownerGUID ~= mainKiller.guid then
+                        table.insert(assists, {
+                            name = ownerName,
+                            guid = ownerGUID
+                        })
+                    end
+                else
+                    table.insert(assists, {
+                        name = killer.name,
+                        guid = killer.guid
+                    })
+                end
+            end
+        end
+
+        return {
+            killer = mainKiller,
+            assists = assists
+        }
+    end
+
+    return nil
+end
+
+local function RegisterPlayerDeath(killerInfo)
+    local characterKey = PSC_GetCharacterKey()
+
+    local lossData = PSC_DB.PvPLossCounts[characterKey]
+    local killerName = killerInfo.killer.name
+    if not killerName then return end
+
+    -- Check if we have info for this killer
+    if not lossData.Deaths[killerName] then
+        lossData.Deaths[killerName] = {
+            deaths = 0,
+            lastDeath = "",
+            zone = "",
+            deathLocations = {},
+            assistKills = 0,
+            soloKills = 0
+        }
+    end
+
+    local deathData = lossData.Deaths[killerName]
+    deathData.deaths = deathData.deaths + 1
+    deathData.lastDeath = date("%Y-%m-%d %H:%M:%S")
+    deathData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
+
+    -- Track whether it was a solo kill or assist
+    if #killerInfo.assists > 0 then
+        deathData.assistKills = deathData.assistKills + 1
+    else
+        deathData.soloKills = deathData.soloKills + 1
+    end
+
+    -- Save location data
+    local mapID = C_Map.GetBestMapForUnit("player")
+    local position = nil
+    if mapID then
+        position = C_Map.GetPlayerMapPosition(mapID, "player")
+    end
+
+    if mapID and position and position.x and position.y then
+        local x = position.x * 100
+        local y = position.y * 100
+
+        table.insert(deathData.deathLocations, {
+            x = x,
+            y = y,
+            mapID = mapID,
+            zone = deathData.zone,
+            timestamp = deathData.lastDeath,
+            deathNumber = deathData.deaths,
+            assisters = #killerInfo.assists > 0 and killerInfo.assists or nil
+        })
+    end
+
+    if PSC_Debug then
+        local assistText = ""
+        if #killerInfo.assists > 0 then
+            assistText = " with help from " .. #killerInfo.assists .. " players"
+        else
+            assistText = " (solo kill)"
+        end
+        print("Death recorded: killed by " .. killerName .. assistText)
+    end
+end
+
 local function HandlePlayerDeath()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
@@ -658,7 +801,16 @@ local function HandlePlayerDeath()
     characterData.CurrentKillStreak = 0
     multiKillCount = 0
     inCombat = false
-    print("You died! Kill streak reset.")
+
+    -- Check if the death was caused by players
+    local killerInfo = GetKillerInfoOnDeath()
+    if killerInfo then
+        RegisterPlayerDeath(killerInfo)
+    end
+
+    if PSC_Debug then
+        print("You died! Kill streak reset.")
+    end
 end
 
 local function CleanupRecentPetDamage()
@@ -914,7 +1066,90 @@ local function HandleUnitDiedEvent(destGUID, destName)
     end
 end
 
--- Replace the HandleCombatLogEvent function with this updated version
+local function TrackIncomingPlayerDamage(sourceGUID, sourceName, amount)
+    if not sourceGUID or not sourceName then return end
+
+    -- Get or create the damage record
+    local existingRecord = recentDamageFromPlayers[sourceGUID] or {
+        name = sourceName,
+        class = select(2, GetPlayerInfoByGUID(sourceGUID)) or "Unknown",
+        totalDamage = 0,
+        timestamp = 0
+    }
+
+    -- Update with new damage info
+    existingRecord.totalDamage = existingRecord.totalDamage + amount
+    existingRecord.timestamp = GetTime()
+
+    -- Store updated record
+    recentDamageFromPlayers[sourceGUID] = existingRecord
+end
+
+local function TrackIncomingPetDamage(petGUID, petName, amount)
+    if not petGUID or not petName then return end
+
+    local ownerGUID = GetPetOwnerGUID(petGUID)
+    if not ownerGUID then
+        -- If we can't find the owner, just track the pet damage directly
+        TrackIncomingPlayerDamage(petGUID, petName, amount)
+        return
+    end
+
+    local ownerName = GetNameFromGUID(ownerGUID) or "Unknown Owner"
+
+    -- Create a merged record with the owner's information
+    local existingRecord = recentDamageFromPlayers[ownerGUID] or {
+        name = ownerName,
+        class = select(2, GetPlayerInfoByGUID(ownerGUID)) or "Unknown",
+        totalDamage = 0,
+        timestamp = 0
+    }
+
+    -- Update with new damage info
+    existingRecord.totalDamage = existingRecord.totalDamage + amount
+    existingRecord.timestamp = GetTime()
+
+    -- Store updated record
+    recentDamageFromPlayers[ownerGUID] = existingRecord
+end
+
+local function HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName)
+    local damageAmount = 0
+
+    -- Handle damage events
+    if combatEvent == "SWING_DAMAGE" then
+        damageAmount = param1 or 0
+    elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
+        damageAmount = param4 or 0
+    elseif combatEvent == "RANGE_DAMAGE" then
+        damageAmount = param4 or 0
+    elseif combatEvent:find("SPELL_") then
+        -- Count debuffs and other spell effects as minimal damage for assist credit
+        damageAmount = 1
+    end
+
+    if damageAmount > 0 then
+        TrackIncomingPlayerDamage(sourceGUID, sourceName, damageAmount)
+    end
+end
+
+local function HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+    local damageAmount = 0
+
+    if combatEvent == "SWING_DAMAGE" then
+        damageAmount = param1 or 0
+    elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
+        damageAmount = param4 or 0
+    elseif combatEvent == "RANGE_DAMAGE" then
+        damageAmount = param4 or 0
+    end
+
+    if damageAmount > 0 then
+        TrackIncomingPetDamage(sourceGUID, sourceName, damageAmount)
+    end
+end
+
+
 local function HandleCombatLogEvent()
     local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
           destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
@@ -924,12 +1159,31 @@ local function HandleCombatLogEvent()
         HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)  -- Add this line
     end
 
+    if CombatLogDestFlagsEnemyPlayer(destFlags) and (destGUID == PSC_PlayerGUID) then
+        HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName)
+    end
+
+    if IsPetGUID(sourceGUID) and destGUID == PSC_PlayerGUID then
+        HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+    end
+
     if combatEvent == "PARTY_KILL" and CombatLogDestFlagsEnemyPlayer(destFlags) then
         HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     end
 
     if combatEvent == "UNIT_DIED" and CombatLogDestFlagsEnemyPlayer(destFlags) then
         HandleUnitDiedEvent(destGUID, destName)
+    end
+end
+
+local function CleanupRecentDamageFromPlayers()
+    local now = GetTime()
+    local cutoff = now - PLAYER_DAMAGE_WINDOW
+
+    for guid, info in pairs(recentDamageFromPlayers) do
+        if info.timestamp < cutoff then
+            recentDamageFromPlayers[guid] = nil
+        end
     end
 end
 
@@ -979,6 +1233,7 @@ function PSC_RegisterEvents()
             CleanupRecentPetDamage()
             CleanupRecentlyCountedKillsDict()
             CleanupRecentPlayerDamage()
+            CleanupRecentDamageFromPlayers()
         elseif event == "PLAYER_LOGOUT" then
             -- PSC_CleanupDatabase()
         elseif event == "ZONE_CHANGED_NEW_AREA" then

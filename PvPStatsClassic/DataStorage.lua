@@ -188,9 +188,44 @@ function PSC_CleanupPlayerInfoCache()
     PSC_DB.PlayerInfoCache = cleanedInfoCache
 end
 
+function PSC_CleanupDeathCounts()
+    if not PSC_DB.PvPLossCounts then return end
+
+    for characterKey, characterData in pairs(PSC_DB.PvPLossCounts) do
+        local cleanedDeaths = {}
+
+        -- Only keep death entries that have at least 1 death
+        for killerName, deathData in pairs(characterData.Deaths) do
+            if deathData.deaths and deathData.deaths > 0 then
+                cleanedDeaths[killerName] = deathData
+            end
+        end
+
+        -- Replace with cleaned data
+        PSC_DB.PvPLossCounts[characterKey].Deaths = cleanedDeaths
+    end
+
+    -- Remove characters with no deaths
+    local cleanedCharacters = {}
+    for characterKey, characterData in pairs(PSC_DB.PvPLossCounts) do
+        local hasDeaths = false
+        for _, _ in pairs(characterData.Deaths) do
+            hasDeaths = true
+            break
+        end
+
+        if hasDeaths then
+            cleanedCharacters[characterKey] = characterData
+        end
+    end
+
+    PSC_DB.PvPLossCounts = cleanedCharacters
+end
+
 function PSC_CleanupDatabase()
     PSC_CleanupKillCounts()
     PSC_CleanupPlayerInfoCache()
+    PSC_CleanupDeathCounts()
 
     if PSC_Debug then
         print("PvPStatsClassic: Database cleaned up.")
@@ -247,11 +282,24 @@ local function initializePlayerKillCounts()
     end
 end
 
+local function initializePlayerLossCounts()
+    PSC_DB.PvPLossCounts = {}
+
+    local characterKey = PSC_GetCharacterKey()
+    if not PSC_DB.PvPLossCounts[characterKey] then
+        PSC_DB.PvPLossCounts[characterKey] = {
+            Deaths = {}
+        }
+    end
+end
+
 function ResetAllStatsToDefault()
     PSC_DB.PlayerInfoCache = {}
     PSC_DB.PlayerKillCounts = {}
+    PSC_DB.PvPLossCounts = {}
 
     initializePlayerKillCounts()
+    initializePlayerLossCounts()
 
     print("All kill statistics have been reset!")
 end
