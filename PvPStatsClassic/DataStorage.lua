@@ -198,6 +198,8 @@ function PSC_CleanupDatabase()
 end
 
 function PSC_LoadDefaultSettings()
+    PSC_DB.ShowAccountWideStats = true
+
     PSC_DB.AutoBattlegroundMode = true
     PSC_DB.CountAssistsInBattlegrounds = true
     PSC_DB.ForceBattlegroundMode = false

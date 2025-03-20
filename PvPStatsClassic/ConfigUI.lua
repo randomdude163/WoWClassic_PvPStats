@@ -384,6 +384,31 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     tooltipKillInfoCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    local showAccountWideStatsCheckbox, _ = CreateCheckbox(parent,
+        "Show account-wide statistics",
+        PSC_DB.ShowAccountWideStats,
+        function(checked)
+            PSC_DB.ShowAccountWideStats = checked
+            -- Refresh open frames if they exist
+            if PSC_StatisticsFrame and PSC_StatisticsFrame:IsShown() then
+                PSC_UpdateStatisticsFrame(PSC_StatisticsFrame)
+            end
+            if PSC_KillsListFrame and PSC_KillsListFrame:IsShown() then
+                RefreshKillsListFrame()
+            end
+        end)
+    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.showAccountWideStatsCheckbox = showAccountWideStatsCheckbox
+
+    showAccountWideStatsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show Account-Wide Statistics")
+        GameTooltip:AddLine("When checked, statistics will include kills from all your characters.", 1, 1, 1, true)
+        GameTooltip:AddLine("When unchecked, only shows kills from your current character.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showAccountWideStatsCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     return 320
 end
 
@@ -500,7 +525,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 630) -- Reduced from 650 to 600
+    frame:SetSize(600, 660) -- Reduced from 650 to 600
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -535,6 +560,7 @@ function PSC_UpdateConfigUI()
     configFrame.enableRecordAnnounceCheckbox:SetChecked(PSC_DB.EnableRecordAnnounceMessages)
     configFrame.enableMultiKillAnnounceCheckbox:SetChecked(PSC_DB.EnableMultiKillAnnounceMessages)
     configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
+    configFrame.showAccountWideStatsCheckbox:SetChecked(PSC_DB.ShowAccountWideStats)
 
 
     -- Update multi-kill slider in its new location (General tab)
@@ -783,6 +809,7 @@ function PSC_CreateConfigFrame()
     configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
     configFrame.enableMultiKillAnnounceCheckbox = tabFrames[1].enableMultiKillAnnounceCheckbox
     configFrame.enableKillSoundsCheckbox = tabFrames[1].enableKillSoundsCheckbox
+    configFrame.showAccountWideStatsCheckbox = tabFrames[1].showAccountWideStatsCheckbox
     configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
     configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
     configFrame.multiKillSlider = tabFrames[1].multiKillSlider

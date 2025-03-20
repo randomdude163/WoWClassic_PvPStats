@@ -607,8 +607,10 @@ local function calculateStatistics()
         }
     end
 
-    -- Loop through all characters
-    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+    local charactersToProcess = GetCharactersToProcessForStatistics()
+
+    -- Loop through characters to process
+    for characterKey, characterData in pairs(charactersToProcess) do
         -- Track character-specific stats to find maximums
         if characterData.HighestKillStreak and characterData.HighestKillStreak > highestKillStreak then
             highestKillStreak = characterData.HighestKillStreak
@@ -750,8 +752,22 @@ local function gatherStatistics()
         return {}, {}, {}, {}, {}, {}, { ["In Guild"] = 0, ["No Guild"] = 0 }
     end
 
-    -- Loop through all characters
-    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+    -- Loop through all characters or just the current one
+    local currentCharacterKey = PSC_GetCharacterKey()
+    local charactersToProcess = {}
+
+    if PSC_DB.ShowAccountWideStats then
+        -- Process all characters
+        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    else
+        -- Only process the current character
+        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
+            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+        end
+    end
+
+    -- Loop through characters to process
+    for characterKey, characterData in pairs(charactersToProcess) do
         if characterData.Kills then
             for nameWithLevel, killData in pairs(characterData.Kills) do
                 if killData.kills and killData.kills > 0 then
@@ -831,6 +847,15 @@ local function createScrollableLeftPanel(parent)
     return content, scrollFrame
 end
 
+function GetFrameTitleTextWithCharacterText(titleText)
+    if PSC_DB.ShowAccountWideStats then
+        titleText = titleText .. " (All characters)"
+    else
+        titleText = titleText .. " (" .. PSC_GetCharacterKey() .. ")"
+    end
+    return titleText
+end
+
 local function setupMainFrame()
     local frame = CreateFrame("Frame", "PSC_StatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(UI.FRAME.WIDTH, UI.FRAME.HEIGHT)
@@ -840,6 +865,10 @@ local function setupMainFrame()
     frame:RegisterForDrag("LeftButton")
 
     tinsert(UISpecialFrames, "PSC_StatisticsFrame")
+
+    -- Update title based on view mode
+    local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
+    frame.TitleText:SetText(titleText)
 
     frame:EnableKeyboard(true)
     frame:SetPropagateKeyboardInput(true)
@@ -948,6 +977,9 @@ end
 -- New function to update statistics frame content
 function PSC_UpdateStatisticsFrame(frame)
     if not frame then return end
+
+    local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
+    frame.TitleText:SetText(titleText)
 
     -- Clear existing content if any
     if frame.leftScrollContent then
