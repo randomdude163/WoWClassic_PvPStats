@@ -20,7 +20,10 @@
         "COMBATLOG_OBJECT_TYPE_PLAYER",
         "UnitPVPRank",
         "GetTargetHonorRank",
-        "class"
+        "class",
+        "FauxScrollFrame_Update",
+        "FauxScrollFrame_OnVerticalScroll",
+        "FauxScrollFrame_GetOffset"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {

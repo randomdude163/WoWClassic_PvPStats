@@ -432,13 +432,6 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.ShowAccountWideStats,
         function(checked)
             PSC_DB.ShowAccountWideStats = checked
-            -- Refresh open frames if they exist
-            if PSC_StatisticsFrame and PSC_StatisticsFrame:IsShown() then
-                PSC_UpdateStatisticsFrame(PSC_StatisticsFrame)
-            end
-            if PSC_KillsListFrame and PSC_KillsListFrame:IsShown() then
-                RefreshKillsListFrame()
-            end
         end)
     showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.showAccountWideStatsCheckbox = showAccountWideStatsCheckbox
