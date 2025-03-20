@@ -10,19 +10,69 @@ local HEADER_ELEMENT_SPACING = 15
 local CHECKBOX_SPACING = 5
 local MESSAGE_TEXTFIELD_SPACING = 40
 
-local function ShowResetStatsConfirmation()
-    StaticPopupDialogs["PSC_RESET_STATS"] = {
-        text = "Are you sure you want to reset all kill statistics? This cannot be undone.",
+
+local function CreateAndShowStaticPopup(dialogName, text, onAcceptFunc)
+    -- Redefine the dialog template every time to ensure it has the latest settings
+    StaticPopupDialogs[dialogName] = {
+        text = text,
         button1 = "Yes",
         button2 = "No",
-        OnAccept = function()
-            ResetAllStatsToDefault()
-        end,
+        OnAccept = onAcceptFunc,
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,
+        preferredIndex = 3,  -- Avoid UI taint from using default index
+
+        -- Critical: When the popup is showing, disable escape handling in the config frame
+        OnShow = function(self)
+            -- This is essential - disable keyboard interaction on the config frame while popup is visible
+            if configFrame then
+                configFrame:EnableKeyboard(false)
+            end
+        end,
+
+        -- Re-enable keyboard on the config frame when popup is dismissed
+        OnHide = function()
+            if configFrame and configFrame:IsVisible() then
+                -- Re-enable keyboard on the config frame
+                configFrame:EnableKeyboard(true)
+
+                -- Ensure config frame is the top-most frame
+                C_Timer.After(0.05, function()
+                    if configFrame:IsVisible() then
+                        PSC_FrameManager:BringToFront("ConfigUI")
+                    end
+                end)
+            end
+        end
     }
-    StaticPopup_Show("PSC_RESET_STATS")
+
+    local popup = StaticPopup_Show(dialogName)
+
+    if popup then
+        -- Set high strata and frame level to ensure popup appears on top
+        popup:SetFrameStrata("FULLSCREEN_DIALOG")
+        popup:SetFrameLevel(2000)
+        popup:SetPoint("CENTER", UIParent, "CENTER")
+        popup:Raise()
+
+        -- The most important fix - explicitly grab focus for the popup
+        popup:SetPropagateKeyboardInput(false)
+        popup:EnableKeyboard(true)
+
+        -- Delete any existing OnKeyDown handler that might interfere
+        popup:SetScript("OnKeyDown", nil)
+    end
+
+    return popup
+end
+
+local function ShowResetStatsConfirmation()
+    CreateAndShowStaticPopup(
+        "PSC_RESET_STATS",
+        "Are you sure you want to reset all kill statistics? This cannot be undone.",
+        function() ResetAllStatsToDefault() end
+    )
 end
 
 local function ResetAllSettingsToDefault()
@@ -31,18 +81,11 @@ local function ResetAllSettingsToDefault()
 end
 
 local function ShowResetDefaultsConfirmation()
-    StaticPopupDialogs["PSC_RESET_DEFAULTS"] = {
-        text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
-        button1 = "Yes",
-        button2 = "No",
-        OnAccept = function()
-            ResetAllSettingsToDefault()
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-    StaticPopup_Show("PSC_RESET_DEFAULTS")
+    CreateAndShowStaticPopup(
+        "PSC_RESET_DEFAULTS",
+        "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
+        function() ResetAllSettingsToDefault() end
+    )
 end
 
 local function CreateSectionHeader(parent, text, xOffset, yOffset)
