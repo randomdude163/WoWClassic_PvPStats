@@ -260,8 +260,8 @@ function PSC_LoadDefaultSettings()
 
     PSC_DB.KillAnnounceMessage = "Enemyplayername x# killed!"
     PSC_DB.KillStreakEndedMessage = "My kill streak of STREAKCOUNT has ended!"
-    PSC_DB.NewKillStreakRecordMessage = "NEW PERSONAL BEST: Kill streak of STREAKCOUNT!"
-    PSC_DB.NewMultiKillRecordMessage = "NEW PERSONAL BEST: MULTIKILLTEXT!"
+    PSC_DB.NewKillStreakRecordMessage = "New personal best: Kill streak of STREAKCOUNT!"
+    PSC_DB.NewMultiKillRecordMessage = "New personal best: MULTIKILLTEXT!"
     PSC_DB.MultiKillThreshold = 3
 
     PSC_DB.MinimapButtonPosition = 195

@@ -272,15 +272,22 @@ local function UpdateMultiKill()
         end
     end
 
-    if multiKillCount > PSC_DB.HighestMultiKill then
-        PSC_DB.HighestMultiKill = multiKillCount
+    local characterKey = PSC_GetCharacterKey()
+    local highestMultiKill = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
 
-        if PSC_DB.HighestMultiKill > 1 then
-            print("NEW MULTI-KILL RECORD: " .. PSC_DB.HighestMultiKill .. "!")
+    if multiKillCount > highestMultiKill then
+        highestMultiKill = multiKillCount
 
-            if PSC_DB.HighestMultiKill >= 3 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
-                local newMultiKillMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(PSC_DB.HighestMultiKill))
-                SendChatMessage(newMultiKillMsg, "PARTY")
+        if highestMultiKill > 1 then
+
+
+            if highestMultiKill >= 3 and PSC_DB.EnableRecordAnnounceMessages then
+                local newMultiKillRecordMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(highestMultiKill))
+                if IsInGroup() then
+                    SendChatMessage(newMultiKillRecordMsg, "PARTY")
+                else
+                    print(newMultiKillRecordMsg)
+                end
             end
         end
     end
@@ -908,9 +915,9 @@ end
 
 
 local function CombatLogDestFlagsEnemyPlayer(destFlags)
-    return true
-    -- return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-    --        bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
+    -- return true
+    return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+           bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
 end
 
 
