@@ -238,7 +238,6 @@ local function initializePlayerKillCounts()
 
     local characterKey = PSC_GetCharacterKey()
     if not PSC_DB.PlayerKillCounts.Characters[characterKey] then
-        print("Creating new character entry in database for " .. characterKey)
         PSC_DB.PlayerKillCounts.Characters[characterKey] = {
             Kills = {},
             CurrentKillStreak = 0,

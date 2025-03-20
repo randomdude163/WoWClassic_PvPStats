@@ -901,19 +901,14 @@ local function enoughPlayerKillsRecorded()
     local totalKills = 0
     local uniqueKills = 0
 
-    if not PSC_DB.PlayerKillCounts.Characters then
-        return false
-    end
+    local charactersToProcess = GetCharactersToProcessForStatistics()
 
-    -- Loop through all characters
-    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
-        if characterData.Kills then
-            -- Count unique kills across all characters
-            for nameWithLevel, killData in pairs(characterData.Kills) do
-                if killData.kills and killData.kills > 0 then
-                    uniqueKills = uniqueKills + 1
-                    totalKills = totalKills + killData.kills
-                end
+    for characterKey, characterData in pairs(charactersToProcess) do
+        -- Count unique kills across all characters
+        for nameWithLevel, killData in pairs(characterData.Kills) do
+            if killData.kills and killData.kills > 0 then
+                uniqueKills = uniqueKills + 1
+                totalKills = totalKills + killData.kills
             end
         end
     end
@@ -934,7 +929,8 @@ local function createEmptyStatsFrame()
     -- Remove this as it's handled by the frame manager now
     -- tinsert(UISpecialFrames, "PSC_StatisticsFrame")
 
-    frame.TitleText:SetText("Player Kill Statistics")
+    local titleText = GetFrameTitleTextWithCharacterText("Player Kill Statistics")
+    frame.TitleText:SetText(titleText)
 
     -- Create message text
     local messageText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
