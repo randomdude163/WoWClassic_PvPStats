@@ -1,7 +1,3 @@
-if not PSC_ActiveFrameLevel then
-    PSC_ActiveFrameLevel = 100
-end
-
 PSC_KillsListFrame = nil
 local searchText = ""
 local levelSearchText = ""

@@ -1,6 +1,9 @@
 -- FrameManager.lua - Handles frame level management across the addon
 
--- Global frame stack management
+if not PSC_ActiveFrameLevel then
+    PSC_ActiveFrameLevel = 100
+end
+
 PSC_FrameManager = {}
 PSC_FrameManager.frames = {}
 PSC_FrameManager.frameOrder = {}

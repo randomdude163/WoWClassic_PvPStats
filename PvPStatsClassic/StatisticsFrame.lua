@@ -1,9 +1,5 @@
 local statisticsFrame = nil
 
-if not PSC_ActiveFrameLevel then
-    PSC_ActiveFrameLevel = 100
-end
-
 local function CreateGoldHighlight(parent, height)
     local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
     highlight:SetAllPoints(true)

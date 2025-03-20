@@ -2,8 +2,9 @@ local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIPare
 
 PSC_Debug = true
 PSC_PlayerGUID = ""
-PSC_PlayerName = ""
+PSC_CharacterName = ""
 PSC_RealmName = ""
+PSC_CharacterNameWithRealmName = ""
 
 local recentPetDamage = {}
 local PET_DAMAGE_WINDOW = 0.05
@@ -70,7 +71,7 @@ local function GetNameFromGUID(guid)
 
     -- If that fails, check if it's the player
     if guid == PSC_PlayerGUID then
-        return PSC_PlayerName
+        return PSC_CharacterName
     end
 
     -- Check party/raid members
@@ -952,9 +953,10 @@ function PSC_RegisterEvents()
                 HandlePlayerDeath()
             end
             PSC_PlayerGUID = UnitGUID("player")
-            PSC_PlayerName = UnitName("player")
+            PSC_CharacterName = UnitName("player")
             PSC_RealmName = GetRealmName()
-            print("PSC_PlayerName: " .. PSC_PlayerName .. " PSC_RealmName: " .. PSC_RealmName)
+            PSC_CharacterNameWithRealmName = PSC_CharacterName .. "-" .. PSC_RealmName
+            print("Character: " .. PSC_CharacterNameWithRealmName)
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
