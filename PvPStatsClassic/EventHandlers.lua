@@ -5,620 +5,14 @@ PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
 
-local recentPetDamage = {}
+RecentPetDamage = {}
 local PET_DAMAGE_WINDOW = 0.05
 
-local recentPlayerDamage = {}
-local ASSIST_DAMAGE_WINDOW = 45.0  -- 45 second window for kill assist credit
+PSC_InCombat = false
 
-local recentlyCountedKills = {}
-local KILL_TRACKING_WINDOW = 1.0
+PSC_CurrentlyInBattleground = false
+PSC_lastInBattlegroundValue = false
 
-local recentDamageFromPlayers = {}
-local PLAYER_DAMAGE_WINDOW = 30.0
-
-local killMilestoneFrame = nil
-local killMilestoneAutoHideTimer = nil
-
-local killStreakMilestoneFrame = nil
-
-local inCombat = false
-
-local currentlyInBattleground = false
-local lastInBattlegroundValue = false
-
-local multiKillCount = 0
-
-function PSC_GetCharacterKey()
-    return PSC_CharacterName .. "-" .. PSC_RealmName
-end
-
-local function IsPetGUID(guid)
-    if not guid then return false end
-
-    -- Classic WoW GUID format: Pet-0-xxxx-xxxx-xxxx-xxxx
-    return guid:match("^Pet%-") ~= nil
-end
-
-local function GetPetOwnerGUID(petGUID)
-    if not petGUID or not IsPetGUID(petGUID) then return nil end
-
-    if UnitExists("pet") and UnitGUID("pet") == petGUID then
-        return PSC_PlayerGUID
-    end
-
-    local numMembers = IsInRaid() and GetNumGroupMembers() or GetNumGroupMembers()
-    local prefix = IsInRaid() and "raid" or "party"
-
-    for i = 1, numMembers do
-        local unitID
-        if prefix == "party" then
-            unitID = (i == GetNumGroupMembers()) and "player" or (prefix..i)
-        else
-            unitID = prefix..i
-        end
-
-        local petID = unitID.."pet"
-
-        if UnitExists(petID) and UnitGUID(petID) == petGUID then
-            return UnitGUID(unitID)
-        end
-    end
-
-    return nil
-end
-
-local function GetNameFromGUID(guid)
-    if not guid then return nil end
-
-    -- Try to find the name from the GUID
-    local name = select(6, GetPlayerInfoByGUID(guid))
-    if name then return name end
-
-    -- If that fails, check if it's the player
-    if guid == PSC_PlayerGUID then
-        return PSC_CharacterName
-    end
-
-    -- Check party/raid members
-    local numMembers = IsInRaid() and GetNumGroupMembers() or GetNumGroupMembers()
-    local prefix = IsInRaid() and "raid" or "party"
-
-    for i = 1, numMembers do
-        local unitID
-        if prefix == "party" then
-            unitID = (i == GetNumGroupMembers()) and "player" or (prefix..i)
-        else
-            unitID = prefix..i
-        end
-
-        if UnitGUID(unitID) == guid then
-            return UnitName(unitID)
-        end
-    end
-
-    return nil
-end
-
-function PSC_Print(message)
-    local PSC_CHAT_MESSAGE_R = 1.0
-    local PSC_CHAT_MESSAGE_G = 1.0
-    local PSC_CHAT_MESSAGE_B = 0.74
-    DEFAULT_CHAT_FRAME:AddMessage(message, PSC_CHAT_MESSAGE_R, PSC_CHAT_MESSAGE_G, PSC_CHAT_MESSAGE_B)
-end
-
-local function PrintSlashCommandUsage()
-    PSC_Print("Usage: /psc settings - Open settings UI")
-    PSC_Print("Usage: /psc stats - Show kills list")
-    PSC_Print("Usage: /psc status - Show current settings")
-    PSC_Print("Usage: /psc debug - Show current streak values")
-    PSC_Print("Usage: /psc registerkill [number] - Register test kill(s) for testing")
-    PSC_Print("Usage: /psc simulatedeath [killers] [assists] - Simulate being killed")
-    PSC_Print("Usage: /psc bgmode - Toggle battleground mode manually")
-    PSC_Print("Usage: /psc toggledebug - Toggle debug messages")
-    PSC_Print("Usage: /psc debugevents - Enhanced combat log debugging for 30 seconds")
-    PSC_Print("Usage: /psc debugpet - Track all pet damage and kills for 60 seconds")
-    PSC_Print("Usage: /psc simulatedeath [killers] [assists] - Simulate being killed")
-    PSC_Print("Usage: /psc simcombatlog [killers] [assists] [damage] - Simulate combat log entries for death")
-    PSC_Print("Usage: /psc deathstats - Show death statistics")
-end
-
-local function PrintStatus()
-    local statusMessage = "Kill announce messages are " .. (PSC_DB.EnableKillAnnounceMessages and "ENABLED" or "DISABLED") .. "."
-    PSC_Print(statusMessage)
-    PSC_Print("Current kill announce message: " .. PSC_DB.KillAnnounceMessage)
-    PSC_Print("Streak ended message: " .. PSC_DB.KillStreakEndedMessage)
-    PSC_Print("New streak record message: " .. PSC_DB.NewKillStreakRecordMessage)
-    PSC_Print("New multi-kill record message: " .. PSC_DB.NewMultiKillRecordMessage)
-    PSC_Print("Multi-kill announcement threshold: " .. PSC_DB.MultiKillThreshold)
-    PSC_Print("Record announcements: " .. (PSC_DB.EnableRecordAnnounceMessages and "ENABLED" or "DISABLED"))
-    PSC_Print("Battleground Mode: " .. (currentlyInBattleground and "ACTIVE" or "INACTIVE"))
-    PSC_Print("Auto BG Detection: " .. (PSC_DB.AutoBattlegroundMode and "ENABLED" or "DISABLED"))
-    PSC_Print("Manual BG Mode: " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
-end
-
-local function ShowDebugInfo()
-    PSC_Print("Current Kill Streak: " .. PSC_DB.PlayerKillCounts.Characters[PSC_GetCharacterKey()].CurrentKillStreak)
-    PSC_Print("Highest Kill Streak: " .. PSC_DB.PlayerKillCounts.Characters[PSC_GetCharacterKey()].HighestKillStreak)
-    PSC_Print("Current Multi-kill Count: " .. multiKillCount)
-    PSC_Print("Highest Multi-kill: " .. PSC_DB.PlayerKillCounts.Characters[PSC_GetCharacterKey()].HighestMultiKill)
-
-    local characterKey = PSC_GetCharacterKey()
-    if PSC_DB.PvPLossCounts and PSC_DB.PvPLossCounts[characterKey] then
-        local totalDeaths = 0
-        local totalSoloDeaths = 0
-        local totalAssistDeaths = 0
-
-        for _, deathData in pairs(PSC_DB.PvPLossCounts[characterKey].Deaths) do
-            totalDeaths = totalDeaths + deathData.deaths
-            totalSoloDeaths = totalSoloDeaths + (deathData.soloKills or 0)
-            totalAssistDeaths = totalAssistDeaths + (deathData.assistKills or 0)
-        end
-
-        PSC_Print("Total Deaths: " .. totalDeaths ..
-                 " (Solo: " .. totalSoloDeaths ..
-                 ", Group: " .. totalAssistDeaths .. ")")
-    else
-        PSC_Print("Total Deaths: 0")
-    end
-
-    PSC_Print("Multi-kill Announcement Threshold: " .. PSC_DB.MultiKillThreshold)
-    PSC_Print("Battleground Mode: " .. (currentlyInBattleground and "ACTIVE" or "INACTIVE"))
-    PSC_Print("Auto BG Detection: " .. (PSC_DB.AutoBattlegroundMode and "ENABLED" or "DISABLED"))
-    PSC_Print("Manual BG Mode: " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
-end
-
-local function InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
-    local characterKey = PSC_GetCharacterKey()
-
-    if not PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel] then
-        PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel] = {
-            kills = 0,
-            lastKill = "",
-            playerLevel = playerLevel,
-            zone = "",
-            killLocations = {},
-            rank = 0
-        }
-    end
-end
-
--- Update UpdateKillCacheEntry to include rank
-local function UpdateKillCountEntry(nameWithLevel, playerLevel)
-    local characterKey = PSC_GetCharacterKey()
-    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
-
-    killData.kills = killData.kills + 1
-    killData.lastKill = date("%Y-%m-%d %H:%M:%S")
-    killData.playerLevel = playerLevel
-    killData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
-
-    local mapID = C_Map.GetBestMapForUnit("player")
-    local position = nil
-    if mapID then
-        position = C_Map.GetPlayerMapPosition(mapID, "player")
-    end
-
-    if mapID and position and position.x and position.y then
-        local x = position.x * 100
-        local y = position.y * 100
-
-        table.insert(killData.killLocations, {
-            x = x,
-            y = y,
-            mapID = mapID,
-            zone = killData.zone,
-            timestamp = killData.lastKill,
-            killNumber = killData.kills
-        })
-    end
-end
-
-local function UpdateKillStreak()
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    characterData.CurrentKillStreak = characterData.CurrentKillStreak + 1
-
-    if characterData.CurrentKillStreak > characterData.HighestKillStreak then
-        characterData.HighestKillStreak = characterData.CurrentKillStreak
-
-        if characterData.HighestKillStreak > 1 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
-            local recordMsg = string.gsub(PSC_DB.NewKillStreakRecordMessage, "STREAKCOUNT", characterData.HighestKillStreak)
-            SendChatMessage(recordMsg, "PARTY")
-        end
-    end
-end
-
-local function GetMultiKillText(count)
-    if count < 2 then return "" end
-
-    local killTexts = {
-        "DOUBLE KILL!",
-        "TRIPLE KILL!",
-        "QUADRA KILL!",
-        "PENTA KILL!"
-    }
-
-    if count <= 5 then
-        return killTexts[count - 1]
-    end
-
-    return "Multi-kill of " .. count
-end
-
-local function UpdateMultiKill()
-    if not inCombat then
-        multiKillCount = 0
-        return
-    end
-
-    multiKillCount = multiKillCount + 1
-
-    -- Play sound based on kill count if enabled
-    if PSC_DB.EnableMultiKillSounds then
-        local soundFile
-        if multiKillCount == 2 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\double_kill.mp3"
-        elseif multiKillCount == 3 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\triple_kill.mp3"
-        elseif multiKillCount == 4 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\quadra_kill.mp3"
-        elseif multiKillCount == 5 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\penta_kill.mp3"
-        end
-
-        if soundFile then
-            PlaySoundFile(soundFile, "Master")
-        end
-    end
-
-    local characterKey = PSC_GetCharacterKey()
-    local highestMultiKill = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
-
-    if multiKillCount > highestMultiKill then
-        highestMultiKill = multiKillCount
-
-        if highestMultiKill > 1 then
-
-
-            if highestMultiKill >= 3 and PSC_DB.EnableRecordAnnounceMessages then
-                local newMultiKillRecordMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(highestMultiKill))
-                if IsInGroup() then
-                    SendChatMessage(newMultiKillRecordMsg, "PARTY")
-                else
-                    print(newMultiKillRecordMsg)
-                end
-            end
-        end
-    end
-end
-
-local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
-    -- Don't announce in battleground mode or if announcements are disabled
-    if currentlyInBattleground or not PSC_DB.EnableKillAnnounceMessages or not IsInGroup() then return end
-
-    local characterKey = PSC_GetCharacterKey()
-    local killMessage = string.gsub(PSC_DB.KillAnnounceMessage, "Enemyplayername", killedPlayer)
-    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
-
-    if string.find(killMessage, "x#") then
-        if killData.kills >= 2 then
-            killMessage = string.gsub(killMessage, "x#", "x" .. killData.kills)
-        else
-            killMessage = string.gsub(killMessage, "x#", "")
-            killMessage = string.gsub(killMessage, "%s+$", "")
-        end
-    elseif killData.kills >= 2 then
-        killMessage = killMessage .. " x" .. killData.kills
-    end
-
-    local levelDifference = level - playerLevel
-    local levelDisplay = level == -1 and "??" or tostring(level)
-
-    if level == -1 or (level > 0 and levelDifference >= 6) then
-        killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
-    end
-
-    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-    if characterData.CurrentKillStreak >= 10 and characterData.CurrentKillStreak % 5 == 0 then
-        killMessage = killMessage .. " - Kill Streak: " .. characterData.CurrentKillStreak
-    end
-
-    SendChatMessage(killMessage, "PARTY")
-
-    -- Only announce multi-kills if the option is enabled
-    if multiKillCount >= PSC_DB.MultiKillThreshold and PSC_DB.EnableMultiKillAnnounceMessages then
-        SendChatMessage(GetMultiKillText(multiKillCount), "PARTY")
-    end
-end
-
-local function CreateKillDebugMessage(playerName, nameWithLevel, killerName, killerGUID)
-    local debugMsg = "Killed: " .. playerName
-
-    local level = PSC_DB.PlayerInfoCache[playerName].level
-    local class = PSC_DB.PlayerInfoCache[playerName].class
-    local race = PSC_DB.PlayerInfoCache[playerName].race
-
-    local playerLevel = UnitLevel("player")
-    local levelDifference = level > 0 and (level - playerLevel) or 0
-    if level == -1 or (level > 0 and levelDifference >= 5) then
-        debugMsg = debugMsg .. " (Level " .. (level == -1 and "??" or level)
-    else
-        debugMsg = debugMsg .. " ("
-    end
-
-    debugMsg = debugMsg .. class .. ", " .. race .. ")"
-
-    local rank = PSC_DB.PlayerKillCounts[nameWithLevel].rank or 0
-    if rank > 0 then
-        debugMsg = debugMsg .. " [Rank: " .. rank .. "]"
-    end
-
-    debugMsg = debugMsg .. " - Total kills: " .. PSC_DB.PlayerKillCounts[nameWithLevel].kills
-    debugMsg = debugMsg .. " - Current streak: " .. PSC_DB.CurrentKillStreak
-    debugMsg = debugMsg .. " - Zone: " .. (PSC_DB.PlayerKillCounts[nameWithLevel].zone or "Unknown")
-
-    -- Check what kind of kill this was
-    if killerGUID and IsPetGUID(killerGUID) then
-        debugMsg = debugMsg .. " - Kill by: Your Pet (" .. (killerName or "Unknown") .. ")"
-    elseif killerName == "Assist" then
-        debugMsg = debugMsg .. " - Assist Kill (mob/environment finished target)"
-    end
-
-    if multiKillCount >= 2 then
-        debugMsg = debugMsg .. " - " .. GetMultiKillText(multiKillCount)
-    end
-
-    return debugMsg
-end
-
-local function IsKillStreakMilestone(count)
-    local killstreakMilestones = {25, 50, 75, 100, 150, 200, 250, 300}
-
-    for _, milestone in ipairs(killstreakMilestones) do
-        if count == milestone then
-            return true
-        end
-    end
-    return false
-end
-
-local function SetupKillstreakMilestoneAnimation(frame, duration)
-    if frame.animGroup then
-        frame.animGroup:Stop()
-        frame.animGroup:SetScript("OnPlay", nil)
-        frame.animGroup:SetScript("OnFinished", nil)
-        frame.animGroup:SetScript("OnStop", nil)
-    end
-
-    local animGroup = frame:CreateAnimationGroup()
-    animGroup:SetLooping("NONE")
-
-    local fadeIn = animGroup:CreateAnimation("Alpha")
-    fadeIn:SetFromAlpha(0)
-    fadeIn:SetToAlpha(1)
-    fadeIn:SetDuration(0.01)
-    fadeIn:SetOrder(1)
-
-    local hold = animGroup:CreateAnimation("Alpha")
-    hold:SetFromAlpha(1)
-    hold:SetToAlpha(1)
-    hold:SetDuration(duration)
-    hold:SetOrder(2)
-
-    local fadeOut = animGroup:CreateAnimation("Alpha")
-    fadeOut:SetFromAlpha(1)
-    fadeOut:SetToAlpha(0)
-    fadeOut:SetDuration(0.5)
-    fadeOut:SetOrder(3)
-
-    animGroup:SetScript("OnFinished", function()
-        frame:Hide()
-    end)
-
-    frame.animGroup = animGroup
-    return animGroup
-end
-
-local function CreateKillstreakMilestoneFrameIfNeeded()
-    if killStreakMilestoneFrame then return killStreakMilestoneFrame end
-
-    local frame = CreateFrame("Frame", "PSC_MilestoneFrame", UIParent)
-    frame:SetSize(400, 200)
-    frame:SetPoint("TOP", 0, -60)
-    frame:SetFrameStrata("HIGH")
-
-    local icon = frame:CreateTexture("PSC_MilestoneIcon", "ARTWORK")
-    icon:SetSize(200, 200)
-    icon:SetPoint("TOP", 0, 0)
-    icon:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
-    frame.icon = icon
-
-    local text = frame:CreateFontString("PSC_MilestoneText", "OVERLAY", "SystemFont_Huge1")
-    text:SetPoint("TOP", icon, "BOTTOM", 0, -10)
-    text:SetTextColor(1, 0, 0)
-    text:SetTextHeight(30)
-    frame.text = text
-
-    frame:Hide()
-    killStreakMilestoneFrame = frame
-    return frame
-end
-
-local function PlayKillstreakMilestoneSound()
-    PlaySound(8454) -- Warsong horde win sound
-    PlaySound(8574) -- Cheer sound
-end
-
-local function ShowKillStreakMilestone(killCount)
-    if not IsKillStreakMilestone(killCount) then
-        return
-    end
-
-    local frame = CreateKillstreakMilestoneFrameIfNeeded()
-
-    frame.text:SetText(killCount .. " KILL STREAK")
-
-    frame:Show()
-    frame:SetAlpha(0)
-
-    local animGroup = SetupKillstreakMilestoneAnimation(frame, 9.0)
-    PlayKillstreakMilestoneSound()
-    DoEmote("CHEER")
-    animGroup:Play()
-end
-
-local function RegisterPlayerKill(playerName, killerName, killerGUID)
-    local playerLevel = UnitLevel("player")
-    local level = PSC_DB.PlayerInfoCache[playerName].level
-    local nameWithLevel = playerName .. ":" .. level
-    local characterKey = PSC_GetCharacterKey()
-
-    -- First ensure the character entry exists
-    if not PSC_DB.PlayerKillCounts.Characters[characterKey] then
-        PSC_DB.PlayerKillCounts.Characters[characterKey] = {
-            Kills = {},
-            CurrentKillStreak = 0,
-            HighestKillStreak = 0,
-            HighestMultiKill = 0
-        }
-    end
-
-    UpdateKillStreak()
-    ShowKillStreakMilestone(PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak)
-    InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
-    UpdateKillCountEntry(nameWithLevel, playerLevel)
-    UpdateMultiKill()
-
-    -- Update this to use the new structure
-    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
-    local playerRank = PSC_DB.PlayerInfoCache[playerName].rank or 0
-
-    -- Fix this call to AnnounceKill to pass the correct data
-    AnnounceKill(playerName, level, nameWithLevel, playerLevel)
-
-    if (killData.kills == 1 and PSC_DB.ShowMilestoneForFirstKill) or killData.kills >= 2 then
-        PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[playerName].class, playerRank, killData.kills)
-    end
-end
-
-local function SimulatePlayerDeath()
-    PSC_Print("Simulating player death...")
-
-    if PSC_DB.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
-        local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", PSC_DB.CurrentKillStreak)
-        SendChatMessage(streakEndedMsg, "PARTY")
-    end
-
-    PSC_DB.CurrentKillStreak = 0
-    multiKillCount = 0
-    inCombat = false
-    PSC_Print("Death simulated! Kill streak reset.")
-end
-
-local function SimulatePlayerKills(killCount)
-    PSC_Print("Registering " .. killCount .. " random test kill(s)...")
-
-    local randomNames = {
-        "Testplayer",
-        "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter", "Campmaster",
-        "Roguenstein", "Sneakattack", "Huntard", "Faceroller", "Dotspammer",
-        "Moonbender", "Healnoob", "Ragequitter", "Imbalanced", "Critmaster",
-        "Zerglord", "Epicfail", "Oneshot", "Griefer", "Farmville",
-        "Stunlock", "Procmaster", "Noobslayer", "Bodycamper", "Flagrunner"
-    }
-
-    local randomGuilds = {
-        "Gank Squad", "PvP Masters", "Corpse Campers", "World Slayers", "Honor Farmers",
-        "Rank Grinders", "Blood Knights", "Deadly Alliance", "Battleground Heroes", "Warsong Outlaws",
-        "Death and Taxes", "Tactical Retreat", "Shadow Dancers", "First Strike", "Elite Few",
-        "Kill on Sight", "No Mercy", "Rogues Do It", "Battlefield Legends", ""  -- Empty guild possible
-    }
-
-    local classes = {
-        "Warrior", "Paladin", "Hunter", "Rogue", "Priest",
-        "Shaman", "Mage", "Warlock", "Druid"
-    }
-
-    local races = {
-        "Human", "Dwarf", "Night Elf", "Gnome",
-    }
-
-    local genders = {"Male", "Female"}
-
-    -- Add random zones for testing
-    local randomZones = {
-        "Stormwind City", "Orgrimmar", "Ironforge", "Thunder Bluff", "Darnassus", "Undercity",
-        "Elwynn Forest", "Durotar", "Mulgore", "Teldrassil", "Tirisfal Glades", "Westfall",
-        "Redridge Mountains", "Duskwood", "Stranglethorn Vale", "The Barrens", "Ashenvale",
-        "Alterac Mountains", "Arathi Highlands", "Badlands", "Blasted Lands", "Burning Steppes",
-        "Desolace", "Dustwallow Marsh", "Eastern Plaguelands", "Felwood", "Feralas",
-        "Hillsbrad Foothills", "Tanaris", "The Hinterlands", "Un'Goro Crater", "Western Plaguelands",
-        "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin", "Alterac Valley"
-    }
-
-    for i = 1, killCount do
-        local randomName = randomNames[math.random(#randomNames)]
-        local randomGuild = randomGuilds[math.random(#randomGuilds)]
-        local randomClass = classes[math.random(#classes)]
-        local randomRace = races[math.random(#races)]
-        local randomGender = genders[math.random(#genders)]
-        local randomZone = randomZones[math.random(#randomZones)]
-
-        local randomLevel = math.min(60, math.floor(math.random() * math.random() * 60) + 1)
-        if math.random(100) <= 15 then  -- 15% chance for unknown level
-            randomLevel = -1
-        end
-
-        -- Generate random rank (0-14)
-        -- Higher chance for lower ranks, lower chance for high ranks
-        local rankChance = math.random(100)
-        local randomRank = 0
-
-        if rankChance <= 40 then
-            -- 40% chance for rank 0 (no rank)
-            randomRank = 0
-        elseif rankChance <= 70 then
-            -- 30% chance for ranks 1-4 (Private to Master Sergeant)
-            randomRank = math.random(1, 4)
-        elseif rankChance <= 90 then
-            -- 20% chance for ranks 5-8 (Sergeant Major to Knight-Captain)
-            randomRank = math.random(5, 8)
-        elseif rankChance <= 98 then
-            -- 8% chance for ranks 9-12 (Knight-Champion to Marshal)
-            randomRank = math.random(9, 12)
-        else
-            -- 2% chance for ranks 13-14 (Field Marshal and Grand Marshal)
-            randomRank = math.random(13, 14)
-        end
-
-        -- Temporarily override GetRealZoneText to return our random zone
-        local originalGetRealZoneText = GetRealZoneText
-        GetRealZoneText = function() return randomZone end
-
-        local randomX = 10.0 + (90.0 - 10.0) * math.random()
-        local randomY = 10.0 + (90.0 - 10.0) * math.random()
-
-        -- Override C_Map.GetPlayerMapPosition for this simulation
-        local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
----@diagnostic disable-next-line: duplicate-set-field
-        C_Map.GetPlayerMapPosition = function(mapID, unit)
-            return {x = randomX/100, y = randomY/100}
-        end
-
-        -- Register the kill with random data including rank
-        randomLevel = 60
-        PSC_StorePlayerInfo(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, randomRank)
-        RegisterPlayerKill(randomName)
-
-        -- Restore the original functions
-        C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
-        GetRealZoneText = originalGetRealZoneText
-    end
-
-    PSC_Print("Successfully registered " .. killCount .. " random test kill(s).")
-end
 
 local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
@@ -630,164 +24,16 @@ local function OnUpdateMouseoverUnit()
 end
 
 local function HandleCombatState(inCombatNow)
-    if inCombat and not inCombatNow then
-        multiKillCount = 0
-        inCombat = false
-    elseif not inCombat and inCombatNow then
-        multiKillCount = 0
-        inCombat = true
+    if PSC_InCombat and not inCombatNow then
+        PSC_MultiKillCount = 0
+        PSC_InCombat = false
+    elseif not PSC_InCombat and inCombatNow then
+        PSC_MultiKillCount = 0
+        PSC_InCombat = true
     end
 end
 
-local function GetKillerInfoOnDeath()
-    local now = GetTime()
-    local killers = {}
-    local mainKiller = nil
-    local highestDamage = 0
-
-    -- Find the player who did the most damage (main killer)
-    for sourceGUID, info in pairs(recentDamageFromPlayers) do
-        if (now - info.timestamp) <= PLAYER_DAMAGE_WINDOW then
-            if info.totalDamage > highestDamage then
-                highestDamage = info.totalDamage
-                mainKiller = {
-                    guid = sourceGUID,
-                    name = info.name,
-                    damage = info.totalDamage,
-                    isPet = IsPetGUID(sourceGUID)
-                }
-            end
-
-            -- Add to all killers list for assist tracking
-            table.insert(killers, {
-                guid = sourceGUID,
-                name = info.name,
-                damage = info.totalDamage,
-                isPet = IsPetGUID(sourceGUID)
-            })
-        end
-    end
-
-    -- If we found a main killer, return information
-    if mainKiller then
-        -- Handle pet owner as the actual killer
-        if mainKiller.isPet then
-            local ownerGUID = GetPetOwnerGUID(mainKiller.guid)
-            local ownerName = GetNameFromGUID(ownerGUID)
-
-            if ownerName then
-                mainKiller.name = ownerName
-                mainKiller.guid = ownerGUID
-                mainKiller.isPet = false
-            end
-        end
-
-        -- Find and add assists (any player who did damage but wasn't the main killer)
-        local assists = {}
-        for _, killer in ipairs(killers) do
-            -- Skip the main killer and their pets
-            if killer.guid ~= mainKiller.guid and not (killer.isPet and GetPetOwnerGUID(killer.guid) == mainKiller.guid) then
-                -- Check if it's a pet, convert to owner
-                if killer.isPet then
-                    local ownerGUID = GetPetOwnerGUID(killer.guid)
-                    local ownerName = GetNameFromGUID(ownerGUID)
-                    if ownerName and ownerGUID ~= mainKiller.guid then
-                        table.insert(assists, {
-                            name = ownerName,
-                            guid = ownerGUID
-                        })
-                    end
-                else
-                    table.insert(assists, {
-                        name = killer.name,
-                        guid = killer.guid
-                    })
-                end
-            end
-        end
-
-        if PSC_Debug then
-            print("Main Killer: " .. mainKiller.name)
-            local assistNames = {}
-            for _, assist in ipairs(assists) do
-                table.insert(assistNames, assist.name)
-            end
-            print("Assists: " .. table.concat(assistNames, ", "))
-        end
-        return {
-            killer = mainKiller,
-            assists = assists
-        }
-    end
-
-    return nil
-end
-
-local function RegisterPlayerDeath(killerInfo)
-    local characterKey = PSC_GetCharacterKey()
-
-    local lossData = PSC_DB.PvPLossCounts[characterKey]
-    local killerName = killerInfo.killer.name
-    if not killerName then return end
-
-    -- Check if we have info for this killer
-    if not lossData.Deaths[killerName] then
-        lossData.Deaths[killerName] = {
-            deaths = 0,
-            lastDeath = "",
-            zone = "",
-            deathLocations = {},
-            assistKills = 0,
-            soloKills = 0
-        }
-    end
-
-    local deathData = lossData.Deaths[killerName]
-    deathData.deaths = deathData.deaths + 1
-    deathData.lastDeath = date("%Y-%m-%d %H:%M:%S")
-    deathData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
-
-    -- Track whether it was a solo kill or assist
-    if #killerInfo.assists > 0 then
-        deathData.assistKills = deathData.assistKills + 1
-    else
-        deathData.soloKills = deathData.soloKills + 1
-    end
-
-    -- Save location data
-    local mapID = C_Map.GetBestMapForUnit("player")
-    local position = nil
-    if mapID then
-        position = C_Map.GetPlayerMapPosition(mapID, "player")
-    end
-
-    if mapID and position and position.x and position.y then
-        local x = position.x * 100
-        local y = position.y * 100
-
-        table.insert(deathData.deathLocations, {
-            x = x,
-            y = y,
-            mapID = mapID,
-            zone = deathData.zone,
-            timestamp = deathData.lastDeath,
-            deathNumber = deathData.deaths,
-            assisters = #killerInfo.assists > 0 and killerInfo.assists or nil
-        })
-    end
-
-    if PSC_Debug then
-        local assistText = ""
-        if #killerInfo.assists > 0 then
-            assistText = " with help from " .. #killerInfo.assists .. " players"
-        else
-            assistText = " (solo kill)"
-        end
-        print("Death recorded: killed by " .. killerName .. assistText)
-    end
-end
-
-local function HandlePlayerDeath()
+function HandlePlayerDeath()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
@@ -797,13 +43,12 @@ local function HandlePlayerDeath()
     end
 
     characterData.CurrentKillStreak = 0
-    multiKillCount = 0
-    inCombat = false
+    PSC_MultiKillCount = 0
+    PSC_InCombat = false
 
-    -- Check if the death was caused by players
-    local killerInfo = GetKillerInfoOnDeath()
+    local killerInfo = PSC_GetKillerInfoOnDeath()
     if killerInfo then
-        RegisterPlayerDeath(killerInfo)
+        PSC_RegisterPlayerDeath(killerInfo)
     end
 
     if PSC_Debug then
@@ -811,186 +56,30 @@ local function HandlePlayerDeath()
     end
 end
 
-local function SimulatePlayerDeathByEnemy(killerCount, assistCount)
-    PSC_Print("Simulating death by " .. killerCount .. " enemy player(s) with " .. assistCount .. " assists...")
-
-    -- Use the same random names pool as in your kill simulation
-    local randomNames = {
-        "Testplayer", "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter",
-        "Campmaster", "Roguenstein", "Sneakattack", "Huntard", "Faceroller",
-        "Dotspammer", "Moonbender", "Healnoob", "Ragequitter", "Imbalanced",
-        "Critmaster", "Zerglord", "Epicfail", "Oneshot", "Griefer",
-        "Farmville", "Stunlock", "Procmaster", "Noobslayer", "Bodycamper"
-    }
-
-    -- Generate random zone
-    local randomZones = {
-        "Stormwind City", "Ironforge", "Darnassus", "Westfall",
-        "Redridge Mountains", "Duskwood", "Stranglethorn Vale", "Ashenvale",
-        "Alterac Mountains", "Arathi Highlands", "Badlands", "Burning Steppes",
-        "Tanaris", "The Hinterlands", "Un'Goro Crater", "Western Plaguelands",
-        "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin"
-    }
-
-    local zone = randomZones[math.random(#randomZones)]
-
-    -- Override GetRealZoneText for this simulation
-    local originalGetRealZoneText = GetRealZoneText
-    GetRealZoneText = function() return zone end
-
-    -- Override map position
-    local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
-    local randomX = 10.0 + (90.0 - 10.0) * math.random()
-    local randomY = 10.0 + (90.0 - 10.0) * math.random()
-
----@diagnostic disable-next-line: duplicate-set-field
-    C_Map.GetPlayerMapPosition = function(mapID, unit)
-        return {x = randomX/100, y = randomY/100}
-    end
-
-    -- Create a simulated killer info structure
-    local killerInfo = {
-        killer = {
-            name = randomNames[math.random(#randomNames)],
-            guid = "Simulated-Killer-GUID-" .. math.random(1000000),
-            damage = 1000,
-            isPet = false
-        },
-        assists = {}
-    }
-
-    -- Add assists
-    for i = 1, assistCount do
-        local assistName = randomNames[math.random(#randomNames)]
-        while assistName == killerInfo.killer.name do
-            assistName = randomNames[math.random(#randomNames)]
-        end
-
-        table.insert(killerInfo.assists, {
-            name = assistName,
-            guid = "Simulated-Assist-GUID-" .. math.random(1000000)
-        })
-    end
-
-    local characterKey = PSC_GetCharacterKey()
-
-    -- Reset kill streak
-    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-    characterData.CurrentKillStreak = 0
-
-    -- Register the death with our handler
-    RegisterPlayerDeath(killerInfo)
-
-    -- Restore original functions
-    GetRealZoneText = originalGetRealZoneText
-    C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
-
-    PSC_Print("Death simulation complete!")
-end
-
 local function CleanupRecentPetDamage()
     local now = GetTime()
     local cutoff = now - PET_DAMAGE_WINDOW
 
-    for guid, info in pairs(recentPetDamage) do
+    for guid, info in pairs(RecentPetDamage) do
         if info.timestamp < cutoff then
-            recentPetDamage[guid] = nil
+            RecentPetDamage[guid] = nil
         end
     end
 end
 
--- Add this function to record pet damage
-local function RecordPetDamage(petGUID, petName, targetGUID, amount)
-    if not petGUID or not targetGUID then return end
-
-    local ownerGUID = GetPetOwnerGUID(petGUID)
-    if not ownerGUID then return end
-
-    recentPetDamage[targetGUID] = {
-        timestamp = GetTime(),
-        petGUID = petGUID,
-        petName = petName,
-        ownerGUID = ownerGUID,
-        amount = amount or 0
-    }
-
-    -- if PSC_Debug then
-    --     local playerGUID = PlayerGUID
-    --     if ownerGUID == playerGUID then
-    --         print("Recorded damage from your pet to: " .. targetName)
-    --     end
-    -- end
-end
-
-
-local function CombatLogDestFlagsEnemyPlayer(destFlags)
+function CombatLogDestFlagsEnemyPlayer(destFlags)
     -- return true
     return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
            bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
 end
 
-
-local function CleanupRecentlyCountedKillsDict()
-    local now = GetTime()
-    local cutoff = now - KILL_TRACKING_WINDOW
-    for guid, timestamp in pairs(recentlyCountedKills) do
-        if timestamp < cutoff then
-            recentlyCountedKills[guid] = nil
-        end
-    end
-end
-
-local function HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
-    if IsPetGUID(sourceGUID) and destGUID then
-        local damageAmount = 0
-
-        if combatEvent == "SWING_DAMAGE" then
-            damageAmount = param1 or 0
-        elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
-            damageAmount = param4 or 0
-        elseif combatEvent == "RANGE_DAMAGE" then
-            damageAmount = param4 or 0
-        end
-
-        -- Only record if there was actual damage
-        if damageAmount > 0 then
-            RecordPetDamage(sourceGUID, sourceName, destGUID, damageAmount)
-        end
-    end
-end
-
-local function RecordPlayerDamage(sourceGUID, sourceName, targetGUID, targetName, amount)
-    if not sourceGUID or not targetGUID then return end
-
-    -- Only track the player's own damage
-    if sourceGUID ~= PSC_PlayerGUID then return end
-
-    -- Get existing record or create new one
-    local existingRecord = recentPlayerDamage[targetGUID] or {
-        timestamp = 0,
-        totalDamage = 0
-    }
-
-    -- Update with new damage information
-    existingRecord.timestamp = GetTime()
-    existingRecord.totalDamage = existingRecord.totalDamage + amount
-
-    -- Store the updated record
-    recentPlayerDamage[targetGUID] = existingRecord
-
-    -- if PSC_Debug then
-    --     print(string.format("You dealt %d damage to %s", amount, targetName))
-    -- end
-end
-
 local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, param1, param4)
-    -- Only track player damage to enemy players
     if sourceGUID ~= PSC_PlayerGUID then return end
 
     local damageAmount = param1 or param4 or 0
     if damageAmount <= 0 then return end
 
-     RecordPlayerDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
+     PSC_RecordPlayerDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
 end
 
 local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
@@ -999,7 +88,6 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
     local damageAmount = 0
     local isUtilitySpell = false
 
-    -- Handle damage events
     if combatEvent == "SWING_DAMAGE" then
         damageAmount = param1 or 0
     elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
@@ -1016,7 +104,6 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
         damageAmount = 1  -- Treat utility spells as minimal damage for assist tracking
     end
 
-    -- Process damage or utility spell
     if damageAmount > 0 or isUtilitySpell then
         HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, damageAmount, nil)
 
@@ -1026,23 +113,11 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
     end
 end
 
--- Add this function to clean up old damage records
-local function CleanupRecentPlayerDamage()
-    local now = GetTime()
-    local cutoff = now - ASSIST_DAMAGE_WINDOW
-
-    for guid, info in pairs(recentPlayerDamage) do
-        if info.timestamp < cutoff then
-            recentPlayerDamage[guid] = nil
-        end
-    end
-end
-
 local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     local countKill = false
 
     -- print("Party Kill Event: " .. sourceName .. " (" .. sourceGUID .. ") killed " .. destName .. " (" .. destGUID .. ")")
-    if currentlyInBattleground then
+    if PSC_CurrentlyInBattleground then
         if sourceGUID == PSC_PlayerGUID then
             countKill = true
             if PSC_Debug then print("BG Mode: Player killing blow") end
@@ -1060,13 +135,13 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     end
 
     if countKill then
-        recentlyCountedKills[destGUID] = GetTime()
-        RegisterPlayerKill(destName, sourceName, sourceGUID)
+        PSC_RecentlyCountedKills[destGUID] = GetTime()
+        PSC_RegisterPlayerKill(destName, sourceName, sourceGUID)
     end
 end
 
 local function HandleUnitDiedEvent(destGUID, destName)
-    if recentlyCountedKills[destGUID] then
+    if PSC_RecentlyCountedKills[destGUID] then
         -- if PSC_Debug then
         --     print("Skipping duplicate kill for: " .. destName)
         -- end
@@ -1075,12 +150,11 @@ local function HandleUnitDiedEvent(destGUID, destName)
 
     local countKill = false
 
-    -- Check if this player was recently damaged by a pet
-    local petDamage = recentPetDamage[destGUID]
+    local petDamage = RecentPetDamage[destGUID]
 
     if petDamage and (GetTime() - petDamage.timestamp) <= PET_DAMAGE_WINDOW then
         -- In BG mode, only count the player's own pet kills
-        if currentlyInBattleground then
+        if PSC_CurrentlyInBattleground then
             if petDamage.ownerGUID == PSC_PlayerGUID then
                 countKill = true
                 if PSC_Debug then
@@ -1110,20 +184,19 @@ local function HandleUnitDiedEvent(destGUID, destName)
         end
 
         if countKill then
-            recentlyCountedKills[destGUID] = GetTime()
-            RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
-            recentPetDamage[destGUID] = nil  -- Clear the record after processing
+            PSC_RecentlyCountedKills[destGUID] = GetTime()
+            PSC_RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
+            RecentPetDamage[destGUID] = nil
             return
         end
     end
 
     -- If not a pet kill, check for assist kill
-    local playerDamage = recentPlayerDamage[destGUID]
-    if playerDamage and (GetTime() - playerDamage.timestamp) <= ASSIST_DAMAGE_WINDOW then
-        -- Check if enough damage was done for assist credit
+    local playerDamage = PSC_RecentPlayerDamage[destGUID]
+    if playerDamage and (GetTime() - playerDamage.timestamp) <= PSC_ASSIST_DAMAGE_WINDOW then
         if playerDamage.totalDamage > 0 then
             -- In BG mode, only count assists if the setting is enabled
-            if currentlyInBattleground and not PSC_DB.CountAssistsInBattlegrounds then
+            if PSC_CurrentlyInBattleground and not PSC_DB.CountAssistsInBattlegrounds then
                 if PSC_Debug then
                     print("BG Mode: Assist kill ignored (assists disabled in BGs)")
                 end
@@ -1134,177 +207,29 @@ local function HandleUnitDiedEvent(destGUID, destName)
                 print("Assist kill detected for: " .. destName)
             end
 
-            recentlyCountedKills[destGUID] = GetTime()
-            RegisterPlayerKill(destName, "Assist", nil)
-            recentPlayerDamage[destGUID] = nil
+            PSC_RecentlyCountedKills[destGUID] = GetTime()
+            PSC_RegisterPlayerKill(destName, "Assist", nil)
+            PSC_RecentPlayerDamage[destGUID] = nil
         end
     end
 end
 
-local function TrackIncomingPlayerDamage(sourceGUID, sourceName, amount)
-    if not sourceGUID or not sourceName then return end
+local function HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
+    if IsPetGUID(sourceGUID) and destGUID then
+        local damageAmount = 0
 
-    -- Get or create the damage record
-    local existingRecord = recentDamageFromPlayers[sourceGUID] or {
-        name = sourceName,
-        class = select(2, GetPlayerInfoByGUID(sourceGUID)) or "Unknown",
-        totalDamage = 0,
-        timestamp = 0
-    }
-
-    -- Update with new damage info
-    existingRecord.totalDamage = existingRecord.totalDamage + amount
-    existingRecord.timestamp = GetTime()
-
-    -- Store updated record
-    recentDamageFromPlayers[sourceGUID] = existingRecord
-
-    -- if PSC_Debug then
-    --     print("Incoming damage from " .. sourceName .. ": " .. amount)
-    -- end
-end
-
-local function TrackIncomingPetDamage(petGUID, petName, amount)
-    if not petGUID or not petName then return end
-
-    local ownerGUID = GetPetOwnerGUID(petGUID)
-    if not ownerGUID then
-        -- If we can't find the owner, just track the pet damage directly
-        TrackIncomingPlayerDamage(petGUID, petName, amount)
-        return
-    end
-
-    local ownerName = GetNameFromGUID(ownerGUID) or "Unknown Owner"
-
-    -- Create a merged record with the owner's information
-    local existingRecord = recentDamageFromPlayers[ownerGUID] or {
-        name = ownerName,
-        class = select(2, GetPlayerInfoByGUID(ownerGUID)) or "Unknown",
-        totalDamage = 0,
-        timestamp = 0
-    }
-
-    -- Update with new damage info
-    existingRecord.totalDamage = existingRecord.totalDamage + amount
-    existingRecord.timestamp = GetTime()
-
-    -- Store updated record
-    recentDamageFromPlayers[ownerGUID] = existingRecord
-
-    if PSC_Debug then
-        print("Incoming damage from " .. ownerName .. "'s pet (" .. petName .. "): " .. amount)
-    end
-end
-
-local function HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
-    local damageAmount = 0
-
-    -- Handle damage events
-    if combatEvent == "SWING_DAMAGE" then
-        damageAmount = param1 or 0
-    elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
-        damageAmount = param4 or 0
-    elseif combatEvent == "RANGE_DAMAGE" then
-        damageAmount = param4 or 0
-    elseif combatEvent:find("SPELL_") then
-        -- Count debuffs and other spell effects as minimal damage for assist credit
-        damageAmount = 1
-    end
-
-    if damageAmount > 0 then
-        TrackIncomingPlayerDamage(sourceGUID, sourceName, damageAmount)
-    end
-end
-
-local function HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
-    local damageAmount = 0
-
-    if combatEvent == "SWING_DAMAGE" then
-        damageAmount = param1 or 0
-    elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
-        damageAmount = param4 or 0
-    elseif combatEvent == "RANGE_DAMAGE" then
-        damageAmount = param4 or 0
-    end
-
-    if damageAmount > 0 then
-        TrackIncomingPetDamage(sourceGUID, sourceName, damageAmount)
-    end
-end
-
-function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
-    PSC_Print("Simulating combat log events for a death with " ..
-              killerCount .. " killer(s) and " .. assistCount .. " assists...")
-
-    -- Use the same random names pool as in your kill simulation
-    local randomNames = {
-        "Testplayer", "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter",
-        "Campmaster", "Roguenstein", "Sneakattack", "Huntard", "Faceroller"
-    }
-
-    local randomClass = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
-                         "SHAMAN", "MAGE", "WARLOCK", "DRUID"}
-
-    -- Generate a main killer and assists
-    local mainKillerName = randomNames[math.random(#randomNames)]
-    local mainKillerGUID = "Player-0-" .. math.random(1000000)
-    local mainKillerClass = randomClass[math.random(#randomClass)]
-
-    -- Clear previous damage tracking
-    recentDamageFromPlayers = {}
-
-    -- Set up the environment
-    local now = GetTime()
-
-    -- First add damage from the main killer
-    TrackIncomingPlayerDamage(mainKillerGUID, mainKillerName, 1000)
-
-    -- Add damage from assists
-    local assistList = {}
-    for i = 1, assistCount do
-        local assistName = randomNames[math.random(#randomNames)]
-        while assistName == mainKillerName or tContains(assistList, assistName) do
-            assistName = randomNames[math.random(#randomNames)]
+        if combatEvent == "SWING_DAMAGE" then
+            damageAmount = param1 or 0
+        elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
+            damageAmount = param4 or 0
+        elseif combatEvent == "RANGE_DAMAGE" then
+            damageAmount = param4 or 0
         end
 
-        local assistGUID = "Player-0-" .. math.random(1000000)
-        TrackIncomingPlayerDamage(assistGUID, assistName, 500)
-        table.insert(assistList, assistName)
-    end
-
-    -- Now simulate the player's death
-    HandlePlayerDeath()
-
-    -- Print a summary of what happened
-    local characterKey = PSC_GetCharacterKey()
-    if PSC_DB.PvPLossCounts and PSC_DB.PvPLossCounts[characterKey] then
-        local deathCount = 0
-        if PSC_DB.PvPLossCounts[characterKey].Deaths[mainKillerName] then
-            deathCount = PSC_DB.PvPLossCounts[characterKey].Deaths[mainKillerName].deaths
+        if damageAmount > 0 then
+            PSC_RecordPetDamage(sourceGUID, sourceName, destGUID, damageAmount)
         end
-
-        PSC_Print("Death simulation complete! Killed by " .. mainKillerName ..
-                 " (" .. mainKillerClass .. ") - Total deaths to them: " .. deathCount)
-
     end
-end
-
-function PSC_RunDeathTrackingTests()
-    PSC_Print("Running comprehensive death tracking tests...")
-
-    -- Test 1: Solo kill
-    PSC_Print("\nTest 1: Solo kill")
-    PSC_SimulateCombatLogEvent(1, 0, "direct")
-
-    -- Test 2: Kill with assists
-    PSC_Print("\nTest 2: Kill with assists")
-    PSC_SimulateCombatLogEvent(1, 2, "direct")
-
-    -- Test 3: Kill with multiple damage types
-    PSC_Print("\nTest 3: Kill with multiple damage types")
-    PSC_SimulateCombatLogEvent(1, 1, "mixed")
-
-    PSC_Print("Death tracking tests complete!")
 end
 
 local function HandleCombatLogEvent()
@@ -1316,21 +241,18 @@ local function HandleCombatLogEvent()
         HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)  -- Add this line
     end
 
-    -- Handle incoming damage to player (you are the destination)
     if destGUID == PSC_PlayerGUID then
         if sourceGUID == PSC_PlayerGUID then return end  -- Ignore self-damage or auras
-        -- Check if source is a player (not a pet)
         if bit.band(sourceFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
             -- if PSC_Debug then
             --     print("Player damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
             -- end
-            HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
-        -- Check if source is a pet
+            PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
         elseif IsPetGUID(sourceGUID) then
             if PSC_Debug then
                 print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
             end
-            HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+            PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
         end
     end
 
@@ -1342,18 +264,6 @@ local function HandleCombatLogEvent()
         HandleUnitDiedEvent(destGUID, destName)
     end
 end
-
-local function CleanupRecentDamageFromPlayers()
-    local now = GetTime()
-    local cutoff = now - PLAYER_DAMAGE_WINDOW
-
-    for guid, info in pairs(recentDamageFromPlayers) do
-        if info.timestamp < cutoff then
-            recentDamageFromPlayers[guid] = nil
-        end
-    end
-end
-
 
 function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -1379,8 +289,8 @@ function PSC_RegisterEvents()
             end
 
             PSC_UpdateMinimapButtonPosition()
-            PSC_SetupTooltip() -- Add this line to call the tooltip setup
-            inCombat = UnitAffectingCombat("player")
+            PSC_SetupMouseoverTooltip() -- Add this line to call the tooltip setup
+            PSC_InCombat = UnitAffectingCombat("player")
             PSC_CheckBattlegroundStatus()  -- Check BG status on login/reload
             if UnitIsDeadOrGhost("player") then
                 HandlePlayerDeath()
@@ -1398,9 +308,9 @@ function PSC_RegisterEvents()
         elseif event == "PLAYER_REGEN_ENABLED" then
             HandleCombatState(false)
             CleanupRecentPetDamage()
-            CleanupRecentlyCountedKillsDict()
-            CleanupRecentPlayerDamage()
-            CleanupRecentDamageFromPlayers()
+            PSC_CleanupRecentlyCountedKillsDict()
+            PSC_CleanupRecentPlayerDamage()
+            PSC_CleanupRecentDamageFromPlayers()
         elseif event == "PLAYER_LOGOUT" then
             -- PSC_CleanupDatabase()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
@@ -1409,19 +319,16 @@ function PSC_RegisterEvents()
     end)
 end
 
--- Add after the RegisterEvents function
 function PSC_CheckBattlegroundStatus()
-    -- First check if battleground mode is being forced by the user
     if PSC_DB.ForceBattlegroundMode then
-        if PSC_Debug and not lastInBattlegroundValue then
+        if PSC_Debug and not PSC_lastInBattlegroundValue then
             print("PvPStatsClassic: Forced battleground mode enabled.")
         end
-        currentlyInBattleground = true
-        lastInBattlegroundValue = true
+        PSC_CurrentlyInBattleground = true
+        PSC_lastInBattlegroundValue = true
         return
     end
 
-    -- If not forced, check if we're in an actual battleground
     local currentZone = GetRealZoneText() or ""
     local battlegroundZones = {
         "Warsong Gulch",
@@ -1433,120 +340,23 @@ function PSC_CheckBattlegroundStatus()
 
     for _, bgName in ipairs(battlegroundZones) do
         if (currentZone == bgName) then
-            if PSC_Debug and not lastInBattlegroundValue then
+            if PSC_Debug and not PSC_lastInBattlegroundValue then
                 print("PvPStatsClassic: Entered battleground. Only your own killing blows will be tracked.")
             end
-            currentlyInBattleground = true
-            lastInBattlegroundValue = true
+            PSC_CurrentlyInBattleground = true
+            PSC_lastInBattlegroundValue = true
             return
         end
     end
 
-    if PSC_Debug and lastInBattlegroundValue then
+    if PSC_Debug and PSC_lastInBattlegroundValue then
         print("PvPStatsClassic: Left battleground. Normal kill tracking active.")
     end
-    lastInBattlegroundValue = false
-    currentlyInBattleground = false
+    PSC_lastInBattlegroundValue = false
+    PSC_CurrentlyInBattleground = false
 end
 
-
--- Add this function near your other debug functions
-function PSC_DebugCombatLogEvents()
-    print("Enabling enhanced combat log debugging for 30 seconds...")
-
-    -- Store the original combat log handler
-    local originalHandler = HandleCombatLogEvent
-
-    -- Replace with our debug version temporarily
-    HandleCombatLogEvent = function()
-        local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
-              destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
-
-        -- Print out kill-related events
-        if (combatEvent == "UNIT_DIED" or combatEvent == "PARTY_KILL") and
-           bit.band(destFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER or 0) > 0 then
-            print("EVENT: " .. combatEvent)
-            print("SOURCE: " .. (sourceName or "nil") .. " (" .. (sourceGUID or "nil") .. ")")
-            print("TARGET: " .. (destName or "nil") .. " (" .. (destGUID or "nil") .. ")")
-            print("FLAGS: source=" .. (sourceFlags or 0) .. ", dest=" .. (destFlags or 0))
-            print("-----------------------------------")
-        end
-
-        -- Still call the original handler
-        originalHandler()
-    end
-
-    -- Reset after 30 seconds
-    C_Timer.After(30, function()
-        print("Combat log debugging ended.")
-        HandleCombatLogEvent = originalHandler
-    end)
-end
-
--- Add this function and command to detect all pet damage and kills
-function PSC_DebugPetKills()
-    print("Enabling pet kill debugging for 120 seconds...")
-
-    -- Store the original combat log handler
-    local originalHandler = HandleCombatLogEvent
-
-    -- Replace with our debug version temporarily
-    HandleCombatLogEvent = function()
-        local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
-              destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
-
-        -- Call the original handler first
-        originalHandler()
-
-        -- Track all pet damage events
-        if IsPetGUID(sourceGUID) then
-            local ownerGUID = GetPetOwnerGUID(sourceGUID)
-
-            if ownerGUID == PSC_PlayerGUID then
-                -- Log all pet damage events
-                if combatEvent:find("_DAMAGE") or combatEvent == "SWING_DAMAGE" then
-                    local amount = combatEvent == "SWING_DAMAGE" and param1 or (combatEvent == "SPELL_DAMAGE" and param4 or 0)
-
-                    print("Pet damage to " .. destName .. ": " .. amount .. " damage")
-
-                    -- Check current health if it's your target
-                    if UnitExists("target") and UnitGUID("target") == destGUID then
-                        print("Target health: " .. UnitHealth("target") .. "/" .. UnitHealthMax("target"))
-                        if UnitHealth("target") <= 0 then
-                            print("Target appears to be DEAD!")
-                        end
-                    end
-                end
-            end
-        end
-
-        -- Track UNIT_DIED events for any mob your pet damaged
-        if combatEvent == "UNIT_DIED" then
-            local petDamage = recentPetDamage[destGUID]
-            if petDamage then
-                print("*** DEATH DETECTED - " .. destName .. " ***")
-                print("This target was damaged by your pet " .. (petDamage.petName or "Unknown") ..
-                      " " .. string.format("%.6f", GetTime() - petDamage.timestamp) .. " seconds ago")
-
-                if CombatLogDestFlagsEnemyPlayer(destFlags) then
-                    print("This was an enemy player kill!")
-                else
-                    print("This was NOT an enemy player")
-                end
-            end
-        end
-    end
-
-    -- Reset after 120 seconds
-    C_Timer.After(120, function()
-        print("Pet kill debugging ended.")
-        HandleCombatLogEvent = originalHandler
-    end)
-end
-
--- Add this function after PSC_LoadSettings but before RegisterEvents
-
-function PSC_SetupTooltip()
+function PSC_SetupMouseoverTooltip()
     local function HasKillsLineInTooltip(tooltip)
         for i = 1, tooltip:NumLines() do
             local line = _G[tooltip:GetName() .. "TextLeft" .. i]
@@ -1604,11 +414,9 @@ function PSC_SetupTooltip()
         local text = line1:GetText()
         if not text or not text:find("^Corpse of ") then return end
 
-        -- Extract player name
         local playerName = text:match("^Corpse of (.+)$")
         if not playerName then return end
 
-        -- Look up player in our database (check at all levels)
         local kills = GetKillsByPlayerName(playerName)
 
         if kills > 0 then
@@ -1616,7 +424,6 @@ function PSC_SetupTooltip()
         end
     end
 
-    -- Hook into various tooltip events for better coverage
     GameTooltip:HookScript("OnTooltipSetUnit", OnTooltipSetUnit)
     GameTooltip:HookScript("OnShow", OnTooltipShow)
 
@@ -1628,395 +435,4 @@ function PSC_SetupTooltip()
             end
         end)
     end)
-end
-
--- Helper function to get PvP rank name based on rank number and faction
-function PSC_GetRankName(rank)
-    if not rank or rank <= 0 then
-        return nil
-    end
-
-    local rankNames = {
-        Alliance = {
-            [1] = "Private",
-            [2] = "Corporal",
-            [3] = "Sergeant",
-            [4] = "Master Sergeant",
-            [5] = "Sergeant Major",
-            [6] = "Knight",
-            [7] = "Knight-Lieutenant",
-            [8] = "Knight-Captain",
-            [9] = "Knight-Champion",
-            [10] = "Lieutenant Commander",
-            [11] = "Commander",
-            [12] = "Marshal",
-            [13] = "Field Marshal",
-            [14] = "Grand Marshal"
-        },
-        Horde = {
-            [1] = "Scout",
-            [2] = "Grunt",
-            [3] = "Sergeant",
-            [4] = "Senior Sergeant",
-            [5] = "First Sergeant",
-            [6] = "Stone Guard",
-            [7] = "Blood Guard",
-            [8] = "Legionnaire",
-            [9] = "Centurion",
-            [10] = "Champion",
-            [11] = "Lieutenant General",
-            [12] = "General",
-            [13] = "Warlord",
-            [14] = "High Warlord"
-        }
-    }
-
-    local player_faction = UnitFactionGroup("player")
-    local factionTable = nil
-    if player_faction == "Horde" then
-        factionTable = rankNames["Alliance"]
-    else
-        factionTable = rankNames["Horde"]
-    end
-    return factionTable[rank] or ("Rank " .. rank)
-end
-
-
--- Function to create and set up the Kill Milestone frame
-local function PSC_CreateKillMilestoneFrame()
-    if killMilestoneFrame then return killMilestoneFrame end
-
-    -- Create the main frame
-    local milestoneFrame = CreateFrame("Frame", "PSC_KillMilestoneFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    milestoneFrame:SetSize(200, 82)  -- Base size - will be adjusted dynamically
-    milestoneFrame:SetPoint("TOP", UIParent, "TOP", 0, -100)  -- Initial position
-    milestoneFrame:SetFrameStrata("MEDIUM")
-    milestoneFrame:SetMovable(true)
-    milestoneFrame:EnableMouse(true)
-    milestoneFrame:SetClampedToScreen(true)
-
-    -- Create backdrop for Classic compatibility
-    local backdrop = {
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
-        tile = true,
-        tileSize = 32,
-        edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
-    }
-
-    -- Apply backdrop using the appropriate method for the client version
-    if milestoneFrame.SetBackdrop then
-        milestoneFrame:SetBackdrop(backdrop)
-    else
-        -- Create background texture
-        local bg = milestoneFrame:CreateTexture(nil, "BACKGROUND")
-        bg:SetTexture(backdrop.bgFile)
----@diagnostic disable-next-line: param-type-mismatch
-        bg:SetAllPoints(milestoneFrame)
-        bg:SetTexCoord(0, 1, 0, 1)
-
-        -- Create border textures (simplified approach)
-        local border = milestoneFrame:CreateTexture(nil, "BORDER")
-        border:SetTexture(backdrop.edgeFile)
-        border:SetPoint("TOPLEFT", milestoneFrame, "TOPLEFT", -backdrop.edgeSize/2, backdrop.edgeSize/2)
-        border:SetPoint("BOTTOMRIGHT", milestoneFrame, "BOTTOMRIGHT", backdrop.edgeSize/2, -backdrop.edgeSize/2)
-    end
-
-    -- Make it draggable
-    milestoneFrame:RegisterForDrag("LeftButton")
-    milestoneFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    milestoneFrame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        -- Save position for future sessions
-        local point, _, relativePoint, xOfs, yOfs = self:GetPoint()
-        PSC_DB.MilestoneFramePosition = {
-            point = point,
-            relativePoint = relativePoint,
-            xOfs = xOfs,
-            yOfs = yOfs
-        }
-    end)
-
-    -- Title
-    local title = milestoneFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetPoint("TOP", milestoneFrame, "TOP", 0, -15)
-    title:SetText("Kill Milestone")
-    title:SetTextColor(1, 0.82, 0)
-    milestoneFrame.title = title
-
-    -- Define left margin for consistent spacing
-    local leftMargin = 20
-
-    -- Class icon
-    local classIcon = milestoneFrame:CreateTexture(nil, "ARTWORK")
-    classIcon:SetSize(24, 24)
-    classIcon:SetPoint("TOPLEFT", milestoneFrame, "TOPLEFT", leftMargin, -30)
-    milestoneFrame.classIcon = classIcon
-
-    -- Player name
-    local nameText = milestoneFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    nameText:SetPoint("TOPLEFT", classIcon, "TOPRIGHT", 5, 0)
-    nameText:SetJustifyH("LEFT")
-    milestoneFrame.nameText = nameText
-
-    -- Level and rank - aligned left like the player name
-    local levelText = milestoneFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelText:SetPoint("TOPLEFT", nameText, "BOTTOMLEFT", 0, -2)
-    levelText:SetTextColor(0.8, 0.8, 0.8)
-    levelText:SetJustifyH("LEFT")  -- Explicit left justification
-    milestoneFrame.levelText = levelText
-
-    -- Kill count - aligned left like the others
-    local killText = milestoneFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killText:SetPoint("TOPLEFT", levelText, "BOTTOMLEFT", 0, -2)
-    killText:SetTextColor(1, 0.82, 0) -- Gold color
-    killText:SetJustifyH("LEFT")
-    milestoneFrame.killText = killText
-
-    -- Close button
-    local close = CreateFrame("Button", nil, milestoneFrame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", milestoneFrame, "TOPRIGHT", -5, -5)
-    close:SetSize(20, 20)
-    close:SetScript("OnClick", function()
-        milestoneFrame:Hide()
-        if killMilestoneAutoHideTimer then
-            killMilestoneAutoHideTimer:Cancel()
-            killMilestoneAutoHideTimer = nil
-        end
-    end)
-
-    milestoneFrame:Hide()
-    killMilestoneFrame = milestoneFrame
-    return milestoneFrame
-end
-
--- Function to update and show the milestone frame
-function PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
-    if not PSC_DB.ShowKillMilestones then return end
-
-    if not PSC_DB.ShowMilestoneForFirstKill and killCount == 1 then return end
-
-    local milestoneFrame = PSC_CreateKillMilestoneFrame()
-    local class_upper = class:upper()
-
-    -- Update position if saved
-    local pos = PSC_DB.MilestoneFramePosition
-    milestoneFrame:ClearAllPoints()
-    milestoneFrame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.xOfs, pos.yOfs)
-
-    -- Only show for milestone kills (1st, or every X kills based on interval)
-    if killCount ~= 1 and killCount % PSC_DB.KillMilestoneInterval ~= 0 then
-        return
-    end
-
-    -- Set class icon
-    local classIconCoords = CLASS_ICON_TCOORDS[class_upper or "WARRIOR"]
-    if classIconCoords then
-        milestoneFrame.classIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
-        milestoneFrame.classIcon:SetTexCoord(unpack(classIconCoords))
-    else
-        milestoneFrame.classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-    end
-
-    -- Set name with color by class
-    local classColor = RAID_CLASS_COLORS[class_upper] or RAID_CLASS_COLORS["WARRIOR"]
-    milestoneFrame.nameText:SetText(playerName)
-    milestoneFrame.nameText:SetTextColor(classColor.r, classColor.g, classColor.b)
-
-    -- Get rank name if applicable
-    local rankName = nil
-    if rank and rank > 0 then
-        rankName = PSC_GetRankName(rank)
-    end
-
-    -- Set level and rank if applicable
-    local levelString = "Level " .. (level > 0 and level or "??")
-    if rankName then
-        levelString = levelString .. " - " .. rankName
-    end
-    milestoneFrame.levelText:SetText(levelString)
-
-    -- Set kill message
-    local killMessage
-    local suffix
-    if killCount % 100 >= 11 and killCount % 100 <= 13 then
-        suffix = "th"
-    else
-        local lastDigit = killCount % 10
-        if lastDigit == 1 then
-            suffix = "st"
-        elseif lastDigit == 2 then
-            suffix = "nd"
-        elseif lastDigit == 3 then
-            suffix = "rd"
-        else
-            suffix = "th"
-        end
-    end
-    killMessage = killCount .. suffix .. " kill!"
-    milestoneFrame.killText:SetText(killMessage)
-
-    -- Calculate required width for content
-    -- 1. Get the text width of the level string (most likely to be longest)
-    milestoneFrame.levelText:SetWidth(0) -- Reset width constraint to get natural width
-    local levelTextWidth = milestoneFrame.levelText:GetStringWidth()
-
-    -- 2. Get the text width of the player name
-    milestoneFrame.nameText:SetWidth(0) -- Reset width constraint to get natural width
-    local nameTextWidth = milestoneFrame.nameText:GetStringWidth()
-
-    -- 3. Get width of kill message
-    milestoneFrame.killText:SetWidth(0)
-    local killTextWidth = milestoneFrame.killText:GetStringWidth()
-
-    -- 4. Calculate the needed width (add padding for icon and margins)
-    local requiredContentWidth = math.max(levelTextWidth, nameTextWidth, killTextWidth)
-
-    -- Add consistent margins on both left and right sides
-    -- 20px left margin + 24px icon + 5px icon-to-text + content width + 20px right margin
-    local frameWidth = 20 + 24 + 5 + requiredContentWidth + 20
-
-    -- Apply minimum and maximum width constraints
-    local minWidth = 140   -- Minimum width
-    local maxWidth = 300   -- Maximum width cap
-    frameWidth = math.min(maxWidth, math.max(minWidth, frameWidth))
-
-    -- Apply the calculated width to the frame
-    milestoneFrame:SetWidth(frameWidth)
-
-    -- Set text element widths to match the frame with proper margins
-    local textWidth = frameWidth - (20 + 24 + 5 + 20) -- Left margin + icon + spacing + right margin
-    milestoneFrame.nameText:SetWidth(textWidth)
-    milestoneFrame.levelText:SetWidth(textWidth)
-    milestoneFrame.killText:SetWidth(textWidth)
-
-    milestoneFrame:Show()
-    local animGroup = SetupKillstreakMilestoneAnimation(milestoneFrame, PSC_DB.KillMilestoneAutoHideTime)
-    animGroup:Play()
-
-    -- Only play sound if milestone sounds are enabled
-    if PSC_DB.EnableKillMilestoneSounds then
-        PlaySound(8213) -- PVPFlagCapturedHorde
-    end
-
-    -- Cancel existing timer if any
-    if killMilestoneAutoHideTimer then
-        killMilestoneAutoHideTimer:Cancel()
-    end
-
-    -- Set auto-hide timer
-    killMilestoneAutoHideTimer = C_Timer.NewTimer(PSC_DB.KillMilestoneAutoHideTime + 1.0, function()
-        milestoneFrame:Hide()
-        killMilestoneAutoHideTimer = nil
-    end)
-end
-
-function PSC_ShowDeathStats()
-    local characterKey = PSC_GetCharacterKey()
-    if not PSC_DB.PvPLossCounts or not PSC_DB.PvPLossCounts[characterKey] then
-        PSC_Print("No death data available")
-        return
-    end
-
-    local lossData = PSC_DB.PvPLossCounts[characterKey]
-    PSC_Print("Death Stats for " .. PSC_CharacterName)
-    PSC_Print("\nDeaths by player:")
-
-    local deaths = {}
-    for killerName, data in pairs(lossData.Deaths) do
-        table.insert(deaths, {
-            name = killerName,
-            total = data.deaths,
-            solo = data.soloKills or 0,
-            assists = data.assistKills or 0,
-            lastDeath = data.lastDeath,
-            zone = data.zone
-        })
-    end
-
-    -- Sort by total deaths
-    table.sort(deaths, function(a, b) return a.total > b.total end)
-
-    for i, death in ipairs(deaths) do
-        local dateStr = death.lastDeath and death.lastDeath:match("(%d+%-%d+%-%d+)") or "Unknown"
-        PSC_Print(i .. ". " .. death.name .. " - " .. death.total ..
-                 " deaths (Solo: " .. death.solo ..
-                 ", Group: " .. death.assists ..
-                 ") - Last: " .. dateStr ..
-                 " in " .. death.zone)
-    end
-end
-
-function PSC_SlashCommandHandler(msg)
-    local command, rest = msg:match("^(%S*)%s*(.-)$")
-    command = string.lower(command or "")
-
-    if command == "" then
-        PrintSlashCommandUsage()
-    elseif command == "death" then
-        SimulatePlayerDeath()
-    elseif command == "simulatedeath" then
-        local killerCount = 1
-        local assistCount = 0
-
-        if rest and rest ~= "" then
-            local counts = {rest:match("(%d+)%s*(%d*)")}
----@diagnostic disable-next-line: cast-local-type
-            if counts[1] then killerCount = tonumber(counts[1]) end
----@diagnostic disable-next-line: cast-local-type
-            if counts[2] then assistCount = tonumber(counts[2]) end
-        end
-
-        SimulatePlayerDeathByEnemy(killerCount, assistCount)
-    elseif command == "simcombatlog" then
-        local killerCount = 1
-        local assistCount = 0
-        local damageType = "direct"  -- Options: direct, dot, mixed
-
-        if rest and rest ~= "" then
-            local parts = {strsplit(" ", rest)}
-            if parts[1] then killerCount = tonumber(parts[1]) or 1 end
-            if parts[2] then assistCount = tonumber(parts[2]) or 0 end
-            if parts[3] then damageType = parts[3] end
-        end
-
-        PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
-    elseif command == "testtrackers" or command == "testdeath" then
-        PSC_RunDeathTrackingTests()
-    elseif command == "deathstats" then
-        PSC_ShowDeathStats()
-    elseif command == "status" then
-        PrintStatus()
-    elseif command == "kills" or command == "stats" then
-        PSC_CreateKillStatsFrame()
-    elseif command == "debug" then
-        ShowDebugInfo()
-    elseif command == "toggledebug" then
-        PSC_Debug = not PSC_Debug
-        PSC_Print("Debug mode " .. (PSC_Debug and "enabled" or "disabled"))
-    elseif command == "registerkill" then
-        local testKillCount = 1
-        if rest and rest ~= "" then
-            local count = tonumber(rest)
-            if count and count > 0 then
-                testKillCount = count
-            end
-        end
-        SimulatePlayerKills(testKillCount)
-    elseif command == "death" then
-        SimulatePlayerDeath()
-    elseif command == "bgmode" then
-        PSC_DB.ForceBattlegroundMode = not PSC_DB.ForceBattlegroundMode
-        PSC_CheckBattlegroundStatus()
-        PSC_Print("Manual Battleground Mode " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
-    elseif command == "debugevents" then
-        PSC_DebugCombatLogEvents()
-    elseif command == "debugpet" then
-        PSC_DebugPetKills()
-    elseif command == "options" or command == "settings" then
-            PSC_CreateConfigUI()
-    else
-        PrintSlashCommandUsage()
-    end
 end
