@@ -11,3 +11,10 @@ StatisticsFrame.lua
 ConfigUI.lua
 PvPStatsClassic.lua
 MinimapButton.lua
+DeathTracking.lua
+DebugTools.lua
+KillMilestones.lua
+KillTracking.lua
+Killstreaks.lua
+SlashCommands.lua
+Utils.lua
