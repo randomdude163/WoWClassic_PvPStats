@@ -1,16 +1,16 @@
 local minimapButton = CreateFrame("Button", "PSC_MinimapButton", Minimap)
-minimapButton:SetSize(31, 31) -- Standard size for minimap buttons
+minimapButton:SetSize(31, 31)
 minimapButton:SetFrameStrata("MEDIUM")
 minimapButton:SetMovable(false)
 
 minimapButton.texture = minimapButton:CreateTexture(nil, "ARTWORK")
-minimapButton.texture:SetSize(20, 20)            -- Standard minimap icon size
-minimapButton.texture:SetPoint("TOPLEFT", 6, -6) -- Blizzard's standard offset
+minimapButton.texture:SetSize(20, 20)
+minimapButton.texture:SetPoint("TOPLEFT", 6, -6)
 minimapButton.texture:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\minimap")
 
 minimapButton.border = minimapButton:CreateTexture(nil, "OVERLAY")
-minimapButton.border:SetSize(53, 53)     -- Standard Blizzard border size
-minimapButton.border:SetPoint("TOPLEFT") -- Proper Blizzard alignment
+minimapButton.border:SetSize(53, 53)
+minimapButton.border:SetPoint("TOPLEFT")
 minimapButton.border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 
 minimapButton:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")

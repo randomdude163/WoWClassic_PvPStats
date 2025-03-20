@@ -1,5 +1,3 @@
--- ConfigUI.lua - Configuration interface for PvPStatsClassic
--- This adds a graphical user interface for all settings of the addon
 local configFrame = nil
 
 local PSC_CONFIG_HEADER_R = 1.0
@@ -10,9 +8,7 @@ local HEADER_ELEMENT_SPACING = 15
 local CHECKBOX_SPACING = 5
 local MESSAGE_TEXTFIELD_SPACING = 40
 
-
 local function CreateAndShowStaticPopup(dialogName, text, onAcceptFunc)
-    -- Redefine the dialog template every time to ensure it has the latest settings
     StaticPopupDialogs[dialogName] = {
         text = text,
         button1 = "Yes",
@@ -21,23 +17,18 @@ local function CreateAndShowStaticPopup(dialogName, text, onAcceptFunc)
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,
-        preferredIndex = 3,  -- Avoid UI taint from using default index
+        preferredIndex = 3,
 
-        -- Critical: When the popup is showing, disable escape handling in the config frame
         OnShow = function(self)
-            -- This is essential - disable keyboard interaction on the config frame while popup is visible
             if configFrame then
                 configFrame:EnableKeyboard(false)
             end
         end,
 
-        -- Re-enable keyboard on the config frame when popup is dismissed
         OnHide = function()
             if configFrame and configFrame:IsVisible() then
-                -- Re-enable keyboard on the config frame
                 configFrame:EnableKeyboard(true)
 
-                -- Ensure config frame is the top-most frame
                 C_Timer.After(0.05, function()
                     if configFrame:IsVisible() then
                         PSC_FrameManager:BringToFront("ConfigUI")
@@ -50,17 +41,14 @@ local function CreateAndShowStaticPopup(dialogName, text, onAcceptFunc)
     local popup = StaticPopup_Show(dialogName)
 
     if popup then
-        -- Set high strata and frame level to ensure popup appears on top
         popup:SetFrameStrata("FULLSCREEN_DIALOG")
         popup:SetFrameLevel(2000)
         popup:SetPoint("CENTER", UIParent, "CENTER")
         popup:Raise()
 
-        -- The most important fix - explicitly grab focus for the popup
         popup:SetPropagateKeyboardInput(false)
         popup:EnableKeyboard(true)
 
-        -- Delete any existing OnKeyDown handler that might interfere
         popup:SetScript("OnKeyDown", nil)
     end
 
@@ -68,11 +56,10 @@ local function CreateAndShowStaticPopup(dialogName, text, onAcceptFunc)
 end
 
 local function ShowResetStatsConfirmation()
-    CreateAndShowStaticPopup(
-        "PSC_RESET_STATS",
-        "Are you sure you want to reset all kill statistics? This cannot be undone.",
-        function() ResetAllStatsToDefault() end
-    )
+    CreateAndShowStaticPopup("PSC_RESET_STATS",
+        "Are you sure you want to reset all kill statistics? This cannot be undone.", function()
+            ResetAllStatsToDefault()
+        end)
 end
 
 local function ResetAllSettingsToDefault()
@@ -81,11 +68,11 @@ local function ResetAllSettingsToDefault()
 end
 
 local function ShowResetDefaultsConfirmation()
-    CreateAndShowStaticPopup(
-        "PSC_RESET_DEFAULTS",
+    CreateAndShowStaticPopup("PSC_RESET_DEFAULTS",
         "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
-        function() ResetAllSettingsToDefault() end
-    )
+        function()
+            ResetAllSettingsToDefault()
+        end)
 end
 
 local function CreateSectionHeader(parent, text, xOffset, yOffset)
@@ -93,7 +80,6 @@ local function CreateSectionHeader(parent, text, xOffset, yOffset)
     header:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
     header:SetText(text)
     header:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
-
 
     local line = parent:CreateTexture(nil, "ARTWORK")
     line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
@@ -175,12 +161,11 @@ local function CreateButton(parent, text, width, height, onClickFunc)
     return button
 end
 
--- Update the config UI to use the new name and add the milestone interval slider
 local function CreateAnnouncementSection(parent, yOffset)
     local announcementSettingsHeader = CreateSectionHeader(parent, "Party Chat Announcements", 20, yOffset)
 
-    local enableKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce kills",
-        PSC_DB.EnableKillAnnounceMessages, function(checked)
+    local enableKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce kills", PSC_DB.EnableKillAnnounceMessages,
+        function(checked)
             PSC_DB.EnableKillAnnounceMessages = checked
         end)
     enableKillAnnounceCheckbox:SetPoint("TOPLEFT", announcementSettingsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
@@ -193,7 +178,6 @@ local function CreateAnnouncementSection(parent, yOffset)
     enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
     parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
 
-    -- Add new checkbox for multi-kill announcements
     local enableMultiKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce multi-kills",
         PSC_DB.EnableMultiKillAnnounceMessages, function(checked)
             PSC_DB.EnableMultiKillAnnounceMessages = checked
@@ -201,7 +185,6 @@ local function CreateAnnouncementSection(parent, yOffset)
     enableMultiKillAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "TOPLEFT", 300, 0)
     parent.enableMultiKillAnnounceCheckbox = enableMultiKillAnnounceCheckbox
 
-    -- Add multi-kill threshold slider to the right side of announcements section
     local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(16)
@@ -224,8 +207,8 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -140)
 
-    local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode",
-        PSC_DB.AutoBattlegroundMode, function(checked)
+    local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode", PSC_DB.AutoBattlegroundMode,
+        function(checked)
             PSC_DB.AutoBattlegroundMode = checked
             PSC_CheckBattlegroundStatus()
         end)
@@ -241,9 +224,9 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("• No messages are posted to group chat", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    autoBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-    -- Count Assists In BG checkbox (new)
+    autoBGModeCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
     local assistsInBGCheckbox, _ = CreateCheckbox(parent, "Count assist kills in Battleground Mode",
         PSC_DB.CountAssistsInBattlegrounds, function(checked)
             PSC_DB.CountAssistsInBattlegrounds = checked
@@ -254,10 +237,14 @@ local function CreateAnnouncementSection(parent, yOffset)
     assistsInBGCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Count Assist Kills in Battlegrounds")
-        GameTooltip:AddLine("Kills count if you damaged a player or cast harmful spells like Purge or Hunter's Mark and someone else does the killing blow.", 1, 1, 1, true)
+        GameTooltip:AddLine(
+            "Kills count if you damaged a player or cast harmful spells like Purge or Hunter's Mark and someone else does the killing blow.",
+            1, 1, 1, true)
         GameTooltip:Show()
     end)
-    assistsInBGCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    assistsInBGCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     local manualBGModeCheckbox, _ = CreateCheckbox(parent, "Force Enable Battleground Mode",
         PSC_DB.ForceBattlegroundMode, function(checked)
@@ -273,13 +260,13 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("Enable battleground mode until you turn it off again.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    manualBGModeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    manualBGModeCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -295)
 
-    local showKillMilestonesCheckbox, _ = CreateCheckbox(parent,
-        "Show kill milestones",
-        PSC_DB.ShowKillMilestones,
+    local showKillMilestonesCheckbox, _ = CreateCheckbox(parent, "Show kill milestones", PSC_DB.ShowKillMilestones,
         function(checked)
             PSC_DB.ShowKillMilestones = checked
         end)
@@ -292,24 +279,23 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("Shows movable notification for kill milestones.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    showKillMilestonesCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    showKillMilestonesCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
-    local killMilestoneSoundsCheckbox, _ = CreateCheckbox(parent,
-        "Play milestone sound effects",
-        PSC_DB.EnableKillMilestoneSounds,
-        function(checked)
+    local killMilestoneSoundsCheckbox, _ = CreateCheckbox(parent, "Play milestone sound effects",
+        PSC_DB.EnableKillMilestoneSounds, function(checked)
             PSC_DB.EnableKillMilestoneSounds = checked
         end)
     killMilestoneSoundsCheckbox:SetPoint("TOPLEFT", showKillMilestonesCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
     parent.killMilestoneSoundsCheckbox = killMilestoneSoundsCheckbox
 
-    local showMilestoneForFirstKillCheckbox, _ = CreateCheckbox(parent,
-        "Show milestone for first kill",
-        PSC_DB.ShowMilestoneForFirstKill, -- Invert the default value
-        function(checked)
-            PSC_DB.ShowMilestoneForFirstKill = checked -- Invert the stored value
+    local showMilestoneForFirstKillCheckbox, _ = CreateCheckbox(parent, "Show milestone for first kill",
+        PSC_DB.ShowMilestoneForFirstKill, function(checked)
+            PSC_DB.ShowMilestoneForFirstKill = checked
         end)
-    showMilestoneForFirstKillCheckbox:SetPoint("TOPLEFT", killMilestoneSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
+    showMilestoneForFirstKillCheckbox:SetPoint("TOPLEFT", killMilestoneSoundsCheckbox, "BOTTOMLEFT", 0,
+        -CHECKBOX_SPACING + 5)
     parent.showMilestoneForFirstKillCheckbox = showMilestoneForFirstKillCheckbox
 
     showMilestoneForFirstKillCheckbox:SetScript("OnEnter", function(self)
@@ -318,9 +304,12 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("When checked, you'll see a notification for your first kill of each player.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    showMilestoneForFirstKillCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    showMilestoneForFirstKillCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
-    local milestoneIntervalSlider = CreateFrame("Slider", "PSC_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
+    local milestoneIntervalSlider =
+        CreateFrame("Slider", "PSC_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
     milestoneIntervalSlider:SetWidth(200)
     milestoneIntervalSlider:SetHeight(16)
     milestoneIntervalSlider:SetPoint("TOPLEFT", killMilestonesHeader, "BOTTOMLEFT", 310, -CHECKBOX_SPACING - 25)
@@ -330,7 +319,8 @@ local function CreateAnnouncementSection(parent, yOffset)
     milestoneIntervalSlider:SetValue(PSC_DB.KillMilestoneInterval or 5)
     getglobal(milestoneIntervalSlider:GetName() .. "Low"):SetText("3")
     getglobal(milestoneIntervalSlider:GetName() .. "High"):SetText("10")
-    getglobal(milestoneIntervalSlider:GetName() .. "Text"):SetText("Milestone interval: Every " .. (PSC_DB.KillMilestoneInterval or 5) .. " kills")
+    getglobal(milestoneIntervalSlider:GetName() .. "Text"):SetText(
+        "Milestone interval: Every " .. (PSC_DB.KillMilestoneInterval or 5) .. " kills")
     parent.milestoneIntervalSlider = milestoneIntervalSlider
 
     milestoneIntervalSlider:SetScript("OnValueChanged", function(self, value)
@@ -340,7 +330,8 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.KillMilestoneInterval = value
     end)
 
-    local milestoneAutoHideTimeSlider = CreateFrame("Slider", "PSC_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
+    local milestoneAutoHideTimeSlider =
+        CreateFrame("Slider", "PSC_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
     milestoneAutoHideTimeSlider:SetWidth(200)
     milestoneAutoHideTimeSlider:SetHeight(16)
     milestoneAutoHideTimeSlider:SetPoint("TOPLEFT", milestoneIntervalSlider, "BOTTOMLEFT", 0, -30)
@@ -350,7 +341,8 @@ local function CreateAnnouncementSection(parent, yOffset)
     milestoneAutoHideTimeSlider:SetValue(PSC_DB.KillMilestoneAutoHideTime or 5)
     getglobal(milestoneAutoHideTimeSlider:GetName() .. "Low"):SetText("1 sec")
     getglobal(milestoneAutoHideTimeSlider:GetName() .. "High"):SetText("15 sec")
-    getglobal(milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText("Hide notification after: " .. (PSC_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
+    getglobal(milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText(
+        "Hide notification after: " .. (PSC_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
     parent.milestoneAutoHideTimeSlider = milestoneAutoHideTimeSlider
 
     milestoneAutoHideTimeSlider:SetScript("OnValueChanged", function(self, value)
@@ -361,38 +353,30 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
 
     local testButton = CreateButton(parent, "Show Kill Milestone", 160, 22, function()
-        -- Test with sample data for milestone kill counts
         local testKillCounts = {1, PSC_DB.KillMilestoneInterval, PSC_DB.KillMilestoneInterval * 2}
         local index = math.random(1, 3)
 
-        -- Skip first kill milestone test if hide first kill is enabled and we rolled a "1"
         if not PSC_DB.ShowMilestoneForFirstKill and testKillCounts[index] == 1 then
-            -- Instead of 1, use the milestone interval value
             index = 2
         end
 
-        -- Create a sample kill event with random class
         local classes = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID"}
         local randomClass = classes[math.random(1, #classes)]
 
-        -- 50% chance to show Horde ranks instead of Alliance
         local useHorde = (math.random(1, 2) == 1)
 
-        -- 30% chance of no rank
         local rank
         if math.random(1, 10) <= 3 then
             rank = 0
         else
-            -- Otherwise random rank 1-14 (higher ranks less common)
             local rankRoll = math.random(1, 100)
             if rankRoll <= 50 then
-                rank = math.random(1, 4) -- 50% chance for ranks 1-4
-            elseif rankRoll <= 75 then
-                rank = math.random(5, 8) -- 25% chance for ranks 5-8
+                rank = math.random(1, 4)
+                rank = math.random(5, 8)
             elseif rankRoll <= 90 then
-                rank = math.random(9, 11) -- 15% chance for ranks 9-11
+                rank = math.random(9, 11)
             else
-                rank = math.random(12, 14) -- 10% chance for ranks 12-14
+                rank = math.random(12, 14)
             end
         end
 
@@ -410,10 +394,8 @@ local function CreateAnnouncementSection(parent, yOffset)
     enableKillSoundsCheckbox:SetPoint("TOPLEFT", generalSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.enableKillSoundsCheckbox = enableKillSoundsCheckbox
 
-    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent,
-        "Show kills in mouseover tooltips",
-        PSC_DB.ShowTooltipKillInfo,
-        function(checked)
+    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show kills in mouseover tooltips",
+        PSC_DB.ShowTooltipKillInfo, function(checked)
             PSC_DB.ShowTooltipKillInfo = checked
         end)
     tooltipKillInfoCheckbox:SetPoint("TOPLEFT", enableKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
@@ -425,12 +407,12 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("Shows how often you killed players while you mouseover them.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    tooltipKillInfoCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    tooltipKillInfoCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
-    local showAccountWideStatsCheckbox, _ = CreateCheckbox(parent,
-        "Show account-wide statistics",
-        PSC_DB.ShowAccountWideStats,
-        function(checked)
+    local showAccountWideStatsCheckbox, _ = CreateCheckbox(parent, "Show account-wide statistics",
+        PSC_DB.ShowAccountWideStats, function(checked)
             PSC_DB.ShowAccountWideStats = checked
         end)
     showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
@@ -443,104 +425,80 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:AddLine("When unchecked, only shows kills from your current character.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    showAccountWideStatsCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    showAccountWideStatsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     return 320
 end
 
 local function CreateMessageTemplatesSection(parent, yOffset)
-    -- Add extra spacing before the Party Messages section
     yOffset = yOffset
 
     local header, line = CreateSectionHeader(parent, "Party Announcement Messages", 20, yOffset)
 
-    local killMsgContainer, killMsgEditBox = CreateInputField(
-        parent,
-        "Kill announcement message:",
-        560,
-        PSC_DB.KillAnnounceMessage,
-        function(text)
+    local killMsgContainer, killMsgEditBox = CreateInputField(parent, "Kill announcement message:", 560,
+        PSC_DB.KillAnnounceMessage, function(text)
             PSC_DB.KillAnnounceMessage = text
-        end
-    )
+        end)
     killMsgContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING - 10)
 
-    -- Kill message placeholder description with highlighted placeholders
     local killAnnounceMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     killAnnounceMessageDesc:SetPoint("TOPLEFT", killMsgEditBox, "BOTTOMLEFT", -4, -5)
-    killAnnounceMessageDesc:SetText("Placeholders: |cFFFFFFFFEnemyplayername|r for player name and |cFFFFFFFFx#|r for kill count (e.g. x3 for 3rd kill).")
+    killAnnounceMessageDesc:SetText(
+        "Placeholders: |cFFFFFFFFEnemyplayername|r for player name and |cFFFFFFFFx#|r for kill count (e.g. x3 for 3rd kill).")
     killAnnounceMessageDesc:SetJustifyH("LEFT")
 
-    local streakEndedContainer, streakEndedEditBox = CreateInputField(
-        parent,
-        "Kill streak ended message:",
-        560,
-        PSC_DB.KillStreakEndedMessage,
-        function(text)
+    local streakEndedContainer, streakEndedEditBox = CreateInputField(parent, "Kill streak ended message:", 560,
+        PSC_DB.KillStreakEndedMessage, function(text)
             PSC_DB.KillStreakEndedMessage = text
-        end
-    )
+        end)
     streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
 
-    -- Streak ended message placeholder description
     local streakEndedMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     streakEndedMessageDesc:SetPoint("TOPLEFT", streakEndedEditBox, "BOTTOMLEFT", -4, -5)
     streakEndedMessageDesc:SetText("Placeholder: |cFFFFFFFFSTREAKCOUNT|r for the number of kills in your streak.")
     streakEndedMessageDesc:SetJustifyH("LEFT")
 
-    local newStreakContainer, newStreakEditBox = CreateInputField(
-        parent,
-        "New kill streak personal best message:",
-        560,
-        PSC_DB.NewKillStreakRecordMessage,
-        function(text)
+    local newStreakContainer, newStreakEditBox = CreateInputField(parent, "New kill streak personal best message:", 560,
+        PSC_DB.NewKillStreakRecordMessage, function(text)
             PSC_DB.NewKillStreakRecordMessage = text
-        end
-    )
+        end)
     newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
 
-    -- New streak record message placeholder description
     local newStreakMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     newStreakMessageDesc:SetPoint("TOPLEFT", newStreakEditBox, "BOTTOMLEFT", -4, -5)
     newStreakMessageDesc:SetText("Placeholder: |cFFFFFFFFSTREAKCOUNT|r for the number of kills in your streak.")
     newStreakMessageDesc:SetJustifyH("LEFT")
 
-    local multiKillContainer, multiKillEditBox = CreateInputField(
-        parent,
-        "New multi-kill personal best message:",
-        560,
-        PSC_DB.NewMultiKillRecordMessage,
-        function(text)
+    local multiKillContainer, multiKillEditBox = CreateInputField(parent, "New multi-kill personal best message:", 560,
+        PSC_DB.NewMultiKillRecordMessage, function(text)
             PSC_DB.NewMultiKillRecordMessage = text
-        end
-    )
+        end)
     multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
 
-    -- Multi-kill record message placeholder description
     local multiKillMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     multiKillMessageDesc:SetPoint("TOPLEFT", multiKillEditBox, "BOTTOMLEFT", -4, -5)
-    multiKillMessageDesc:SetText("Placeholder: |cFFFFFFFFMULTIKILLTEXT|r for the multi-kill description ('Double-Kill', 'Triple-Kill', etc).")
+    multiKillMessageDesc:SetText(
+        "Placeholder: |cFFFFFFFFMULTIKILLTEXT|r for the multi-kill description ('Double-Kill', 'Triple-Kill', etc).")
     multiKillMessageDesc:SetJustifyH("LEFT")
 
-    -- Return UI elements for potential updates
     return {
         killMsg = killMsgEditBox,
         streakEnded = streakEndedEditBox,
         newStreak = newStreakEditBox,
-        multiKill = multiKillEditBox,
+        multiKill = multiKillEditBox
     }
 end
 
 local function CreateActionButtons(parent)
-    -- Create a centered container for buttons
     local buttonContainer = CreateFrame("Frame", nil, parent)
-    buttonContainer:SetSize(200, 200)  -- Fixed width container
+    buttonContainer:SetSize(200, 200)
     buttonContainer:SetPoint("CENTER")
 
-    -- Consistent button sizes and spacing
-    local buttonWidth = 160  -- Fixed width for all buttons
-    local buttonHeight = 25  -- Fixed height for all buttons
-    local buttonSpacing = 15 -- Space between buttons
+    local buttonWidth = 160
+    local buttonHeight = 25
+    local buttonSpacing = 15
 
     local resetStatsBtn = CreateButton(buttonContainer, "Reset Statistics", buttonWidth, buttonHeight, function()
         ShowResetStatsConfirmation()
@@ -561,7 +519,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 660) -- Reduced from 650 to 600
+    frame:SetSize(600, 660)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -569,7 +527,6 @@ local function CreateMainFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
-    -- Add a close button handler
     frame.CloseButton:SetScript("OnClick", function()
         frame:Hide()
     end)
@@ -582,9 +539,10 @@ local function CreateMainFrame()
 end
 
 function PSC_UpdateConfigUI()
-    if not configFrame then return end
+    if not configFrame then
+        return
+    end
 
-    -- Update checkboxes
     configFrame.autoBGModeCheckbox:SetChecked(PSC_DB.AutoBattlegroundMode)
     configFrame.assistsInBGCheckbox:SetChecked(PSC_DB.CountAssistsInBattlegrounds)
     configFrame.manualBGModeCheckbox:SetChecked(PSC_DB.ForceBattlegroundMode)
@@ -598,26 +556,24 @@ function PSC_UpdateConfigUI()
     configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
     configFrame.showAccountWideStatsCheckbox:SetChecked(PSC_DB.ShowAccountWideStats)
 
-
-    -- Update multi-kill slider in its new location (General tab)
     if configFrame.multiKillSlider and configFrame.multiKillSlider:GetName() then
         configFrame.multiKillSlider:SetValue(PSC_DB.MultiKillThreshold or 3)
-        getglobal(configFrame.multiKillSlider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
+        getglobal(configFrame.multiKillSlider:GetName() .. "Text"):SetText(
+            "Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
     end
 
-    -- Update milestone interval slider
     if configFrame.milestoneIntervalSlider and configFrame.milestoneIntervalSlider:GetName() then
         configFrame.milestoneIntervalSlider:SetValue(PSC_DB.KillMilestoneInterval or 5)
-        getglobal(configFrame.milestoneIntervalSlider:GetName() .. "Text"):SetText("Milestone interval: Every " .. (PSC_DB.KillMilestoneInterval or 5) .. " kills")
+        getglobal(configFrame.milestoneIntervalSlider:GetName() .. "Text"):SetText(
+            "Milestone interval: Every " .. (PSC_DB.KillMilestoneInterval or 5) .. " kills")
     end
 
-    -- Update milestone auto-hide time slider
     if configFrame.milestoneAutoHideTimeSlider and configFrame.milestoneAutoHideTimeSlider:GetName() then
         configFrame.milestoneAutoHideTimeSlider:SetValue(PSC_DB.KillMilestoneAutoHideTime or 5)
-        getglobal(configFrame.milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText("Hide notification after: " .. (PSC_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
+        getglobal(configFrame.milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText(
+            "Hide notification after: " .. (PSC_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
     end
 
-    -- Update message templates
     configFrame.editBoxes.killMsg:SetText(PSC_DB.KillAnnounceMessage)
     configFrame.editBoxes.streakEnded:SetText(PSC_DB.KillStreakEndedMessage)
     configFrame.editBoxes.newStreak:SetText(PSC_DB.NewKillStreakRecordMessage)
@@ -634,26 +590,22 @@ local function CreateTabSystem(parent)
     tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
     tabContainer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -7, 7)
 
-    -- Create tab buttons
     local tabNames = {"General", "Messages", "Reset", "About"}
     for i, name in ipairs(tabNames) do
-        local tab = CreateFrame("Button", parent:GetName().."Tab"..i, parent, "CharacterFrameTabButtonTemplate")
+        local tab = CreateFrame("Button", parent:GetName() .. "Tab" .. i, parent, "CharacterFrameTabButtonTemplate")
         tab:SetText(name)
         tab:SetID(i)
 
-        -- Set initial size
         tab:SetSize(tabWidth, tabHeight)
 
-        -- Get references to all tab textures
-        local tabMiddle = _G[tab:GetName().."Middle"]
-        local tabLeft = _G[tab:GetName().."Left"]
-        local tabRight = _G[tab:GetName().."Right"]
-        local tabSelectedMiddle = _G[tab:GetName().."SelectedMiddle"]
-        local tabSelectedLeft = _G[tab:GetName().."SelectedLeft"]
-        local tabSelectedRight = _G[tab:GetName().."SelectedRight"]
-        local tabText = _G[tab:GetName().."Text"]
+        local tabMiddle = _G[tab:GetName() .. "Middle"]
+        local tabLeft = _G[tab:GetName() .. "Left"]
+        local tabRight = _G[tab:GetName() .. "Right"]
+        local tabSelectedMiddle = _G[tab:GetName() .. "SelectedMiddle"]
+        local tabSelectedLeft = _G[tab:GetName() .. "SelectedLeft"]
+        local tabSelectedRight = _G[tab:GetName() .. "SelectedRight"]
+        local tabText = _G[tab:GetName() .. "Text"]
 
-        -- Fix texture sizes immediately
         if tabMiddle then
             tabMiddle:ClearAllPoints()
             tabMiddle:SetPoint("LEFT", tabLeft, "RIGHT", 0, 0)
@@ -665,14 +617,12 @@ local function CreateTabSystem(parent)
             tabSelectedMiddle:SetWidth(tabWidth - 31)
         end
 
-        -- Position tabs with proper spacing
         if i == 1 then
             tab:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 5, 0)
         else
-            tab:SetPoint("LEFT", tabs[i-1], "RIGHT", -8, 0)
+            tab:SetPoint("LEFT", tabs[i - 1], "RIGHT", -8, 0)
         end
 
-        -- Force proper text positioning
         if tabText then
             tabText:ClearAllPoints()
             tabText:SetPoint("CENTER", tab, "CENTER", 0, 2)
@@ -680,7 +630,6 @@ local function CreateTabSystem(parent)
             tabText:SetWidth(tabWidth - 40)
         end
 
-        -- Create content frame for this tab
         local contentFrame = CreateFrame("Frame", nil, tabContainer)
         contentFrame:SetPoint("TOPLEFT", tabContainer, "TOPLEFT", 0, -5)
         contentFrame:SetPoint("BOTTOMRIGHT", tabContainer, "BOTTOMRIGHT")
@@ -689,7 +638,6 @@ local function CreateTabSystem(parent)
         tabFrames[i] = contentFrame
         table.insert(tabs, tab)
 
-        -- Set up click handler
         tab:SetScript("OnClick", function()
             PanelTemplates_SetTab(parent, i)
             for index, frame in ipairs(tabFrames) do
@@ -709,7 +657,6 @@ local function CreateTabSystem(parent)
     PanelTemplates_SetTab(parent, 1)
     tabFrames[1]:Show()
 
-    -- Force resize and texture setup
     for i, tab in ipairs(tabs) do
         PanelTemplates_TabResize(tab, 0)
     end
@@ -718,21 +665,17 @@ local function CreateTabSystem(parent)
 end
 
 local function CreateCopyableField(parent, label, text, anchorTo, yOffset)
-    -- Create the label
     local labelText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, yOffset)
     labelText:SetText(label .. ":")
 
-    -- Create the EditBox
     local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     editBox:SetAutoFocus(false)
     editBox:SetSize(300, 20)
-    -- Increased horizontal spacing to 10 pixels and adjusted vertical position of label
     editBox:SetPoint("TOPLEFT", labelText, "TOPLEFT", labelText:GetStringWidth() + 10, 5)
     editBox:SetText(text)
     editBox:SetTextColor(0.3, 0.6, 1.0)
 
-    -- Make it read-only but copyable
     editBox:SetScript("OnEditFocusGained", function(self)
         self:HighlightText()
     end)
@@ -753,7 +696,6 @@ local function CreateCopyableField(parent, label, text, anchorTo, yOffset)
 end
 
 local function CreateAboutTab(parent)
-    -- Keep existing header and logo code
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOP", parent, "TOP", 0, -20)
     header:SetText("PvP Stats Classic")
@@ -774,14 +716,17 @@ local function CreateAboutTab(parent)
     logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
     logo:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
 
-    local hunterColor = RAID_CLASS_COLORS["HUNTER"] or {r = 0.67, g = 0.83, b = 0.45}
+    local hunterColor = RAID_CLASS_COLORS["HUNTER"] or {
+        r = 0.67,
+        g = 0.83,
+        b = 0.45
+    }
 
     local contentWidth = 300
     local creditsContainer = CreateFrame("Frame", nil, parent)
     creditsContainer:SetSize(contentWidth, 200)
     creditsContainer:SetPoint("TOP", logo, "BOTTOM", 0, -10)
 
-    -- Developers section (keep existing code)
     local devsLabel = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     devsLabel:SetPoint("TOPLEFT", creditsContainer, "TOPLEFT", 0, 0)
     devsLabel:SetText("Developed by:")
@@ -800,7 +745,6 @@ local function CreateAboutTab(parent)
     secondAuthorText:SetText("Hkfarmer")
     secondAuthorText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
 
-    -- Realm and Guild info (keep existing code)
     local realmText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     realmText:SetPoint("TOPLEFT", devsLabel, "BOTTOMLEFT", 0, -15)
     realmText:SetText("Realm: Spineshatter")
@@ -809,10 +753,12 @@ local function CreateAboutTab(parent)
     guildText:SetPoint("TOPLEFT", realmText, "BOTTOMLEFT", 0, -10)
     guildText:SetText("Guild: <Redridge Police>")
 
-    -- New copyable fields
-    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact", "redridgepolice@outlook.com", guildText, -20)
-    local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub", "github.com/randomdude163/WoWClassic_PvPStats", contactLabel, -25)
-    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord", "https://discord.gg/ZBaN2xk5h3", githubLabel, -25)
+    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact", "redridgepolice@outlook.com",
+        guildText, -20)
+    local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub",
+        "github.com/randomdude163/WoWClassic_PvPStats", contactLabel, -25)
+    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord", "https://discord.gg/ZBaN2xk5h3",
+        githubLabel, -25)
 
     return parent
 end
@@ -826,14 +772,11 @@ function PSC_CreateConfigFrame()
     configFrame = CreateMainFrame()
     PSC_FrameManager:RegisterFrame(configFrame, "ConfigUI")
 
-    -- Create tab system
     local tabFrames = CreateTabSystem(configFrame)
 
-    -- General Tab (Tab 1)
     local currentY = -10
     local announcementHeight = CreateAnnouncementSection(tabFrames[1], currentY)
 
-    -- Copy references from the tab frame to the config frame
     configFrame.autoBGModeCheckbox = tabFrames[1].autoBGModeCheckbox
     configFrame.assistsInBGCheckbox = tabFrames[1].assistsInBGCheckbox
     configFrame.manualBGModeCheckbox = tabFrames[1].manualBGModeCheckbox
@@ -850,17 +793,13 @@ function PSC_CreateConfigFrame()
     configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
     configFrame.multiKillSlider = tabFrames[1].multiKillSlider
 
-    -- Messages Tab (Tab 2)
     configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
 
-    -- Reset Tab (Tab 3)
     local resetButtons = CreateActionButtons(tabFrames[3])
     configFrame.resetButtons = resetButtons
 
-    -- About Tab (Tab 4)
     CreateAboutTab(tabFrames[4])
 
-    -- Initialize first tab
     PanelTemplates_SetTab(configFrame, 1)
     tabFrames[1]:Show()
 
