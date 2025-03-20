@@ -1,27 +1,34 @@
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
-PSC_MultiKillCount = 0
 
-PSC_KILLSTREAK_MILESTONES = {25, 50, 75, 100, 150, 200, 250, 300}
-PSC_CurrentlyInBattleground = false       -- Current BG state
-PSC_LastInBattlegroundValue = false
-
-local inCombat = false
-local killStreakMilestoneFrame = nil
 PSC_Debug = true
+PSC_PlayerGUID = ""
+PSC_CharacterName = ""
+PSC_RealmName = ""
 
+local recentPetDamage = {}
+local PET_DAMAGE_WINDOW = 0.05
 
-local PSC_RecentPetDamage = {}
-local PSC_PET_DAMAGE_WINDOW = 0.05
+local recentPlayerDamage = {}
+local ASSIST_DAMAGE_WINDOW = 45.0  -- 45 second window for kill assist credit
 
-local PSC_RecentPlayerDamage = {}  -- Track recent damage from player to enemies
-local PSC_ASSIST_DAMAGE_WINDOW = 30.0  -- 60 second window for assist credit
-
-local PSC_RecentlyCountedKills = {}
-local PSC_KILL_TRACKING_WINDOW = 1.0
+local recentlyCountedKills = {}
+local KILL_TRACKING_WINDOW = 1.0
 
 local killMilestoneFrame = nil
 local killMilestoneAutoHideTimer = nil
 
+local killStreakMilestoneFrame = nil
+
+local inCombat = false
+
+local currentlyInBattleground = false
+local lastInBattlegroundValue = false
+
+local multiKillCount = 0
+
+function PSC_GetCharacterKey()
+    return PSC_CharacterName .. "-" .. PSC_RealmName
+end
 
 local function IsPetGUID(guid)
     if not guid then return false end
@@ -67,7 +74,7 @@ local function GetNameFromGUID(guid)
 
     -- If that fails, check if it's the player
     if guid == PSC_PlayerGUID then
-        return UnitName("player")
+        return PSC_CharacterName
     end
 
     -- Check party/raid members
@@ -118,7 +125,7 @@ local function PrintStatus()
     PSC_Print("New multi-kill record message: " .. PSC_DB.NewMultiKillRecordMessage)
     PSC_Print("Multi-kill announcement threshold: " .. PSC_DB.MultiKillThreshold)
     PSC_Print("Record announcements: " .. (PSC_DB.EnableRecordAnnounceMessages and "ENABLED" or "DISABLED"))
-    PSC_Print("Battleground Mode: " .. (PSC_CurrentlyInBattleground and "ACTIVE" or "INACTIVE"))
+    PSC_Print("Battleground Mode: " .. (currentlyInBattleground and "ACTIVE" or "INACTIVE"))
     PSC_Print("Auto BG Detection: " .. (PSC_DB.AutoBattlegroundMode and "ENABLED" or "DISABLED"))
     PSC_Print("Manual BG Mode: " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
 end
@@ -126,17 +133,19 @@ end
 local function ShowDebugInfo()
     PSC_Print("Current Kill Streak: " .. PSC_DB.CurrentKillStreak)
     PSC_Print("Highest Kill Streak: " .. PSC_DB.HighestKillStreak)
-    PSC_Print("Current Multi-kill Count: " .. PSC_MultiKillCount)
+    PSC_Print("Current Multi-kill Count: " .. multiKillCount)
     PSC_Print("Highest Multi-kill: " .. PSC_DB.HighestMultiKill)
     PSC_Print("Multi-kill Announcement Threshold: " .. PSC_DB.MultiKillThreshold)
-    PSC_Print("Battleground Mode: " .. (PSC_CurrentlyInBattleground and "ACTIVE" or "INACTIVE"))
+    PSC_Print("Battleground Mode: " .. (currentlyInBattleground and "ACTIVE" or "INACTIVE"))
     PSC_Print("Auto BG Detection: " .. (PSC_DB.AutoBattlegroundMode and "ENABLED" or "DISABLED"))
     PSC_Print("Manual BG Mode: " .. (PSC_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
 end
 
 local function InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
-    if not PSC_DB.PlayerKillCounts[nameWithLevel] then
-        PSC_DB.PlayerKillCounts[nameWithLevel] = {
+    local characterKey = PSC_GetCharacterKey()
+
+    if not PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel] then
+        PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel] = {
             kills = 0,
             lastKill = "",
             playerLevel = playerLevel,
@@ -149,13 +158,13 @@ end
 
 -- Update UpdateKillCacheEntry to include rank
 local function UpdateKillCountEntry(nameWithLevel, playerLevel)
-    PSC_DB.PlayerKillCounts[nameWithLevel].kills = PSC_DB.PlayerKillCounts[nameWithLevel].kills + 1
-    local timestamp = date("%Y-%m-%d %H:%M:%S")
----@diagnostic disable-next-line: assign-type-mismatch
-    PSC_DB.PlayerKillCounts[nameWithLevel].lastKill = timestamp
-    PSC_DB.PlayerKillCounts[nameWithLevel].playerLevel = playerLevel
-    local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
-    PSC_DB.PlayerKillCounts[nameWithLevel].zone = currentZone
+    local characterKey = PSC_GetCharacterKey()
+    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
+
+    killData.kills = killData.kills + 1
+    killData.lastKill = date("%Y-%m-%d %H:%M:%S")
+    killData.playerLevel = playerLevel
+    killData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
     local mapID = C_Map.GetBestMapForUnit("player")
     local position = nil
@@ -167,40 +176,29 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
         local x = position.x * 100
         local y = position.y * 100
 
-        table.insert(PSC_DB.PlayerKillCounts[nameWithLevel].killLocations, {
-            timestamp = timestamp,
-            zone = currentZone,
-            mapID = mapID,
+        table.insert(killData.killLocations, {
             x = x,
             y = y,
-            killNumber = PSC_DB.PlayerKillCounts[nameWithLevel].kills
+            mapID = mapID,
+            zone = killData.zone,
+            timestamp = killData.lastKill,
+            killNumber = killData.kills
         })
-
-        -- if PSC_Debug then
-        --     print(string.format("Kill recorded at %s (%.4f, %.4f) in %s",
-        --         timestamp, x, y, currentZone))
-        -- end
-    else
-        if PSC_Debug then
-            print("Failed to get player position for kill location")
-        end
     end
-
 end
 
 local function UpdateKillStreak()
-    PSC_DB.CurrentKillStreak = PSC_DB.CurrentKillStreak + 1
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
-    if PSC_DB.CurrentKillStreak > PSC_DB.HighestKillStreak then
-        PSC_DB.HighestKillStreak = PSC_DB.CurrentKillStreak
+    characterData.CurrentKillStreak = characterData.CurrentKillStreak + 1
 
-        if PSC_DB.HighestKillStreak > 1 then
-            print("New kill streak personal best: " .. PSC_DB.HighestKillStreak .. "!")
+    if characterData.CurrentKillStreak > characterData.HighestKillStreak then
+        characterData.HighestKillStreak = characterData.CurrentKillStreak
 
-            if PSC_DB.HighestKillStreak >= 10 and PSC_DB.HighestKillStreak % 5 == 0 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
-                local newRecordMsg = string.gsub(PSC_DB.NewKillStreakRecordMessage , "STREAKCOUNT", PSC_DB.HighestKillStreak)
-                SendChatMessage(newRecordMsg, "PARTY")
-            end
+        if characterData.HighestKillStreak > 1 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+            local recordMsg = string.gsub(PSC_DB.NewKillStreakRecordMessage, "STREAKCOUNT", characterData.HighestKillStreak)
+            SendChatMessage(recordMsg, "PARTY")
         end
     end
 end
@@ -224,22 +222,22 @@ end
 
 local function UpdateMultiKill()
     if not inCombat then
-        PSC_MultiKillCount = 0
+        multiKillCount = 0
         return
     end
 
-    PSC_MultiKillCount = PSC_MultiKillCount + 1
+    multiKillCount = multiKillCount + 1
 
     -- Play sound based on kill count if enabled
     if PSC_DB.EnableMultiKillSounds then
         local soundFile
-        if PSC_MultiKillCount == 2 then
+        if multiKillCount == 2 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\double_kill.mp3"
-        elseif PSC_MultiKillCount == 3 then
+        elseif multiKillCount == 3 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\triple_kill.mp3"
-        elseif PSC_MultiKillCount == 4 then
+        elseif multiKillCount == 4 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\quadra_kill.mp3"
-        elseif PSC_MultiKillCount == 5 then
+        elseif multiKillCount == 5 then
             soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\penta_kill.mp3"
         end
 
@@ -248,8 +246,8 @@ local function UpdateMultiKill()
         end
     end
 
-    if PSC_MultiKillCount > PSC_DB.HighestMultiKill then
-        PSC_DB.HighestMultiKill = PSC_MultiKillCount
+    if multiKillCount > PSC_DB.HighestMultiKill then
+        PSC_DB.HighestMultiKill = multiKillCount
 
         if PSC_DB.HighestMultiKill > 1 then
             print("NEW MULTI-KILL RECORD: " .. PSC_DB.HighestMultiKill .. "!")
@@ -264,21 +262,21 @@ end
 
 local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     -- Don't announce in battleground mode or if announcements are disabled
-    if PSC_CurrentlyInBattleground or not PSC_DB.EnableKillAnnounceMessages or not IsInGroup() then return end
+    if currentlyInBattleground or not PSC_DB.EnableKillAnnounceMessages or not IsInGroup() then return end
 
+    local characterKey = PSC_GetCharacterKey()
     local killMessage = string.gsub(PSC_DB.KillAnnounceMessage, "Enemyplayername", killedPlayer)
+    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
 
-    local killCount = PSC_DB.PlayerKillCounts[nameWithLevel].kills
     if string.find(killMessage, "x#") then
-        if killCount >= 2 then
-            killMessage = string.gsub(killMessage, "x#", "x" .. killCount)
+        if killData.kills >= 2 then
+            killMessage = string.gsub(killMessage, "x#", "x" .. killData.kills)
         else
             killMessage = string.gsub(killMessage, "x#", "")
-            killMessage = string.gsub(killMessage, "%s+", " ")
             killMessage = string.gsub(killMessage, "%s+$", "")
         end
-    elseif killCount >= 2 then
-        killMessage = killMessage .. " x" .. killCount
+    elseif killData.kills >= 2 then
+        killMessage = killMessage .. " x" .. killData.kills
     end
 
     local levelDifference = level - playerLevel
@@ -288,15 +286,16 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
         killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
     end
 
-    if PSC_DB.CurrentKillStreak >= 10 and PSC_DB.CurrentKillStreak % 5 == 0 then
-        killMessage = killMessage .. " - Kill Streak: " .. PSC_DB.CurrentKillStreak
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+    if characterData.CurrentKillStreak >= 10 and characterData.CurrentKillStreak % 5 == 0 then
+        killMessage = killMessage .. " - Kill Streak: " .. characterData.CurrentKillStreak
     end
 
     SendChatMessage(killMessage, "PARTY")
 
     -- Only announce multi-kills if the option is enabled
-    if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold and PSC_DB.EnableMultiKillAnnounceMessages then
-        SendChatMessage(GetMultiKillText(PSC_MultiKillCount), "PARTY")
+    if multiKillCount >= PSC_DB.MultiKillThreshold and PSC_DB.EnableMultiKillAnnounceMessages then
+        SendChatMessage(GetMultiKillText(multiKillCount), "PARTY")
     end
 end
 
@@ -333,15 +332,17 @@ local function CreateKillDebugMessage(playerName, nameWithLevel, killerName, kil
         debugMsg = debugMsg .. " - Assist Kill (mob/environment finished target)"
     end
 
-    if PSC_MultiKillCount >= 2 then
-        debugMsg = debugMsg .. " - " .. GetMultiKillText(PSC_MultiKillCount)
+    if multiKillCount >= 2 then
+        debugMsg = debugMsg .. " - " .. GetMultiKillText(multiKillCount)
     end
 
     return debugMsg
 end
 
 local function IsKillStreakMilestone(count)
-    for _, milestone in ipairs(PSC_KILLSTREAK_MILESTONES) do
+    local killstreakMilestones = {25, 50, 75, 100, 150, 200, 250, 300}
+
+    for _, milestone in ipairs(killstreakMilestones) do
         if count == milestone then
             return true
         end
@@ -438,24 +439,33 @@ local function RegisterPlayerKill(playerName, killerName, killerGUID)
     local playerLevel = UnitLevel("player")
     local level = PSC_DB.PlayerInfoCache[playerName].level
     local nameWithLevel = playerName .. ":" .. level
+    local characterKey = PSC_GetCharacterKey()
+
+    -- First ensure the character entry exists
+    if not PSC_DB.PlayerKillCounts.Characters[characterKey] then
+        PSC_DB.PlayerKillCounts.Characters[characterKey] = {
+            Kills = {},
+            CurrentKillStreak = 0,
+            HighestKillStreak = 0,
+            HighestMultiKill = 0
+        }
+    end
 
     UpdateKillStreak()
-    ShowKillStreakMilestone(PSC_DB.CurrentKillStreak)
+    ShowKillStreakMilestone(PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak)
     InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
     UpdateKillCountEntry(nameWithLevel, playerLevel)
     UpdateMultiKill()
+
+    -- Update this to use the new structure
+    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
+    local playerRank = PSC_DB.PlayerInfoCache[playerName].rank or 0
+
+    -- Fix this call to AnnounceKill to pass the correct data
     AnnounceKill(playerName, level, nameWithLevel, playerLevel)
 
-    -- if PSC_Debug then
-    --     local debugMsg = CreateKillDebugMessage(playerName, nameWithLevel, killerName, killerGUID)
-    --     print(debugMsg)
-    -- end
-
-    local killCount = PSC_DB.PlayerKillCounts[nameWithLevel].kills
-    local playerRank = PSC_DB.PlayerKillCounts[nameWithLevel].rank
-    local class = PSC_DB.PlayerInfoCache[playerName].class
-    if (killCount == 1 and PSC_DB.ShowMilestoneForFirstKill) or killCount >= 2 then
-        PSC_ShowKillMilestone(playerName, level, class, playerRank, killCount)
+    if (killData.kills == 1 and PSC_DB.ShowMilestoneForFirstKill) or killData.kills >= 2 then
+        PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[playerName].class, playerRank, killData.kills)
     end
 end
 
@@ -468,7 +478,7 @@ local function SimulatePlayerDeath()
     end
 
     PSC_DB.CurrentKillStreak = 0
-    PSC_MultiKillCount = 0
+    multiKillCount = 0
     inCombat = false
     PSC_Print("Death simulated! Kill streak reset.")
 end
@@ -477,12 +487,12 @@ local function SimulatePlayerKills(killCount)
     PSC_Print("Registering " .. killCount .. " random test kill(s)...")
 
     local randomNames = {
-        "Testplayer"
-        -- "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter", "Campmaster",
-        -- "Roguenstein", "Sneakattack", "Huntard", "Faceroller", "Dotspammer",
-        -- "Moonbender", "Healnoob", "Ragequitter", "Imbalanced", "Critmaster",
-        -- "Zerglord", "Epicfail", "Oneshot", "Griefer", "Farmville",
-        -- "Stunlock", "Procmaster", "Noobslayer", "Bodycamper", "Flagrunner"
+        "Testplayer",
+        "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter", "Campmaster",
+        "Roguenstein", "Sneakattack", "Huntard", "Faceroller", "Dotspammer",
+        "Moonbender", "Healnoob", "Ragequitter", "Imbalanced", "Critmaster",
+        "Zerglord", "Epicfail", "Oneshot", "Griefer", "Farmville",
+        "Stunlock", "Procmaster", "Noobslayer", "Bodycamper", "Flagrunner"
     }
 
     local randomGuilds = {
@@ -628,33 +638,36 @@ end
 
 local function HandleCombatState(inCombatNow)
     if inCombat and not inCombatNow then
-        PSC_MultiKillCount = 0
+        multiKillCount = 0
         inCombat = false
     elseif not inCombat and inCombatNow then
-        PSC_MultiKillCount = 0
+        multiKillCount = 0
         inCombat = true
     end
 end
 
 local function HandlePlayerDeath()
-    if PSC_DB.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
-        local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", PSC_DB.CurrentKillStreak)
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if characterData.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+        local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", characterData.CurrentKillStreak)
         SendChatMessage(streakEndedMsg, "PARTY")
     end
 
-    PSC_DB.CurrentKillStreak = 0
-    PSC_MultiKillCount = 0
+    characterData.CurrentKillStreak = 0
+    multiKillCount = 0
     inCombat = false
     print("You died! Kill streak reset.")
 end
 
 local function CleanupRecentPetDamage()
     local now = GetTime()
-    local cutoff = now - PSC_PET_DAMAGE_WINDOW
+    local cutoff = now - PET_DAMAGE_WINDOW
 
-    for guid, info in pairs(PSC_RecentPetDamage) do
+    for guid, info in pairs(recentPetDamage) do
         if info.timestamp < cutoff then
-            PSC_RecentPetDamage[guid] = nil
+            recentPetDamage[guid] = nil
         end
     end
 end
@@ -666,7 +679,7 @@ local function RecordPetDamage(petGUID, petName, targetGUID, amount)
     local ownerGUID = GetPetOwnerGUID(petGUID)
     if not ownerGUID then return end
 
-    PSC_RecentPetDamage[targetGUID] = {
+    recentPetDamage[targetGUID] = {
         timestamp = GetTime(),
         petGUID = petGUID,
         petName = petName,
@@ -692,10 +705,10 @@ end
 
 local function CleanupRecentlyCountedKillsDict()
     local now = GetTime()
-    local cutoff = now - PSC_KILL_TRACKING_WINDOW
-    for guid, timestamp in pairs(PSC_RecentlyCountedKills) do
+    local cutoff = now - KILL_TRACKING_WINDOW
+    for guid, timestamp in pairs(recentlyCountedKills) do
         if timestamp < cutoff then
-            PSC_RecentlyCountedKills[guid] = nil
+            recentlyCountedKills[guid] = nil
         end
     end
 end
@@ -726,7 +739,7 @@ local function RecordPlayerDamage(sourceGUID, sourceName, targetGUID, targetName
     if sourceGUID ~= PSC_PlayerGUID then return end
 
     -- Get existing record or create new one
-    local existingRecord = PSC_RecentPlayerDamage[targetGUID] or {
+    local existingRecord = recentPlayerDamage[targetGUID] or {
         timestamp = 0,
         totalDamage = 0
     }
@@ -736,7 +749,7 @@ local function RecordPlayerDamage(sourceGUID, sourceName, targetGUID, targetName
     existingRecord.totalDamage = existingRecord.totalDamage + amount
 
     -- Store the updated record
-    PSC_RecentPlayerDamage[targetGUID] = existingRecord
+    recentPlayerDamage[targetGUID] = existingRecord
 
     -- if PSC_Debug then
     --     print(string.format("You dealt %d damage to %s", amount, targetName))
@@ -789,11 +802,11 @@ end
 -- Add this function to clean up old damage records
 local function CleanupRecentPlayerDamage()
     local now = GetTime()
-    local cutoff = now - PSC_ASSIST_DAMAGE_WINDOW
+    local cutoff = now - ASSIST_DAMAGE_WINDOW
 
-    for guid, info in pairs(PSC_RecentPlayerDamage) do
+    for guid, info in pairs(recentPlayerDamage) do
         if info.timestamp < cutoff then
-            PSC_RecentPlayerDamage[guid] = nil
+            recentPlayerDamage[guid] = nil
         end
     end
 end
@@ -802,7 +815,7 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     local countKill = false
 
     -- print("Party Kill Event: " .. sourceName .. " (" .. sourceGUID .. ") killed " .. destName .. " (" .. destGUID .. ")")
-    if PSC_CurrentlyInBattleground then
+    if currentlyInBattleground then
         if sourceGUID == PSC_PlayerGUID then
             countKill = true
             if PSC_Debug then print("BG Mode: Player killing blow") end
@@ -820,13 +833,13 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     end
 
     if countKill then
-        PSC_RecentlyCountedKills[destGUID] = GetTime()
+        recentlyCountedKills[destGUID] = GetTime()
         RegisterPlayerKill(destName, sourceName, sourceGUID)
     end
 end
 
 local function HandleUnitDiedEvent(destGUID, destName)
-    if PSC_RecentlyCountedKills[destGUID] then
+    if recentlyCountedKills[destGUID] then
         -- if PSC_Debug then
         --     print("Skipping duplicate kill for: " .. destName)
         -- end
@@ -836,11 +849,11 @@ local function HandleUnitDiedEvent(destGUID, destName)
     local countKill = false
 
     -- Check if this player was recently damaged by a pet
-    local petDamage = PSC_RecentPetDamage[destGUID]
+    local petDamage = recentPetDamage[destGUID]
 
-    if petDamage and (GetTime() - petDamage.timestamp) <= PSC_PET_DAMAGE_WINDOW then
+    if petDamage and (GetTime() - petDamage.timestamp) <= PET_DAMAGE_WINDOW then
         -- In BG mode, only count the player's own pet kills
-        if PSC_CurrentlyInBattleground then
+        if currentlyInBattleground then
             if petDamage.ownerGUID == PSC_PlayerGUID then
                 countKill = true
                 if PSC_Debug then
@@ -870,20 +883,20 @@ local function HandleUnitDiedEvent(destGUID, destName)
         end
 
         if countKill then
-            PSC_RecentlyCountedKills[destGUID] = GetTime()
+            recentlyCountedKills[destGUID] = GetTime()
             RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
-            PSC_RecentPetDamage[destGUID] = nil  -- Clear the record after processing
+            recentPetDamage[destGUID] = nil  -- Clear the record after processing
             return
         end
     end
 
     -- If not a pet kill, check for assist kill
-    local playerDamage = PSC_RecentPlayerDamage[destGUID]
-    if playerDamage and (GetTime() - playerDamage.timestamp) <= PSC_ASSIST_DAMAGE_WINDOW then
+    local playerDamage = recentPlayerDamage[destGUID]
+    if playerDamage and (GetTime() - playerDamage.timestamp) <= ASSIST_DAMAGE_WINDOW then
         -- Check if enough damage was done for assist credit
         if playerDamage.totalDamage > 0 then
             -- In BG mode, only count assists if the setting is enabled
-            if PSC_CurrentlyInBattleground and not PSC_DB.CountAssistsInBattlegrounds then
+            if currentlyInBattleground and not PSC_DB.CountAssistsInBattlegrounds then
                 if PSC_Debug then
                     print("BG Mode: Assist kill ignored (assists disabled in BGs)")
                 end
@@ -894,9 +907,9 @@ local function HandleUnitDiedEvent(destGUID, destName)
                 print("Assist kill detected for: " .. destName)
             end
 
-            PSC_RecentlyCountedKills[destGUID] = GetTime()
+            recentlyCountedKills[destGUID] = GetTime()
             RegisterPlayerKill(destName, "Assist", nil)
-            PSC_RecentPlayerDamage[destGUID] = nil
+            recentPlayerDamage[destGUID] = nil
         end
     end
 end
@@ -934,11 +947,16 @@ function PSC_RegisterEvents()
 
     pvpStatsClassicFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_ENTERING_WORLD" then
+            PSC_PlayerGUID = UnitGUID("player")
+            PSC_CharacterName = UnitName("player")
+            PSC_RealmName = GetRealmName()
+
             if not PSC_DB then
                 PSC_DB = {}
                 PSC_LoadDefaultSettings()
                 ResetAllStatsToDefault()
             end
+
             PSC_UpdateMinimapButtonPosition()
             PSC_SetupTooltip() -- Add this line to call the tooltip setup
             inCombat = UnitAffectingCombat("player")
@@ -946,7 +964,6 @@ function PSC_RegisterEvents()
             if UnitIsDeadOrGhost("player") then
                 HandlePlayerDeath()
             end
-            PSC_PlayerGUID = UnitGUID("player")
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -963,7 +980,7 @@ function PSC_RegisterEvents()
             CleanupRecentlyCountedKillsDict()
             CleanupRecentPlayerDamage()
         elseif event == "PLAYER_LOGOUT" then
-            PSC_CleanupDatabase()
+            -- PSC_CleanupDatabase()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             PSC_CheckBattlegroundStatus()  -- Check BG status on zone change
         end
@@ -974,11 +991,11 @@ end
 function PSC_CheckBattlegroundStatus()
     -- First check if battleground mode is being forced by the user
     if PSC_DB.ForceBattlegroundMode then
-        if PSC_Debug and not PSC_LastInBattlegroundValue then
+        if PSC_Debug and not lastInBattlegroundValue then
             print("PvPStatsClassic: Forced battleground mode enabled.")
         end
-        PSC_CurrentlyInBattleground = true
-        PSC_LastInBattlegroundValue = true
+        currentlyInBattleground = true
+        lastInBattlegroundValue = true
         return
     end
 
@@ -994,20 +1011,20 @@ function PSC_CheckBattlegroundStatus()
 
     for _, bgName in ipairs(battlegroundZones) do
         if (currentZone == bgName) then
-            if PSC_Debug and not PSC_LastInBattlegroundValue then
+            if PSC_Debug and not lastInBattlegroundValue then
                 print("PvPStatsClassic: Entered battleground. Only your own killing blows will be tracked.")
             end
-            PSC_CurrentlyInBattleground = true
-            PSC_LastInBattlegroundValue = true
+            currentlyInBattleground = true
+            lastInBattlegroundValue = true
             return
         end
     end
 
-    if PSC_Debug and PSC_LastInBattlegroundValue then
+    if PSC_Debug and lastInBattlegroundValue then
         print("PvPStatsClassic: Left battleground. Normal kill tracking active.")
     end
-    PSC_LastInBattlegroundValue = false
-    PSC_CurrentlyInBattleground = false
+    lastInBattlegroundValue = false
+    currentlyInBattleground = false
 end
 
 
@@ -1083,7 +1100,7 @@ function PSC_DebugPetKills()
 
         -- Track UNIT_DIED events for any mob your pet damaged
         if combatEvent == "UNIT_DIED" then
-            local petDamage = PSC_RecentPetDamage[destGUID]
+            local petDamage = recentPetDamage[destGUID]
             if petDamage then
                 print("*** DEATH DETECTED - " .. destName .. " ***")
                 print("This target was damaged by your pet " .. (petDamage.petName or "Unknown") ..

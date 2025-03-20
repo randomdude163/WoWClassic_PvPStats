@@ -1,7 +1,3 @@
-if not PSC_ActiveFrameLevel then
-    PSC_ActiveFrameLevel = 100
-end
-
 PSC_KillsListFrame = nil
 local searchText = ""
 local levelSearchText = ""
@@ -165,7 +161,7 @@ local function SetupLevelSearchBoxScripts(levelSearchBox)
         levelSearchText = self:GetText()
         if ParseLevelSearch(levelSearchText) then
             self:SetTextColor(1, 1, 1)
-            RefreshKillList()
+            RefreshKillsListFrame()
         else
             self:SetTextColor(1, 0.3, 0.3)
         end
@@ -185,7 +181,7 @@ local function SetupLevelSearchBoxScripts(levelSearchBox)
         levelSearchText = ""
         minLevelSearch = nil
         maxLevelSearch = nil
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     -- Enter key handling
@@ -266,7 +262,7 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
             sortBy = columnId
             sortAscending = false
         end
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     -- Create the header text first without the sort indicator
@@ -293,121 +289,140 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
     return button
 end
 
+function GetCharactersToProcessForStatistics()
+    local charactersToProcess = {}
+    local currentCharacterKey = PSC_GetCharacterKey()
+
+    if PSC_DB.ShowAccountWideStats then
+        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    else
+        charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+    end
+
+    return charactersToProcess
+end
+
 local function FilterAndSortEntries()
     local sortedEntries = {}
+    local currentCharacterKey = PSC_GetCharacterKey()
 
-    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-        if data then
-            -- Extract name from combined "name:level" format
-            local nameWithoutLevel = nameWithLevel:match("([^:]+)")
+    local charactersToProcess = GetCharactersToProcessForStatistics()
 
-            -- Get stored level from the nameWithLevel string
-            local level = nameWithLevel:match(":(%S+)")
-            local levelNum = tonumber(level or "0") or 0
+    -- Process the selected characters
+    for characterKey, characterData in pairs(charactersToProcess) do
+        for nameWithLevel, data in pairs(characterData.Kills) do
+            if data then
+                -- Extract name from combined "name:level" format
+                local nameWithoutLevel = nameWithLevel:match("([^:]+)")
 
-            -- Get player info from cache instead of KillCounts
-            local playerInfo = PSC_DB.PlayerInfoCache[nameWithoutLevel] or {}
-            local class = playerInfo.class
-            local race = playerInfo.race
-            local gender = playerInfo.gender
-            local guild = playerInfo.guild
-            local rank = playerInfo.rank
+                -- Get stored level from the nameWithLevel string
+                local level = nameWithLevel:match(":(%S+)")
+                local levelNum = tonumber(level or "0") or 0
 
-            -- Create entry object with all needed data
-            local entry = {
-                name = nameWithoutLevel,
-                nameWithLevel = nameWithLevel,
-                class = class,
-                race = race,
-                gender = gender,
-                guild = guild,
-                zone = data.zone or "Unknown",
-                kills = data.kills or 1,
-                lastKill = data.lastKill or "",
-                levelNum = levelNum,
-                levelDisplay = levelNum,
-                rank = rank
-            }
+                -- Get player info from cache instead of KillCounts
+                local playerInfo = PSC_DB.PlayerInfoCache[nameWithoutLevel] or {}
+                local class = playerInfo.class
+                local race = playerInfo.race
+                local gender = playerInfo.gender
+                local guild = playerInfo.guild
+                local rank = playerInfo.rank
 
-            -- Special case for unknown level
-            if levelNum == -1 then
-                entry.levelDisplay = -1  -- Will be shown as "??"
-            end
+                -- Create entry object with all needed data
+                local entry = {
+                    name = nameWithoutLevel,
+                    nameWithLevel = nameWithLevel,
+                    class = class,
+                    race = race,
+                    gender = gender,
+                    guild = guild,
+                    zone = data.zone or "Unknown",
+                    kills = data.kills or 1,
+                    lastKill = data.lastKill or "",
+                    levelNum = levelNum,
+                    levelDisplay = levelNum,
+                    rank = rank
+                }
 
-            local searchMatch = true
-            local levelMatch = true
-            local classMatch = true
-            local raceMatch = true
-            local genderMatch = true
-            local zoneMatch = true
-            local rankMatch = true
-
-            -- Player/Guild name search
-            if searchText ~= "" then
-                local nameLower = nameWithoutLevel:lower()
-                local guildLower = guild:lower()
-
----@diagnostic disable-next-line: cast-local-type
-                searchMatch = nameLower:find(searchText, 1, true) or
-                             (guild ~= "" and guildLower:find(searchText, 1, true))
-            end
-
-            -- Level search
-            if minLevelSearch or maxLevelSearch then
-                if minLevelSearch == -1 and maxLevelSearch == -1 then
-                    -- Special case for unknown level search
-                    levelMatch = (levelNum == -1)
-                elseif minLevelSearch and maxLevelSearch then
-                    -- Range search
-                    levelMatch = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
+                -- Special case for unknown level
+                if levelNum == -1 then
+                    entry.levelDisplay = -1  -- Will be shown as "??"
                 end
-            end
 
-            -- Class filter
-            if classSearchText ~= "" then
----@diagnostic disable-next-line: cast-local-type
-                classMatch = class:lower():find(classSearchText:lower(), 1, true)
-            end
+                local searchMatch = true
+                local levelMatch = true
+                local classMatch = true
+                local raceMatch = true
+                local genderMatch = true
+                local zoneMatch = true
+                local rankMatch = true
 
-            -- Race filter
-            if raceSearchText ~= "" then
----@diagnostic disable-next-line: cast-local-type
-                raceMatch = race:lower():find(raceSearchText:lower(), 1, true)
-            end
+                -- Player/Guild name search
+                if searchText ~= "" then
+                    local nameLower = nameWithoutLevel:lower()
+                    local guildLower = guild:lower()
 
-            -- Gender filter - Make this exact match case insensitive
-            if genderSearchText ~= "" then
-                local compareText = genderSearchText:lower()
-                local genderLower = gender:lower()
-
-                -- Handle short forms of gender
-                if compareText == "m" or compareText == "male" then
-                    genderMatch = (genderLower == "male")
-                elseif compareText == "f" or compareText == "female" then
-                    genderMatch = (genderLower == "female")
-                elseif compareText == "u" or compareText == "unknown" or compareText == "?" then
-                    genderMatch = (genderLower == "unknown")
-                else
----@diagnostic disable-next-line: cast-local-type
-                    genderMatch = genderLower:find(compareText, 1, true)
+    ---@diagnostic disable-next-line: cast-local-type
+                    searchMatch = nameLower:find(searchText, 1, true) or
+                                (guild ~= "" and guildLower:find(searchText, 1, true))
                 end
-            end
 
-            -- Zone filter
-            if zoneSearchText ~= "" then
----@diagnostic disable-next-line: cast-local-type
-                zoneMatch = (data.zone or "Unknown"):lower():find(zoneSearchText:lower(), 1, true)
-            end
-
-            -- Rank filter
-            if minRankSearch or maxRankSearch then
-                if minRankSearch and maxRankSearch then
-                    rankMatch = (rank >= minRankSearch and rank <= maxRankSearch)
+                -- Level search
+                if minLevelSearch or maxLevelSearch then
+                    if minLevelSearch == -1 and maxLevelSearch == -1 then
+                        -- Special case for unknown level search
+                        levelMatch = (levelNum == -1)
+                    elseif minLevelSearch and maxLevelSearch then
+                        -- Range search
+                        levelMatch = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
+                    end
                 end
-            end
 
-            if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
-                table.insert(sortedEntries, entry)
+                -- Class filter
+                if classSearchText ~= "" then
+    ---@diagnostic disable-next-line: cast-local-type
+                    classMatch = class:lower():find(classSearchText:lower(), 1, true)
+                end
+
+                -- Race filter
+                if raceSearchText ~= "" then
+    ---@diagnostic disable-next-line: cast-local-type
+                    raceMatch = race:lower():find(raceSearchText:lower(), 1, true)
+                end
+
+                -- Gender filter - Make this exact match case insensitive
+                if genderSearchText ~= "" then
+                    local compareText = genderSearchText:lower()
+                    local genderLower = gender:lower()
+
+                    -- Handle short forms of gender
+                    if compareText == "m" or compareText == "male" then
+                        genderMatch = (genderLower == "male")
+                    elseif compareText == "f" or compareText == "female" then
+                        genderMatch = (genderLower == "female")
+                    elseif compareText == "u" or compareText == "unknown" or compareText == "?" then
+                        genderMatch = (genderLower == "unknown")
+                    else
+    ---@diagnostic disable-next-line: cast-local-type
+                        genderMatch = genderLower:find(compareText, 1, true)
+                    end
+                end
+
+                -- Zone filter
+                if zoneSearchText ~= "" then
+    ---@diagnostic disable-next-line: cast-local-type
+                    zoneMatch = (data.zone or "Unknown"):lower():find(zoneSearchText:lower(), 1, true)
+                end
+
+                -- Rank filter
+                if minRankSearch or maxRankSearch then
+                    if minRankSearch and maxRankSearch then
+                        rankMatch = (rank >= minRankSearch and rank <= maxRankSearch)
+                    end
+                end
+
+                if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
+                    table.insert(sortedEntries, entry)
+                end
             end
         end
     end
@@ -856,7 +871,7 @@ end
 local function SetupSearchBoxScripts(searchBox)
     searchBox:SetScript("OnTextChanged", function(self)
         searchText = self:GetText():lower()
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     searchBox:SetScript("OnEditFocusGained", function(self)
@@ -871,7 +886,7 @@ local function SetupSearchBoxScripts(searchBox)
         self:ClearFocus()
         self:SetText("")
         searchText = ""
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     -- Enter key handling
@@ -915,7 +930,7 @@ end
 local function SetupClassSearchBoxScripts(classSearchBox)
     classSearchBox:SetScript("OnTextChanged", function(self)
         classSearchText = self:GetText()
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     classSearchBox:SetScript("OnEditFocusGained", function(self)
@@ -930,7 +945,7 @@ local function SetupClassSearchBoxScripts(classSearchBox)
         self:ClearFocus()
         self:SetText("")
         classSearchText = ""
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     classSearchBox:SetScript("OnEnterPressed", function(self)
@@ -972,7 +987,7 @@ end
 local function SetupRaceSearchBoxScripts(raceSearchBox)
     raceSearchBox:SetScript("OnTextChanged", function(self)
         raceSearchText = self:GetText()
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     raceSearchBox:SetScript("OnEditFocusGained", function(self)
@@ -987,7 +1002,7 @@ local function SetupRaceSearchBoxScripts(raceSearchBox)
         self:ClearFocus()
         self:SetText("")
         raceSearchText = ""
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     raceSearchBox:SetScript("OnEnterPressed", function(self)
@@ -1047,7 +1062,7 @@ local function SetupGenderSearchBoxScripts(genderSearchBox)
             -- Keep as "f" for now - will be expanded in filter
         end
 
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     genderSearchBox:SetScript("OnEditFocusGained", function(self)
@@ -1062,39 +1077,39 @@ local function SetupGenderSearchBoxScripts(genderSearchBox)
         if text == "m" or text == "male" then
             self:SetText("Male")
             genderSearchText = "Male"
-            RefreshKillList()
+            RefreshKillsListFrame()
         elseif text == "f" or text == "female" then
             self:SetText("Female")
             genderSearchText = "Female"
-            RefreshKillList()
+            RefreshKillsListFrame()
         elseif text == "u" or text == "unknown" or text == "?" or text == "??" then
             self:SetText("Unknown")
             genderSearchText = "Unknown"
-            RefreshKillList()
+            RefreshKillsListFrame()
         elseif text == "" then
             -- Clear filter
             genderSearchText = ""
-            RefreshKillList()
+            RefreshKillsListFrame()
         else
             -- If text doesn't match known genders, try to find closest match
             local lowerText = text:lower()
             if lowerText:find("^ma") or lowerText:find("^me") then
                 self:SetText("Male")
                 genderSearchText = "Male"
-                RefreshKillList()
+                RefreshKillsListFrame()
             elseif lowerText:find("^fe") or lowerText:find("^wo") then
                 self:SetText("Female")
                 genderSearchText = "Female"
-                RefreshKillList()
+                RefreshKillsListFrame()
             elseif lowerText:find("^un") then
                 self:SetText("Unknown")
                 genderSearchText = "Unknown"
-                RefreshKillList()
+                RefreshKillsListFrame()
             else
                 -- Text doesn't match any known gender, clear to avoid confusion
                 self:SetText("")
                 genderSearchText = ""
-                RefreshKillList()
+                RefreshKillsListFrame()
             end
         end
     end)
@@ -1103,7 +1118,7 @@ local function SetupGenderSearchBoxScripts(genderSearchBox)
         self:ClearFocus()
         self:SetText("")
         genderSearchText = ""
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     genderSearchBox:SetScript("OnEnterPressed", function(self)
@@ -1154,7 +1169,7 @@ end
 local function SetupZoneSearchBoxScripts(zoneSearchBox)
     zoneSearchBox:SetScript("OnTextChanged", function(self)
         zoneSearchText = self:GetText()
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     zoneSearchBox:SetScript("OnEditFocusGained", function(self)
@@ -1169,7 +1184,7 @@ local function SetupZoneSearchBoxScripts(zoneSearchBox)
         self:ClearFocus()
         self:SetText("")
         zoneSearchText = ""
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     zoneSearchBox:SetScript("OnEnterPressed", function(self)
@@ -1221,7 +1236,7 @@ local function SetupRankSearchBoxScripts(rankSearchBox)
         rankSearchText = self:GetText()
         if ParseRankSearch(rankSearchText) then
             self:SetTextColor(1, 1, 1)
-            RefreshKillList()
+            RefreshKillsListFrame()
         else
             self:SetTextColor(1, 0.3, 0.3)
         end
@@ -1241,7 +1256,7 @@ local function SetupRankSearchBoxScripts(rankSearchBox)
         rankSearchText = ""
         minRankSearch = nil
         maxRankSearch = nil
-        RefreshKillList()
+        RefreshKillsListFrame()
     end)
 
     rankSearchBox:SetScript("OnEnterPressed", function(self)
@@ -1411,15 +1426,19 @@ local function CreateMainFrame()
     -- frame:SetScript("OnMouseDown", function(self) ... end)
 
     table.insert(UISpecialFrames, "PSC_KillStatsFrame")
-    frame.TitleText:SetText("Player Kills List")
+    local titleText = GetFrameTitleTextWithCharacterText("Player Kills List")
+    frame.TitleText:SetText(titleText)
 
     return frame
 end
 
-function RefreshKillList()
+function RefreshKillsListFrame()
     if PSC_KillsListFrame == nil then return end
     local content = PSC_KillsListFrame.content
     if not content then return end
+
+    local titleText = GetFrameTitleTextWithCharacterText("Player Kills List")
+    PSC_KillsListFrame.TitleText:SetText(titleText)
 
     CleanupFrameElements(content)
     collectgarbage("collect")
@@ -1434,7 +1453,7 @@ end
 function PSC_CreateKillStatsFrame()
     if (PSC_KillsListFrame) then
         PSC_FrameManager:ShowFrame("KillsList")
-        RefreshKillList()
+        RefreshKillsListFrame()
         return
     end
 
@@ -1445,6 +1464,9 @@ function PSC_CreateKillStatsFrame()
     -- Register with frame manager
     PSC_FrameManager:RegisterFrame(PSC_KillsListFrame, "KillsList")
 
+    local titleText = GetFrameTitleTextWithCharacterText("Player Kills List")
+    PSC_KillsListFrame.TitleText:SetText(titleText)
+
     -- Remove from UISpecialFrames since FrameManager handles ESC key
     for i = #UISpecialFrames, 1, -1 do
         if (UISpecialFrames[i] == "PSC_KillStatsFrame") then
@@ -1453,7 +1475,7 @@ function PSC_CreateKillStatsFrame()
         end
     end
 
-    RefreshKillList()
+    RefreshKillsListFrame()
 end
 
 -- Make the searchText variable accessible to external functions
@@ -1508,7 +1530,7 @@ function PSC_SetKillListSearch(text, levelText, classText, raceText, genderText,
             zoneSearchText = zoneText
         end
 
-        RefreshKillList()
+        RefreshKillsListFrame()
     end
 end
 
@@ -1564,7 +1586,7 @@ function PSC_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
         end
 
         -- Refresh the kill list to apply the filter
-        RefreshKillList()
+        RefreshKillsListFrame()
 
         -- Bring the kills list frame to front if it's not already
         PSC_FrameManager:BringToFront("KillsList")
@@ -1623,7 +1645,7 @@ function PSC_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
         end
 
         -- Refresh the kill list to apply the filter
-        RefreshKillList()
+        RefreshKillsListFrame()
 
         -- Bring the kills list frame to front if it's not already
         PSC_FrameManager:BringToFront("KillsList")

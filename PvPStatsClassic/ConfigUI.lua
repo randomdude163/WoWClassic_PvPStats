@@ -10,19 +10,69 @@ local HEADER_ELEMENT_SPACING = 15
 local CHECKBOX_SPACING = 5
 local MESSAGE_TEXTFIELD_SPACING = 40
 
-local function ShowResetStatsConfirmation()
-    StaticPopupDialogs["PSC_RESET_STATS"] = {
-        text = "Are you sure you want to reset all kill statistics? This cannot be undone.",
+
+local function CreateAndShowStaticPopup(dialogName, text, onAcceptFunc)
+    -- Redefine the dialog template every time to ensure it has the latest settings
+    StaticPopupDialogs[dialogName] = {
+        text = text,
         button1 = "Yes",
         button2 = "No",
-        OnAccept = function()
-            ResetAllStatsToDefault()
-        end,
+        OnAccept = onAcceptFunc,
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,
+        preferredIndex = 3,  -- Avoid UI taint from using default index
+
+        -- Critical: When the popup is showing, disable escape handling in the config frame
+        OnShow = function(self)
+            -- This is essential - disable keyboard interaction on the config frame while popup is visible
+            if configFrame then
+                configFrame:EnableKeyboard(false)
+            end
+        end,
+
+        -- Re-enable keyboard on the config frame when popup is dismissed
+        OnHide = function()
+            if configFrame and configFrame:IsVisible() then
+                -- Re-enable keyboard on the config frame
+                configFrame:EnableKeyboard(true)
+
+                -- Ensure config frame is the top-most frame
+                C_Timer.After(0.05, function()
+                    if configFrame:IsVisible() then
+                        PSC_FrameManager:BringToFront("ConfigUI")
+                    end
+                end)
+            end
+        end
     }
-    StaticPopup_Show("PSC_RESET_STATS")
+
+    local popup = StaticPopup_Show(dialogName)
+
+    if popup then
+        -- Set high strata and frame level to ensure popup appears on top
+        popup:SetFrameStrata("FULLSCREEN_DIALOG")
+        popup:SetFrameLevel(2000)
+        popup:SetPoint("CENTER", UIParent, "CENTER")
+        popup:Raise()
+
+        -- The most important fix - explicitly grab focus for the popup
+        popup:SetPropagateKeyboardInput(false)
+        popup:EnableKeyboard(true)
+
+        -- Delete any existing OnKeyDown handler that might interfere
+        popup:SetScript("OnKeyDown", nil)
+    end
+
+    return popup
+end
+
+local function ShowResetStatsConfirmation()
+    CreateAndShowStaticPopup(
+        "PSC_RESET_STATS",
+        "Are you sure you want to reset all kill statistics? This cannot be undone.",
+        function() ResetAllStatsToDefault() end
+    )
 end
 
 local function ResetAllSettingsToDefault()
@@ -31,18 +81,11 @@ local function ResetAllSettingsToDefault()
 end
 
 local function ShowResetDefaultsConfirmation()
-    StaticPopupDialogs["PSC_RESET_DEFAULTS"] = {
-        text = "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
-        button1 = "Yes",
-        button2 = "No",
-        OnAccept = function()
-            ResetAllSettingsToDefault()
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-    StaticPopup_Show("PSC_RESET_DEFAULTS")
+    CreateAndShowStaticPopup(
+        "PSC_RESET_DEFAULTS",
+        "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
+        function() ResetAllSettingsToDefault() end
+    )
 end
 
 local function CreateSectionHeader(parent, text, xOffset, yOffset)
@@ -384,6 +427,31 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
     tooltipKillInfoCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    local showAccountWideStatsCheckbox, _ = CreateCheckbox(parent,
+        "Show account-wide statistics",
+        PSC_DB.ShowAccountWideStats,
+        function(checked)
+            PSC_DB.ShowAccountWideStats = checked
+            -- Refresh open frames if they exist
+            if PSC_StatisticsFrame and PSC_StatisticsFrame:IsShown() then
+                PSC_UpdateStatisticsFrame(PSC_StatisticsFrame)
+            end
+            if PSC_KillsListFrame and PSC_KillsListFrame:IsShown() then
+                RefreshKillsListFrame()
+            end
+        end)
+    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.showAccountWideStatsCheckbox = showAccountWideStatsCheckbox
+
+    showAccountWideStatsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show Account-Wide Statistics")
+        GameTooltip:AddLine("When checked, statistics will include kills from all your characters.", 1, 1, 1, true)
+        GameTooltip:AddLine("When unchecked, only shows kills from your current character.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showAccountWideStatsCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     return 320
 end
 
@@ -500,7 +568,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 630) -- Reduced from 650 to 600
+    frame:SetSize(600, 660) -- Reduced from 650 to 600
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -535,6 +603,7 @@ function PSC_UpdateConfigUI()
     configFrame.enableRecordAnnounceCheckbox:SetChecked(PSC_DB.EnableRecordAnnounceMessages)
     configFrame.enableMultiKillAnnounceCheckbox:SetChecked(PSC_DB.EnableMultiKillAnnounceMessages)
     configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
+    configFrame.showAccountWideStatsCheckbox:SetChecked(PSC_DB.ShowAccountWideStats)
 
 
     -- Update multi-kill slider in its new location (General tab)
@@ -783,6 +852,7 @@ function PSC_CreateConfigFrame()
     configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
     configFrame.enableMultiKillAnnounceCheckbox = tabFrames[1].enableMultiKillAnnounceCheckbox
     configFrame.enableKillSoundsCheckbox = tabFrames[1].enableKillSoundsCheckbox
+    configFrame.showAccountWideStatsCheckbox = tabFrames[1].showAccountWideStatsCheckbox
     configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
     configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
     configFrame.multiKillSlider = tabFrames[1].multiKillSlider
