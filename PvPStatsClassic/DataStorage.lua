@@ -97,69 +97,6 @@ function PSC_GetAndStorePlayerInfoFromUnit(unit)
     PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
 end
 
-function PSC_GetInfoFromActiveUnit(name, unitId)
-    if not UnitExists(unitId) or UnitName(unitId) ~= name then
-        return 0, "Unknown", "Unknown", 0, "", 0
-    end
-
-    local level = UnitLevel(unitId)
-    local class, _ = UnitClass(unitId)
-    local race, _ = UnitRace(unitId)
-    local gender = UnitSex(unitId)
-    local guildName = GetGuildInfo(unitId)
-
-    -- Get the PvP rank if this is the target
-    local rank = 0
-    if unitId == "target" then
-        rank = GetTargetHonorRank()
-    end
-
-    return level, class, race, gender, guildName, rank
-end
-
-function PSC_GetInfoFromGuid(guid)
-    if not guid or guid == "" then
-        return "Unknown"
-    end
-
-    local _, englishClass = GetPlayerInfoByGUID(guid)
-    return englishClass or "Unknown"
-end
-
-function PSC_CleanupKillCounts()
-    if not PSC_DB.PlayerKillCounts.Characters then return end
-
-    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
-        local cleanedKills = {}
-
-        -- Only keep kill entries that have at least 1 kill
-        for nameWithLevel, killData in pairs(characterData.Kills) do
-            if killData.kills and killData.kills > 0 then
-                cleanedKills[nameWithLevel] = killData
-            end
-        end
-
-        -- Replace with cleaned data
-        PSC_DB.PlayerKillCounts.Characters[characterKey].Kills = cleanedKills
-    end
-
-    -- Remove characters with no kills
-    local cleanedCharacters = {}
-    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
-        local hasKills = false
-        for _, _ in pairs(characterData.Kills) do
-            hasKills = true
-            break
-        end
-
-        if hasKills then
-            cleanedCharacters[characterKey] = characterData
-        end
-    end
-
-    PSC_DB.PlayerKillCounts.Characters = cleanedCharacters
-end
-
 function PSC_CleanupPlayerInfoCache()
     if not PSC_DB.PlayerKillCounts.Characters then return end
 
@@ -186,50 +123,6 @@ function PSC_CleanupPlayerInfoCache()
     end
 
     PSC_DB.PlayerInfoCache = cleanedInfoCache
-end
-
-function PSC_CleanupDeathCounts()
-    if not PSC_DB.PvPLossCounts then return end
-
-    for characterKey, characterData in pairs(PSC_DB.PvPLossCounts) do
-        local cleanedDeaths = {}
-
-        -- Only keep death entries that have at least 1 death
-        for killerName, deathData in pairs(characterData.Deaths) do
-            if deathData.deaths and deathData.deaths > 0 then
-                cleanedDeaths[killerName] = deathData
-            end
-        end
-
-        -- Replace with cleaned data
-        PSC_DB.PvPLossCounts[characterKey].Deaths = cleanedDeaths
-    end
-
-    -- Remove characters with no deaths
-    local cleanedCharacters = {}
-    for characterKey, characterData in pairs(PSC_DB.PvPLossCounts) do
-        local hasDeaths = false
-        for _, _ in pairs(characterData.Deaths) do
-            hasDeaths = true
-            break
-        end
-
-        if hasDeaths then
-            cleanedCharacters[characterKey] = characterData
-        end
-    end
-
-    PSC_DB.PvPLossCounts = cleanedCharacters
-end
-
-function PSC_CleanupDatabase()
-    PSC_CleanupKillCounts()
-    PSC_CleanupPlayerInfoCache()
-    PSC_CleanupDeathCounts()
-
-    if PSC_Debug then
-        print("PvPStatsClassic: Database cleaned up.")
-    end
 end
 
 function PSC_LoadDefaultSettings()
@@ -267,7 +160,6 @@ function PSC_LoadDefaultSettings()
     PSC_DB.MinimapButtonPosition = 195
 end
 
-
 local function initializePlayerKillCounts()
     PSC_DB.PlayerKillCounts.Characters = {}
 
@@ -303,4 +195,3 @@ function ResetAllStatsToDefault()
 
     print("All kill statistics have been reset!")
 end
-

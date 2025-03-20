@@ -312,9 +312,9 @@ function PSC_RegisterEvents()
             PSC_CleanupRecentPlayerDamage()
             PSC_CleanupRecentDamageFromPlayers()
         elseif event == "PLAYER_LOGOUT" then
-            -- PSC_CleanupDatabase()
+            PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
-            PSC_CheckBattlegroundStatus()  -- Check BG status on zone change
+            PSC_CheckBattlegroundStatus()
         end
     end)
 end
