@@ -9,7 +9,7 @@ function UpdateKillStreak()
     if characterData.CurrentKillStreak > characterData.HighestKillStreak then
         characterData.HighestKillStreak = characterData.CurrentKillStreak
 
-        if characterData.HighestKillStreak > 1 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+        if characterData.HighestKillStreak > 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
             local recordMsg = string.gsub(PSC_DB.NewKillStreakRecordMessage, "STREAKCOUNT", characterData.HighestKillStreak)
             SendChatMessage(recordMsg, "PARTY")
         end

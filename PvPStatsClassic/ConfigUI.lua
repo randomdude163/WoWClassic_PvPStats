@@ -429,6 +429,23 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
+    local trackBGKillsCheckbox, _ = CreateCheckbox(parent, "Track kills in battlegrounds",
+        PSC_DB.TrackKillsInBattlegrounds, function(checked)
+            PSC_DB.TrackKillsInBattlegrounds = checked
+        end)
+    trackBGKillsCheckbox:SetPoint("TOPLEFT", enableKillSoundsCheckbox, "TOPLEFT", 300, 0)
+    parent.trackBGKillsCheckbox = trackBGKillsCheckbox
+
+    trackBGKillsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Track Kills in Battlegrounds")
+        GameTooltip:AddLine("When unchecked, kills in battlegrounds won't be counted at all.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    trackBGKillsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
     return 320
 end
 
@@ -555,6 +572,7 @@ function PSC_UpdateConfigUI()
     configFrame.enableMultiKillAnnounceCheckbox:SetChecked(PSC_DB.EnableMultiKillAnnounceMessages)
     configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
     configFrame.showAccountWideStatsCheckbox:SetChecked(PSC_DB.ShowAccountWideStats)
+    configFrame.trackBGKillsCheckbox:SetChecked(PSC_DB.TrackKillsInBattlegrounds)
 
     if configFrame.multiKillSlider and configFrame.multiKillSlider:GetName() then
         configFrame.multiKillSlider:SetValue(PSC_DB.MultiKillThreshold or 3)

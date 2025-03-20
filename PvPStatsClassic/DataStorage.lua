@@ -131,6 +131,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.AutoBattlegroundMode = true
     PSC_DB.CountAssistsInBattlegrounds = true
     PSC_DB.ForceBattlegroundMode = false
+    PSC_DB.TrackKillsInBattlegrounds = true
 
     PSC_DB.ShowTooltipKillInfo = true
 

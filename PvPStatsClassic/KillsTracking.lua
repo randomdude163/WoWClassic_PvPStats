@@ -105,14 +105,7 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
 
     if string.find(killMessage, "x#") then
-        if killData.kills >= 2 then
-            killMessage = string.gsub(killMessage, "x#", "x" .. killData.kills)
-        else
-            killMessage = string.gsub(killMessage, "x#", "")
-            killMessage = string.gsub(killMessage, "%s+$", "")
-        end
-    elseif killData.kills >= 2 then
-        killMessage = killMessage .. " x" .. killData.kills
+        killMessage = string.gsub(killMessage, "x#", "x" .. killData.kills)
     end
 
     local levelDifference = level - playerLevel

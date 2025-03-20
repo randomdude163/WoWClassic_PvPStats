@@ -116,6 +116,11 @@ end
 local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     local countKill = false
 
+    if PSC_CurrentlyInBattleground and not PSC_DB.TrackKillsInBattlegrounds then
+        if PSC_Debug then print("BG Mode: Kill tracking disabled in battlegrounds") end
+        return
+    end
+
     -- print("Party Kill Event: " .. sourceName .. " (" .. sourceGUID .. ") killed " .. destName .. " (" .. destGUID .. ")")
     if PSC_CurrentlyInBattleground then
         if sourceGUID == PSC_PlayerGUID then
@@ -145,6 +150,10 @@ local function HandleUnitDiedEvent(destGUID, destName)
         -- if PSC_Debug then
         --     print("Skipping duplicate kill for: " .. destName)
         -- end
+        return
+    end
+
+    if PSC_CurrentlyInBattleground and not PSC_DB.TrackKillsInBattlegrounds then
         return
     end
 
