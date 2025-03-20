@@ -120,6 +120,7 @@ local function PrintSlashCommandUsage()
     PSC_Print("Usage: /psc debugpet - Track all pet damage and kills for 60 seconds")
     PSC_Print("Usage: /psc simulatedeath [killers] [assists] - Simulate being killed")
     PSC_Print("Usage: /psc simcombatlog [killers] [assists] [damage] - Simulate combat log entries for death")
+    PSC_Print("Usage: /psc deathstats - Show death statistics")
 end
 
 local function PrintStatus()
@@ -705,6 +706,14 @@ local function GetKillerInfoOnDeath()
             end
         end
 
+        if PSC_Debug then
+            print("Main Killer: " .. mainKiller.name)
+            local assistNames = {}
+            for _, assist in ipairs(assists) do
+                table.insert(assistNames, assist.name)
+            end
+            print("Assists: " .. table.concat(assistNames, ", "))
+        end
         return {
             killer = mainKiller,
             assists = assists
@@ -1149,6 +1158,10 @@ local function TrackIncomingPlayerDamage(sourceGUID, sourceName, amount)
 
     -- Store updated record
     recentDamageFromPlayers[sourceGUID] = existingRecord
+
+    -- if PSC_Debug then
+    --     print("Incoming damage from " .. sourceName .. ": " .. amount)
+    -- end
 end
 
 local function TrackIncomingPetDamage(petGUID, petName, amount)
@@ -1177,6 +1190,10 @@ local function TrackIncomingPetDamage(petGUID, petName, amount)
 
     -- Store updated record
     recentDamageFromPlayers[ownerGUID] = existingRecord
+
+    if PSC_Debug then
+        print("Incoming damage from " .. ownerName .. "'s pet (" .. petName .. "): " .. amount)
+    end
 end
 
 local function HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
@@ -1299,12 +1316,22 @@ local function HandleCombatLogEvent()
         HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)  -- Add this line
     end
 
-    if CombatLogDestFlagsEnemyPlayer(destFlags) and (destGUID == PSC_PlayerGUID) then
-        HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
-    end
-
-    if IsPetGUID(sourceGUID) and destGUID == PSC_PlayerGUID then
-        HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+    -- Handle incoming damage to player (you are the destination)
+    if destGUID == PSC_PlayerGUID then
+        if sourceGUID == PSC_PlayerGUID then return end  -- Ignore self-damage or auras
+        -- Check if source is a player (not a pet)
+        if bit.band(sourceFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
+            -- if PSC_Debug then
+            --     print("Player damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
+            -- end
+            HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
+        -- Check if source is a pet
+        elseif IsPetGUID(sourceGUID) then
+            if PSC_Debug then
+                print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
+            end
+            HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+        end
     end
 
     if combatEvent == "PARTY_KILL" and CombatLogDestFlagsEnemyPlayer(destFlags) then
@@ -1885,6 +1912,42 @@ function PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
     end)
 end
 
+function PSC_ShowDeathStats()
+    local characterKey = PSC_GetCharacterKey()
+    if not PSC_DB.PvPLossCounts or not PSC_DB.PvPLossCounts[characterKey] then
+        PSC_Print("No death data available")
+        return
+    end
+
+    local lossData = PSC_DB.PvPLossCounts[characterKey]
+    PSC_Print("Death Stats for " .. PSC_CharacterName)
+    PSC_Print("\nDeaths by player:")
+
+    local deaths = {}
+    for killerName, data in pairs(lossData.Deaths) do
+        table.insert(deaths, {
+            name = killerName,
+            total = data.deaths,
+            solo = data.soloKills or 0,
+            assists = data.assistKills or 0,
+            lastDeath = data.lastDeath,
+            zone = data.zone
+        })
+    end
+
+    -- Sort by total deaths
+    table.sort(deaths, function(a, b) return a.total > b.total end)
+
+    for i, death in ipairs(deaths) do
+        local dateStr = death.lastDeath and death.lastDeath:match("(%d+%-%d+%-%d+)") or "Unknown"
+        PSC_Print(i .. ". " .. death.name .. " - " .. death.total ..
+                 " deaths (Solo: " .. death.solo ..
+                 ", Group: " .. death.assists ..
+                 ") - Last: " .. dateStr ..
+                 " in " .. death.zone)
+    end
+end
+
 function PSC_SlashCommandHandler(msg)
     local command, rest = msg:match("^(%S*)%s*(.-)$")
     command = string.lower(command or "")
@@ -1921,6 +1984,8 @@ function PSC_SlashCommandHandler(msg)
         PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
     elseif command == "testtrackers" or command == "testdeath" then
         PSC_RunDeathTrackingTests()
+    elseif command == "deathstats" then
+        PSC_ShowDeathStats()
     elseif command == "status" then
         PrintStatus()
     elseif command == "kills" or command == "stats" then

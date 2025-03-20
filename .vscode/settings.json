@@ -23,7 +23,8 @@
         "class",
         "FauxScrollFrame_Update",
         "FauxScrollFrame_OnVerticalScroll",
-        "FauxScrollFrame_GetOffset"
+        "FauxScrollFrame_GetOffset",
+        "PanelTemplates_GetSelectedTab"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {
