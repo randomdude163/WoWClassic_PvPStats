@@ -3,18 +3,18 @@
 ## Author: Severussnipe, Hkfarmer <Redridge Police>
 ## Notes: Tracks PvP kills and provides detailed statistics.
 ## SavedVariables: PSC_DB
-FrameManager.lua
-EventHandlers.lua
-DataStorage.lua
-KillsListFrame.lua
-StatisticsFrame.lua
 ConfigUI.lua
-PvPStatsClassic.lua
-MinimapButton.lua
+DataStorage.lua
 DeathTracking.lua
 DebugTools.lua
+EventHandlers.lua
+FrameManager.lua
 KillMilestones.lua
-KillTracking.lua
+KillsListFrame.lua
+KillsTracking.lua
 Killstreaks.lua
+MinimapButton.lua
 SlashCommands.lua
+StatisticsFrame.lua
 Utils.lua
+PvPStatsClassic.lua
