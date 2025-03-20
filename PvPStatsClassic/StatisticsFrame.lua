@@ -484,12 +484,21 @@ local function createGuildTable(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Guild Kills", x, y, width, height)
 
     local guildKills = {}
-    for playerNameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-        local playerNameWithoutLevel = playerNameWithLevel:match("([^:]+)")
-        if data then
-            local guild = PSC_DB.PlayerInfoCache[playerNameWithoutLevel].guild
-            if guild ~= "" then
-                guildKills[guild] = (guildKills[guild] or 0) + (data.kills or 0)
+
+    if PSC_DB.PlayerKillCounts.Characters then
+        for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+            if characterData.Kills then
+                for nameWithLevel, killData in pairs(characterData.Kills) do
+                    local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
+                    local kills = killData.kills or 0
+
+                    if PSC_DB.PlayerInfoCache[playerNameWithoutLevel] then
+                        local guild = PSC_DB.PlayerInfoCache[playerNameWithoutLevel].guild
+                        if guild ~= "" then
+                            guildKills[guild] = (guildKills[guild] or 0) + kills
+                        end
+                    end
+                end
             end
         end
     end
@@ -574,33 +583,80 @@ local function calculateStatistics()
     local unknownLevelKills = 0
     local mostKilledPlayer = nil
     local mostKilledCount = 0
+    local highestKillStreak = 0
+    local currentKillStreak = 0
+    local highestMultiKill = 0
 
-    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-        if data then
-            uniqueKills = uniqueKills + 1
-            local kills = data.kills or 0
-            totalKills = totalKills + kills
+    -- Track kills per player across all characters
+    local killsPerPlayer = {}
 
-            -- Track most killed player
-            if kills > mostKilledCount then
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return {
+            totalKills = 0,
+            uniqueKills = 0,
+            unknownLevelKills = 0,
+            avgLevel = 0,
+            avgPlayerLevel = UnitLevel("player"),
+            avgLevelDiff = 0,
+            avgKillsPerPlayer = 0,
+            mostKilledPlayer = "None",
+            mostKilledCount = 0,
+            currentKillStreak = 0,
+            highestKillStreak = 0,
+            highestMultiKill = 0
+        }
+    end
+
+    -- Loop through all characters
+    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        -- Track character-specific stats to find maximums
+        if characterData.HighestKillStreak and characterData.HighestKillStreak > highestKillStreak then
+            highestKillStreak = characterData.HighestKillStreak
+        end
+
+        if characterData.CurrentKillStreak and characterData.CurrentKillStreak > currentKillStreak then
+            currentKillStreak = characterData.CurrentKillStreak
+        end
+
+        if characterData.HighestMultiKill and characterData.HighestMultiKill > highestMultiKill then
+            highestMultiKill = characterData.HighestMultiKill
+        end
+
+        -- Loop through kills
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                local kills = killData.kills or 0
                 local playerName = nameWithLevel:match("([^:]+)")
-                mostKilledPlayer = playerName
-                mostKilledCount = kills
-            end
 
-            local level = nameWithLevel:match(":(%S+)")
-            local levelNum = tonumber(level or "0") or 0
+                -- Aggregate kills by player name across characters
+                killsPerPlayer[playerName] = (killsPerPlayer[playerName] or 0) + kills
 
-            if levelNum == -1 then
-                unknownLevelKills = unknownLevelKills + kills
-            else
-                totalLevels = totalLevels + levelNum * kills
-            end
+                -- Track total unique entries
+                uniqueKills = uniqueKills + 1
+                totalKills = totalKills + kills
 
-            if data.playerLevel then
-                totalPlayerLevels = totalPlayerLevels + (data.playerLevel * kills)
-                killsWithLevelData = killsWithLevelData + kills
+                local level = nameWithLevel:match(":(%S+)")
+                local levelNum = tonumber(level or "0") or 0
+
+                if levelNum == -1 then
+                    unknownLevelKills = unknownLevelKills + kills
+                else
+                    totalLevels = totalLevels + levelNum * kills
+                end
+
+                if killData.playerLevel then
+                    totalPlayerLevels = totalPlayerLevels + (killData.playerLevel * kills)
+                    killsWithLevelData = killsWithLevelData + kills
+                end
             end
+        end
+    end
+
+    -- Find the most killed player
+    for playerName, kills in pairs(killsPerPlayer) do
+        if kills > mostKilledCount then
+            mostKilledPlayer = playerName
+            mostKilledCount = kills
         end
     end
 
@@ -619,7 +675,10 @@ local function calculateStatistics()
         avgLevelDiff = avgLevelDiff,
         avgKillsPerPlayer = avgKillsPerPlayer,
         mostKilledPlayer = mostKilledPlayer or "None",
-        mostKilledCount = mostKilledCount
+        mostKilledCount = mostKilledCount,
+        currentKillStreak = currentKillStreak,
+        highestKillStreak = highestKillStreak,
+        highestMultiKill = highestMultiKill
     }
 end
 
@@ -650,10 +709,8 @@ local function createSummaryStats(parent, x, y, width, height)
     if stats.mostKilledPlayer ~= "None" then
         local tooltipFrame = container:GetChildren()
         for _, child in pairs({container:GetChildren()}) do
----@diagnostic disable-next-line: undefined-field
             if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
                 -- This is likely our tooltip frame for the most killed player
----@diagnostic disable-next-line: undefined-field
                 child:SetScript("OnMouseUp", function()
                     PSC_CreateKillStatsFrame()
                     C_Timer.After(0.05, function()
@@ -666,11 +723,12 @@ local function createSummaryStats(parent, x, y, width, height)
         end
     end
 
-    statY = addSummaryStatLine(container, "Current Kill Streak:", PSC_DB.CurrentKillStreak or 0, statY,
+    -- Update to use the stats data directly rather than PSC_DB
+    statY = addSummaryStatLine(container, "Current Kill Streak:", stats.currentKillStreak, statY,
         "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Kill Streak:", PSC_DB.HighestKillStreak or 0, statY,
+    statY = addSummaryStatLine(container, "Highest Kill Streak:", stats.highestKillStreak, statY,
         "This record persists through logouts and can only be reset manually through the Reset tab in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Multi-Kill:", PSC_DB.HighestMultiKill or 0, statY)
+    statY = addSummaryStatLine(container, "Highest Multi-Kill:", stats.highestMultiKill, statY)
 
     return container
 end
@@ -688,39 +746,52 @@ local function gatherStatistics()
         ["No Guild"] = 0
     }
 
-    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-        if data then
-            local nameWithoutLevel = nameWithLevel:match("([^:]+)")
-            local class = PSC_DB.PlayerInfoCache[nameWithoutLevel].class
-            classData[class] = (classData[class] or 0) + 1
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return {}, {}, {}, {}, {}, {}, { ["In Guild"] = 0, ["No Guild"] = 0 }
+    end
 
-            local level = nameWithLevel:match(":(%S+)")
-            local levelNum = tonumber(level or "0") or 0
-            local kills = data.kills or 1
+    -- Loop through all characters
+    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                if killData.kills and killData.kills > 0 then
+                    local nameWithoutLevel = nameWithLevel:match("([^:]+)")
+                    local kills = killData.kills
 
-            if levelNum == -1 then
-                unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
-                levelData["??"] = (levelData["??"] or 0) + kills
-            else
-                if levelNum > 0 and levelNum <= 60 then
-                    levelData[tostring(levelNum)] = (levelData[tostring(levelNum)] or 0) + kills
+                    -- Only process if we have info for this player
+                    if PSC_DB.PlayerInfoCache[nameWithoutLevel] then
+                        local class = PSC_DB.PlayerInfoCache[nameWithoutLevel].class
+                        classData[class] = (classData[class] or 0) + 1
+
+                        local level = nameWithLevel:match(":(%S+)")
+                        local levelNum = tonumber(level or "0") or 0
+
+                        if levelNum == -1 then
+                            unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
+                            levelData["??"] = (levelData["??"] or 0) + kills
+                        else
+                            if levelNum > 0 and levelNum <= 60 then
+                                levelData[tostring(levelNum)] = (levelData[tostring(levelNum)] or 0) + kills
+                            end
+                        end
+
+                        local race = PSC_DB.PlayerInfoCache[nameWithoutLevel].race
+                        raceData[race] = (raceData[race] or 0) + 1
+
+                        local gender = PSC_DB.PlayerInfoCache[nameWithoutLevel].gender
+                        genderData[gender] = (genderData[gender] or 0) + 1
+
+                        local zone = killData.zone
+                        zoneData[zone] = (zoneData[zone] or 0) + kills
+
+                        local guild = PSC_DB.PlayerInfoCache[nameWithoutLevel].guild
+                        if guild ~= "" then
+                            guildStatusData["In Guild"] = guildStatusData["In Guild"] + kills
+                        else
+                            guildStatusData["No Guild"] = guildStatusData["No Guild"] + kills
+                        end
+                    end
                 end
-            end
-
-            local race = PSC_DB.PlayerInfoCache[nameWithoutLevel].race
-            raceData[race] = (raceData[race] or 0) + 1
-
-            local gender = PSC_DB.PlayerInfoCache[nameWithoutLevel].gender
-            genderData[gender] = (genderData[gender] or 0) + 1
-
-            local zone = data.zone
-            zoneData[zone] = (zoneData[zone] or 0) + kills
-
-            local guild = PSC_DB.PlayerInfoCache[nameWithoutLevel].guild
-            if guild ~= "" then
-                guildStatusData["In Guild"] = guildStatusData["In Guild"] + kills
-            else
-                guildStatusData["No Guild"] = guildStatusData["No Guild"] + kills
             end
         end
     end
@@ -801,10 +872,20 @@ local function enoughPlayerKillsRecorded()
     local totalKills = 0
     local uniqueKills = 0
 
-    for _, data in pairs(PSC_DB.PlayerKillCounts) do
-        if data then
-            uniqueKills = uniqueKills + 1
-            totalKills = totalKills + (data.kills or 1)
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return false
+    end
+
+    -- Loop through all characters
+    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        if characterData.Kills then
+            -- Count unique kills across all characters
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                if killData.kills and killData.kills > 0 then
+                    uniqueKills = uniqueKills + 1
+                    totalKills = totalKills + killData.kills
+                end
+            end
         end
     end
 

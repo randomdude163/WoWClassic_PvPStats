@@ -127,32 +127,58 @@ function PSC_GetInfoFromGuid(guid)
 end
 
 function PSC_CleanupKillCounts()
-    local cleanedKillCounts = {}
+    if not PSC_DB.PlayerKillCounts.Characters then return end
 
-    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-        if data.kills and data.kills > 0 then
-            cleanedKillCounts[nameWithLevel] = data
+    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        local cleanedKills = {}
+
+        -- Only keep kill entries that have at least 1 kill
+        for nameWithLevel, killData in pairs(characterData.Kills) do
+            if killData.kills and killData.kills > 0 then
+                cleanedKills[nameWithLevel] = killData
+            end
+        end
+
+        -- Replace with cleaned data
+        PSC_DB.PlayerKillCounts.Characters[characterKey].Kills = cleanedKills
+    end
+
+    -- Remove characters with no kills
+    local cleanedCharacters = {}
+    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        local hasKills = false
+        for _, _ in pairs(characterData.Kills) do
+            hasKills = true
+            break
+        end
+
+        if hasKills then
+            cleanedCharacters[characterKey] = characterData
         end
     end
 
-    PSC_DB.PlayerKillCounts = cleanedKillCounts
+    PSC_DB.PlayerKillCounts.Characters = cleanedCharacters
 end
 
 function PSC_CleanupPlayerInfoCache()
+    if not PSC_DB.PlayerKillCounts.Characters then return end
+
     local cleanedInfoCache = {}
     local playersWithKills = {}
 
-    if not PSC_DB.PlayerKillCounts then return end
-
-    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-        if data.kills and data.kills > 0 then
-            local name = string.match(nameWithLevel, "([^:]+)")
-            if name then
-                playersWithKills[name] = true
+    -- Collect names of all players who have been killed
+    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        for nameWithLevel, killData in pairs(characterData.Kills) do
+            if killData.kills and killData.kills > 0 then
+                local name = nameWithLevel:match("([^:]+)")
+                if name then
+                    playersWithKills[name] = true
+                end
             end
         end
     end
 
+    -- Only keep info for players who have been killed
     for name, data in pairs(PSC_DB.PlayerInfoCache) do
         if playersWithKills[name] then
             cleanedInfoCache[name] = data
@@ -205,12 +231,27 @@ function PSC_LoadDefaultSettings()
 end
 
 
+local function initializePlayerKillCounts()
+    PSC_DB.PlayerKillCounts.Characters = {}
+
+    local characterKey = PSC_GetCharacterKey()
+    if not PSC_DB.PlayerKillCounts.Characters[characterKey] then
+        print("Creating new character entry in database for " .. characterKey)
+        PSC_DB.PlayerKillCounts.Characters[characterKey] = {
+            Kills = {},
+            CurrentKillStreak = 0,
+            HighestKillStreak = 0,
+            HighestMultiKill = 0
+        }
+    end
+end
+
 function ResetAllStatsToDefault()
     PSC_DB.PlayerInfoCache = {}
     PSC_DB.PlayerKillCounts = {}
-    PSC_DB.CurrentKillStreak = 0
-    PSC_DB.HighestKillStreak = 0
-    PSC_DB.HighestMultiKill = 0
+
+    initializePlayerKillCounts()
 
     print("All kill statistics have been reset!")
 end
+

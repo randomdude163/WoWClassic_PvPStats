@@ -292,118 +292,120 @@ end
 local function FilterAndSortEntries()
     local sortedEntries = {}
 
-    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-        if data then
-            -- Extract name from combined "name:level" format
-            local nameWithoutLevel = nameWithLevel:match("([^:]+)")
+    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        for nameWithLevel, data in pairs(characterData.Kills) do
+            if data then
+                -- Extract name from combined "name:level" format
+                local nameWithoutLevel = nameWithLevel:match("([^:]+)")
 
-            -- Get stored level from the nameWithLevel string
-            local level = nameWithLevel:match(":(%S+)")
-            local levelNum = tonumber(level or "0") or 0
+                -- Get stored level from the nameWithLevel string
+                local level = nameWithLevel:match(":(%S+)")
+                local levelNum = tonumber(level or "0") or 0
 
-            -- Get player info from cache instead of KillCounts
-            local playerInfo = PSC_DB.PlayerInfoCache[nameWithoutLevel] or {}
-            local class = playerInfo.class
-            local race = playerInfo.race
-            local gender = playerInfo.gender
-            local guild = playerInfo.guild
-            local rank = playerInfo.rank
+                -- Get player info from cache instead of KillCounts
+                local playerInfo = PSC_DB.PlayerInfoCache[nameWithoutLevel] or {}
+                local class = playerInfo.class
+                local race = playerInfo.race
+                local gender = playerInfo.gender
+                local guild = playerInfo.guild
+                local rank = playerInfo.rank
 
-            -- Create entry object with all needed data
-            local entry = {
-                name = nameWithoutLevel,
-                nameWithLevel = nameWithLevel,
-                class = class,
-                race = race,
-                gender = gender,
-                guild = guild,
-                zone = data.zone or "Unknown",
-                kills = data.kills or 1,
-                lastKill = data.lastKill or "",
-                levelNum = levelNum,
-                levelDisplay = levelNum,
-                rank = rank
-            }
+                -- Create entry object with all needed data
+                local entry = {
+                    name = nameWithoutLevel,
+                    nameWithLevel = nameWithLevel,
+                    class = class,
+                    race = race,
+                    gender = gender,
+                    guild = guild,
+                    zone = data.zone or "Unknown",
+                    kills = data.kills or 1,
+                    lastKill = data.lastKill or "",
+                    levelNum = levelNum,
+                    levelDisplay = levelNum,
+                    rank = rank
+                }
 
-            -- Special case for unknown level
-            if levelNum == -1 then
-                entry.levelDisplay = -1  -- Will be shown as "??"
-            end
-
-            local searchMatch = true
-            local levelMatch = true
-            local classMatch = true
-            local raceMatch = true
-            local genderMatch = true
-            local zoneMatch = true
-            local rankMatch = true
-
-            -- Player/Guild name search
-            if searchText ~= "" then
-                local nameLower = nameWithoutLevel:lower()
-                local guildLower = guild:lower()
-
----@diagnostic disable-next-line: cast-local-type
-                searchMatch = nameLower:find(searchText, 1, true) or
-                             (guild ~= "" and guildLower:find(searchText, 1, true))
-            end
-
-            -- Level search
-            if minLevelSearch or maxLevelSearch then
-                if minLevelSearch == -1 and maxLevelSearch == -1 then
-                    -- Special case for unknown level search
-                    levelMatch = (levelNum == -1)
-                elseif minLevelSearch and maxLevelSearch then
-                    -- Range search
-                    levelMatch = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
+                -- Special case for unknown level
+                if levelNum == -1 then
+                    entry.levelDisplay = -1  -- Will be shown as "??"
                 end
-            end
 
-            -- Class filter
-            if classSearchText ~= "" then
----@diagnostic disable-next-line: cast-local-type
-                classMatch = class:lower():find(classSearchText:lower(), 1, true)
-            end
+                local searchMatch = true
+                local levelMatch = true
+                local classMatch = true
+                local raceMatch = true
+                local genderMatch = true
+                local zoneMatch = true
+                local rankMatch = true
 
-            -- Race filter
-            if raceSearchText ~= "" then
----@diagnostic disable-next-line: cast-local-type
-                raceMatch = race:lower():find(raceSearchText:lower(), 1, true)
-            end
+                -- Player/Guild name search
+                if searchText ~= "" then
+                    local nameLower = nameWithoutLevel:lower()
+                    local guildLower = guild:lower()
 
-            -- Gender filter - Make this exact match case insensitive
-            if genderSearchText ~= "" then
-                local compareText = genderSearchText:lower()
-                local genderLower = gender:lower()
-
-                -- Handle short forms of gender
-                if compareText == "m" or compareText == "male" then
-                    genderMatch = (genderLower == "male")
-                elseif compareText == "f" or compareText == "female" then
-                    genderMatch = (genderLower == "female")
-                elseif compareText == "u" or compareText == "unknown" or compareText == "?" then
-                    genderMatch = (genderLower == "unknown")
-                else
----@diagnostic disable-next-line: cast-local-type
-                    genderMatch = genderLower:find(compareText, 1, true)
+    ---@diagnostic disable-next-line: cast-local-type
+                    searchMatch = nameLower:find(searchText, 1, true) or
+                                (guild ~= "" and guildLower:find(searchText, 1, true))
                 end
-            end
 
-            -- Zone filter
-            if zoneSearchText ~= "" then
----@diagnostic disable-next-line: cast-local-type
-                zoneMatch = (data.zone or "Unknown"):lower():find(zoneSearchText:lower(), 1, true)
-            end
-
-            -- Rank filter
-            if minRankSearch or maxRankSearch then
-                if minRankSearch and maxRankSearch then
-                    rankMatch = (rank >= minRankSearch and rank <= maxRankSearch)
+                -- Level search
+                if minLevelSearch or maxLevelSearch then
+                    if minLevelSearch == -1 and maxLevelSearch == -1 then
+                        -- Special case for unknown level search
+                        levelMatch = (levelNum == -1)
+                    elseif minLevelSearch and maxLevelSearch then
+                        -- Range search
+                        levelMatch = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
+                    end
                 end
-            end
 
-            if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
-                table.insert(sortedEntries, entry)
+                -- Class filter
+                if classSearchText ~= "" then
+    ---@diagnostic disable-next-line: cast-local-type
+                    classMatch = class:lower():find(classSearchText:lower(), 1, true)
+                end
+
+                -- Race filter
+                if raceSearchText ~= "" then
+    ---@diagnostic disable-next-line: cast-local-type
+                    raceMatch = race:lower():find(raceSearchText:lower(), 1, true)
+                end
+
+                -- Gender filter - Make this exact match case insensitive
+                if genderSearchText ~= "" then
+                    local compareText = genderSearchText:lower()
+                    local genderLower = gender:lower()
+
+                    -- Handle short forms of gender
+                    if compareText == "m" or compareText == "male" then
+                        genderMatch = (genderLower == "male")
+                    elseif compareText == "f" or compareText == "female" then
+                        genderMatch = (genderLower == "female")
+                    elseif compareText == "u" or compareText == "unknown" or compareText == "?" then
+                        genderMatch = (genderLower == "unknown")
+                    else
+    ---@diagnostic disable-next-line: cast-local-type
+                        genderMatch = genderLower:find(compareText, 1, true)
+                    end
+                end
+
+                -- Zone filter
+                if zoneSearchText ~= "" then
+    ---@diagnostic disable-next-line: cast-local-type
+                    zoneMatch = (data.zone or "Unknown"):lower():find(zoneSearchText:lower(), 1, true)
+                end
+
+                -- Rank filter
+                if minRankSearch or maxRankSearch then
+                    if minRankSearch and maxRankSearch then
+                        rankMatch = (rank >= minRankSearch and rank <= maxRankSearch)
+                    end
+                end
+
+                if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
+                    table.insert(sortedEntries, entry)
+                end
             end
         end
     end
