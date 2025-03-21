@@ -77,7 +77,7 @@ function HandlePlayerDeath()
         print("You died! Kill streak reset.")
     end
 
-    if PSC_CurrentlyInBattleground and not PSC_DB.TrackDeathsInBattlegrounds then
+    if PSC_CurrentlyInBattleground and not PSC_DB.CountDeathsInBattlegrounds then
         if PSC_Debug then print("BG Mode: Death tracking disabled in battlegrounds") end
         return
     end
@@ -149,7 +149,7 @@ end
 local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     local countKill = false
 
-    if PSC_CurrentlyInBattleground and not PSC_DB.TrackKillsInBattlegrounds then
+    if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
         if PSC_Debug then print("BG Mode: Kill tracking disabled in battlegrounds") end
         return
     end
@@ -186,7 +186,7 @@ local function HandleUnitDiedEvent(destGUID, destName)
         return
     end
 
-    if PSC_CurrentlyInBattleground and not PSC_DB.TrackKillsInBattlegrounds then
+    if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
         return
     end
 
@@ -488,7 +488,7 @@ function PSC_SetupMouseoverTooltip()
     end
 
     local function OnTooltipSetUnit(tooltip)
-        if not PSC_DB.ShowTooltipKillInfo then return end
+        if not PSC_DB.ShowScoreInPlayerTooltip then return end
 
         local _, unit = tooltip:GetUnit()
         if not unit then return end

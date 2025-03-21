@@ -170,13 +170,31 @@ local function CreateAnnouncementSection(parent, yOffset)
         end)
     enableKillAnnounceCheckbox:SetPoint("TOPLEFT", announcementSettingsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
     parent.enableKillAnnounceCheckbox = enableKillAnnounceCheckbox
+    enableKillAnnounceCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce kills in party chat")
+        GameTooltip:AddLine("When checked, kills will be announced in party chat. You can customize these messages in the Messages tab. ", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableKillAnnounceCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
-    local enableRecordAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce new personal bests",
+    local enableRecordAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce personal bests",
         PSC_DB.EnableRecordAnnounceMessages, function(checked)
             PSC_DB.EnableRecordAnnounceMessages = checked
         end)
     enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
     parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
+    enableRecordAnnounceCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce personal bests in party chat")
+        GameTooltip:AddLine("When checked, a customizable party chat message will be sent when you achieve a new personal best for kill streak or multi-kill.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableRecordAnnounceCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     local enableMultiKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce multi-kills",
         PSC_DB.EnableMultiKillAnnounceMessages, function(checked)
@@ -184,6 +202,15 @@ local function CreateAnnouncementSection(parent, yOffset)
         end)
     enableMultiKillAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "TOPLEFT", 300, 0)
     parent.enableMultiKillAnnounceCheckbox = enableMultiKillAnnounceCheckbox
+    enableMultiKillAnnounceCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce personal bests in party chat")
+        GameTooltip:AddLine("When checked, a customizable party chat message will be sent when you achieve a multi-kill.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableMultiKillAnnounceCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
@@ -224,6 +251,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     autoBGModeCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
+
     local assistsInBGCheckbox, _ = CreateCheckbox(parent, "Count assist kills",
         PSC_DB.CountAssistsInBattlegrounds, function(checked)
             PSC_DB.CountAssistsInBattlegrounds = checked
@@ -262,8 +290,8 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
 
     local trackBGKillsCheckbox, _ = CreateCheckbox(parent, "Count kills in battlegrounds",
-        PSC_DB.TrackKillsInBattlegrounds, function(checked)
-            PSC_DB.TrackKillsInBattlegrounds = checked
+        PSC_DB.CountKillsInBattlegrounds, function(checked)
+            PSC_DB.CountKillsInBattlegrounds = checked
         end)
     trackBGKillsCheckbox:SetPoint("TOPLEFT", assistsInBGCheckbox, "TOPLEFT", 260, 0)
     parent.trackBGKillsCheckbox = trackBGKillsCheckbox
@@ -279,8 +307,8 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
 
     local trackBGDeathsCheckbox, _ = CreateCheckbox(parent, "Count deaths in battlegrounds",
-        PSC_DB.TrackDeathsInBattlegrounds, function(checked)
-            PSC_DB.TrackDeathsInBattlegrounds = checked
+        PSC_DB.CountDeathsInBattlegrounds, function(checked)
+            PSC_DB.CountDeathsInBattlegrounds = checked
         end)
     trackBGDeathsCheckbox:SetPoint("TOPLEFT", trackBGKillsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.trackBGDeathsCheckbox = trackBGDeathsCheckbox
@@ -316,8 +344,8 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
 
     local killMilestoneSoundsCheckbox, _ = CreateCheckbox(parent, "Play milestone sound effect",
-        PSC_DB.EnableKillMilestoneSounds, function(checked)
-            PSC_DB.EnableKillMilestoneSounds = checked
+        PSC_DB.EnableKillMilestoneSound, function(checked)
+            PSC_DB.EnableKillMilestoneSound = checked
         end)
     killMilestoneSoundsCheckbox:SetPoint("TOPLEFT", showKillMilestonesCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
     parent.killMilestoneSoundsCheckbox = killMilestoneSoundsCheckbox
@@ -447,8 +475,8 @@ local function CreateAnnouncementSection(parent, yOffset)
     end)
 
     local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show score in mouseover tooltips",
-        PSC_DB.ShowTooltipKillInfo, function(checked)
-            PSC_DB.ShowTooltipKillInfo = checked
+        PSC_DB.ShowScoreInPlayerTooltip, function(checked)
+            PSC_DB.ShowScoreInPlayerTooltip = checked
         end)
     tooltipKillInfoCheckbox:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
@@ -598,17 +626,17 @@ function PSC_UpdateConfigUI()
     configFrame.autoBGModeCheckbox:SetChecked(PSC_DB.AutoBattlegroundMode)
     configFrame.assistsInBGCheckbox:SetChecked(PSC_DB.CountAssistsInBattlegrounds)
     configFrame.manualBGModeCheckbox:SetChecked(PSC_DB.ForceBattlegroundMode)
-    configFrame.tooltipKillInfoCheckbox:SetChecked(PSC_DB.ShowTooltipKillInfo)
+    configFrame.tooltipKillInfoCheckbox:SetChecked(PSC_DB.ShowScoreInPlayerTooltip)
     configFrame.showKillMilestonesCheckbox:SetChecked(PSC_DB.ShowKillMilestones)
-    configFrame.killMilestoneSoundsCheckbox:SetChecked(PSC_DB.EnableKillMilestoneSounds)
+    configFrame.killMilestoneSoundsCheckbox:SetChecked(PSC_DB.EnableKillMilestoneSound)
     configFrame.showMilestoneForFirstKillCheckbox:SetChecked(PSC_DB.ShowMilestoneForFirstKill)
     configFrame.enableKillAnnounceCheckbox:SetChecked(PSC_DB.EnableKillAnnounceMessages)
     configFrame.enableRecordAnnounceCheckbox:SetChecked(PSC_DB.EnableRecordAnnounceMessages)
     configFrame.enableMultiKillAnnounceCheckbox:SetChecked(PSC_DB.EnableMultiKillAnnounceMessages)
     configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
     configFrame.showAccountWideStatsCheckbox:SetChecked(PSC_DB.ShowAccountWideStats)
-    configFrame.trackBGKillsCheckbox:SetChecked(PSC_DB.TrackKillsInBattlegrounds)
-    configFrame.trackBGDeathsCheckbox:SetChecked(PSC_DB.TrackDeathsInBattlegrounds)
+    configFrame.trackBGKillsCheckbox:SetChecked(PSC_DB.CountKillsInBattlegrounds)
+    configFrame.trackBGDeathsCheckbox:SetChecked(PSC_DB.CountDeathsInBattlegrounds)
 
     if configFrame.multiKillSlider and configFrame.multiKillSlider:GetName() then
         configFrame.multiKillSlider:SetValue(PSC_DB.MultiKillThreshold or 3)

@@ -126,18 +126,19 @@ function PSC_CleanupPlayerInfoCache()
 end
 
 function PSC_LoadDefaultSettings()
-    PSC_DB.ShowAccountWideStats = true
+    PSC_DB.EnableKillAnnounceMessages = true
+    PSC_DB.EnableRecordAnnounceMessages = true
+    PSC_DB.EnableMultiKillAnnounceMessages = true
+    PSC_DB.MultiKillThreshold = 3
 
     PSC_DB.AutoBattlegroundMode = true
     PSC_DB.CountAssistsInBattlegrounds = true
     PSC_DB.ForceBattlegroundMode = false
-    PSC_DB.TrackKillsInBattlegrounds = true
-    PSC_DB.TrackDeathsInBattlegrounds = true
-
-    PSC_DB.ShowTooltipKillInfo = true
+    PSC_DB.CountKillsInBattlegrounds = true
+    PSC_DB.CountDeathsInBattlegrounds = true
 
     PSC_DB.ShowKillMilestones = true
-    PSC_DB.EnableKillMilestoneSounds = true
+    PSC_DB.EnableKillMilestoneSound = true
     PSC_DB.ShowMilestoneForFirstKill = true
     PSC_DB.KillMilestoneInterval = 5
     PSC_DB.KillMilestoneAutoHideTime = 5
@@ -148,16 +149,15 @@ function PSC_LoadDefaultSettings()
         yOfs=-100
     }
 
-    PSC_DB.EnableKillAnnounceMessages = true
-    PSC_DB.EnableRecordAnnounceMessages = true
-    PSC_DB.EnableMultiKillAnnounceMessages = true
     PSC_DB.EnableMultiKillSounds = true
+    PSC_DB.ShowScoreInPlayerTooltip = true
+    PSC_DB.ShowAccountWideStats = true
+
 
     PSC_DB.KillAnnounceMessage = "Enemyplayername x# killed!"
     PSC_DB.KillStreakEndedMessage = "My kill streak of STREAKCOUNT has ended!"
     PSC_DB.NewKillStreakRecordMessage = "New personal best: Kill streak of STREAKCOUNT!"
     PSC_DB.NewMultiKillRecordMessage = "New personal best: MULTIKILLTEXT!"
-    PSC_DB.MultiKillThreshold = 3
 
     PSC_DB.MinimapButtonPosition = 195
 end
@@ -197,5 +197,5 @@ function ResetAllStatsToDefault()
     initializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()
 
-    print("All kill statistics have been reset!")
+    print("All statistics have been reset!")
 end
