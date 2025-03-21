@@ -762,17 +762,6 @@ local function createSummaryStats(parent, x, y, width, height)
         "Total number of unique players you have killed. Mlitple kills of the same player are counted only once.")
     statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills, statY,
         "Total number of times you have killed a level ?? player.")
-
-    statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - 15,
-        "Average level of players you have killed.")
-    statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
-        "Average number of kills per unique player.")
-    local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
-                              (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
-    statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
-        "Average level difference between you and the players you have killed.")
-
-
     local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
     statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - 15,
         "Click to show all kills of this player")
@@ -792,6 +781,16 @@ local function createSummaryStats(parent, x, y, width, height)
             end
         end
     end
+
+    statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - 15,
+        "Average level of players you have killed.")
+    statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
+        "Average number of kills per unique player.")
+    local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
+                              (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
+    statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
+        "Average level difference between you and the players you have killed.")
+
 
     statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - 15,
         "Kill streaks persist through logouts and will only reset when you die or manually reset your statistics in the dddon settings.")
