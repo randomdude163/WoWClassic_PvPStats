@@ -514,6 +514,16 @@ local function CreateAnnouncementSection(parent, yOffset)
         end)
     showAccountWideStatsCheckbox:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.showAccountWideStatsCheckbox = showAccountWideStatsCheckbox
+    showAccountWideStatsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show account-wide statistics")
+        GameTooltip:AddLine("When checked, the addon will use data from all your characters for statistics calculation and in the kills list.", 1, 1, 1, true)
+        GameTooltip:AddLine("When unchecked, only data from your current character will be used.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showAccountWideStatsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     return 320
 end
