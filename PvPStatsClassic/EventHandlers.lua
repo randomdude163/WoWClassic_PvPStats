@@ -10,6 +10,10 @@ local PET_DAMAGE_WINDOW = 0.05
 
 PSC_InCombat = false
 
+-- Add this variable to track the last death time
+PSC_LastDeathTime = 0
+PSC_DEATH_EVENT_COOLDOWN = 2 -- seconds to ignore duplicate death events
+
 PSC_CurrentlyInBattleground = false
 PSC_lastInBattlegroundValue = false
 
@@ -51,7 +55,7 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     local subZoneText = GetSubZoneText()
     local playerPosition = ""
     if subZoneText ~= "" then
-        playerPosition =  subZoneText .. "(" .. playerCoords .. ")"
+        playerPosition =  subZoneText .. " (" .. playerCoords .. ")"
     else
         playerPosition =  playerCoords
     end
@@ -61,6 +65,18 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
 end
 
 function HandlePlayerDeath()
+    -- Check if this is a duplicate death event within the cooldown period
+    local now = GetTime()
+    if (now - PSC_LastDeathTime) < PSC_DEATH_EVENT_COOLDOWN then
+        if PSC_Debug then
+            print("Ignoring duplicate PLAYER_DEAD event")
+        end
+        return
+    end
+
+    -- Update the last death time
+    PSC_LastDeathTime = now
+
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
@@ -345,6 +361,9 @@ function PSC_RegisterEvents()
         elseif event == "UPDATE_MOUSEOVER_UNIT" then
             OnUpdateMouseoverUnit()
         elseif event == "PLAYER_DEAD" then
+            if PSC_Debug then
+                print("PLAYER_DEAD event received")
+            end
             HandlePlayerDeath()
         elseif event == "PLAYER_REGEN_DISABLED" then
             HandleCombatState(true)

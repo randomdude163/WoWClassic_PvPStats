@@ -154,7 +154,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.ShowAccountWideStats = true
 
 
-    PSC_DB.KillAnnounceMessage = "Enemyplayername x# killed!"
+    PSC_DB.KillAnnounceMessage = "Enemyplayername killed! x#"
     PSC_DB.KillStreakEndedMessage = "My kill streak of STREAKCOUNT has ended!"
     PSC_DB.NewKillStreakRecordMessage = "New personal best: Kill streak of STREAKCOUNT!"
     PSC_DB.NewMultiKillRecordMessage = "New personal best: MULTIKILLTEXT!"
