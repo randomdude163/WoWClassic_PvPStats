@@ -158,6 +158,14 @@ function PSC_LoadDefaultSettings()
         yOfs=-100
     }
 
+    -- Add default position for kill streak milestone frame
+    PSC_DB.KillStreakMilestoneFramePosition = {
+        point="TOP",
+        relativePoint="TOP",
+        xOfs=0,
+        yOfs=-10
+    }
+
     PSC_DB.EnableMultiKillSounds = true
     PSC_DB.ShowScoreInPlayerTooltip = true
     PSC_DB.ShowAccountWideStats = true

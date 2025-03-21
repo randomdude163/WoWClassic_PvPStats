@@ -70,7 +70,20 @@ local function CreateKillstreakMilestoneFrameIfNeeded()
     local frame = CreateFrame("Frame", "PSC_MilestoneFrame", UIParent)
     local sizeX, sizeY = 140, 140
     frame:SetSize(sizeX, sizeY)
-    frame:SetPoint("TOP", 0, -10)
+
+    -- Use saved position if available, otherwise use default
+    if PSC_DB and PSC_DB.KillStreakMilestoneFramePosition then
+        frame:SetPoint(
+            PSC_DB.KillStreakMilestoneFramePosition.point,
+            UIParent,
+            PSC_DB.KillStreakMilestoneFramePosition.relativePoint,
+            PSC_DB.KillStreakMilestoneFramePosition.xOfs,
+            PSC_DB.KillStreakMilestoneFramePosition.yOfs
+        )
+    else
+        frame:SetPoint("TOP", 0, -10)
+    end
+
     frame:SetFrameStrata("HIGH")
     frame:SetMovable(true)
     frame:SetClampedToScreen(true)
@@ -79,7 +92,20 @@ local function CreateKillstreakMilestoneFrameIfNeeded()
     -- Set up the drag functionality
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+
+        -- Save position to the database with new variable
+        local point, _, relativePoint, xOfs, yOfs = self:GetPoint()
+        if PSC_DB then
+            PSC_DB.KillStreakMilestoneFramePosition = {
+                point = point,
+                relativePoint = relativePoint,
+                xOfs = xOfs,
+                yOfs = yOfs
+            }
+        end
+    end)
 
     local icon = frame:CreateTexture("PSC_MilestoneIcon", "ARTWORK")
     icon:SetSize(sizeX, sizeY)
