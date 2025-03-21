@@ -411,16 +411,6 @@ function PSC_GetTotalsKillsForPlayer(playerName)
 end
 
 function PSC_SetupMouseoverTooltip()
-    local function HasKillsLineInTooltip(tooltip)
-        for i = 1, tooltip:NumLines() do
-            local line = _G[tooltip:GetName() .. "TextLeft" .. i]
-            if line and line:GetText() and (line:GetText():find("^Kills: ") or line:GetText():find("^PvP Score")) then
-                return true
-            end
-        end
-        return false
-    end
-
     local function GetLastKillTimestamp(playerName)
         local characterKey = PSC_GetCharacterKey()
         local lastKill = 0
@@ -466,10 +456,6 @@ function PSC_SetupMouseoverTooltip()
     end
 
     local function AddPvPInfoToTooltip(tooltip, playerName)
-        if HasKillsLineInTooltip(tooltip) then
-            return
-        end
-
         local kills = PSC_GetTotalsKillsForPlayer(playerName)
         local deaths = GetDeathsByPlayerName(playerName)
         local lastKill = GetLastKillTimestamp(playerName)
