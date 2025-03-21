@@ -68,20 +68,29 @@ local function CreateKillstreakMilestoneFrameIfNeeded()
     if killStreakMilestoneFrame then return killStreakMilestoneFrame end
 
     local frame = CreateFrame("Frame", "PSC_MilestoneFrame", UIParent)
-    frame:SetSize(400, 200)
-    frame:SetPoint("TOP", 0, -60)
+    local sizeX, sizeY = 140, 140
+    frame:SetSize(sizeX, sizeY)
+    frame:SetPoint("TOP", 0, -10)
     frame:SetFrameStrata("HIGH")
+    frame:SetMovable(true)
+    frame:SetClampedToScreen(true)
+    frame:EnableMouse(true)  -- Allow the frame to receive mouse input
+
+    -- Set up the drag functionality
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
 
     local icon = frame:CreateTexture("PSC_MilestoneIcon", "ARTWORK")
-    icon:SetSize(200, 200)
+    icon:SetSize(sizeX, sizeY)
     icon:SetPoint("TOP", 0, 0)
     icon:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
     frame.icon = icon
 
     local text = frame:CreateFontString("PSC_MilestoneText", "OVERLAY", "SystemFont_Huge1")
-    text:SetPoint("TOP", icon, "BOTTOM", 0, -10)
+    text:SetPoint("TOP", icon, "BOTTOM", 0, -5)
     text:SetTextColor(1, 0, 0)
-    text:SetTextHeight(30)
+    text:SetTextHeight(25)
     frame.text = text
 
     frame:Hide()
@@ -106,7 +115,7 @@ function ShowKillStreakMilestone(killCount)
     frame:Show()
     frame:SetAlpha(0)
 
-    local animGroup = SetupKillstreakMilestoneAnimation(frame, 9.0)
+    local animGroup = SetupKillstreakMilestoneAnimation(frame, 8.0)
     PlayKillstreakMilestoneSound()
     DoEmote("CHEER")
     animGroup:Play()

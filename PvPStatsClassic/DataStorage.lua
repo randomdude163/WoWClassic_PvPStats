@@ -87,11 +87,20 @@ function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
     PSC_DB.PlayerInfoCache[name].gender = gender
     PSC_DB.PlayerInfoCache[name].guild = guildName
     PSC_DB.PlayerInfoCache[name].rank = rank
+    -- if PSC_Debug then
+    --     print("Stored player info: " .. name .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
+    -- end
 end
 
 function PSC_GetAndStorePlayerInfoFromUnit(unit)
+    if not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then
+        return
+    end
     local name, level, class, race, gender, guildName, rank = GetPlayerInfoFromUnit(unit)
     if not name or not level or not class or not race or not gender or not guildName or not rank then
+        if PSC_Debug then
+            print("Incomplete player info for unit: " .. unit)
+        end
         return
     end
     PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)

@@ -100,7 +100,9 @@ function HandlePlayerDeath()
 
     local killerInfo = PSC_GetKillerInfoOnDeath()
     if killerInfo then
-        SendWarningIfKilledByHighLevelPlayer(killerInfo)
+        if not PSC_CurrentlyInBattleground then
+            SendWarningIfKilledByHighLevelPlayer(killerInfo)
+        end
         PSC_RegisterPlayerDeath(killerInfo)
     end
 end
@@ -307,9 +309,9 @@ local function HandleCombatLogEvent()
             -- end
             PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
         elseif IsPetGUID(sourceGUID) then
-            if PSC_Debug then
-                print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
-            end
+            -- if PSC_Debug then
+            --     print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
+            -- end
             PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
         end
     end

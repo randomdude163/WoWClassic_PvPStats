@@ -684,8 +684,6 @@ local function calculateStatistics()
 
     local charactersToProcess = GetCharactersToProcessForStatistics()
     for characterKey, characterData in pairs(charactersToProcess) do
-        print("Processing character: " .. characterKey)
-
         if characterKey == PSC_GetCharacterKey() then
             currentKillStreak = characterData.CurrentKillStreak
         end

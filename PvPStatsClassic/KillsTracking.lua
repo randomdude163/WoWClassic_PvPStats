@@ -144,6 +144,12 @@ end
 
 function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     local playerLevel = UnitLevel("player")
+    if not PSC_DB.PlayerInfoCache[playerName] then
+        if PSC_Debug then
+            print("Player not found in cache: " .. playerName .. ", ignoring kill.")
+        end
+        return
+    end
     local level = PSC_DB.PlayerInfoCache[playerName].level
     local nameWithLevel = playerName .. ":" .. level
     local characterKey = PSC_GetCharacterKey()
