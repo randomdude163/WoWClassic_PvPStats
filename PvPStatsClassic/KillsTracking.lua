@@ -26,7 +26,7 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
 
     killData.kills = killData.kills + 1
-    killData.lastKill = time() -- date("%Y-%m-%d %H:%M:%S")
+    killData.lastKill = time()
     killData.playerLevel = playerLevel
     killData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
@@ -172,8 +172,9 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
 
     AnnounceKill(playerName, level, nameWithLevel, playerLevel)
 
-    if (killData.kills == 1 and PSC_DB.ShowMilestoneForFirstKill) or killData.kills >= 2 then
-        PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[playerName].class, playerRank, killData.kills)
+    local totalKills = PSC_GetTotalsKillsForPlayer(playerName)
+    if (totalKills == 1 and PSC_DB.ShowMilestoneForFirstKill) or totalKills >= 2 then
+        PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[playerName].class, playerRank, totalKills)
     end
 end
 

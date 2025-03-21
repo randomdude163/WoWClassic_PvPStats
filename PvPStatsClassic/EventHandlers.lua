@@ -398,7 +398,7 @@ function PSC_CheckBattlegroundStatus()
     PSC_CurrentlyInBattleground = false
 end
 
-local function GetKillsByPlayerName(playerName)
+function PSC_GetTotalsKillsForPlayer(playerName)
     local total_kills = 0
     for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts.Characters[PSC_GetCharacterKey()].Kills) do
         local storedName = nameWithLevel:match("^(.+):")
@@ -469,7 +469,7 @@ function PSC_SetupMouseoverTooltip()
             return
         end
 
-        local kills = GetKillsByPlayerName(playerName)
+        local kills = PSC_GetTotalsKillsForPlayer(playerName)
         local deaths = GetDeathsByPlayerName(playerName)
         local lastKill = GetLastKillTimestamp(playerName)
 
