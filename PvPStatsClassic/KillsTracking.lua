@@ -77,21 +77,17 @@ local function UpdateMultiKill()
     end
 
     local characterKey = PSC_GetCharacterKey()
-    local highestMultiKill = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
+    local highestMultiKillAlias = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
 
-    if PSC_MultiKillCount > highestMultiKill then
-        highestMultiKill = PSC_MultiKillCount
+    if PSC_MultiKillCount > highestMultiKillAlias then
+        PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill = PSC_MultiKillCount
 
-        if highestMultiKill > 1 then
-
-
-            if highestMultiKill >= 3 and PSC_DB.EnableRecordAnnounceMessages then
-                local newMultiKillRecordMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(highestMultiKill))
-                if IsInGroup() then
-                    SendChatMessage(newMultiKillRecordMsg, "PARTY")
-                else
-                    print(newMultiKillRecordMsg)
-                end
+        if highestMultiKillAlias >= 3 and PSC_DB.EnableRecordAnnounceMessages then
+            local newMultiKillRecordMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(highestMultiKillAlias))
+            if IsInGroup() then
+                SendChatMessage(newMultiKillRecordMsg, "PARTY")
+            else
+                print(newMultiKillRecordMsg)
             end
         end
     end
