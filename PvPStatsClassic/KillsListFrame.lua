@@ -580,20 +580,15 @@ local function CreateKillsCell(content, anchorTo, kills, width)
     return killsText
 end
 
-local function FormatLastKillDate(dateString)
-    if not dateString or dateString == "" then
+local function FormatLastKillDate(timestamp)
+    if not timestamp or timestamp == 0 then
         return ""
     end
 
-    local year, month, day, hour, min, sec = dateString:match("(%d+)-(%d+)-(%d+)%s+(%d+):(%d+):(%d+)")
-
-    if not year then
-        return dateString
-    end
-
-    local shortYear = year:sub(-2)
-    return string.format("%02d/%02d/%02s %02d:%02d:%02d", tonumber(day), tonumber(month), shortYear, tonumber(hour),
-        tonumber(min), tonumber(sec))
+    local dateInfo = date("*t", timestamp)
+    return string.format("%02d/%02d/%02d %02d:%02d:%02d",
+        dateInfo.day, dateInfo.month, dateInfo.year % 100,
+        dateInfo.hour, dateInfo.min, dateInfo.sec)
 end
 
 local function CreateLastKillCell(content, anchorTo, lastKill, width)

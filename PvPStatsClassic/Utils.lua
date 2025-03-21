@@ -142,3 +142,11 @@ function GetMultiKillText(count)
 
     return "Multi-kill of " .. count
 end
+
+function GetPlayerCoordinates()
+    local mapID = C_Map.GetBestMapForUnit("player")
+    local position = C_Map.GetPlayerMapPosition(mapID, "player")
+    local x = position.x * 100
+    local y = position.y * 100
+    return x, y
+end
