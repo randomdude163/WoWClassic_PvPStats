@@ -1,5 +1,5 @@
 
-# !!! Version 0.9 Release Candiate. Only for testing purposes !!!
+# !!! Version 1.0 Release Candiate. Only for testing purposes !!!
 This is a release candiate version meaning it has been tested and should be mostly bug-free. It can still have bugs, though! Please report them to Severussnipe or Hkfarmer \<Redridge Police\>.
 
 # PvP Stats (Classic)
