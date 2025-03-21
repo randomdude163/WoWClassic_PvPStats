@@ -548,7 +548,6 @@ function PSC_SetupMouseoverTooltip()
         local playerName = text:match("^Corpse of (.+)$")
         if not playerName then return end
 
-        print("Corpse of: " .. playerName)
         local kills = PSC_GetTotalsKillsForPlayer(playerName)
         local deaths = GetDeathsByPlayerName(playerName)
         if kills == nil or deaths == nil then return end
