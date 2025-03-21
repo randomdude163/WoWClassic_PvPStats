@@ -70,7 +70,7 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     else
         playerPosition =  playerCoords
     end
-    local warningMsg = "Warning: I got killed by " .. killerName .. " (Level ?? " .. killerClass .. ") at " .. playerPosition .. "!"
+    local warningMsg = "I got killed by " .. killerName .. " (Level ?? " .. killerClass .. ") at " .. playerPosition .. "!"
     SendChatMessage(warningMsg, "PARTY")
 end
 
