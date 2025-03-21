@@ -811,8 +811,14 @@ local function createSummaryStats(parent, x, y, width, height)
 
     local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
     local highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat across all characters."
-    local highestKillStreakValueText = tostring(stats.highestKillStreak) .. " (" .. stats.highestKillStreakCharacter .. ")"
-    local highestMultiKillValueText = tostring(stats.highestMultiKill) .. " (" .. stats.highestMultiKillCharacter .. ")"
+    local highestKillStreakValueText = tostring(stats.highestKillStreak)
+    if stats.highestKillStreak > 0 then
+        highestKillStreakValueText = highestKillStreakValueText .. " (" .. stats.highestKillStreakCharacter .. ")"
+    end
+    local highestMultiKillValueText = tostring(stats.highestMultiKill)
+    if stats.highestMultiKill > 0 then
+        highestMultiKillValueText = highestMultiKillValueText .. " (" .. stats.highestMultiKillCharacter .. ")"
+    end
     if not PSC_DB.ShowAccountWideStats then
         highestKillStreakTooltip = "The highest kill streak you achieved on this character."
         highestKillStreakValueText = tostring(stats.highestKillStreak)
