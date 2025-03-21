@@ -2,8 +2,8 @@
 # !!! Version 0.9 Release Candiate. Only for testing purposes !!!
 This is a release candiate version meaning it has been tested and should be mostly bug-free. It can still have bugs, though! Please report them to Severussnipe or Hkfarmer \<Redridge Police\>.
 
-# PvP Stats Classic
-PvP Stats Classic tracks your PvP kills and provides detailed statistics and customizable notifications. Whether you're ganking in the open world or dominating BGs, this addon greatly enhances your PvP experience!
+# PvP Stats (Classic)
+PvP Stats tracks your PvP kills and provides detailed statistics and customizable notifications. Whether you're ganking in the open world or dominating BGs, this addon greatly enhances your PvP experience!
 
 ### Key Features:
 - **Kill Tracking**: Details of enemy players kills are stored: name, level, class, race, guild and PvP rank

@@ -57,7 +57,7 @@ end
 
 local function ShowResetStatsConfirmation()
     CreateAndShowStaticPopup("PSC_RESET_STATS",
-        "Are you sure you want to reset all kill statistics? This cannot be undone.", function()
+        "Are you sure you want to reset all kill/death statistics? This cannot be undone.", function()
             ResetAllStatsToDefault()
         end)
 end
@@ -69,7 +69,7 @@ end
 
 local function ShowResetDefaultsConfirmation()
     CreateAndShowStaticPopup("PSC_RESET_DEFAULTS",
-        "Are you sure you want to reset all settings to defaults? This will not affect your kill statistics. Forces a UI reload!",
+        "Are you sure you want to reset all settings to defaults? This will not affect your kill/death statistics. Forces a UI reload!",
         function()
             ResetAllSettingsToDefault()
         end)
@@ -218,16 +218,13 @@ local function CreateAnnouncementSection(parent, yOffset)
     autoBGModeCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Auto Battleground Mode")
-        GameTooltip:AddLine("Automatically detects when you enter battlegrounds.", 1, 1, 1, true)
-        GameTooltip:AddLine("In battlegrounds:", 1, 1, 1, true)
-        GameTooltip:AddLine("• Only your or your pet's killing blows count", 1, 1, 1, true)
-        GameTooltip:AddLine("• No messages are posted to group chat", 1, 1, 1, true)
+        GameTooltip:AddLine("When checked, BG mode will be automatically enabled if you enter a battleground. In BG Mode, kills are only counted if you get the killing blow and party chat announce messages are disabled.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     autoBGModeCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
-    local assistsInBGCheckbox, _ = CreateCheckbox(parent, "Count assist kills in Battleground Mode",
+    local assistsInBGCheckbox, _ = CreateCheckbox(parent, "Count assist kills",
         PSC_DB.CountAssistsInBattlegrounds, function(checked)
             PSC_DB.CountAssistsInBattlegrounds = checked
         end)
@@ -236,9 +233,9 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     assistsInBGCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Count Assist Kills in Battlegrounds")
+        GameTooltip:AddLine("Count assist kills in Battleground Mode")
         GameTooltip:AddLine(
-            "Kills count if you damaged a player or cast harmful spells like Purge or Hunter's Mark and someone else does the killing blow.",
+            "Kills are counted count if you damage a player or cast harmful spells on them and someone else does the killing blow.",
             1, 1, 1, true)
         GameTooltip:Show()
     end)
@@ -246,21 +243,55 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local manualBGModeCheckbox, _ = CreateCheckbox(parent, "Force Enable Battleground Mode",
+    local forceEnableBGModeCheckbox, _ = CreateCheckbox(parent, "Force enable",
         PSC_DB.ForceBattlegroundMode, function(checked)
             PSC_DB.ForceBattlegroundMode = checked
             PSC_CheckBattlegroundStatus()
         end)
-    manualBGModeCheckbox:SetPoint("TOPLEFT", assistsInBGCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
-    parent.manualBGModeCheckbox = manualBGModeCheckbox
+    forceEnableBGModeCheckbox:SetPoint("TOPLEFT", assistsInBGCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
+    parent.manualBGModeCheckbox = forceEnableBGModeCheckbox
 
-    manualBGModeCheckbox:SetScript("OnEnter", function(self)
+    forceEnableBGModeCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Force Battleground Mode")
-        GameTooltip:AddLine("Enable battleground mode until you turn it off again.", 1, 1, 1, true)
+        GameTooltip:AddLine("Force enable Battleground Mode")
+        GameTooltip:AddLine("Enable BG mode until you turn it off again.", 1, 1, 1, false)
         GameTooltip:Show()
     end)
-    manualBGModeCheckbox:SetScript("OnLeave", function()
+    forceEnableBGModeCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local trackBGKillsCheckbox, _ = CreateCheckbox(parent, "Count kills in battlegrounds",
+        PSC_DB.TrackKillsInBattlegrounds, function(checked)
+            PSC_DB.TrackKillsInBattlegrounds = checked
+        end)
+    trackBGKillsCheckbox:SetPoint("TOPLEFT", assistsInBGCheckbox, "TOPLEFT", 260, 0)
+    parent.trackBGKillsCheckbox = trackBGKillsCheckbox
+
+    trackBGKillsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Count kills in battlegrounds")
+        GameTooltip:AddLine("When unchecked, kills in battlegrounds won't be counted at all.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    trackBGKillsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local trackBGDeathsCheckbox, _ = CreateCheckbox(parent, "Count deaths in battlegrounds",
+        PSC_DB.TrackDeathsInBattlegrounds, function(checked)
+            PSC_DB.TrackDeathsInBattlegrounds = checked
+        end)
+    trackBGDeathsCheckbox:SetPoint("TOPLEFT", trackBGKillsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.trackBGDeathsCheckbox = trackBGDeathsCheckbox
+
+    trackBGDeathsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Count deaths in battlegrounds")
+        GameTooltip:AddLine("When unchecked, deaths in battlegrounds won't be counted at all.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    trackBGDeathsCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
 
@@ -275,20 +306,31 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     showKillMilestonesCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Kill Milestone")
-        GameTooltip:AddLine("Shows movable notification for kill milestones.", 1, 1, 1, true)
+        GameTooltip:AddLine("Show kill milestones")
+        GameTooltip:AddLine("Show a notification when you reach a certain number of kills for the same player.", 1, 1, 1, true)
+        GameTooltip:AddLine("You can move the notificatin frame using drag and drop.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     showKillMilestonesCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
 
-    local killMilestoneSoundsCheckbox, _ = CreateCheckbox(parent, "Play milestone sound effects",
+    local killMilestoneSoundsCheckbox, _ = CreateCheckbox(parent, "Play milestone sound effect",
         PSC_DB.EnableKillMilestoneSounds, function(checked)
             PSC_DB.EnableKillMilestoneSounds = checked
         end)
     killMilestoneSoundsCheckbox:SetPoint("TOPLEFT", showKillMilestonesCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
     parent.killMilestoneSoundsCheckbox = killMilestoneSoundsCheckbox
+
+    killMilestoneSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play milestone sound effect")
+        GameTooltip:AddLine("Play a sound effect when a kill milestone notification is shown.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    killMilestoneSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     local showMilestoneForFirstKillCheckbox, _ = CreateCheckbox(parent, "Show milestone for first kill",
         PSC_DB.ShowMilestoneForFirstKill, function(checked)
@@ -300,8 +342,8 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     showMilestoneForFirstKillCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Show First Kill Milestones")
-        GameTooltip:AddLine("When checked, you'll see a notification for your first kill of each player.", 1, 1, 1, true)
+        GameTooltip:AddLine("Show milestone for first kill")
+        GameTooltip:AddLine("When checked, show a notification for your first kill of a player.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     showMilestoneForFirstKillCheckbox:SetScript("OnLeave", function()
@@ -387,24 +429,34 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -460)
 
-    local enableKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
+    local enableMultiKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
         PSC_DB.EnableMultiKillSounds, function(checked)
             PSC_DB.EnableMultiKillSounds = checked
         end)
-    enableKillSoundsCheckbox:SetPoint("TOPLEFT", generalSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.enableKillSoundsCheckbox = enableKillSoundsCheckbox
+    enableMultiKillSoundsCheckbox:SetPoint("TOPLEFT", generalSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.enableKillSoundsCheckbox = enableMultiKillSoundsCheckbox
 
-    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show kills in mouseover tooltips",
+    enableMultiKillSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enable multi-kill sound effects")
+        GameTooltip:AddLine("Play Leage of Legends multi-kill sounds when you achieve a multi-kill.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableMultiKillSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show score in mouseover tooltips",
         PSC_DB.ShowTooltipKillInfo, function(checked)
             PSC_DB.ShowTooltipKillInfo = checked
         end)
-    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", enableKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
 
     tooltipKillInfoCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Enemy Player Tooltips")
-        GameTooltip:AddLine("Shows how often you killed players while you mouseover them.", 1, 1, 1, true)
+        GameTooltip:AddLine("Show score in mouseover tooltips")
+        GameTooltip:AddLine("Show kills and losses for an enemy player in the mouseover tooltip.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     tooltipKillInfoCheckbox:SetScript("OnLeave", function()
@@ -420,46 +472,12 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     showAccountWideStatsCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Show Account-Wide Statistics")
-        GameTooltip:AddLine("When checked, statistics will include kills from all your characters.", 1, 1, 1, true)
-        GameTooltip:AddLine("When unchecked, only shows kills from your current character.", 1, 1, 1, true)
+        GameTooltip:AddLine("Show account-wide statistics")
+        GameTooltip:AddLine("When checked, the addon will use data from all your characters for statistics calculation and in the kills list.", 1, 1, 1, true)
+        GameTooltip:AddLine("When unchecked, only data from your current character will be used.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     showAccountWideStatsCheckbox:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-
-    local trackBGKillsCheckbox, _ = CreateCheckbox(parent, "Track kills in battlegrounds",
-        PSC_DB.TrackKillsInBattlegrounds, function(checked)
-            PSC_DB.TrackKillsInBattlegrounds = checked
-        end)
-    trackBGKillsCheckbox:SetPoint("TOPLEFT", enableKillSoundsCheckbox, "TOPLEFT", 300, 0)
-    parent.trackBGKillsCheckbox = trackBGKillsCheckbox
-
-    trackBGKillsCheckbox:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Track Kills in Battlegrounds")
-        GameTooltip:AddLine("When unchecked, kills in battlegrounds won't be counted at all.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    trackBGKillsCheckbox:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-
-    local trackBGDeathsCheckbox, _ = CreateCheckbox(parent, "Track deaths in battlegrounds",
-        PSC_DB.TrackDeathsInBattlegrounds, function(checked)
-            PSC_DB.TrackDeathsInBattlegrounds = checked
-        end)
-    trackBGDeathsCheckbox:SetPoint("TOPLEFT", trackBGKillsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
-    parent.trackBGDeathsCheckbox = trackBGDeathsCheckbox
-
-    trackBGDeathsCheckbox:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Track Deaths in Battlegrounds")
-        GameTooltip:AddLine("When unchecked, deaths in battlegrounds won't be counted at all.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    trackBGDeathsCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
 
@@ -567,7 +585,7 @@ local function CreateMainFrame()
 
     tinsert(UISpecialFrames, "PSC_ConfigFrame")
 
-    frame.TitleText:SetText("PvP Stats Classic Settings")
+    frame.TitleText:SetText("PvP Stats Settings")
 
     return frame
 end
@@ -700,14 +718,14 @@ local function CreateTabSystem(parent)
     return tabFrames
 end
 
-local function CreateCopyableField(parent, label, text, anchorTo, yOffset)
+local function CreateCopyableField(parent, label, text, anchorTo, xOffset, yOffset)
     local labelText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    labelText:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, yOffset)
-    labelText:SetText(label .. ":")
+    labelText:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", xOffset, yOffset)
+    labelText:SetText(label)
 
     local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     editBox:SetAutoFocus(false)
-    editBox:SetSize(300, 20)
+    editBox:SetSize(285, 20)
     editBox:SetPoint("TOPLEFT", labelText, "TOPLEFT", labelText:GetStringWidth() + 10, 5)
     editBox:SetText(text)
     editBox:SetTextColor(0.3, 0.6, 1.0)
@@ -734,21 +752,21 @@ end
 local function CreateAboutTab(parent)
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOP", parent, "TOP", 0, -20)
-    header:SetText("PvP Stats Classic")
+    header:SetText("PvP Stats (Classic)")
     header:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
     local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     versionText:SetPoint("TOP", header, "BOTTOM", 0, -5)
-    versionText:SetText("Version: 0.9.0")
+    versionText:SetText("Version: 1.0")
     versionText:SetTextColor(1, 1, 1)
 
     local creditsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    creditsHeader:SetPoint("TOP", header, "BOTTOM", 0, -40)
+    creditsHeader:SetPoint("TOP", header, "BOTTOM", 0, -60)
     creditsHeader:SetText("Credits")
     creditsHeader:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
     local logo = parent:CreateTexture(nil, "ARTWORK")
-    logo:SetSize(220, 220)
+    logo:SetSize(240, 240)
     logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
     logo:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
 
@@ -761,7 +779,7 @@ local function CreateAboutTab(parent)
     local contentWidth = 300
     local creditsContainer = CreateFrame("Frame", nil, parent)
     creditsContainer:SetSize(contentWidth, 200)
-    creditsContainer:SetPoint("TOP", logo, "BOTTOM", 0, -10)
+    creditsContainer:SetPoint("TOP", logo, "BOTTOM", 29, -10)
 
     local devsLabel = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     devsLabel:SetPoint("TOPLEFT", creditsContainer, "TOPLEFT", 0, 0)
@@ -775,26 +793,39 @@ local function CreateAboutTab(parent)
     local andText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     andText:SetPoint("TOPLEFT", firstAuthorText, "TOPRIGHT", 5, 0)
     andText:SetText("&")
+    andText:SetTextColor(1, 1, 1) -- Set color to white
 
     local secondAuthorText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     secondAuthorText:SetPoint("TOPLEFT", andText, "TOPRIGHT", 5, 0)
     secondAuthorText:SetText("Hkfarmer")
     secondAuthorText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
 
-    local realmText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    realmText:SetPoint("TOPLEFT", devsLabel, "BOTTOMLEFT", 0, -15)
-    realmText:SetText("Realm: Spineshatter")
-
     local guildText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    guildText:SetPoint("TOPLEFT", realmText, "BOTTOMLEFT", 0, -10)
-    guildText:SetText("Guild: <Redridge Police>")
+    guildText:SetPoint("TOPLEFT", devsLabel, "BOTTOMLEFT", 0, -10)
+    guildText:SetText("Guild: ")
+    guildText:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
-    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact", "redridgepolice@outlook.com",
-        guildText, -20)
-    local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub",
-        "github.com/randomdude163/WoWClassic_PvPStats", contactLabel, -25)
-    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord", "https://discord.gg/ZBaN2xk5h3",
-        githubLabel, -25)
+    local guildNameText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    guildNameText:SetPoint("TOPLEFT", guildText, "TOPRIGHT", 0, 0)
+    guildNameText:SetText("<Redridge Police>")
+    guildNameText:SetTextColor(1, 1, 1) -- Set color to white
+
+    local realmText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    realmText:SetPoint("TOPLEFT", guildText, "BOTTOMLEFT", 0, -10)
+    realmText:SetText("Realm: ")
+    realmText:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
+
+    local realmNameText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    realmNameText:SetPoint("TOPLEFT", realmText, "TOPRIGHT", 0, 0)
+    realmNameText:SetText("Spineshatter (EU)")
+    realmNameText:SetTextColor(1, 1, 1) -- Set color to white
+
+    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord:", "https://discord.gg/ZBaN2xk5h3",
+        realmText, -60, -50)
+    local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub: ",
+        "github.com/randomdude163/WoWClassic_PvPStats", discordLabel, 0, -20)
+    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact:", "redridgepolice@outlook.com",
+        githubLabel, 0, -20)
 
     return parent
 end

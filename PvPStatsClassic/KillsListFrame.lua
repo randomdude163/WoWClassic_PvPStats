@@ -177,7 +177,7 @@ local function SetupLevelSearchBoxScripts(levelSearchBox)
 
     levelSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Level Filter")
+        GameTooltip:SetText("Level filter")
         GameTooltip:AddLine("Enter a single level (e.g. 60)", 1, 1, 1, true)
         GameTooltip:AddLine("Or a range (e.g. 30-40)", 1, 1, 1, true)
         GameTooltip:AddLine("Or ?? for unknown levels", 1, 1, 1, true)
@@ -188,14 +188,6 @@ local function SetupLevelSearchBoxScripts(levelSearchBox)
     levelSearchBox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
-end
-
-local function CreateLevelSearchLabel(parent, anchorTo)
-    local levelLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelLabel:SetPoint("LEFT", anchorTo, "RIGHT", 8, 0)
-    levelLabel:SetText("Level:")
-    levelLabel:SetTextColor(1, 0.82, 0)
-    return levelLabel
 end
 
 local function CleanupFrameElements(content)
@@ -788,14 +780,6 @@ local function CreateSearchBackground(parent)
     return searchBg
 end
 
-local function CreateSearchLabel(parent)
-    local searchLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    searchLabel:SetPoint("LEFT", parent, "LEFT", 8, 0)
-    searchLabel:SetText("Search Player/Guild:")
-    searchLabel:SetTextColor(1, 0.82, 0)
-    return searchLabel
-end
-
 local function CreateEditBox(parent, anchorTo)
     local searchBox = CreateFrame("EditBox", nil, parent)
     searchBox:SetSize(200, 20)
@@ -843,7 +827,7 @@ local function SetupSearchBoxScripts(searchBox)
 
     searchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Search")
+        GameTooltip:SetText("Player/Guild filter")
         GameTooltip:AddLine("Type to filter by player name or guild", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
@@ -900,7 +884,7 @@ local function SetupClassSearchBoxScripts(classSearchBox)
 
     classSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Class Filter")
+        GameTooltip:SetText("Class filter")
         GameTooltip:AddLine("Type to filter by class name", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
@@ -957,7 +941,7 @@ local function SetupRaceSearchBoxScripts(raceSearchBox)
 
     raceSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Race Filter")
+        GameTooltip:SetText("Race filter")
         GameTooltip:AddLine("Type to filter by race name", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
@@ -966,14 +950,6 @@ local function SetupRaceSearchBoxScripts(raceSearchBox)
     raceSearchBox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
-end
-
-local function CreateRaceSearchLabel(parent, anchorTo)
-    local raceLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    raceLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
-    raceLabel:SetText("Race:")
-    raceLabel:SetTextColor(1, 0.82, 0)
-    return raceLabel
 end
 
 local function CreateGenderSearchBox(parent, anchorTo)
@@ -1066,7 +1042,7 @@ local function SetupGenderSearchBoxScripts(genderSearchBox)
 
     genderSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Gender Filter")
+        GameTooltip:SetText("Gender filter")
         GameTooltip:AddLine("Type to filter by gender", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
@@ -1077,17 +1053,9 @@ local function SetupGenderSearchBoxScripts(genderSearchBox)
     end)
 end
 
-local function CreateGenderSearchLabel(parent, anchorTo)
-    local genderLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    genderLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
-    genderLabel:SetText("Gender:")
-    genderLabel:SetTextColor(1, 0.82, 0)
-    return genderLabel
-end
-
 local function CreateZoneSearchBox(parent, anchorTo)
     local zoneSearchBox = CreateFrame("EditBox", nil, parent)
-    zoneSearchBox:SetSize(130, 20)
+    zoneSearchBox:SetSize(140, 20)
     zoneSearchBox:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
     zoneSearchBox:SetAutoFocus(false)
     zoneSearchBox:SetMaxLetters(25)
@@ -1131,7 +1099,7 @@ local function SetupZoneSearchBoxScripts(zoneSearchBox)
 
     zoneSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Zone Filter")
+        GameTooltip:SetText("Zone filter")
         GameTooltip:AddLine("Type to filter by zone name", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
@@ -1140,14 +1108,6 @@ local function SetupZoneSearchBoxScripts(zoneSearchBox)
     zoneSearchBox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
-end
-
-local function CreateZoneSearchLabel(parent, anchorTo)
-    local zoneLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    zoneLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
-    zoneLabel:SetText("Zone:")
-    zoneLabel:SetTextColor(1, 0.82, 0)
-    return zoneLabel
 end
 
 local function CreateRankSearchBox(parent, anchorTo)
@@ -1203,7 +1163,7 @@ local function SetupRankSearchBoxScripts(rankSearchBox)
 
     rankSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Rank Filter")
+        GameTooltip:SetText("Rank filter")
         GameTooltip:AddLine("Enter a single rank (e.g. 8)", 1, 1, 1, true)
         GameTooltip:AddLine("Or a range (e.g. 5-10)", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
@@ -1213,14 +1173,6 @@ local function SetupRankSearchBoxScripts(rankSearchBox)
     rankSearchBox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
-end
-
-local function CreateRankSearchLabel(parent, anchorTo)
-    local rankLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    rankLabel:SetPoint("LEFT", anchorTo, "RIGHT", 5, 0)
-    rankLabel:SetText("Rank:")
-    rankLabel:SetTextColor(1, 0.82, 0)
-    return rankLabel
 end
 
 local function CreateSearchBar(frame)
@@ -1348,7 +1300,7 @@ local function CreateMainFrame()
     frame:RegisterForDrag("LeftButton")
 
     table.insert(UISpecialFrames, "PSC_KillStatsFrame")
-    local titleText = GetFrameTitleTextWithCharacterText("Player Kills List")
+    local titleText = GetFrameTitleTextWithCharacterText("Player Kills")
     frame.TitleText:SetText(titleText)
 
     return frame
@@ -1363,7 +1315,7 @@ function RefreshKillsListFrame()
         return
     end
 
-    local titleText = GetFrameTitleTextWithCharacterText("Player Kills List")
+    local titleText = GetFrameTitleTextWithCharacterText("Player Kills")
     PSC_KillsListFrame.TitleText:SetText(titleText)
 
     CleanupFrameElements(content)
