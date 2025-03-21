@@ -500,6 +500,9 @@ function PSC_SetupMouseoverTooltip()
     end
 
     local function AddPvPInfoToTooltip(tooltip, playerName, kills, deaths)
+        -- Check if we've already added PvP info to this tooltip
+        if tooltip.pvpStatsAdded then return end
+
         local lastKill = GetLastKillTimestamp(playerName)
         local scoreText = ""
 
@@ -519,6 +522,7 @@ function PSC_SetupMouseoverTooltip()
         end
 
         tooltip:AddLine(scoreText, 1, 1, 1)
+        tooltip.pvpStatsAdded = true
         tooltip:Show() -- Force refresh to show the new line
     end
 
@@ -560,6 +564,7 @@ function PSC_SetupMouseoverTooltip()
 
     -- The OnTooltipCleared event might fire too early, so we also use a small timer
     GameTooltip:HookScript("OnTooltipCleared", function(tooltip)
+        tooltip.pvpStatsAdded = nil  -- Reset the flag when tooltip is cleared
         C_Timer.After(0.01, function()
             if tooltip:IsShown() then
                 OnTooltipShow(tooltip)
