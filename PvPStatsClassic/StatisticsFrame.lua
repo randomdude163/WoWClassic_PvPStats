@@ -359,19 +359,19 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         GameTooltip:SetText(displayName)
 
         if titleType == "class" or titleType == "unknownLevelClass" then
-            GameTooltip:AddLine("Click to show all kills from this class", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills for this class", 1, 1, 1, true)
         elseif titleType == "zone" then
-            GameTooltip:AddLine("Click to show all kills from this zone", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills for this zone", 1, 1, 1, true)
         elseif titleType == "level" then
             if entry.key == "??" then
-                GameTooltip:AddLine("Click to show all unknown level kills", 1, 1, 1, true)
+                GameTooltip:AddLine("Click to show all kill for level ??", 1, 1, 1, true)
             else
-                GameTooltip:AddLine("Click to show all kills with this level", 1, 1, 1, true)
+                GameTooltip:AddLine("Click to show all kills for this level", 1, 1, 1, true)
             end
         elseif titleType == raceColors then
-            GameTooltip:AddLine("Click to show all kills from this race", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
         elseif titleType == genderColors then
-            GameTooltip:AddLine("Click to show all kills from this gender", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills for this gender", 1, 1, 1, true)
         end
 
         GameTooltip:Show()
@@ -529,7 +529,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     rowButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(guildName)
-        GameTooltip:AddLine("Click to show all kills from this guild", 1, 1, 1, true)
+        GameTooltip:AddLine("Click to show all kills for this guild", 1, 1, 1, true)
         GameTooltip:Show()
     end)
 
@@ -756,21 +756,26 @@ local function createSummaryStats(parent, x, y, width, height)
     local stats = calculateStatistics()
     local statY = -30
 
-    statY = addSummaryStatLine(container, "Total Player Kills:", stats.totalKills, statY)
-    statY = addSummaryStatLine(container, "Unique Players Killed:", stats.uniqueKills, statY)
-    statY = addSummaryStatLine(container, "Level ?? Kills:", stats.unknownLevelKills, statY)
-    statY = addSummaryStatLine(container, "Average Kill Level:", string.format("%.1f", stats.avgLevel), statY)
+    statY = addSummaryStatLine(container, "Total Player Kills:", stats.totalKills, statY,
+        "Total number of players you have killed.")
+    statY = addSummaryStatLine(container, "Unique Players Killed:", stats.uniqueKills, statY,
+        "Total number of unique players you have killed. Mlitple kills of the same player are counted only once.")
+    statY = addSummaryStatLine(container, "Level ?? Kills:", stats.unknownLevelKills, statY,
+        "Total number of times you have killed a level ?? player.")
+    statY = addSummaryStatLine(container, "Average Kill Level:", string.format("%.1f", stats.avgLevel), statY,
+        "Average level of players you have killed.")
 
     local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
                               (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
-    statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY)
+    statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY,
+        "Average level difference between you and the players you have killed.")
 
-    statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer),
-        statY)
+    statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
+        "Average number of kills per unique player.")
 
     local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
     statY = addSummaryStatLine(container, "Most Killed Player:", mostKilledText, statY,
-        "Click to filter kill list to show only kills of this player")
+        "Click to show all kills of this player")
 
     if stats.mostKilledPlayer ~= "None" then
         local tooltipFrame = container:GetChildren()
@@ -789,10 +794,11 @@ local function createSummaryStats(parent, x, y, width, height)
     end
 
     statY = addSummaryStatLine(container, "Current Kill Streak:", stats.currentKillStreak, statY,
-        "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
+        "Kill streaks persist through logouts and will only reset when you die or manually reset your statistics in the dddon settings.")
     statY = addSummaryStatLine(container, "Highest Kill Streak:", stats.highestKillStreak, statY,
-        "This record persists through logouts and can only be reset manually through the Reset tab in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Multi-Kill:", stats.highestMultiKill, statY)
+        "The highest kill streak you ever achieved.")
+    statY = addSummaryStatLine(container, "Highest Multi-Kill:", stats.highestMultiKill, statY,
+        "The highest number of kills you achieved while staying in combat.")
 
     return container
 end
