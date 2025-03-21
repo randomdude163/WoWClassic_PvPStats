@@ -624,7 +624,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     labelText:SetText(label)
 
     local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    valueText:SetPoint("TOPLEFT", 200, yPosition)
+    valueText:SetPoint("TOPLEFT", 150, yPosition)
     valueText:SetText(tostring(value))
 
     if tooltipText then
@@ -642,7 +642,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             GameTooltip:Hide()
         end)
 
-        if label == "Most Killed Player:" then
+        if label == "Most killed player:" then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
@@ -756,25 +756,25 @@ local function createSummaryStats(parent, x, y, width, height)
     local stats = calculateStatistics()
     local statY = -30
 
-    statY = addSummaryStatLine(container, "Total Player Kills:", stats.totalKills, statY,
+    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
         "Total number of players you have killed.")
-    statY = addSummaryStatLine(container, "Unique Players Killed:", stats.uniqueKills, statY,
+    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills, statY,
         "Total number of unique players you have killed. Mlitple kills of the same player are counted only once.")
-    statY = addSummaryStatLine(container, "Level ?? Kills:", stats.unknownLevelKills, statY,
+    statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills, statY,
         "Total number of times you have killed a level ?? player.")
-    statY = addSummaryStatLine(container, "Average Kill Level:", string.format("%.1f", stats.avgLevel), statY,
-        "Average level of players you have killed.")
 
+    statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - 15,
+        "Average level of players you have killed.")
+    statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
+        "Average number of kills per unique player.")
     local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
                               (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
-    statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY,
+    statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
         "Average level difference between you and the players you have killed.")
 
-    statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
-        "Average number of kills per unique player.")
 
     local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
-    statY = addSummaryStatLine(container, "Most Killed Player:", mostKilledText, statY,
+    statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - 15,
         "Click to show all kills of this player")
 
     if stats.mostKilledPlayer ~= "None" then
@@ -793,11 +793,11 @@ local function createSummaryStats(parent, x, y, width, height)
         end
     end
 
-    statY = addSummaryStatLine(container, "Current Kill Streak:", stats.currentKillStreak, statY,
+    statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - 15,
         "Kill streaks persist through logouts and will only reset when you die or manually reset your statistics in the dddon settings.")
-    statY = addSummaryStatLine(container, "Highest Kill Streak:", stats.highestKillStreak, statY,
+    statY = addSummaryStatLine(container, "Highest kill streak:", stats.highestKillStreak, statY,
         "The highest kill streak you ever achieved.")
-    statY = addSummaryStatLine(container, "Highest Multi-Kill:", stats.highestMultiKill, statY,
+    statY = addSummaryStatLine(container, "Highest multi-kill:", stats.highestMultiKill, statY,
         "The highest number of kills you achieved while staying in combat.")
 
     return container

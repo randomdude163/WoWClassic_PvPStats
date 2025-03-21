@@ -740,8 +740,8 @@ local function DisplayEntries(content, sortedEntries, startYOffset)
 
     if count == maxDisplayEntries and #sortedEntries > maxDisplayEntries then
         local moreText = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        moreText:SetPoint("TOPLEFT", 10, yOffset)
-        moreText:SetText("Showing " .. count .. " of " .. #sortedEntries .. " entries. Use search to narrow results.")
+        moreText:SetPoint("TOPLEFT", 10, yOffset - 10)
+        moreText:SetText("Showing " .. count .. " of " .. #sortedEntries .. " entries. Use the filters to narrow results.")
         moreText:SetTextColor(1, 0.7, 0)
         yOffset = yOffset - 20
     end
