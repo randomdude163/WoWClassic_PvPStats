@@ -680,23 +680,6 @@ local function calculateStatistics()
 
     local killsPerPlayer = {}
 
-    if not PSC_DB.PlayerKillCounts.Characters then
-        return {
-            totalKills = 0,
-            uniqueKills = 0,
-            unknownLevelKills = 0,
-            avgLevel = 0,
-            avgPlayerLevel = UnitLevel("player"),
-            avgLevelDiff = 0,
-            avgKillsPerPlayer = 0,
-            mostKilledPlayer = "None",
-            mostKilledCount = 0,
-            currentKillStreak = 0,
-            highestKillStreak = 0,
-            highestMultiKill = 0
-        }
-    end
-
     local charactersToProcess = GetCharactersToProcessForStatistics()
 
     for characterKey, characterData in pairs(charactersToProcess) do
@@ -748,7 +731,7 @@ local function calculateStatistics()
 
     local knownLevelKills = totalKills - unknownLevelKills
     local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
-    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData) or UnitLevel("player")
+    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData)
     local avgLevelDiff = avgPlayerLevel - avgLevel
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
@@ -757,7 +740,6 @@ local function calculateStatistics()
         uniqueKills = uniqueKills,
         unknownLevelKills = unknownLevelKills,
         avgLevel = avgLevel,
-        avgPlayerLevel = avgPlayerLevel,
         avgLevelDiff = avgLevelDiff,
         avgKillsPerPlayer = avgKillsPerPlayer,
         mostKilledPlayer = mostKilledPlayer or "None",
@@ -778,7 +760,6 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Unique Players Killed:", stats.uniqueKills, statY)
     statY = addSummaryStatLine(container, "Level ?? Kills:", stats.unknownLevelKills, statY)
     statY = addSummaryStatLine(container, "Average Kill Level:", string.format("%.1f", stats.avgLevel), statY)
-    statY = addSummaryStatLine(container, "Your Average Level:", string.format("%.1f", stats.avgPlayerLevel), statY)
 
     local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
                               (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
