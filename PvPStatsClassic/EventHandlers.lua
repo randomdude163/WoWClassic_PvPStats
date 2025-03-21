@@ -505,17 +505,17 @@ function PSC_SetupMouseoverTooltip()
         local lastKill = GetLastKillTimestamp(playerName)
 
         local scoreText
-        if kills > 0 or deaths > 0 then
-            scoreText = "Score " .. kills .. ":" .. deaths
+        scoreText = "Score " .. kills .. ":" .. deaths
 
+        if kills > 0 then
             local lastKillTimespan = FormatLastKillTimespan(lastKill)
             if lastKillTimespan then
                 scoreText = scoreText .. " - Last kill " .. lastKillTimespan .. " ago"
             end
-
-            tooltip:AddLine(scoreText, 1, 1, 1)
-            tooltip:Show() -- Force refresh to show the new line
         end
+
+        tooltip:AddLine(scoreText, 1, 1, 1)
+        tooltip:Show() -- Force refresh to show the new line
     end
 
     local function OnTooltipSetUnit(tooltip)
