@@ -1,6 +1,6 @@
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = true
+PSC_Debug = false
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
@@ -99,9 +99,7 @@ function HandlePlayerDeath()
     PSC_MultiKillCount = 0
     PSC_InCombat = false
 
-    if PSC_Debug then
-        print("You died! Kill streak reset.")
-    end
+    print("[PvPStats]: You died, kill streak reset.")
 
     if PSC_CurrentlyInBattleground and not PSC_DB.CountDeathsInBattlegrounds then
         if PSC_Debug then print("BG Mode: Death tracking disabled in battlegrounds") end
@@ -395,8 +393,8 @@ end
 
 function PSC_CheckBattlegroundStatus()
     if PSC_DB.ForceBattlegroundMode then
-        if PSC_Debug and not PSC_lastInBattlegroundValue then
-            print("PvPStatsClassic: Forced battleground mode enabled.")
+        if not PSC_lastInBattlegroundValue then
+            print("[PvPStats]: Forced battleground mode enabled.")
         end
         PSC_CurrentlyInBattleground = true
         PSC_lastInBattlegroundValue = true
@@ -408,14 +406,29 @@ function PSC_CheckBattlegroundStatus()
         "Warsong Gulch",
         "Arathi Basin",
         "Alterac Valley",
-        -- "Elwynn Forest",
+        "Elwynn Forest",
         -- "Duskwood"
     }
 
     for _, bgName in ipairs(battlegroundZones) do
         if (currentZone == bgName) then
-            if PSC_Debug and not PSC_lastInBattlegroundValue then
-                print("PvPStatsClassic: Entered battleground. Only your own killing blows will be tracked.")
+            if not PSC_lastInBattlegroundValue then
+                local msg = "[PvPStats]: Entered battleground. "
+                -- if PSC_DB.CountKillsInBattlegrounds then
+                --     msg = msg .. "Only your own killing blows "
+                --     if PSC_DB.CountAssistsInBattlegrounds then
+                --         msg = msg .. "and assists "
+                --     end
+                --     msg = msg .. "will be counted, "
+                -- else
+                --     msg = msg .. "No kills will be counted, "
+                -- end
+                -- if PSC_DB.CountDeathsInBattlegrounds then
+                --     msg = msg .. "deaths will be counted."
+                -- else
+                --     msg = msg .. "no deaths will be counted."
+                -- end
+                print(msg)
             end
             PSC_CurrentlyInBattleground = true
             PSC_lastInBattlegroundValue = true
@@ -423,8 +436,8 @@ function PSC_CheckBattlegroundStatus()
         end
     end
 
-    if PSC_Debug and PSC_lastInBattlegroundValue then
-        print("PvPStatsClassic: Left battleground. Normal kill tracking active.")
+    if PSC_lastInBattlegroundValue then
+        print("[PvPStats]: Left battleground.")
     end
     PSC_lastInBattlegroundValue = false
     PSC_CurrentlyInBattleground = false

@@ -87,7 +87,7 @@ local function UpdateMultiKill()
             if IsInGroup() then
                 SendChatMessage(newMultiKillRecordMsg, "PARTY")
             else
-                print(newMultiKillRecordMsg)
+                print("[PvPStats]: " .. newMultiKillRecordMsg)
             end
         end
     end

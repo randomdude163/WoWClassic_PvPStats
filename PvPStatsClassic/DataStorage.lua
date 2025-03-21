@@ -208,5 +208,5 @@ function ResetAllStatsToDefault()
     PSC_InitializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()
 
-    print("All statistics have been reset!")
+    print("[PvPStats]: All statistics have been reset!")
 end
