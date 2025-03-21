@@ -162,8 +162,10 @@ function PSC_LoadDefaultSettings()
     PSC_DB.MinimapButtonPosition = 195
 end
 
-local function initializePlayerKillCounts()
-    PSC_DB.PlayerKillCounts.Characters = {}
+function PSC_InitializePlayerKillCounts()
+    if not PSC_DB.PlayerKillCounts.Characters then
+        PSC_DB.PlayerKillCounts.Characters = {}
+    end
 
     local characterKey = PSC_GetCharacterKey()
     if not PSC_DB.PlayerKillCounts.Characters[characterKey] then
@@ -194,7 +196,7 @@ function ResetAllStatsToDefault()
     PSC_DB.PlayerKillCounts = {}
     PSC_DB.PvPLossCounts = {}
 
-    initializePlayerKillCounts()
+    PSC_InitializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()
 
     print("All statistics have been reset!")

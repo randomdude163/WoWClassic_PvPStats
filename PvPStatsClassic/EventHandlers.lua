@@ -329,6 +329,7 @@ function PSC_RegisterEvents()
                 PSC_LoadDefaultSettings()
                 ResetAllStatsToDefault()
             end
+            PSC_InitializePlayerKillCounts()
             PSC_InitializePlayerLossCounts()
             PSC_UpdateMinimapButtonPosition()
             PSC_SetupMouseoverTooltip()

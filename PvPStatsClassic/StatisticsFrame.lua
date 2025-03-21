@@ -675,24 +675,34 @@ local function calculateStatistics()
     local mostKilledPlayer = nil
     local mostKilledCount = 0
     local highestKillStreak = 0
+    local highestKillStreakCharacter = ""
     local currentKillStreak = 0
     local highestMultiKill = 0
+    local highestMultiKillCharacter = ""
 
     local killsPerPlayer = {}
 
     local charactersToProcess = GetCharactersToProcessForStatistics()
-
     for characterKey, characterData in pairs(charactersToProcess) do
-        if characterData.HighestKillStreak and characterData.HighestKillStreak > highestKillStreak then
-            highestKillStreak = characterData.HighestKillStreak
-        end
+        print("Processing character: " .. characterKey)
 
-        if characterData.CurrentKillStreak and characterData.CurrentKillStreak > currentKillStreak then
+        if characterKey == PSC_GetCharacterKey() then
             currentKillStreak = characterData.CurrentKillStreak
         end
 
-        if characterData.HighestMultiKill and characterData.HighestMultiKill > highestMultiKill then
+        if PSC_DB.ShowAccountWideStats then
+            if characterData.HighestKillStreak > highestKillStreak then
+                highestKillStreak = characterData.HighestKillStreak
+                highestKillStreakCharacter = characterKey
+            end
+
+            if characterData.HighestMultiKill > highestMultiKill then
+                highestMultiKill = characterData.HighestMultiKill
+                highestMultiKillCharacter = characterKey
+            end
+        else
             highestMultiKill = characterData.HighestMultiKill
+            highestKillStreak = characterData.HighestKillStreak
         end
 
         if characterData.Kills then
@@ -746,7 +756,9 @@ local function calculateStatistics()
         mostKilledCount = mostKilledCount,
         currentKillStreak = currentKillStreak,
         highestKillStreak = highestKillStreak,
-        highestMultiKill = highestMultiKill
+        highestMultiKill = highestMultiKill,
+        highestKillStreakCharacter = highestKillStreakCharacter,
+        highestMultiKillCharacter = highestMultiKillCharacter
     }
 end
 
@@ -769,7 +781,9 @@ local function createSummaryStats(parent, x, y, width, height)
     if stats.mostKilledPlayer ~= "None" then
         local tooltipFrame = container:GetChildren()
         for _, child in pairs({container:GetChildren()}) do
+---@diagnostic disable-next-line: undefined-field
             if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
+---@diagnostic disable-next-line: undefined-field
                 child:SetScript("OnMouseUp", function()
                     PSC_CreateKillStatsFrame()
                     C_Timer.After(0.05, function()
@@ -793,11 +807,20 @@ local function createSummaryStats(parent, x, y, width, height)
 
 
     statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - 15,
-        "Kill streaks persist through logouts and will only reset when you die or manually reset your statistics in the dddon settings.")
-    statY = addSummaryStatLine(container, "Highest kill streak:", stats.highestKillStreak, statY,
-        "The highest kill streak you ever achieved.")
-    statY = addSummaryStatLine(container, "Highest multi-kill:", stats.highestMultiKill, statY,
-        "The highest number of kills you achieved while staying in combat.")
+        "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.")
+
+    local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
+    local highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat across all characters."
+    local highestKillStreakValueText = tostring(stats.highestKillStreak) .. " (" .. stats.highestKillStreakCharacter .. ")"
+    local highestMultiKillValueText = tostring(stats.highestMultiKill) .. " (" .. stats.highestMultiKillCharacter .. ")"
+    if not PSC_DB.ShowAccountWideStats then
+        highestKillStreakTooltip = "The highest kill streak you achieved on this character."
+        highestKillStreakValueText = tostring(stats.highestKillStreak)
+        highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat on this character."
+        highestMultiKillValueText = tostring(stats.highestMultiKill)
+    end
+    statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
+    statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
     return container
 end

@@ -84,12 +84,11 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
     PSC_Print("Simulating combat log events for a death with " ..
         killerCount .. " killer(s) and " .. assistCount .. " assists...")
 
-    local randomNames, randomClass = GetTestPlayer()
+    local randomPlayer = PSC_GetRandomTestPlayer()
 
-    local mainKillerName = randomNames[math.random(#randomNames)]
+    local mainKillerName = randomPlayer.name
     local mainKillerGUID = "Player-0-" .. math.random(1000000)
-    local mainKillerClass = randomClass[math.random(#randomClass)]
-
+    local mainKillerClass = randomPlayer.class
     PSC_RecentDamageFromPlayers = {}
 
     local now = GetTime()
@@ -98,9 +97,11 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
 
     local assistList = {}
     for i = 1, assistCount do
-        local assistName = randomNames[math.random(#randomNames)]
+        local randomPlayer = PSC_GetRandomTestPlayer()
+        local assistName = randomPlayer.name
         while assistName == mainKillerName or tContains(assistList, assistName) do
-            assistName = randomNames[math.random(#randomNames)]
+            randomPlayer = PSC_GetRandomTestPlayer()
+            assistName = randomPlayer.name
         end
 
         local assistGUID = "Player-0-" .. math.random(1000000)
