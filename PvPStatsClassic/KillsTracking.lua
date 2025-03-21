@@ -43,7 +43,6 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
         table.insert(killData.killLocations, {
             x = x,
             y = y,
-            mapID = mapID,
             zone = killData.zone,
             timestamp = killData.lastKill,
             killNumber = killData.kills

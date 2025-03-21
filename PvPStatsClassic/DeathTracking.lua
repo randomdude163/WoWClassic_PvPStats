@@ -128,7 +128,6 @@ function PSC_RegisterPlayerDeath(killerInfo)
         table.insert(deathData.deathLocations, {
             x = x,
             y = y,
-            mapID = mapID,
             zone = deathData.zone,
             timestamp = deathData.lastDeath,
             deathNumber = deathData.deaths,

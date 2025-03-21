@@ -499,18 +499,22 @@ function PSC_SetupMouseoverTooltip()
         return PSC_DB.PvPLossCounts[characterKey].Deaths[playerName].deaths or 0
     end
 
-    local function AddPvPInfoToTooltip(tooltip, playerName)
-        local kills = PSC_GetTotalsKillsForPlayer(playerName)
-        local deaths = GetDeathsByPlayerName(playerName)
+    local function AddPvPInfoToTooltip(tooltip, playerName, kills, deaths)
         local lastKill = GetLastKillTimestamp(playerName)
+        local scoreText = ""
 
-        local scoreText
-        scoreText = "Score " .. kills .. ":" .. deaths
+        -- Basic format just shows kills
+        if not PSC_DB.ShowExtendedTooltipInfo then
+            scoreText = "Kills: " .. kills
+        else
+            -- Extended format shows kills:deaths ratio and time since last kill
+            scoreText = "Score " .. kills .. ":" .. deaths
 
-        if kills > 0 then
-            local lastKillTimespan = FormatLastKillTimespan(lastKill)
-            if lastKillTimespan then
-                scoreText = scoreText .. " - Last kill " .. lastKillTimespan .. " ago"
+            if kills > 0 then
+                local lastKillTimespan = FormatLastKillTimespan(lastKill)
+                if lastKillTimespan then
+                    scoreText = scoreText .. " - Last kill " .. lastKillTimespan .. " ago"
+                end
             end
         end
 
@@ -527,7 +531,9 @@ function PSC_SetupMouseoverTooltip()
         if not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then return end
 
         local playerName = UnitName(unit)
-        AddPvPInfoToTooltip(tooltip, playerName)
+        local kills = PSC_GetTotalsKillsForPlayer(playerName)
+        local deaths = GetDeathsByPlayerName(playerName)
+        AddPvPInfoToTooltip(tooltip, playerName, kills, deaths)
     end
 
     local function OnTooltipShow(tooltip)
@@ -542,6 +548,11 @@ function PSC_SetupMouseoverTooltip()
         local playerName = text:match("^Corpse of (.+)$")
         if not playerName then return end
 
+        print("Corpse of: " .. playerName)
+        local kills = PSC_GetTotalsKillsForPlayer(playerName)
+        local deaths = GetDeathsByPlayerName(playerName)
+        if kills == nil or deaths == nil then return end
+        if kills == 0 and deaths == 0 then return end
         AddPvPInfoToTooltip(tooltip, playerName)
     end
 

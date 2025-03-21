@@ -474,20 +474,37 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show score in mouseover tooltips",
+    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show kills in mouseover tooltips",
         PSC_DB.ShowScoreInPlayerTooltip, function(checked)
             PSC_DB.ShowScoreInPlayerTooltip = checked
         end)
-    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "TOPLEFT", 300, 0)
     parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
 
     tooltipKillInfoCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Show score in mouseover tooltips")
-        GameTooltip:AddLine("Show kills and losses for an enemy player in the mouseover tooltip, but only if you have at least once killed them or were killed by them.", 1, 1, 1, true)
+        GameTooltip:AddLine("Show kills in mouseover tooltips")
+        GameTooltip:AddLine("Show your kills of an enemy player in their mouseover tooltip.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     tooltipKillInfoCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local tooltipExtendedInfoCheckbox, _ = CreateCheckbox(parent, "Show deaths and time since last kill",
+        PSC_DB.ShowExtendedTooltipInfo or true, function(checked)
+            PSC_DB.ShowExtendedTooltipInfo = checked
+        end)
+    tooltipExtendedInfoCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.tooltipExtendedInfoCheckbox = tooltipExtendedInfoCheckbox
+
+    tooltipExtendedInfoCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show deaths and time since last kill")
+        GameTooltip:AddLine("When checked, tooltips will show your deaths against that player and time since your last kill. When unchecked, only the number of kills will be shown.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    tooltipExtendedInfoCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
 
@@ -495,19 +512,8 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.ShowAccountWideStats, function(checked)
             PSC_DB.ShowAccountWideStats = checked
         end)
-    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.showAccountWideStatsCheckbox = showAccountWideStatsCheckbox
-
-    showAccountWideStatsCheckbox:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Show account-wide statistics")
-        GameTooltip:AddLine("When checked, the addon will use data from all your characters for statistics calculation and in the kills list.", 1, 1, 1, true)
-        GameTooltip:AddLine("When unchecked, only data from your current character will be used.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    showAccountWideStatsCheckbox:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
 
     return 320
 end
@@ -627,6 +633,7 @@ function PSC_UpdateConfigUI()
     configFrame.assistsInBGCheckbox:SetChecked(PSC_DB.CountAssistsInBattlegrounds)
     configFrame.manualBGModeCheckbox:SetChecked(PSC_DB.ForceBattlegroundMode)
     configFrame.tooltipKillInfoCheckbox:SetChecked(PSC_DB.ShowScoreInPlayerTooltip)
+    configFrame.tooltipExtendedInfoCheckbox:SetChecked(PSC_DB.ShowExtendedTooltipInfo)
     configFrame.showKillMilestonesCheckbox:SetChecked(PSC_DB.ShowKillMilestones)
     configFrame.killMilestoneSoundsCheckbox:SetChecked(PSC_DB.EnableKillMilestoneSound)
     configFrame.showMilestoneForFirstKillCheckbox:SetChecked(PSC_DB.ShowMilestoneForFirstKill)
@@ -889,6 +896,7 @@ function PSC_CreateConfigFrame()
     configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
     configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
     configFrame.multiKillSlider = tabFrames[1].multiKillSlider
+    configFrame.tooltipExtendedInfoCheckbox = tabFrames[1].tooltipExtendedInfoCheckbox
 
     configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
 
