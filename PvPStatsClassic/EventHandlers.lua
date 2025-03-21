@@ -39,10 +39,21 @@ end
 
 local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     local killerName = killerInfo.killer.name
+
+    if not PSC_DB.PlayerInfoCache[killerName] then
+        if PSC_Debug then
+            print("Warning: Killer " .. killerName .. " not found in player info cache")
+        end
+        return
+    end
+
     local killerLevel = PSC_DB.PlayerInfoCache[killerName].level
     local killerClass = PSC_DB.PlayerInfoCache[killerName].class
 
-    if not killerLevel == -1 then
+    if killerLevel ~= -1 then
+        if PSC_Debug then
+            print("Not sending warning for " .. killerName .. ", level " .. killerLevel .. " (not ??)")
+        end
         return
     end
 
@@ -61,7 +72,6 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     end
     local warningMsg = "Warning: I got killed by " .. killerName .. " (Level ?? " .. killerClass .. ") at " .. playerPosition .. "!"
     SendChatMessage(warningMsg, "PARTY")
-
 end
 
 function HandlePlayerDeath()
