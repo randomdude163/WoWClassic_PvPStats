@@ -17,4 +17,5 @@ MinimapButton.lua
 SlashCommands.lua
 StatisticsFrame.lua
 Utils.lua
+TestData.lua
 PvPStatsClassic.lua

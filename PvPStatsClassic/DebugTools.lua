@@ -5,7 +5,7 @@ function PSC_DebugPetKills()
 
     HandleCombatLogEvent = function()
         local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
-              destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
+        destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
 
         originalHandler()
 
@@ -14,7 +14,8 @@ function PSC_DebugPetKills()
 
             if ownerGUID == PSC_PlayerGUID then
                 if combatEvent:find("_DAMAGE") or combatEvent == "SWING_DAMAGE" then
-                    local amount = combatEvent == "SWING_DAMAGE" and param1 or (combatEvent == "SPELL_DAMAGE" and param4 or 0)
+                    local amount = combatEvent == "SWING_DAMAGE" and param1 or
+                        (combatEvent == "SPELL_DAMAGE" and param4 or 0)
 
                     print("Pet damage to " .. destName .. ": " .. amount .. " damage")
 
@@ -34,7 +35,7 @@ function PSC_DebugPetKills()
             if petDamage then
                 print("*** DEATH DETECTED - " .. destName .. " ***")
                 print("This target was damaged by your pet " .. (petDamage.petName or "Unknown") ..
-                      " " .. string.format("%.6f", GetTime() - petDamage.timestamp) .. " seconds ago")
+                    " " .. string.format("%.6f", GetTime() - petDamage.timestamp) .. " seconds ago")
 
                 if CombatLogDestFlagsEnemyPlayer(destFlags) then
                     print("This was an enemy player kill!")
@@ -58,11 +59,11 @@ function PSC_DebugCombatLogEvents()
 
     HandleCombatLogEvent = function()
         local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
-              destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
+        destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
 
         -- Print out kill-related events
         if (combatEvent == "UNIT_DIED" or combatEvent == "PARTY_KILL") and
-           bit.band(destFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER or 0) > 0 then
+            bit.band(destFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER or 0) > 0 then
             print("EVENT: " .. combatEvent)
             print("SOURCE: " .. (sourceName or "nil") .. " (" .. (sourceGUID or "nil") .. ")")
             print("TARGET: " .. (destName or "nil") .. " (" .. (destGUID or "nil") .. ")")
@@ -79,28 +80,15 @@ function PSC_DebugCombatLogEvents()
     end)
 end
 
-local function GetRandomTestData()
-    local randomNames = {
-        "Testplayer", "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter",
-        "Campmaster", "Roguenstein", "Sneakattack", "Huntard", "Faceroller"
-    }
-
-    local randomClass = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
-                         "SHAMAN", "MAGE", "WARLOCK", "DRUID"}
-
-    return randomNames, randomClass
-end
-
 function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
     PSC_Print("Simulating combat log events for a death with " ..
-              killerCount .. " killer(s) and " .. assistCount .. " assists...")
+        killerCount .. " killer(s) and " .. assistCount .. " assists...")
 
-    local randomNames, randomClass = GetRandomTestData()
+    local randomPlayer = PSC_GetRandomTestPlayer()
 
-    local mainKillerName = randomNames[math.random(#randomNames)]
+    local mainKillerName = randomPlayer.name
     local mainKillerGUID = "Player-0-" .. math.random(1000000)
-    local mainKillerClass = randomClass[math.random(#randomClass)]
-
+    local mainKillerClass = randomPlayer.class
     PSC_RecentDamageFromPlayers = {}
 
     local now = GetTime()
@@ -109,9 +97,11 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
 
     local assistList = {}
     for i = 1, assistCount do
-        local assistName = randomNames[math.random(#randomNames)]
+        local randomPlayer = PSC_GetRandomTestPlayer()
+        local assistName = randomPlayer.name
         while assistName == mainKillerName or tContains(assistList, assistName) do
-            assistName = randomNames[math.random(#randomNames)]
+            randomPlayer = PSC_GetRandomTestPlayer()
+            assistName = randomPlayer.name
         end
 
         local assistGUID = "Player-0-" .. math.random(1000000)
@@ -130,8 +120,7 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
         end
 
         PSC_Print("Death simulation complete! Killed by " .. mainKillerName ..
-                 " (" .. mainKillerClass .. ") - Total deaths to them: " .. deathCount)
-
+            " (" .. mainKillerClass .. ") - Total deaths to them: " .. deathCount)
     end
 end
 
@@ -169,8 +158,8 @@ function PSC_ShowDebugInfo()
         end
 
         PSC_Print("Total Deaths: " .. totalDeaths ..
-                 " (Solo: " .. totalSoloDeaths ..
-                 ", Group: " .. totalAssistDeaths .. ")")
+            " (Solo: " .. totalSoloDeaths ..
+            ", Group: " .. totalAssistDeaths .. ")")
     else
         PSC_Print("Total Deaths: 0")
     end
@@ -221,97 +210,22 @@ local function CreateKillDebugMessage(playerName, nameWithLevel, killerName, kil
     return debugMsg
 end
 
-function PSC_SimulatePlayerDeath()
-    PSC_Print("Simulating player death...")
-
-    if PSC_DB.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
-        local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", PSC_DB.CurrentKillStreak)
-        SendChatMessage(streakEndedMsg, "PARTY")
-    end
-
-    PSC_DB.CurrentKillStreak = 0
-    PSC_MultiKillCount = 0
-    PSC_InCombat = false
-    PSC_Print("Death simulated! Kill streak reset.")
-end
+local zones = {
+    "Stormwind City", "Orgrimmar", "Ironforge", "Thunder Bluff", "Darnassus", "Undercity",
+    "Elwynn Forest", "Durotar", "Mulgore", "Teldrassil", "Tirisfal Glades", "Westfall",
+    "Redridge Mountains", "Duskwood", "Stranglethorn Vale", "The Barrens", "Ashenvale",
+    "Alterac Mountains", "Arathi Highlands", "Badlands", "Blasted Lands", "Burning Steppes",
+    "Desolace", "Dustwallow Marsh", "Eastern Plaguelands", "Felwood", "Feralas",
+    "Hillsbrad Foothills", "Tanaris", "The Hinterlands", "Un'Goro Crater", "Western Plaguelands",
+    "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin", "Alterac Valley"
+}
 
 function PSC_SimulatePlayerKills(killCount)
-    PSC_Print("Registering " .. killCount .. " random test kill(s)...")
-
-    local randomNames = {
-        "Testplayer",
-        "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter", "Campmaster",
-        "Roguenstein", "Sneakattack", "Huntard", "Faceroller", "Dotspammer",
-        "Moonbender", "Healnoob", "Ragequitter", "Imbalanced", "Critmaster",
-        "Zerglord", "Epicfail", "Oneshot", "Griefer", "Farmville",
-        "Stunlock", "Procmaster", "Noobslayer", "Bodycamper", "Flagrunner"
-    }
-
-    local randomGuilds = {
-        "Gank Squad", "PvP Masters", "Corpse Campers", "World Slayers", "Honor Farmers",
-        "Rank Grinders", "Blood Knights", "Deadly Alliance", "Battleground Heroes", "Warsong Outlaws",
-        "Death and Taxes", "Tactical Retreat", "Shadow Dancers", "First Strike", "Elite Few",
-        "Kill on Sight", "No Mercy", "Rogues Do It", "Battlefield Legends", ""  -- Empty guild possible
-    }
-
-    local classes = {
-        "Warrior", "Paladin", "Hunter", "Rogue", "Priest",
-        "Shaman", "Mage", "Warlock", "Druid"
-    }
-
-    local races = {
-        "Human", "Dwarf", "Night Elf", "Gnome",
-    }
-
-    local genders = {"Male", "Female"}
-
-    -- Add random zones for testing
-    local randomZones = {
-        "Stormwind City", "Orgrimmar", "Ironforge", "Thunder Bluff", "Darnassus", "Undercity",
-        "Elwynn Forest", "Durotar", "Mulgore", "Teldrassil", "Tirisfal Glades", "Westfall",
-        "Redridge Mountains", "Duskwood", "Stranglethorn Vale", "The Barrens", "Ashenvale",
-        "Alterac Mountains", "Arathi Highlands", "Badlands", "Blasted Lands", "Burning Steppes",
-        "Desolace", "Dustwallow Marsh", "Eastern Plaguelands", "Felwood", "Feralas",
-        "Hillsbrad Foothills", "Tanaris", "The Hinterlands", "Un'Goro Crater", "Western Plaguelands",
-        "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin", "Alterac Valley"
-    }
-
     for i = 1, killCount do
-        local randomName = randomNames[math.random(#randomNames)]
-        local randomGuild = randomGuilds[math.random(#randomGuilds)]
-        local randomClass = classes[math.random(#classes)]
-        local randomRace = races[math.random(#races)]
-        local randomGender = genders[math.random(#genders)]
-        local randomZone = randomZones[math.random(#randomZones)]
-
-        local randomLevel = math.min(60, math.floor(math.random() * math.random() * 60) + 1)
-        if math.random(100) <= 15 then  -- 15% chance for unknown level
-            randomLevel = -1
-        end
-
-        -- Generate random rank (0-14)
-        -- Higher chance for lower ranks, lower chance for high ranks
-        local rankChance = math.random(100)
-        local randomRank = 0
-
-        if rankChance <= 40 then
-            -- 40% chance for rank 0 (no rank)
-            randomRank = 0
-        elseif rankChance <= 70 then
-            -- 30% chance for ranks 1-4 (Private to Master Sergeant)
-            randomRank = math.random(1, 4)
-        elseif rankChance <= 90 then
-            -- 20% chance for ranks 5-8 (Sergeant Major to Knight-Captain)
-            randomRank = math.random(5, 8)
-        elseif rankChance <= 98 then
-            -- 8% chance for ranks 9-12 (Knight-Champion to Marshal)
-            randomRank = math.random(9, 12)
-        else
-            -- 2% chance for ranks 13-14 (Field Marshal and Grand Marshal)
-            randomRank = math.random(13, 14)
-        end
+        local testPlayer = PSC_GetRandomTestPlayer()
 
         -- Temporarily override GetRealZoneText to return our random zone
+        local randomZone = zones[math.random(#zones)]
         local originalGetRealZoneText = GetRealZoneText
         GetRealZoneText = function() return randomZone end
 
@@ -320,22 +234,23 @@ function PSC_SimulatePlayerKills(killCount)
 
         -- Override C_Map.GetPlayerMapPosition for this simulation
         local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
----@diagnostic disable-next-line: duplicate-set-field
+        ---@diagnostic disable-next-line: duplicate-set-field
         C_Map.GetPlayerMapPosition = function(mapID, unit)
-            return {x = randomX/100, y = randomY/100}
+            return { x = randomX / 100, y = randomY / 100 }
         end
 
         -- Register the kill with random data including rank
-        randomLevel = 60
-        PSC_StorePlayerInfo(randomName, randomLevel, randomClass, randomRace, randomGender, randomGuild, randomRank)
-        PSC_RegisterPlayerKill(randomName)
+        PSC_StorePlayerInfo(testPlayer.name, testPlayer.level, testPlayer.class,
+            testPlayer.race, testPlayer.gender, testPlayer.guildName,
+            testPlayer.rank)
+        PSC_RegisterPlayerKill(testPlayer.name)
 
         -- Restore the original functions
         C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
         GetRealZoneText = originalGetRealZoneText
     end
 
-    PSC_Print("Successfully registered " .. killCount .. " random test kill(s).")
+    PSC_Print("Registered " .. killCount .. " random test kill(s).")
 end
 
 function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
@@ -350,16 +265,7 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
         "Farmville", "Stunlock", "Procmaster", "Noobslayer", "Bodycamper"
     }
 
-    -- Generate random zone
-    local randomZones = {
-        "Stormwind City", "Ironforge", "Darnassus", "Westfall",
-        "Redridge Mountains", "Duskwood", "Stranglethorn Vale", "Ashenvale",
-        "Alterac Mountains", "Arathi Highlands", "Badlands", "Burning Steppes",
-        "Tanaris", "The Hinterlands", "Un'Goro Crater", "Western Plaguelands",
-        "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin"
-    }
-
-    local zone = randomZones[math.random(#randomZones)]
+    local zone = zones[math.random(#zones)]
 
     -- Override GetRealZoneText for this simulation
     local originalGetRealZoneText = GetRealZoneText
@@ -370,9 +276,9 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
     local randomX = 10.0 + (90.0 - 10.0) * math.random()
     local randomY = 10.0 + (90.0 - 10.0) * math.random()
 
----@diagnostic disable-next-line: duplicate-set-field
+    ---@diagnostic disable-next-line: duplicate-set-field
     C_Map.GetPlayerMapPosition = function(mapID, unit)
-        return {x = randomX/100, y = randomY/100}
+        return { x = randomX / 100, y = randomY / 100 }
     end
 
     -- Create a simulated killer info structure

@@ -359,19 +359,19 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         GameTooltip:SetText(displayName)
 
         if titleType == "class" or titleType == "unknownLevelClass" then
-            GameTooltip:AddLine("Click to show all kills from this class", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills for this class", 1, 1, 1, true)
         elseif titleType == "zone" then
-            GameTooltip:AddLine("Click to show all kills from this zone", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills for this zone", 1, 1, 1, true)
         elseif titleType == "level" then
             if entry.key == "??" then
-                GameTooltip:AddLine("Click to show all unknown level kills", 1, 1, 1, true)
+                GameTooltip:AddLine("Click to show all kill for level ??", 1, 1, 1, true)
             else
-                GameTooltip:AddLine("Click to show all kills with this level", 1, 1, 1, true)
+                GameTooltip:AddLine("Click to show all kills for this level", 1, 1, 1, true)
             end
         elseif titleType == raceColors then
-            GameTooltip:AddLine("Click to show all kills from this race", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
         elseif titleType == genderColors then
-            GameTooltip:AddLine("Click to show all kills from this gender", 1, 1, 1, true)
+            GameTooltip:AddLine("Click to show all kills for this gender", 1, 1, 1, true)
         end
 
         GameTooltip:Show()
@@ -529,7 +529,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     rowButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(guildName)
-        GameTooltip:AddLine("Click to show all kills from this guild", 1, 1, 1, true)
+        GameTooltip:AddLine("Click to show all kills for this guild", 1, 1, 1, true)
         GameTooltip:Show()
     end)
 
@@ -624,7 +624,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     labelText:SetText(label)
 
     local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    valueText:SetPoint("TOPLEFT", 200, yPosition)
+    valueText:SetPoint("TOPLEFT", 150, yPosition)
     valueText:SetText(tostring(value))
 
     if tooltipText then
@@ -642,7 +642,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             GameTooltip:Hide()
         end)
 
-        if label == "Most Killed Player:" then
+        if label == "Most killed player:" then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
@@ -675,41 +675,34 @@ local function calculateStatistics()
     local mostKilledPlayer = nil
     local mostKilledCount = 0
     local highestKillStreak = 0
+    local highestKillStreakCharacter = ""
     local currentKillStreak = 0
     local highestMultiKill = 0
+    local highestMultiKillCharacter = ""
 
     local killsPerPlayer = {}
 
-    if not PSC_DB.PlayerKillCounts.Characters then
-        return {
-            totalKills = 0,
-            uniqueKills = 0,
-            unknownLevelKills = 0,
-            avgLevel = 0,
-            avgPlayerLevel = UnitLevel("player"),
-            avgLevelDiff = 0,
-            avgKillsPerPlayer = 0,
-            mostKilledPlayer = "None",
-            mostKilledCount = 0,
-            currentKillStreak = 0,
-            highestKillStreak = 0,
-            highestMultiKill = 0
-        }
-    end
-
     local charactersToProcess = GetCharactersToProcessForStatistics()
-
     for characterKey, characterData in pairs(charactersToProcess) do
-        if characterData.HighestKillStreak and characterData.HighestKillStreak > highestKillStreak then
-            highestKillStreak = characterData.HighestKillStreak
-        end
+        print("Processing character: " .. characterKey)
 
-        if characterData.CurrentKillStreak and characterData.CurrentKillStreak > currentKillStreak then
+        if characterKey == PSC_GetCharacterKey() then
             currentKillStreak = characterData.CurrentKillStreak
         end
 
-        if characterData.HighestMultiKill and characterData.HighestMultiKill > highestMultiKill then
+        if PSC_DB.ShowAccountWideStats then
+            if characterData.HighestKillStreak > highestKillStreak then
+                highestKillStreak = characterData.HighestKillStreak
+                highestKillStreakCharacter = characterKey
+            end
+
+            if characterData.HighestMultiKill > highestMultiKill then
+                highestMultiKill = characterData.HighestMultiKill
+                highestMultiKillCharacter = characterKey
+            end
+        else
             highestMultiKill = characterData.HighestMultiKill
+            highestKillStreak = characterData.HighestKillStreak
         end
 
         if characterData.Kills then
@@ -748,7 +741,7 @@ local function calculateStatistics()
 
     local knownLevelKills = totalKills - unknownLevelKills
     local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
-    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData) or UnitLevel("player")
+    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData)
     local avgLevelDiff = avgPlayerLevel - avgLevel
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
@@ -757,14 +750,15 @@ local function calculateStatistics()
         uniqueKills = uniqueKills,
         unknownLevelKills = unknownLevelKills,
         avgLevel = avgLevel,
-        avgPlayerLevel = avgPlayerLevel,
         avgLevelDiff = avgLevelDiff,
         avgKillsPerPlayer = avgKillsPerPlayer,
         mostKilledPlayer = mostKilledPlayer or "None",
         mostKilledCount = mostKilledCount,
         currentKillStreak = currentKillStreak,
         highestKillStreak = highestKillStreak,
-        highestMultiKill = highestMultiKill
+        highestMultiKill = highestMultiKill,
+        highestKillStreakCharacter = highestKillStreakCharacter,
+        highestMultiKillCharacter = highestMultiKillCharacter
     }
 end
 
@@ -774,27 +768,22 @@ local function createSummaryStats(parent, x, y, width, height)
     local stats = calculateStatistics()
     local statY = -30
 
-    statY = addSummaryStatLine(container, "Total Player Kills:", stats.totalKills, statY)
-    statY = addSummaryStatLine(container, "Unique Players Killed:", stats.uniqueKills, statY)
-    statY = addSummaryStatLine(container, "Level ?? Kills:", stats.unknownLevelKills, statY)
-    statY = addSummaryStatLine(container, "Average Kill Level:", string.format("%.1f", stats.avgLevel), statY)
-    statY = addSummaryStatLine(container, "Your Average Level:", string.format("%.1f", stats.avgPlayerLevel), statY)
-
-    local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
-                              (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
-    statY = addSummaryStatLine(container, "Avg. Level Difference:", levelDiffText, statY)
-
-    statY = addSummaryStatLine(container, "Avg. Kills Per Player:", string.format("%.2f", stats.avgKillsPerPlayer),
-        statY)
-
+    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
+        "Total number of players you have killed.")
+    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills, statY,
+        "Total number of unique players you have killed. Mlitple kills of the same player are counted only once.")
+    statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills, statY,
+        "Total number of times you have killed a level ?? player.")
     local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
-    statY = addSummaryStatLine(container, "Most Killed Player:", mostKilledText, statY,
-        "Click to filter kill list to show only kills of this player")
+    statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - 15,
+        "Click to show all kills of this player")
 
     if stats.mostKilledPlayer ~= "None" then
         local tooltipFrame = container:GetChildren()
         for _, child in pairs({container:GetChildren()}) do
+---@diagnostic disable-next-line: undefined-field
             if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
+---@diagnostic disable-next-line: undefined-field
                 child:SetScript("OnMouseUp", function()
                     PSC_CreateKillStatsFrame()
                     C_Timer.After(0.05, function()
@@ -807,11 +796,31 @@ local function createSummaryStats(parent, x, y, width, height)
         end
     end
 
-    statY = addSummaryStatLine(container, "Current Kill Streak:", stats.currentKillStreak, statY,
-        "Kill streak will persist through logouts and will only reset when you die in PvP or manually reset your statistics in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Kill Streak:", stats.highestKillStreak, statY,
-        "This record persists through logouts and can only be reset manually through the Reset tab in the Addon Settings.")
-    statY = addSummaryStatLine(container, "Highest Multi-Kill:", stats.highestMultiKill, statY)
+    statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - 15,
+        "Average level of players you have killed.")
+    statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
+        "Average number of kills per unique player.")
+    local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
+                              (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
+    statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
+        "Average level difference between you and the players you have killed.")
+
+
+    statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - 15,
+        "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.")
+
+    local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
+    local highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat across all characters."
+    local highestKillStreakValueText = tostring(stats.highestKillStreak) .. " (" .. stats.highestKillStreakCharacter .. ")"
+    local highestMultiKillValueText = tostring(stats.highestMultiKill) .. " (" .. stats.highestMultiKillCharacter .. ")"
+    if not PSC_DB.ShowAccountWideStats then
+        highestKillStreakTooltip = "The highest kill streak you achieved on this character."
+        highestKillStreakValueText = tostring(stats.highestKillStreak)
+        highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat on this character."
+        highestMultiKillValueText = tostring(stats.highestMultiKill)
+    end
+    statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
+    statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
     return container
 end

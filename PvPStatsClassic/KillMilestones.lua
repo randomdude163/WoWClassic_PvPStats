@@ -180,7 +180,7 @@ function PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
     local animGroup = SetupKillstreakMilestoneAnimation(milestoneFrame, PSC_DB.KillMilestoneAutoHideTime)
     animGroup:Play()
 
-    if PSC_DB.EnableKillMilestoneSounds then
+    if PSC_DB.EnableKillMilestoneSound then
         PlaySound(8213) -- PVPFlagCapturedHorde
     end
 

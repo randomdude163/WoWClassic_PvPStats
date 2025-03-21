@@ -77,7 +77,7 @@ function HandlePlayerDeath()
         print("You died! Kill streak reset.")
     end
 
-    if PSC_CurrentlyInBattleground and not PSC_DB.TrackDeathsInBattlegrounds then
+    if PSC_CurrentlyInBattleground and not PSC_DB.CountDeathsInBattlegrounds then
         if PSC_Debug then print("BG Mode: Death tracking disabled in battlegrounds") end
         return
     end
@@ -149,7 +149,7 @@ end
 local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     local countKill = false
 
-    if PSC_CurrentlyInBattleground and not PSC_DB.TrackKillsInBattlegrounds then
+    if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
         if PSC_Debug then print("BG Mode: Kill tracking disabled in battlegrounds") end
         return
     end
@@ -186,7 +186,7 @@ local function HandleUnitDiedEvent(destGUID, destName)
         return
     end
 
-    if PSC_CurrentlyInBattleground and not PSC_DB.TrackKillsInBattlegrounds then
+    if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
         return
     end
 
@@ -329,6 +329,7 @@ function PSC_RegisterEvents()
                 PSC_LoadDefaultSettings()
                 ResetAllStatsToDefault()
             end
+            PSC_InitializePlayerKillCounts()
             PSC_InitializePlayerLossCounts()
             PSC_UpdateMinimapButtonPosition()
             PSC_SetupMouseoverTooltip()
@@ -398,7 +399,7 @@ function PSC_CheckBattlegroundStatus()
     PSC_CurrentlyInBattleground = false
 end
 
-local function GetKillsByPlayerName(playerName)
+function PSC_GetTotalsKillsForPlayer(playerName)
     local total_kills = 0
     for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts.Characters[PSC_GetCharacterKey()].Kills) do
         local storedName = nameWithLevel:match("^(.+):")
@@ -469,7 +470,7 @@ function PSC_SetupMouseoverTooltip()
             return
         end
 
-        local kills = GetKillsByPlayerName(playerName)
+        local kills = PSC_GetTotalsKillsForPlayer(playerName)
         local deaths = GetDeathsByPlayerName(playerName)
         local lastKill = GetLastKillTimestamp(playerName)
 
@@ -488,7 +489,7 @@ function PSC_SetupMouseoverTooltip()
     end
 
     local function OnTooltipSetUnit(tooltip)
-        if not PSC_DB.ShowTooltipKillInfo then return end
+        if not PSC_DB.ShowScoreInPlayerTooltip then return end
 
         local _, unit = tooltip:GetUnit()
         if not unit then return end

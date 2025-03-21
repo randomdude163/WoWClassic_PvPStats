@@ -34,8 +34,6 @@ function PSC_SlashCommandHandler(msg)
 
     if command == "" then
         PrintSlashCommandUsage()
-    elseif command == "death" then
-        PSC_SimulatePlayerDeath()
     elseif command == "simulatedeath" then
         local killerCount = 1
         local assistCount = 0
@@ -84,8 +82,6 @@ function PSC_SlashCommandHandler(msg)
             end
         end
         PSC_SimulatePlayerKills(testKillCount)
-    elseif command == "death" then
-        PSC_SimulatePlayerDeath()
     elseif command == "bgmode" then
         PSC_DB.ForceBattlegroundMode = not PSC_DB.ForceBattlegroundMode
         PSC_CheckBattlegroundStatus()

@@ -62,11 +62,11 @@ end)
 
 minimapButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    GameTooltip:AddLine("PvP Stats Classic")
+    GameTooltip:AddLine("PvP Stats (Classic)")
     GameTooltip:AddLine(" ")
     GameTooltip:AddLine("Left-Click: Statistics")
     GameTooltip:AddLine("Right-Click: Kills List")
-    GameTooltip:AddLine("Ctrl + Left-Click: Settings")
+    GameTooltip:AddLine("Ctrl+Left-Click: Settings")
     GameTooltip:Show()
 end)
 
