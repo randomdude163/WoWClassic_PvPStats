@@ -33,6 +33,33 @@ local function HandleCombatState(inCombatNow)
     end
 end
 
+local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
+    local killerName = killerInfo.killer.name
+    local killerLevel = PSC_DB.PlayerInfoCache[killerName].level
+    local killerClass = PSC_DB.PlayerInfoCache[killerName].class
+
+    if not killerLevel == -1 then
+        return
+    end
+
+    if not IsInGroup() then
+        return
+    end
+
+    local playerX, playerY = GetPlayerCoordinates()
+    local playerCoords = string.format("%.1f, %.1f", playerX, playerY)
+    local subZoneText = GetSubZoneText()
+    local playerPosition = ""
+    if subZoneText ~= "" then
+        playerPosition =  subZoneText .. "(" .. playerCoords .. ")"
+    else
+        playerPosition =  playerCoords
+    end
+    local warningMsg = "Warning: I got killed by " .. killerName .. " (Level ?? " .. killerClass .. ") at " .. playerPosition .. "!"
+    SendChatMessage(warningMsg, "PARTY")
+
+end
+
 function HandlePlayerDeath()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
@@ -46,13 +73,19 @@ function HandlePlayerDeath()
     PSC_MultiKillCount = 0
     PSC_InCombat = false
 
-    local killerInfo = PSC_GetKillerInfoOnDeath()
-    if killerInfo then
-        PSC_RegisterPlayerDeath(killerInfo)
-    end
-
     if PSC_Debug then
         print("You died! Kill streak reset.")
+    end
+
+    if PSC_CurrentlyInBattleground and not PSC_DB.TrackDeathsInBattlegrounds then
+        if PSC_Debug then print("BG Mode: Death tracking disabled in battlegrounds") end
+        return
+    end
+
+    local killerInfo = PSC_GetKillerInfoOnDeath()
+    if killerInfo then
+        SendWarningIfKilledByHighLevelPlayer(killerInfo)
+        PSC_RegisterPlayerDeath(killerInfo)
     end
 end
 
@@ -116,6 +149,11 @@ end
 local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     local countKill = false
 
+    if PSC_CurrentlyInBattleground and not PSC_DB.TrackKillsInBattlegrounds then
+        if PSC_Debug then print("BG Mode: Kill tracking disabled in battlegrounds") end
+        return
+    end
+
     -- print("Party Kill Event: " .. sourceName .. " (" .. sourceGUID .. ") killed " .. destName .. " (" .. destGUID .. ")")
     if PSC_CurrentlyInBattleground then
         if sourceGUID == PSC_PlayerGUID then
@@ -145,6 +183,10 @@ local function HandleUnitDiedEvent(destGUID, destName)
         -- if PSC_Debug then
         --     print("Skipping duplicate kill for: " .. destName)
         -- end
+        return
+    end
+
+    if PSC_CurrentlyInBattleground and not PSC_DB.TrackKillsInBattlegrounds then
         return
     end
 
@@ -287,9 +329,9 @@ function PSC_RegisterEvents()
                 PSC_LoadDefaultSettings()
                 ResetAllStatsToDefault()
             end
-
+            PSC_InitializePlayerLossCounts()
             PSC_UpdateMinimapButtonPosition()
-            PSC_SetupMouseoverTooltip() -- Add this line to call the tooltip setup
+            PSC_SetupMouseoverTooltip()
             PSC_InCombat = UnitAffectingCombat("player")
             PSC_CheckBattlegroundStatus()  -- Check BG status on login/reload
             if UnitIsDeadOrGhost("player") then
@@ -356,32 +398,93 @@ function PSC_CheckBattlegroundStatus()
     PSC_CurrentlyInBattleground = false
 end
 
+local function GetKillsByPlayerName(playerName)
+    local total_kills = 0
+    for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts.Characters[PSC_GetCharacterKey()].Kills) do
+        local storedName = nameWithLevel:match("^(.+):")
+        if storedName == playerName then
+            total_kills = total_kills + data.kills
+        end
+    end
+    return total_kills
+end
+
 function PSC_SetupMouseoverTooltip()
     local function HasKillsLineInTooltip(tooltip)
         for i = 1, tooltip:NumLines() do
             local line = _G[tooltip:GetName() .. "TextLeft" .. i]
-            if line and line:GetText() and line:GetText():find("^Kills: ") then
+            if line and line:GetText() and (line:GetText():find("^Kills: ") or line:GetText():find("^PvP Score")) then
                 return true
             end
         end
         return false
     end
 
-    local function AddKillsToTooltip(tooltip, kills)
-        if not HasKillsLineInTooltip(tooltip) then
-            tooltip:AddLine("Kills: " .. kills, 1, 1, 1)
-            tooltip:Show() -- Force refresh to show the new line
+    local function GetLastKillTimestamp(playerName)
+        local characterKey = PSC_GetCharacterKey()
+        local lastKill = 0
+
+        -- Find the most recent kill timestamp for this player (across different level entries)
+        for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts.Characters[characterKey].Kills) do
+            local storedName = nameWithLevel:match("^(.+):")
+            if storedName == playerName and data.lastKill and data.lastKill > lastKill then
+                lastKill = data.lastKill
+            end
+        end
+
+        return lastKill > 0 and lastKill or nil
+    end
+
+    local function FormatLastKillTimespan(lastKillTimestamp)
+        if not lastKillTimestamp then
+            return nil
+        end
+
+        local currentTime = time()
+        local timeDiff = currentTime - lastKillTimestamp
+
+        if timeDiff < 60 then
+            return format("%ds", timeDiff)
+        elseif timeDiff < 3600 then
+            return format("%dm", math.floor(timeDiff/60))
+        elseif timeDiff < 86400 then
+            return format("%dh", math.floor(timeDiff/3600))
+        else
+            return format("%dd", math.floor(timeDiff/86400))
         end
     end
 
-    local function GetKillsByPlayerName(playerName)
-        for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts) do
-            local storedName = nameWithLevel:match("^(.+):")
-            if storedName == playerName then
-                return data.kills
-            end
+    local function GetDeathsByPlayerName(playerName)
+        local characterKey = PSC_GetCharacterKey()
+        if not PSC_DB.PvPLossCounts or not PSC_DB.PvPLossCounts[characterKey] or
+           not PSC_DB.PvPLossCounts[characterKey].Deaths or not PSC_DB.PvPLossCounts[characterKey].Deaths[playerName] then
+            return 0
         end
-        return 0
+
+        return PSC_DB.PvPLossCounts[characterKey].Deaths[playerName].deaths or 0
+    end
+
+    local function AddPvPInfoToTooltip(tooltip, playerName)
+        if HasKillsLineInTooltip(tooltip) then
+            return
+        end
+
+        local kills = GetKillsByPlayerName(playerName)
+        local deaths = GetDeathsByPlayerName(playerName)
+        local lastKill = GetLastKillTimestamp(playerName)
+
+        local scoreText
+        if kills > 0 or deaths > 0 then
+            scoreText = "Score " .. kills .. ":" .. deaths
+
+            local lastKillTimespan = FormatLastKillTimespan(lastKill)
+            if lastKillTimespan then
+                scoreText = scoreText .. " - Last kill " .. lastKillTimespan .. " ago"
+            end
+
+            tooltip:AddLine(scoreText, 1, 1, 1)
+            tooltip:Show() -- Force refresh to show the new line
+        end
     end
 
     local function OnTooltipSetUnit(tooltip)
@@ -393,18 +496,9 @@ function PSC_SetupMouseoverTooltip()
         if not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then return end
 
         local playerName = UnitName(unit)
-        local playerLevel = UnitLevel(unit)
-        local nameWithLevel = playerName .. ":" .. playerLevel
-
-        local kills = 0
-        if PSC_DB.PlayerKillCounts[nameWithLevel] then
-            kills = PSC_DB.PlayerKillCounts[nameWithLevel].kills
-        end
-
-        AddKillsToTooltip(tooltip, kills)
+        AddPvPInfoToTooltip(tooltip, playerName)
     end
 
-    -- Handle corpse tooltips
     local function OnTooltipShow(tooltip)
         if not tooltip:IsShown() then return end
 
@@ -417,11 +511,7 @@ function PSC_SetupMouseoverTooltip()
         local playerName = text:match("^Corpse of (.+)$")
         if not playerName then return end
 
-        local kills = GetKillsByPlayerName(playerName)
-
-        if kills > 0 then
-            AddKillsToTooltip(tooltip, kills)
-        end
+        AddPvPInfoToTooltip(tooltip, playerName)
     end
 
     GameTooltip:HookScript("OnTooltipSetUnit", OnTooltipSetUnit)

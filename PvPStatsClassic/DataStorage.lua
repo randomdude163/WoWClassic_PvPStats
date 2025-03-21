@@ -131,6 +131,8 @@ function PSC_LoadDefaultSettings()
     PSC_DB.AutoBattlegroundMode = true
     PSC_DB.CountAssistsInBattlegrounds = true
     PSC_DB.ForceBattlegroundMode = false
+    PSC_DB.TrackKillsInBattlegrounds = true
+    PSC_DB.TrackDeathsInBattlegrounds = true
 
     PSC_DB.ShowTooltipKillInfo = true
 
@@ -174,8 +176,10 @@ local function initializePlayerKillCounts()
     end
 end
 
-local function initializePlayerLossCounts()
-    PSC_DB.PvPLossCounts = {}
+function PSC_InitializePlayerLossCounts()
+    if not PSC_DB.PvPLossCounts then
+        PSC_DB.PvPLossCounts = {}
+    end
 
     local characterKey = PSC_GetCharacterKey()
     if not PSC_DB.PvPLossCounts[characterKey] then
@@ -191,7 +195,7 @@ function ResetAllStatsToDefault()
     PSC_DB.PvPLossCounts = {}
 
     initializePlayerKillCounts()
-    initializePlayerLossCounts()
+    PSC_InitializePlayerLossCounts()
 
     print("All kill statistics have been reset!")
 end

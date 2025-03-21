@@ -79,6 +79,11 @@ function PSC_GetKillerInfoOnDeath()
 end
 
 function PSC_RegisterPlayerDeath(killerInfo)
+    if PSC_CurrentlyInBattleground and not PSC_DB.TrackDeathsInBattlegrounds then
+        if PSC_Debug then print("BG Mode: Death tracking disabled in battlegrounds") end
+        return
+    end
+
     local characterKey = PSC_GetCharacterKey()
 
     local lossData = PSC_DB.PvPLossCounts[characterKey]

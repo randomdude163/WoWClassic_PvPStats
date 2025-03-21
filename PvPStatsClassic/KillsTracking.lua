@@ -26,7 +26,7 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
 
     killData.kills = killData.kills + 1
-    killData.lastKill = date("%Y-%m-%d %H:%M:%S")
+    killData.lastKill = time() -- date("%Y-%m-%d %H:%M:%S")
     killData.playerLevel = playerLevel
     killData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
@@ -105,14 +105,7 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
 
     if string.find(killMessage, "x#") then
-        if killData.kills >= 2 then
-            killMessage = string.gsub(killMessage, "x#", "x" .. killData.kills)
-        else
-            killMessage = string.gsub(killMessage, "x#", "")
-            killMessage = string.gsub(killMessage, "%s+$", "")
-        end
-    elseif killData.kills >= 2 then
-        killMessage = killMessage .. " x" .. killData.kills
+        killMessage = string.gsub(killMessage, "x#", "x" .. killData.kills)
     end
 
     local levelDifference = level - playerLevel
@@ -129,9 +122,27 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
 
     SendChatMessage(killMessage, "PARTY")
 
-    -- Only announce multi-kills if the option is enabled
     if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold and PSC_DB.EnableMultiKillAnnounceMessages then
         SendChatMessage(GetMultiKillText(PSC_MultiKillCount), "PARTY")
+    end
+end
+
+local function FormatTimeSinceLastKill(lastKillTimestamp)
+    if not lastKillTimestamp or lastKillTimestamp == 0 then
+        return nil
+    end
+
+    local currentTime = time()
+    local timeDiff = currentTime - lastKillTimestamp
+
+    if timeDiff < 60 then
+        return format("%d seconds", timeDiff)
+    elseif timeDiff < 3600 then
+        return format("%d minutes", math.floor(timeDiff/60))
+    elseif timeDiff < 86400 then
+        return format("%d hours", math.floor(timeDiff/3600))
+    else
+        return format("%d days", math.floor(timeDiff/86400))
     end
 end
 
@@ -141,7 +152,6 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     local nameWithLevel = playerName .. ":" .. level
     local characterKey = PSC_GetCharacterKey()
 
-    -- First ensure the character entry exists
     if not PSC_DB.PlayerKillCounts.Characters[characterKey] then
         PSC_DB.PlayerKillCounts.Characters[characterKey] = {
             Kills = {},
