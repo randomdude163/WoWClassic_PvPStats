@@ -553,7 +553,7 @@ function PSC_SetupMouseoverTooltip()
         local deaths = GetDeathsByPlayerName(playerName)
         if kills == nil or deaths == nil then return end
         if kills == 0 and deaths == 0 then return end
-        AddPvPInfoToTooltip(tooltip, playerName)
+        AddPvPInfoToTooltip(tooltip, playerName, kills, deaths)
     end
 
     GameTooltip:HookScript("OnTooltipSetUnit", OnTooltipSetUnit)
