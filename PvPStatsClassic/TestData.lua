@@ -263,6 +263,66 @@ local testPlayers = {
         class = "Paladin",
         race = "Dwarf",
         gender = "Female",
+    },
+    {
+        name = "Bladewhisper",
+        class = "Rogue",
+        race = "Orc",
+        gender = "Male",
+    },
+    {
+        name = "Stonefist",
+        class = "Warrior",
+        race = "Orc",
+        gender = "Male",
+    },
+    {
+        name = "Spiritcaller",
+        class = "Shaman",
+        race = "Orc",
+        gender = "Female",
+    },
+    {
+        name = "Shadowhunter",
+        class = "Hunter",
+        race = "Troll",
+        gender = "Male",
+    },
+    {
+        name = "Hexweaver",
+        class = "Shaman",
+        race = "Troll",
+        gender = "Female",
+    },
+    {
+        name = "Deathbringer",
+        class = "Warrior",
+        race = "Undead",
+        gender = "Male",
+    },
+    {
+        name = "Soulstealer",
+        class = "Rogue",
+        race = "Undead",
+        gender = "Female",
+    },
+    {
+        name = "Plaguecaster",
+        class = "Mage",
+        race = "Undead",
+        gender = "Male",
+    },
+    {
+        name = "Bonecrusher",
+        class = "Warrior",
+        race = "Tauren",
+        gender = "Male",
+    },
+    {
+        name = "Earthcaller",
+        class = "Shaman",
+        race = "Tauren",
+        gender = "Female",
     }
 }
 
