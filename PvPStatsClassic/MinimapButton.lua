@@ -55,7 +55,7 @@ minimapButton:SetScript("OnClick", function(self, button)
             PSC_CreateStatisticsFrame()
         end
     elseif button == "RightButton" then
-        PSC_CreateKillStatsFrame()
+        PSC_CreateKillsListFrame()
     end
 end)
 

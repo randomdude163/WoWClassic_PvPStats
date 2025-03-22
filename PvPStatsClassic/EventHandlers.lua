@@ -1,6 +1,6 @@
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = false
+PSC_Debug = true
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
@@ -61,7 +61,7 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
         return
     end
 
-    local playerX, playerY = GetPlayerCoordinates()
+    local playerX, playerY = PSC_GetPlayerCoordinates()
     local playerCoords = string.format("%.1f, %.1f", playerX, playerY)
     local subZoneText = GetSubZoneText()
     local playerPosition = ""
@@ -317,10 +317,11 @@ local function HandleCombatLogEvent()
             -- end
             PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
         elseif IsPetGUID(sourceGUID) then
+            -- This does not work properly, yet.
             -- if PSC_Debug then
             --     print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
             -- end
-            PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+            -- PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
         end
     end
 

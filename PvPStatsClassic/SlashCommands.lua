@@ -67,7 +67,7 @@ function PSC_SlashCommandHandler(msg)
     elseif command == "status" then
         PrintStatus()
     elseif command == "kills" or command == "stats" then
-        PSC_CreateKillStatsFrame()
+        PSC_CreateKillsListFrame()
     elseif command == "debug" then
         PSC_ShowDebugInfo()
     elseif command == "toggledebug" then

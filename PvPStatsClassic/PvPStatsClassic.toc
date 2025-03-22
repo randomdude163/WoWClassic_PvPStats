@@ -10,6 +10,8 @@ DebugTools.lua
 EventHandlers.lua
 FrameManager.lua
 KillMilestones.lua
+PlayerDetailFrame.lua
+KillsListFrameFilters.lua
 KillsListFrame.lua
 KillsTracking.lua
 Killstreaks.lua

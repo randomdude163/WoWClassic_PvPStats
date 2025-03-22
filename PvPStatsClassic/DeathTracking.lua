@@ -48,14 +48,12 @@ function PSC_GetKillerInfoOnDeath()
                     local ownerName = GetNameFromGUID(ownerGUID)
                     if ownerName and ownerGUID ~= mainKiller.guid then
                         table.insert(assists, {
-                            name = ownerName,
-                            guid = ownerGUID
+                            name = ownerName
                         })
                     end
                 else
                     table.insert(assists, {
-                        name = killer.name,
-                        guid = killer.guid
+                        name = killer.name
                     })
                 end
             end
@@ -90,11 +88,17 @@ function PSC_RegisterPlayerDeath(killerInfo)
     local killerName = killerInfo.killer.name
     if not killerName then return end
 
+    -- Get killer level from player info cache
+    local killerLevel = -1
+    if PSC_DB.PlayerInfoCache[killerName] then
+        killerLevel = PSC_DB.PlayerInfoCache[killerName].level
+    end
+
     -- Check if we have info for this killer
     if not lossData.Deaths[killerName] then
         lossData.Deaths[killerName] = {
             deaths = 0,
-            lastDeath = "",
+            lastDeath = 0, -- Store as number (time())
             zone = "",
             deathLocations = {},
             assistKills = 0,
@@ -104,8 +108,11 @@ function PSC_RegisterPlayerDeath(killerInfo)
 
     local deathData = lossData.Deaths[killerName]
     deathData.deaths = deathData.deaths + 1
-    deathData.lastDeath = date("%Y-%m-%d %H:%M:%S")
+    deathData.lastDeath = time() -- Use time() instead of formatted string
     deathData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
+
+    -- Store the killer's level at time of death
+    deathData.killerLevel = killerLevel
 
     -- Track whether it was a solo kill or assist
     if #killerInfo.assists > 0 then
@@ -125,13 +132,25 @@ function PSC_RegisterPlayerDeath(killerInfo)
         local x = position.x * 100
         local y = position.y * 100
 
+        -- Prepare assist information with levels
+        local assistsWithLevels = nil
+        if #killerInfo.assists > 0 then
+            assistsWithLevels = {}
+            for _, assist in ipairs(killerInfo.assists) do
+                table.insert(assistsWithLevels, {
+                    name = assist.name
+                })
+            end
+        end
+
         table.insert(deathData.deathLocations, {
             x = x,
             y = y,
             zone = deathData.zone,
-            timestamp = deathData.lastDeath,
+            timestamp = time(), -- Use time() instead of formatted string
             deathNumber = deathData.deaths,
-            assisters = #killerInfo.assists > 0 and killerInfo.assists or nil
+            killerLevel = killerLevel,
+            assisters = assistsWithLevels
         })
     end
 
@@ -142,7 +161,7 @@ function PSC_RegisterPlayerDeath(killerInfo)
         else
             assistText = " (solo kill)"
         end
-        print("Death recorded: killed by " .. killerName .. assistText)
+        print("Death recorded: killed by " .. killerName .. " (Level: " .. killerLevel .. ")" .. assistText)
     end
 end
 
@@ -172,7 +191,10 @@ end
 function TrackIncomingPetDamage(petGUID, petName, amount)
     if not petGUID or not petName then return end
 
+    -- This doesn't work properly, yet.
     local ownerGUID = GetPetOwnerGUID(petGUID)
+
+    print("Pet owner GUID: " .. ownerGUID)
     if not ownerGUID then
         -- If we can't find the owner, just track the pet damage directly
         TrackIncomingPlayerDamage(petGUID, petName, amount)
@@ -180,7 +202,7 @@ function TrackIncomingPetDamage(petGUID, petName, amount)
     end
 
     local ownerName = GetNameFromGUID(ownerGUID) or "Unknown Owner"
-
+    print("Owner Name: " .. ownerName)
     -- Create a merged record with the owner's information
     local existingRecord = PSC_RecentDamageFromPlayers[ownerGUID] or {
         name = ownerName,
@@ -232,6 +254,8 @@ function PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sour
         damageAmount = param4 or 0
     end
 
+    print("Damage amount: " .. damageAmount)
+
     if damageAmount > 0 then
         TrackIncomingPetDamage(sourceGUID, sourceName, damageAmount)
     end
@@ -275,7 +299,7 @@ function PSC_ShowDeathStats()
     table.sort(deaths, function(a, b) return a.total > b.total end)
 
     for i, death in ipairs(deaths) do
-        local dateStr = death.lastDeath and death.lastDeath:match("(%d+%-%d+%-%d+)") or "Unknown"
+        local dateStr = PSC_FormatTimestamp(death.lastDeath)
         PSC_Print(i .. ". " .. death.name .. " - " .. death.total ..
                  " deaths (Solo: " .. death.solo ..
                  ", Group: " .. death.assists ..

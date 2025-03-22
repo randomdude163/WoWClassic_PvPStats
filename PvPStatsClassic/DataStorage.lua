@@ -110,23 +110,47 @@ function PSC_CleanupPlayerInfoCache()
     if not PSC_DB.PlayerKillCounts.Characters then return end
 
     local cleanedInfoCache = {}
-    local playersWithKills = {}
+    local playersToKeep = {}
 
-    -- Collect names of all players who have been killed
+    -- Collect names of all players who have been killed by us
     for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
         for nameWithLevel, killData in pairs(characterData.Kills) do
             if killData.kills and killData.kills > 0 then
                 local name = nameWithLevel:match("([^:]+)")
                 if name then
-                    playersWithKills[name] = true
+                    playersToKeep[name] = true
                 end
             end
         end
     end
 
-    -- Only keep info for players who have been killed
+    -- Also collect names of all players who have killed us
+    for characterKey, lossData in pairs(PSC_DB.PvPLossCounts) do
+        if lossData.Deaths then
+            for killerName, deathData in pairs(lossData.Deaths) do
+                if deathData.deaths and deathData.deaths > 0 then
+                    playersToKeep[killerName] = true
+
+                    -- Also keep info for players who have assisted in killing us
+                    if deathData.deathLocations then
+                        for _, location in ipairs(deathData.deathLocations) do
+                            if location.assisters then
+                                for _, assister in ipairs(location.assisters) do
+                                    if assister.name then
+                                        playersToKeep[assister.name] = true
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Only keep info for relevant players (those we've killed or those who've killed us)
     for name, data in pairs(PSC_DB.PlayerInfoCache) do
-        if playersWithKills[name] then
+        if playersToKeep[name] then
             cleanedInfoCache[name] = data
         end
     end
