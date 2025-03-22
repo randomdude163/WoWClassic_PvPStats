@@ -191,7 +191,9 @@ end
 function TrackIncomingPetDamage(petGUID, petName, amount)
     if not petGUID or not petName then return end
 
+    -- This doesn't work properly, yet.
     local ownerGUID = GetPetOwnerGUID(petGUID)
+
     print("Pet owner GUID: " .. ownerGUID)
     if not ownerGUID then
         -- If we can't find the owner, just track the pet damage directly

@@ -317,10 +317,11 @@ local function HandleCombatLogEvent()
             -- end
             PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
         elseif IsPetGUID(sourceGUID) then
-            if PSC_Debug then
-                print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
-            end
-            PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+            -- This does not work properly, yet.
+            -- if PSC_Debug then
+            --     print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
+            -- end
+            -- PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
         end
     end
 
