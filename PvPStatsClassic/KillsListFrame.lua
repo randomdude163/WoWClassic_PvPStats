@@ -2,21 +2,21 @@ PSC_KillsListFrame = nil
 
 PSC_SortKillsListBy = "lastKill"
 PSC_SortKillsListAscending = false
-local KILLS_FRAME_WIDTH = 1020
+local KILLS_FRAME_WIDTH = 1050
 local KILLS_FRAME_HEIGHT = 550
 
 local colWidths = {
     name = 100,
-    class = 70,
-    race = 70,
+    class = 68,
+    race = 65,
     gender = 80,
-    level = 70,
-    rank = 70,
+    level = 65,
+    kills = 55,
+    deaths = 75,
+    rank = 60,
     guild = 150,
     zone = 150,
-    kills = 50,
-    deaths = 50,
-    lastKill = 110
+    lastKill = 135
 }
 
 local function CleanupFrameElements(content)

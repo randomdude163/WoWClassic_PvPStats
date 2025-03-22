@@ -599,47 +599,43 @@ local function PSC_CreateSearchBackground(parent)
     return searchBg
 end
 
-function PSC_FilterAndSortEntries()
-    local entries = {}
-    local playerNameMap = {}
-    local searchText = PSC_SearchText or ""
-    searchText = searchText:lower()
+-- Helper function to add or update a player entry in the entries table
+local function AddOrUpdatePlayerEntry(playerNameMap, entries, name, entry)
+    if not playerNameMap[name] then
+        playerNameMap[name] = entry
+        table.insert(entries, entry)
+    else
+        local existingEntry = playerNameMap[name]
+        existingEntry.kills = existingEntry.kills + entry.kills
 
-    local function AddOrUpdatePlayerEntry(name, entry)
-        if not playerNameMap[name] then
-            playerNameMap[name] = entry
-            table.insert(entries, entry)
-        else
-            local existingEntry = playerNameMap[name]
-            existingEntry.kills = existingEntry.kills + entry.kills
+        -- Keep the most recent kill timestamp and data
+        if entry.lastKill > (existingEntry.lastKill or 0) then
+            existingEntry.lastKill = entry.lastKill
+            existingEntry.zone = entry.zone
+            existingEntry.levelDisplay = entry.levelDisplay
+            existingEntry.rank = entry.rank
+        end
 
-            -- Keep the most recent kill timestamp and data
-            if entry.lastKill > (existingEntry.lastKill or 0) then
-                existingEntry.lastKill = entry.lastKill
-                existingEntry.zone = entry.zone
-                existingEntry.levelDisplay = entry.levelDisplay
-                existingEntry.rank = entry.rank
-            end
+        -- Store details of all kills for the detail view
+        if not existingEntry.killHistory then
+            existingEntry.killHistory = {}
+        end
 
-            -- Store details of all kills for the detail view
-            if not existingEntry.killHistory then
-                existingEntry.killHistory = {}
-            end
-
-            if not entry.includedInHistory then
-                table.insert(existingEntry.killHistory, {
-                    level = entry.levelDisplay,
-                    zone = entry.zone,
-                    timestamp = entry.lastKill,
-                    rank = entry.rank,
-                    kills = entry.kills
-                })
-                entry.includedInHistory = true
-            end
+        if not entry.includedInHistory then
+            table.insert(existingEntry.killHistory, {
+                level = entry.levelDisplay,
+                zone = entry.zone,
+                timestamp = entry.lastKill,
+                rank = entry.rank,
+                kills = entry.kills
+            })
+            entry.includedInHistory = true
         end
     end
+end
 
-    -- Gather death data for all players
+-- Collect death data for the current character
+local function CollectDeathData()
     local deathDataByPlayer = {}
     local characterKey = PSC_GetCharacterKey()
 
@@ -651,7 +647,13 @@ function PSC_FilterAndSortEntries()
         end
     end
 
+    return deathDataByPlayer
+end
+
+-- Process and collect all players you have killed
+local function ProcessKilledPlayers(searchText, playerNameMap, entries)
     local charactersToProcess = GetCharactersToProcessForStatistics()
+
     for charKey, charData in pairs(charactersToProcess) do
         for nameWithLevel, killData in pairs(charData.Kills or {}) do
             local name = string.match(nameWithLevel, "(.-)%:")
@@ -678,7 +680,7 @@ function PSC_FilterAndSortEntries()
                         class = playerClass,
                         race = playerRace,
                         gender = playerGender,
-                        levelDisplay = level,
+                        levelDisplay = level,  -- Store as number for consistent sorting
                         rank = rank,
                         guild = playerGuild,
                         zone = killData.zone or "Unknown",
@@ -688,24 +690,81 @@ function PSC_FilterAndSortEntries()
                         originalKillData = killData
                     }
 
-                    AddOrUpdatePlayerEntry(name, entry)
+                    AddOrUpdatePlayerEntry(playerNameMap, entries, name, entry)
                 end
             end
         end
     end
+end
 
-    -- Add death count to each entry if available
+-- Process players who have killed you but you haven't killed
+local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        if not playerNameMap[killerName] then
+            local playerInfo = PSC_DB.PlayerInfoCache[killerName] or {}
+            local playerClass = playerInfo.class or "Unknown"
+            local playerRace = playerInfo.race or "Unknown"
+            local playerGender = playerInfo.gender or "Unknown"
+            local playerGuild = playerInfo.guild or ""
+            local playerLevel = tonumber(playerInfo.level) or -1  -- Ensure it's a number
+            local playerRank = playerInfo.rank or 0
+
+            -- Only add if matches search criteria
+            if searchText == "" or
+               killerName:lower():find(searchText, 1, true) or
+               playerClass:lower():find(searchText, 1, true) or
+               playerRace:lower():find(searchText, 1, true) or
+               playerGuild:lower():find(searchText, 1, true) then
+
+                local entry = {
+                    name = killerName,
+                    class = playerClass,
+                    race = playerRace,
+                    gender = playerGender,
+                    levelDisplay = playerLevel,  -- Store as number for consistent sorting
+                    rank = playerRank,
+                    guild = playerGuild,
+                    zone = "Unknown",
+                    kills = 0,
+                    lastKill = 0,
+                    deaths = deathData.deaths or 0,
+                    deathHistory = deathData.deathLocations or {}
+                }
+
+                playerNameMap[killerName] = entry
+                table.insert(entries, entry)
+            end
+        end
+    end
+end
+
+-- Add death counts to entries
+local function AddDeathCountsToEntries(entries, deathDataByPlayer)
     for i, entry in ipairs(entries) do
         local deathData = deathDataByPlayer[entry.name]
         entry.deaths = deathData and deathData.deaths or 0
         entry.deathHistory = deathData and deathData.deathLocations or {}
     end
+end
 
-    -- Sort entries
+-- Sort entries based on current sort settings
+local function SortPlayerEntries(entries)
     if PSC_SortKillsListBy then
         table.sort(entries, function(a, b)
             local aValue = a[PSC_SortKillsListBy]
             local bValue = b[PSC_SortKillsListBy]
+
+            -- Special handling for level sorting - convert to numbers for proper comparison
+            if PSC_SortKillsListBy == "levelDisplay" then
+                local aLevel = tonumber(aValue) or -1
+                local bLevel = tonumber(bValue) or -1
+
+                if PSC_SortKillsListAscending then
+                    return aLevel < bLevel
+                else
+                    return aLevel > bLevel
+                end
+            end
 
             -- Special case for numeric values vs nil
             if type(aValue) == "number" and type(bValue) == "number" then
@@ -726,6 +785,29 @@ function PSC_FilterAndSortEntries()
     end
 
     return entries
+end
+
+-- Main function to filter and sort entries
+function PSC_FilterAndSortEntries()
+    local entries = {}
+    local playerNameMap = {}
+    local searchText = PSC_SearchText or ""
+    searchText = searchText:lower()
+
+    -- Step 1: Collect death data
+    local deathDataByPlayer = CollectDeathData()
+
+    -- Step 2: Process players you've killed
+    ProcessKilledPlayers(searchText, playerNameMap, entries)
+
+    -- Step 3: Process players who killed you but you haven't killed
+    ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
+
+    -- Step 4: Add death counts to all entries
+    AddDeathCountsToEntries(entries, deathDataByPlayer)
+
+    -- Step 5: Sort entries
+    return SortPlayerEntries(entries)
 end
 
 function PSC_CreateSearchBar(frame)

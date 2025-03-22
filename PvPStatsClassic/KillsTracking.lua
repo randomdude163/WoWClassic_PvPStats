@@ -122,25 +122,6 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     end
 end
 
-local function FormatTimeSinceLastKill(lastKillTimestamp)
-    if not lastKillTimestamp or lastKillTimestamp == 0 then
-        return nil
-    end
-
-    local currentTime = time()
-    local timeDiff = currentTime - lastKillTimestamp
-
-    if timeDiff < 60 then
-        return format("%d seconds", timeDiff)
-    elseif timeDiff < 3600 then
-        return format("%d minutes", math.floor(timeDiff/60))
-    elseif timeDiff < 86400 then
-        return format("%d hours", math.floor(timeDiff/3600))
-    else
-        return format("%d days", math.floor(timeDiff/86400))
-    end
-end
-
 function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     local playerLevel = UnitLevel("player")
     if not PSC_DB.PlayerInfoCache[playerName] then

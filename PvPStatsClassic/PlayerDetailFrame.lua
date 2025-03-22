@@ -3,6 +3,31 @@ local DETAIL_FRAME_WIDTH = 600
 local DETAIL_FRAME_HEIGHT = 600
 
 
+function PSC_FormatTimestamp(timestamp)
+    if not timestamp then return "Unknown" end
+
+    -- If timestamp is already a string, try to return it as-is
+    if type(timestamp) == "string" then
+        return timestamp
+    end
+
+    -- If timestamp is 0 or invalid
+    if timestamp == 0 or type(timestamp) ~= "number" then
+        return "Unknown"
+    end
+
+    -- Process numeric timestamp
+    local dateInfo = date("*t", timestamp)
+    if not dateInfo or not dateInfo.day then
+        return "Invalid date"
+    end
+
+    return string.format("%02d/%02d/%02d %02d:%02d:%02d",
+        dateInfo.day, dateInfo.month, dateInfo.year % 100,
+        dateInfo.hour, dateInfo.min, dateInfo.sec)
+end
+
+
 local function CreateKillHistoryHeaderRow(content, yOffset)
     local headerBg = content:CreateTexture(nil, "BACKGROUND")
     headerBg:SetPoint("TOPLEFT", 15, yOffset)

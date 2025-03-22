@@ -380,6 +380,4 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
         end
         PSC_Print("Assists: " .. table.concat(assistNames, ", "))
     end
-
-    PSC_RegisterPlayerKill(killerName)
 end
