@@ -382,7 +382,7 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     end)
 
     barButton:SetScript("OnClick", function()
-        PSC_CreateKillStatsFrame()
+        PSC_CreateKillsListFrame()
         C_Timer.After(0.05, function()
             if titleType == "class" or titleType == "unknownLevelClass" then
                 PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
@@ -538,7 +538,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     end)
 
     rowButton:SetScript("OnClick", function()
-        PSC_CreateKillStatsFrame()
+        PSC_CreateKillsListFrame()
 
         if PSC_KillsListFrame then
             ---@diagnostic disable-next-line: need-check-nil, undefined-field
@@ -652,7 +652,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             button:SetScript("OnMouseUp", function()
                 if value ~= "None (0)" then
                     local playerName = value:match("([^%(]+)"):trim()
-                    PSC_CreateKillStatsFrame()
+                    PSC_CreateKillsListFrame()
                     C_Timer.After(0.05, function()
                         PSC_SetKillListSearch(playerName, nil, nil, nil, nil, nil, true)
                         PSC_FrameManager:BringToFront("KillsList")
@@ -783,7 +783,7 @@ local function createSummaryStats(parent, x, y, width, height)
             if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
 ---@diagnostic disable-next-line: undefined-field
                 child:SetScript("OnMouseUp", function()
-                    PSC_CreateKillStatsFrame()
+                    PSC_CreateKillsListFrame()
                     C_Timer.After(0.05, function()
                         PSC_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
                         PSC_FrameManager:BringToFront("KillsList")

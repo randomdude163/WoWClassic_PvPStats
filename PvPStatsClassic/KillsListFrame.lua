@@ -1328,7 +1328,7 @@ function RefreshKillsListFrame()
     content:SetHeight(math.max((-finalYOffset + 20), PSC_KILLS_FRAME_HEIGHT - 50))
 end
 
-function PSC_CreateKillStatsFrame()
+function PSC_CreateKillsListFrame()
     if (PSC_KillsListFrame) then
         PSC_FrameManager:ShowFrame("KillsList")
         RefreshKillsListFrame()
