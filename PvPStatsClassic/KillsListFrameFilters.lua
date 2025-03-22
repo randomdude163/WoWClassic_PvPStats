@@ -1,4 +1,4 @@
-local searchText = ""
+PSC_SearchText = ""
 local levelSearchText = ""
 local classSearchText = ""
 local raceSearchText = ""
@@ -195,7 +195,7 @@ end
 
 local function PSC_SetupSearchBoxScripts(searchBox)
     searchBox:SetScript("OnTextChanged", function(self)
-        searchText = self:GetText():lower()
+        PSC_SearchText = self:GetText():lower()
         RefreshKillsListFrame()
     end)
 
@@ -210,7 +210,7 @@ local function PSC_SetupSearchBoxScripts(searchBox)
     searchBox:SetScript("OnEscapePressed", function(self)
         self:ClearFocus()
         self:SetText("")
-        searchText = ""
+        PSC_SearchText = ""
         RefreshKillsListFrame()
     end)
 
@@ -600,204 +600,132 @@ local function PSC_CreateSearchBackground(parent)
 end
 
 function PSC_FilterAndSortEntries()
-    local sortedEntries = {}
-    local currentCharacterKey = PSC_GetCharacterKey()
+    local entries = {}
+    local playerNameMap = {}
+    local searchText = PSC_SearchText or ""
+    searchText = searchText:lower()
+
+    local function AddOrUpdatePlayerEntry(name, entry)
+        if not playerNameMap[name] then
+            playerNameMap[name] = entry
+            table.insert(entries, entry)
+        else
+            local existingEntry = playerNameMap[name]
+            existingEntry.kills = existingEntry.kills + entry.kills
+
+            -- Keep the most recent kill timestamp and data
+            if entry.lastKill > (existingEntry.lastKill or 0) then
+                existingEntry.lastKill = entry.lastKill
+                existingEntry.zone = entry.zone
+                existingEntry.levelDisplay = entry.levelDisplay
+                existingEntry.rank = entry.rank
+            end
+
+            -- Store details of all kills for the detail view
+            if not existingEntry.killHistory then
+                existingEntry.killHistory = {}
+            end
+
+            if not entry.includedInHistory then
+                table.insert(existingEntry.killHistory, {
+                    level = entry.levelDisplay,
+                    zone = entry.zone,
+                    timestamp = entry.lastKill,
+                    rank = entry.rank,
+                    kills = entry.kills
+                })
+                entry.includedInHistory = true
+            end
+        end
+    end
+
+    -- Gather death data for all players
+    local deathDataByPlayer = {}
+    local characterKey = PSC_GetCharacterKey()
+
+    if PSC_DB.PvPLossCounts and PSC_DB.PvPLossCounts[characterKey] then
+        local lossData = PSC_DB.PvPLossCounts[characterKey]
+
+        for killerName, deathData in pairs(lossData.Deaths or {}) do
+            deathDataByPlayer[killerName] = deathData
+        end
+    end
 
     local charactersToProcess = GetCharactersToProcessForStatistics()
+    for charKey, charData in pairs(charactersToProcess) do
+        for nameWithLevel, killData in pairs(charData.Kills or {}) do
+            local name = string.match(nameWithLevel, "(.-)%:")
+            if name then
+                local levelStr = string.match(nameWithLevel, ":(%d+)") or "-1"
+                local level = tonumber(levelStr) or -1
+                local rank = killData.rank or 0
 
-    for characterKey, characterData in pairs(charactersToProcess) do
-        for nameWithLevel, data in pairs(characterData.Kills) do
-            if data then
-                local nameWithoutLevel = nameWithLevel:match("([^:]+)")
+                -- Get class, race, gender and guild info from player cache if available
+                local playerInfo = PSC_DB.PlayerInfoCache[name] or {}
+                local playerClass = playerInfo.class or "Unknown"
+                local playerRace = playerInfo.race or "Unknown"
+                local playerGender = playerInfo.gender or "Unknown"
+                local playerGuild = playerInfo.guild or ""
 
-                local level = nameWithLevel:match(":(%S+)")
-                local levelNum = tonumber(level or "0") or 0
+                if searchText == "" or
+                   name:lower():find(searchText, 1, true) or
+                   playerClass:lower():find(searchText, 1, true) or
+                   playerRace:lower():find(searchText, 1, true) or
+                   playerGuild:lower():find(searchText, 1, true) then
 
-                local playerInfo = PSC_DB.PlayerInfoCache[nameWithoutLevel] or {}
-                local class = playerInfo.class
-                local race = playerInfo.race
-                local gender = playerInfo.gender
-                local guild = playerInfo.guild
-                local rank = playerInfo.rank
+                    local entry = {
+                        name = name,
+                        class = playerClass,
+                        race = playerRace,
+                        gender = playerGender,
+                        levelDisplay = level,
+                        rank = rank,
+                        guild = playerGuild,
+                        zone = killData.zone or "Unknown",
+                        kills = killData.kills or 0,
+                        lastKill = killData.lastKill or 0,
+                        levelAtKill = level,
+                        originalKillData = killData
+                    }
 
-                local entry = {
-                    name = nameWithoutLevel,
-                    nameWithLevel = nameWithLevel,
-                    class = class,
-                    race = race,
-                    gender = gender,
-                    guild = guild,
-                    zone = data.zone or "Unknown",
-                    kills = data.kills or 1,
-                    lastKill = data.lastKill or "",
-                    levelNum = levelNum,
-                    levelDisplay = levelNum,
-                    rank = rank
-                }
-
-                if levelNum == -1 then
-                    entry.levelDisplay = -1
-                end
-
-                local searchMatch = true
-                local levelMatch = true
-                local classMatch = true
-                local raceMatch = true
-                local genderMatch = true
-                local zoneMatch = true
-                local rankMatch = true
-
-                if searchText ~= "" then
-                    local nameLower = nameWithoutLevel:lower()
-                    local guildLower = guild:lower()
-
-                    ---@diagnostic disable-next-line: cast-local-type
-                    searchMatch = nameLower:find(searchText, 1, true) or
-                                      (guild ~= "" and guildLower:find(searchText, 1, true))
-                end
-
-                if minLevelSearch or maxLevelSearch then
-                    if minLevelSearch == -1 and maxLevelSearch == -1 then
-                        levelMatch = (levelNum == -1)
-                    elseif minLevelSearch and maxLevelSearch then
-                        levelMatch = (levelNum >= minLevelSearch and levelNum <= maxLevelSearch)
-                    end
-                end
-
-                if classSearchText ~= "" then
-                    ---@diagnostic disable-next-line: cast-local-type
-                    classMatch = class:lower():find(classSearchText:lower(), 1, true)
-                end
-
-                if raceSearchText ~= "" then
-                    ---@diagnostic disable-next-line: cast-local-type
-                    raceMatch = race:lower():find(raceSearchText:lower(), 1, true)
-                end
-
-                if genderSearchText ~= "" then
-                    local compareText = genderSearchText:lower()
-                    local genderLower = gender:lower()
-
-                    if compareText == "m" or compareText == "male" then
-                        genderMatch = (genderLower == "male")
-                    elseif compareText == "f" or compareText == "female" then
-                        genderMatch = (genderLower == "female")
-                    elseif compareText == "u" or compareText == "unknown" or compareText == "?" then
-                        genderMatch = (genderLower == "unknown")
-                    else
-                        ---@diagnostic disable-next-line: cast-local-type
-                        genderMatch = genderLower:find(compareText, 1, true)
-                    end
-                end
-
-                if zoneSearchText ~= "" then
-                    ---@diagnostic disable-next-line: cast-local-type
-                    zoneMatch = (data.zone or "Unknown"):lower():find(zoneSearchText:lower(), 1, true)
-                end
-
-                if minRankSearch or maxRankSearch then
-                    if minRankSearch and maxRankSearch then
-                        rankMatch = (rank >= minRankSearch and rank <= maxRankSearch)
-                    end
-                end
-
-                if searchMatch and levelMatch and classMatch and raceMatch and genderMatch and zoneMatch and rankMatch then
-                    table.insert(sortedEntries, entry)
+                    AddOrUpdatePlayerEntry(name, entry)
                 end
             end
         end
     end
 
-    table.sort(sortedEntries, function(a, b)
-        if not a then
-            return false
-        end
-        if not b then
-            return true
-        end
-        if a == b then
-            return false
-        end
+    -- Add death count to each entry if available
+    for i, entry in ipairs(entries) do
+        local deathData = deathDataByPlayer[entry.name]
+        entry.deaths = deathData and deathData.deaths or 0
+        entry.deathHistory = deathData and deathData.deathLocations or {}
+    end
 
-        if PSC_SortKillsListBy == "level" then
-            if a.levelNum == -1 and b.levelNum ~= -1 then
-                return not PSC_SortKillsListAscending
-            elseif a.levelNum ~= -1 and b.levelNum == -1 then
-                return PSC_SortKillsListAscending
-            elseif a.levelNum == -1 and b.levelNum == -1 then
+    -- Sort entries
+    if PSC_SortKillsListBy then
+        table.sort(entries, function(a, b)
+            local aValue = a[PSC_SortKillsListBy]
+            local bValue = b[PSC_SortKillsListBy]
+
+            -- Special case for numeric values vs nil
+            if type(aValue) == "number" and type(bValue) == "number" then
                 if PSC_SortKillsListAscending then
-                    return a.name < b.name
+                    return aValue < bValue
                 else
-                    return a.name > b.name
+                    return aValue > bValue
                 end
             end
-        end
 
-        local aVal, bVal
-
-        if PSC_SortKillsListBy == "name" then
-            aVal, bVal = a.name or "", b.name or ""
-        elseif PSC_SortKillsListBy == "class" then
-            aVal, bVal = a.class or "Unknown", b.class or "Unknown"
-        elseif PSC_SortKillsListBy == "race" then
-            aVal, bVal = a.race or "Unknown", b.race or "Unknown"
-        elseif PSC_SortKillsListBy == "gender" then
-            aVal, bVal = a.gender or "Unknown", b.gender or "Unknown"
-        elseif PSC_SortKillsListBy == "rank" then
-            aVal, bVal = tonumber(a.rank or 0), tonumber(b.rank or 0)
-        elseif PSC_SortKillsListBy == "guild" then
-            aVal, bVal = a.guild or "", b.guild or ""
-        elseif PSC_SortKillsListBy == "zone" then
-            aVal, bVal = a.zone or "Unknown", b.zone or "Unknown"
-        elseif PSC_SortKillsListBy == "kills" then
-            aVal, bVal = tonumber(a.kills or 0), tonumber(b.kills or 0)
-        elseif PSC_SortKillsListBy == "lastKill" then
-            aVal, bVal = a.lastKill or "", b.lastKill or ""
-        elseif PSC_SortKillsListBy == "level" then
-            aVal, bVal = tonumber(a.levelNum or 0), tonumber(b.levelNum or 0)
-        else
-            aVal, bVal = a.name or "", b.name or ""
-        end
-
-        if aVal == nil then
-            aVal = ""
-        end
-        if bVal == nil then
-            bVal = ""
-        end
-
-        if type(aVal) == "number" and type(bVal) == "number" then
-            if aVal == bVal then
-                if PSC_SortKillsListAscending then
-                    return a.name < b.name
-                else
-                    return a.name > b.name
-                end
+            -- Handle string comparison
+            if PSC_SortKillsListAscending then
+                return tostring(aValue or "") < tostring(bValue or "")
             else
-                if PSC_SortKillsListAscending then
-                    return aVal < bVal
-                else
-                    return aVal > bVal
-                end
+                return tostring(aValue or "") > tostring(bValue or "")
             end
-        else
-            if aVal == bVal then
-                if PSC_SortKillsListAscending then
-                    return a.name < b.name
-                else
-                    return a.name > b.name
-                end
-            else
-                if PSC_SortKillsListAscending then
-                    return aVal < bVal
-                else
-                    return aVal > bVal
-                end
-            end
-        end
-    end)
+        end)
+    end
 
-    return sortedEntries
+    return entries
 end
 
 function PSC_CreateSearchBar(frame)
@@ -819,7 +747,7 @@ function PSC_CreateSearchBar(frame)
     searchBox:SetPoint("LEFT", searchLabel, "RIGHT", 5, 0)
     PSC_SetupSearchBoxScripts(searchBox)
     searchBox:SetText("")
-    searchText = ""
+    PSC_SearchText = ""
 
     local classLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     classLabel:SetPoint("LEFT", searchBox, "RIGHT", 15, 0)
@@ -908,7 +836,7 @@ function PSC_SetKillListSearch(text, levelText, classText, raceText, genderText,
     if PSC_KillsListFrame then
         if resetOtherFilters then
             PSC_KillsListFrame.searchBox:SetText("")
-            searchText = ""
+            PSC_SearchText = ""
             PSC_KillsListFrame.levelSearchBox:SetText("")
             levelSearchText = ""
             PSC_KillsListFrame.classSearchBox:SetText("")
@@ -925,7 +853,7 @@ function PSC_SetKillListSearch(text, levelText, classText, raceText, genderText,
 
         if PSC_KillsListFrame.searchBox and text then
             PSC_KillsListFrame.searchBox:SetText(text)
-            searchText = text:lower()
+            PSC_SearchText = text:lower()
         end
 
         if PSC_KillsListFrame.levelSearchBox and levelText then
@@ -962,7 +890,7 @@ function PSC_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
     if PSC_KillsListFrame then
         if resetOtherFilters then
             PSC_KillsListFrame.searchBox:SetText("")
-            searchText = ""
+            PSC_SearchText = ""
             PSC_KillsListFrame.classSearchBox:SetText("")
             classSearchText = ""
             PSC_KillsListFrame.raceSearchBox:SetText("")
@@ -1009,7 +937,7 @@ function PSC_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
     if PSC_KillsListFrame then
         if resetOtherFilters then
             PSC_KillsListFrame.searchBox:SetText("")
-            searchText = ""
+            PSC_SearchText = ""
             PSC_KillsListFrame.levelSearchBox:SetText("")
             levelSearchText = ""
             minLevelSearch = nil

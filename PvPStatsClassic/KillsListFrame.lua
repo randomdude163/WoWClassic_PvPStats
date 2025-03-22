@@ -15,7 +15,8 @@ local colWidths = {
     guild = 150,
     zone = 150,
     kills = 50,
-    lastKill = 160
+    deaths = 50,
+    lastKill = 110
 }
 
 local function CleanupFrameElements(content)
@@ -112,13 +113,23 @@ local function CreateColumnHeaders(content)
     local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
     local genderButton = CreateColumnHeader(content, "Gender", colWidths.gender, raceButton, 0, 0, "gender")
     local levelButton = CreateColumnHeader(content, "Level", colWidths.level, genderButton, 0, 0, "level")
-    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, levelButton, 0, 0, "rank") -- New rank column header
-    local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, rankButton, 0, 0, "guild") -- Changed anchor
+    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, levelButton, 0, 0, "rank")
+    local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, rankButton, 0, 0, "guild")
     local zoneButton = CreateColumnHeader(content, "Zone", colWidths.zone, guildButton, 0, 0, "zone")
     local killsButton = CreateColumnHeader(content, "Kills", colWidths.kills, zoneButton, 0, 0, "kills")
-    local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, killsButton, 0, 0, "lastKill")
+    local deathsButton = CreateColumnHeader(content, "Deaths", colWidths.deaths, killsButton, 0, 0, "deaths")
+    local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, deathsButton, 0, 0, "lastKill")
 
     return -30
+end
+
+local function CreateDeathsCell(content, anchorTo, deaths, width)
+    local deathsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    deathsText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    deathsText:SetText(tostring(deaths))
+    deathsText:SetWidth(width)
+    deathsText:SetJustifyH("LEFT")
+    return deathsText
 end
 
 local function CreateNameCell(content, xPos, yPos, name, width)
@@ -346,7 +357,25 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local guildCell = CreateGuildCell(rowContainer, rankCell, entry.guild, colWidths.guild)
     local zoneCell = CreateZoneCell(rowContainer, guildCell, entry.zone, colWidths.zone)
     local killsCell = CreateKillsCell(rowContainer, zoneCell, entry.kills, colWidths.kills)
-    local lastKillCell = CreateLastKillCell(rowContainer, killsCell, entry.lastKill, colWidths.lastKill)
+    local deathsCell = CreateDeathsCell(rowContainer, killsCell, entry.deaths, colWidths.deaths)
+    local lastKillCell = CreateLastKillCell(rowContainer, deathsCell, entry.lastKill, colWidths.lastKill)
+
+    -- Add click handler to view detailed history
+    rowContainer:SetScript("OnClick", function()
+        PSC_ShowPlayerDetailFrame(entry.name)
+    end)
+
+    -- Add tooltip to indicate clickable
+    rowContainer:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(entry.name)
+        GameTooltip:AddLine("Click to view detailed history", 1, 0.82, 0)
+        GameTooltip:Show()
+    end)
+
+    rowContainer:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     return yOffset - 16
 end
