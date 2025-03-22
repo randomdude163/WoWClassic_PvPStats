@@ -2,20 +2,21 @@ PSC_KillsListFrame = nil
 
 PSC_SortKillsListBy = "lastKill"
 PSC_SortKillsListAscending = false
-local KILLS_FRAME_WIDTH = 1050
+local KILLS_FRAME_WIDTH = 1000
 local KILLS_FRAME_HEIGHT = 550
 
 local colWidths = {
-    name = 100,
+    name = 95,
     class = 68,
     race = 65,
     gender = 80,
-    level = 65,
-    kills = 55,
-    deaths = 75,
+    level = 45,
+    kills = 35,
+    deaths = 35,
+    assists = 35, -- New column for assists
     rank = 60,
     guild = 150,
-    zone = 150,
+    zone = 140,
     lastKill = 135
 }
 
@@ -86,9 +87,29 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
 
     button:SetScript("OnEnter", function(self)
         SetHeaderButtonHighlight(self, true)
+
+        -- Add tooltips for specific columns
+        if columnId == "kills" then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP") -- Changed from ANCHOR_BOTTOM to ANCHOR_TOP
+            GameTooltip:SetText("Kills", 1, 0.82, 0)
+            GameTooltip:AddLine("The number of times you have killed this player", 1, 1, 1, true)
+            GameTooltip:Show()
+        elseif columnId == "deaths" then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP") -- Changed from ANCHOR_BOTTOM to ANCHOR_TOP
+            GameTooltip:SetText("Deaths", 1, 0.82, 0)
+            GameTooltip:AddLine("The number of times this player has dealt a killing blow against you", 1, 1, 1, true)
+            GameTooltip:Show()
+        elseif columnId == "assists" then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP") -- Changed from ANCHOR_BOTTOM to ANCHOR_TOP
+            GameTooltip:SetText("Assists", 1, 0.82, 0)
+            GameTooltip:AddLine("The number of times this player damaged you without dealing a killing blow when you died", 1, 1, 1, true)
+            GameTooltip:Show()
+        end
     end)
+
     button:SetScript("OnLeave", function(self)
         SetHeaderButtonHighlight(self, false)
+        GameTooltip:Hide()
     end)
 
     return button
@@ -112,13 +133,11 @@ local function CreateColumnHeaders(content)
     local classButton = CreateColumnHeader(content, "Class", colWidths.class, nameButton, 0, 0, "class")
     local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
     local genderButton = CreateColumnHeader(content, "Gender", colWidths.gender, raceButton, 0, 0, "gender")
-    local levelButton = CreateColumnHeader(content, "Level", colWidths.level, genderButton, 0, 0, "level")
-
-    -- Move kills and deaths columns here (between level and rank)
-    local killsButton = CreateColumnHeader(content, "Kills", colWidths.kills, levelButton, 0, 0, "kills")
-    local deathsButton = CreateColumnHeader(content, "Deaths", colWidths.deaths, killsButton, 0, 0, "deaths")
-
-    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, deathsButton, 0, 0, "rank")
+    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, genderButton, 0, 0, "levelDisplay")
+    local killsButton = CreateColumnHeader(content, "K", colWidths.kills, levelButton, 0, 0, "kills")
+    local deathsButton = CreateColumnHeader(content, "D", colWidths.deaths, killsButton, 0, 0, "deaths")
+    local assistsButton = CreateColumnHeader(content, "A", colWidths.assists, deathsButton, 0, 0, "assists")
+    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, assistsButton, 0, 0, "rank")
     local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, rankButton, 0, 0, "guild")
     local zoneButton = CreateColumnHeader(content, "Zone", colWidths.zone, guildButton, 0, 0, "zone")
     local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, zoneButton, 0, 0, "lastKill")
@@ -152,10 +171,8 @@ local function CreateClassCell(content, anchorTo, className, width)
     classText:SetWidth(width)
     classText:SetJustifyH("LEFT")
 
-    if RAID_CLASS_COLORS and RAID_CLASS_COLORS[className:upper()] then
-        local color = RAID_CLASS_COLORS[className:upper()]
-        classText:SetTextColor(color.r, color.g, color.b)
-    end
+    -- Don't color the class name text by class color - keep it white by default
+    -- classText is already white by default with GameFontHighlight
 
     return classText
 end
@@ -189,7 +206,7 @@ local function CreateLevelCell(content, anchorTo, level, width)
     local levelText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     levelText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
 
-    levelText:SetText(level == -1 and "??" or tostring(level))
+        levelText:SetText(level == -1 and "??" or tostring(level))
     levelText:SetWidth(width)
     levelText:SetJustifyH("LEFT")
     return levelText
@@ -213,12 +230,36 @@ local function CreateKillsCell(content, anchorTo, kills, width)
     return killsText
 end
 
+local function CreateAssistsCell(content, anchorTo, assists, width)
+    local assistsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    assistsText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    assistsText:SetText(tostring(assists or 0))
+    assistsText:SetWidth(width)
+    assistsText:SetJustifyH("LEFT")
+    return assistsText
+end
+
 local function FormatLastKillDate(timestamp)
     if not timestamp or timestamp == 0 then
-        return ""
+        return "-"
+    end
+
+    -- Debug check - make sure timestamp is a valid number
+    if type(timestamp) ~= "number" then
+        return "-"
+    end
+
+    -- Make sure timestamp is recent enough to be valid
+    local minTimestamp = 1000000000  -- Roughly year 2001
+    if timestamp < minTimestamp then
+        return "-"
     end
 
     local dateInfo = date("*t", timestamp)
+    if not dateInfo then
+        return "-"
+    end
+
     return string.format("%02d/%02d/%02d %02d:%02d:%02d",
         dateInfo.day, dateInfo.month, dateInfo.year % 100,
         dateInfo.hour, dateInfo.min, dateInfo.sec)
@@ -356,12 +397,10 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
     local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
     local levelCell = CreateLevelCell(rowContainer, genderCell, entry.levelDisplay, colWidths.level)
-
-    -- Move kills and deaths cells here (between level and rank)
     local killsCell = CreateKillsCell(rowContainer, levelCell, entry.kills, colWidths.kills)
     local deathsCell = CreateDeathsCell(rowContainer, killsCell, entry.deaths, colWidths.deaths)
-
-    local rankCell = CreateRankCell(rowContainer, deathsCell, entry.rank, colWidths.rank)
+    local assistsCell = CreateAssistsCell(rowContainer, deathsCell, entry.assists or 0, colWidths.assists)
+    local rankCell = CreateRankCell(rowContainer, assistsCell, entry.rank, colWidths.rank)
     local guildCell = CreateGuildCell(rowContainer, rankCell, entry.guild, colWidths.guild)
     local zoneCell = CreateZoneCell(rowContainer, guildCell, entry.zone, colWidths.zone)
     local lastKillCell = CreateLastKillCell(rowContainer, zoneCell, entry.lastKill, colWidths.lastKill)
@@ -371,11 +410,47 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         PSC_ShowPlayerDetailFrame(entry.name)
     end)
 
-    -- Add tooltip to indicate clickable
+    -- Check if entry has incomplete information
+    local hasIncompleteInfo = (entry.class == "Unknown" or entry.race == "Unknown" or entry.gender == "Unknown" or entry.levelDisplay == -1)
+
+    -- Apply class color to name but keep class text white
+    if not hasIncompleteInfo and RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class:upper()] then
+        local color = RAID_CLASS_COLORS[entry.class:upper()]
+        nameCell:SetTextColor(color.r, color.g, color.b)
+        -- Don't modify class cell color here - it stays white
+    end
+
+    if hasIncompleteInfo then
+        -- Gray out all cells for incomplete entries
+        local grayColor = {r = 0.7, g = 0.7, b = 0.7}
+
+        if nameCell and nameCell.SetTextColor then nameCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if classCell and classCell.SetTextColor then classCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if raceCell and raceCell.SetTextColor then raceCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if genderCell and genderCell.SetTextColor then genderCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if levelCell and levelCell.SetTextColor then levelCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if killsCell and killsCell.SetTextColor then killsCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if deathsCell and deathsCell.SetTextColor then deathsCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if assistsCell and assistsCell.SetTextColor then assistsCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if rankCell and rankCell.SetTextColor then rankCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if guildCell and guildCell.SetTextColor then guildCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if zoneCell and zoneCell.SetTextColor then zoneCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+        if lastKillCell and lastKillCell.SetTextColor then lastKillCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+    end
+
     rowContainer:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText(entry.name)
-        GameTooltip:AddLine("Click to view detailed history", 1, 0.82, 0)
+
+        if hasIncompleteInfo then
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("Incomplete player information", 1, 0.5, 0)
+            GameTooltip:AddLine("This player was detected in combat logs, but you never targeted or moused over them directly. Therefore, only the player's name is available.", 1, 1, 1, true)
+            GameTooltip:AddLine("Complete information will be added if you mouseover or target this player again.", 1, 1, 1, true)
+        end
+
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Click to view detailed history", 1, 1, 1)
         GameTooltip:Show()
     end)
 

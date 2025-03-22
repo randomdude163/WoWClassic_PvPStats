@@ -2,6 +2,19 @@ PSC_PlayerDetailFrame = nil
 local DETAIL_FRAME_WIDTH = 600
 local DETAIL_FRAME_HEIGHT = 600
 
+-- Layout constants for column positioning
+PSC_COLUMN_POSITIONS = {
+    LEVEL = 25,     -- Level column
+    ZONE = 70,      -- Zone column
+    KILLS = 230,    -- Kills/Assisters column
+    TIME = 330      -- Time column
+}
+
+PSC_COLUMN_WIDTHS = {
+    LEVEL = 40,     -- Level column width
+    ZONE = 140,     -- Zone column width
+    KILLS = 100      -- Kills/Assisters column width
+}
 
 function PSC_FormatTimestamp(timestamp)
     if not timestamp then return "Unknown" end
@@ -36,27 +49,26 @@ local function CreateKillHistoryHeaderRow(content, yOffset)
     headerBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
 
     local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    levelHeader:SetPoint("TOPLEFT", 25, yOffset - 3)
+    levelHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
     levelHeader:SetText("Level")
     levelHeader:SetTextColor(1, 0.82, 0)
 
-    -- Remove Rank header and adjust zone header position
     local zoneHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    zoneHeader:SetPoint("TOPLEFT", 70, yOffset - 3) -- Moved from 120 to 70
+    zoneHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
     zoneHeader:SetText("Zone")
     zoneHeader:SetTextColor(1, 0.82, 0)
-    zoneHeader:SetWidth(250) -- Increased width from 200 to 250
-    zoneHeader:SetJustifyH("LEFT") -- Explicitly set left alignment
+    zoneHeader:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
+    zoneHeader:SetJustifyH("LEFT")
 
     local killsHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killsHeader:SetPoint("TOPLEFT", 330, yOffset - 3)
+    killsHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     killsHeader:SetText("Kills")
     killsHeader:SetTextColor(1, 0.82, 0)
-    killsHeader:SetWidth(40)
-    killsHeader:SetJustifyH("LEFT") -- Set left alignment for header
+    killsHeader:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    killsHeader:SetJustifyH("LEFT")
 
     local timeHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    timeHeader:SetPoint("TOPLEFT", 380, yOffset - 3)
+    timeHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
     timeHeader:SetText("Time")
     timeHeader:SetTextColor(1, 0.82, 0)
 
@@ -121,25 +133,24 @@ local function CreateKillHistoryEntry(parent, killData, index, yOffset)
     bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4])
 
     local levelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    levelText:SetPoint("TOPLEFT", 25, yOffset - 3)
+    levelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
     levelText:SetText(killData.level == -1 and "??" or tostring(killData.level))
-    levelText:SetWidth(40)
+    levelText:SetWidth(PSC_COLUMN_WIDTHS.LEVEL)
 
-    -- Remove Rank text and adjust zone text position
     local zoneText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    zoneText:SetPoint("TOPLEFT", 70, yOffset - 3) -- Moved from 120 to 70
+    zoneText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
     zoneText:SetText(killData.zone or "Unknown")
-    zoneText:SetWidth(250) -- Increased width from 200 to 250
-    zoneText:SetJustifyH("LEFT") -- Explicitly set left alignment
+    zoneText:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
+    zoneText:SetJustifyH("LEFT")
 
     local killsText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killsText:SetPoint("TOPLEFT", 330, yOffset - 3)
+    killsText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     killsText:SetText(killData.kills and tostring(killData.kills) or "1")
-    killsText:SetWidth(40)
-    killsText:SetJustifyH("LEFT") -- Ensure left alignment for content
+    killsText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    killsText:SetJustifyH("LEFT")
 
     local timeText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    timeText:SetPoint("TOPLEFT", 380, yOffset - 3)
+    timeText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
     timeText:SetText(PSC_FormatTimestamp(killData.timestamp))
 
     return yOffset - 20
@@ -155,29 +166,29 @@ local function CreateDeathHistoryEntry(parent, deathData, index, yOffset)
     bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4])
 
     local levelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    levelText:SetPoint("TOPLEFT", 25, yOffset - 3)
+    levelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
     levelText:SetText(deathData.killerLevel == -1 and "??" or tostring(deathData.killerLevel))
-    levelText:SetWidth(40)
+    levelText:SetWidth(PSC_COLUMN_WIDTHS.LEVEL)
 
     local zoneText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    zoneText:SetPoint("TOPLEFT", 70, yOffset - 3)
+    zoneText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
     zoneText:SetText(deathData.zone or "Unknown")
-    zoneText:SetWidth(200)
-    zoneText:SetJustifyH("LEFT") -- Explicitly set left alignment
+    zoneText:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
+    zoneText:SetJustifyH("LEFT")
 
     -- Create a frame for the assisters column to handle tooltip
     local assistFrame = CreateFrame("Frame", nil, parent)
-    assistFrame:SetPoint("TOPLEFT", 280, yOffset - 3)
+    assistFrame:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     assistFrame:SetSize(100, 20)
 
     local assistText = assistFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     assistText:SetPoint("LEFT", 0, 0)
 
     local assistCount = deathData.assisters and #deathData.assisters or 0
-    local assistDisplay = assistCount > 0 and tostring(assistCount) .. " players" or "Solo kill"
+    local assistDisplay = assistCount > 0 and tostring(assistCount) .. " players" or "-"
     assistText:SetText(assistDisplay)
-    assistText:SetWidth(100)
-    assistText:SetJustifyH("LEFT") -- Ensure left alignment for content
+    assistText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    assistText:SetJustifyH("LEFT")
 
     -- Add tooltip functionality if there are assisters
     if assistCount > 0 then
@@ -222,7 +233,7 @@ local function CreateDeathHistoryEntry(parent, deathData, index, yOffset)
                     displayText = assister.name .. " (" .. levelDisplay .. " " .. playerClass .. ")"
                 else
                     color = {r = 1, g = 1, b = 1} -- Default to white if class not found
-                    displayText = assister.name .. " (unknown)"
+                    displayText = assister.name
                 end
 
                 GameTooltip:AddLine(displayText, color.r, color.g, color.b)
@@ -237,7 +248,7 @@ local function CreateDeathHistoryEntry(parent, deathData, index, yOffset)
     end
 
     local timeText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    timeText:SetPoint("TOPLEFT", 390, yOffset - 3)
+    timeText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
     timeText:SetText(PSC_FormatTimestamp(deathData.timestamp))
 
     return yOffset - 20
@@ -262,27 +273,35 @@ end
 
 -- Helper functions for creating and manipulating the player detail frame
 local function FindPlayerEntryByName(playerName)
-    -- Get player info directly from the database cache
-    local playerInfo = PSC_DB.PlayerInfoCache[playerName]
-    if not playerInfo then
-        return nil
-    end
-
-    -- Create a consolidated entry with data from the player info cache
+    -- Create a basic entry even if we don't have complete info
     local entry = {
         name = playerName,
-        class = playerInfo.class or "Unknown",
-        race = playerInfo.race or "Unknown",
-        gender = playerInfo.gender or "Unknown",
-        levelDisplay = playerInfo.level or -1,
-        guild = playerInfo.guild or "",
-        rank = playerInfo.rank or 0,
+        class = "Unknown",
+        race = "Unknown",
+        gender = "Unknown",
+        levelDisplay = -1,
+        guild = "",
+        rank = 0,
         kills = 0,
         deaths = 0,
+        assists = 0,
         lastKill = 0,
         killHistory = {},
-        deathHistory = {}
+        deathHistory = {},
+        assistHistory = {}
     }
+
+    -- Try to get player info from the database cache
+    local playerInfo = PSC_DB.PlayerInfoCache[playerName]
+    if playerInfo then
+        -- Update with available information
+        entry.class = playerInfo.class or "Unknown"
+        entry.race = playerInfo.race or "Unknown"
+        entry.gender = playerInfo.gender or "Unknown"
+        entry.levelDisplay = playerInfo.level or -1
+        entry.guild = playerInfo.guild or ""
+        entry.rank = playerInfo.rank or 0
+    end
 
     -- Collect kill history across all characters
     local charactersToProcess = GetCharactersToProcessForStatistics()
@@ -313,22 +332,60 @@ local function FindPlayerEntryByName(playerName)
         end
     end
 
-    -- Collect death history from all characters that match this player name
+    -- Collect death history and assists from all characters that match this player name
     local currentCharacterKey = PSC_GetCharacterKey()
     local lossData = PSC_DB.PvPLossCounts[currentCharacterKey]
 
-    if lossData and lossData.Deaths and lossData.Deaths[playerName] then
-        local deathData = lossData.Deaths[playerName]
-        entry.deaths = deathData.deaths or 0
+    if lossData and lossData.Deaths then
+        -- Count direct deaths
+        if lossData.Deaths[playerName] then
+            local deathData = lossData.Deaths[playerName]
+            entry.deaths = deathData.deaths or 0
 
-        -- Add all death locations to history
-        if deathData.deathLocations then
-            for _, location in ipairs(deathData.deathLocations) do
-                table.insert(entry.deathHistory, location)
+            -- Add all death locations to history
+            if deathData.deathLocations then
+                for _, location in ipairs(deathData.deathLocations) do
+                    table.insert(entry.deathHistory, location)
+                end
+            end
+        end
+
+        -- Count assists and build assist history
+        for killerName, deathData in pairs(lossData.Deaths) do
+            if deathData.deathLocations then
+                for _, location in ipairs(deathData.deathLocations) do
+                    if location.assisters then
+                        for _, assister in ipairs(location.assisters) do
+                            if assister.name == playerName then
+                                entry.assists = entry.assists + 1
+
+                                -- Create assist history entry
+                                local assistData = {
+                                    killerName = killerName,
+                                    killerLevel = location.killerLevel or -1,
+                                    victimLevel = entry.levelDisplay, -- Use the entry level (which might be -1)
+                                    zone = location.zone or "Unknown",
+                                    timestamp = location.timestamp or 0,
+                                    otherAssisters = {}
+                                }
+
+                                -- Add other assisters (excluding the current player)
+                                for _, otherAssister in ipairs(location.assisters) do
+                                    if otherAssister.name ~= playerName then
+                                        table.insert(assistData.otherAssisters, otherAssister)
+                                    end
+                                end
+
+                                table.insert(entry.assistHistory, assistData)
+                            end
+                        end
+                    end
+                end
             end
         end
     end
 
+    -- Always return an entry even if incomplete
     return entry
 end
 
@@ -352,7 +409,9 @@ local function CreatePlayerDetailFrame()
     scrollFrame:SetScrollChild(content)
 
     frame.content = content
-    table.insert(UISpecialFrames, "PSC_PlayerDetailFrame")
+
+    -- Don't add to UISpecialFrames as FrameManager will handle this
+    -- Remove this line: table.insert(UISpecialFrames, "PSC_PlayerDetailFrame")
 
     return frame
 end
@@ -376,17 +435,20 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
     playerLabel:SetTextColor(1, 1, 1) -- White color
 
     -- Create player info with class color
-    local infoText = string.format("%s - Level %s %s %s %s",
-        playerName, playerLevel, playerRace, playerClass, guildInfo)
+    local infoText = string.format("%s - Level %s %s %s",
+        playerName, playerLevel, playerRace, playerClass)
 
     local playerInfoLabel = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     playerInfoLabel:SetPoint("TOPLEFT", 120, yOffset) -- Match the alignment of other detail rows
     playerInfoLabel:SetText(infoText)
 
     -- Apply class color to the player info text
-    if RAID_CLASS_COLORS and RAID_CLASS_COLORS[playerClass:upper()] then
+    if playerClass ~= "Unknown" and RAID_CLASS_COLORS and RAID_CLASS_COLORS[playerClass:upper()] then
         local color = RAID_CLASS_COLORS[playerClass:upper()]
         playerInfoLabel:SetTextColor(color.r, color.g, color.b)
+    else
+        -- Gray out text for incomplete player info
+        playerInfoLabel:SetTextColor(0.7, 0.7, 0.7)
     end
 
     yOffset = yOffset - 20
@@ -395,6 +457,7 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
     yOffset = CreateDetailRow(content, "Rank:", playerEntry.rank and playerEntry.rank > 0 and tostring(playerEntry.rank) or "0", yOffset)
     yOffset = CreateDetailRow(content, "Total kills:", tostring(playerEntry.kills), yOffset)
     yOffset = CreateDetailRow(content, "Total deaths:", tostring(playerEntry.deaths), yOffset)
+    yOffset = CreateDetailRow(content, "Total assists:", tostring(playerEntry.assists), yOffset) -- Add assists to summary
     yOffset = CreateDetailRow(content, "K/D Ratio:", string.format("%.2f", playerEntry.deaths > 0 and playerEntry.kills / playerEntry.deaths or playerEntry.kills), yOffset)
 
     return yOffset - 20
@@ -431,26 +494,26 @@ local function CreateDeathHistoryHeaderRow(content, yOffset)
     deathHeaderBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
 
     local killerLevelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killerLevelHeader:SetPoint("TOPLEFT", 25, yOffset - 3)
+    killerLevelHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
     killerLevelHeader:SetText("Level")
     killerLevelHeader:SetTextColor(1, 0.82, 0)
 
     local deathZoneHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    deathZoneHeader:SetPoint("TOPLEFT", 70, yOffset - 3)
+    deathZoneHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
     deathZoneHeader:SetText("Zone")
     deathZoneHeader:SetTextColor(1, 0.82, 0)
-    deathZoneHeader:SetWidth(200)
-    deathZoneHeader:SetJustifyH("LEFT") -- Explicitly set left alignment
+    deathZoneHeader:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
+    deathZoneHeader:SetJustifyH("LEFT")
 
     local assistHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    assistHeader:SetPoint("TOPLEFT", 280, yOffset - 3)
+    assistHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     assistHeader:SetText("Assisters")
     assistHeader:SetTextColor(1, 0.82, 0)
-    assistHeader:SetWidth(100)
-    assistHeader:SetJustifyH("LEFT") -- Set left alignment for header
+    assistHeader:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    assistHeader:SetJustifyH("LEFT")
 
     local deathTimeHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    deathTimeHeader:SetPoint("TOPLEFT", 390, yOffset - 3)
+    deathTimeHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
     deathTimeHeader:SetText("Time")
     deathTimeHeader:SetTextColor(1, 0.82, 0)
 
@@ -477,7 +540,167 @@ local function DisplayDeathHistorySection(content, playerEntry, yOffset)
         yOffset = yOffset - 30
     end
 
-    return yOffset
+    return yOffset - 20
+end
+
+-- Create a header row for assist history
+local function CreateAssistHistoryHeaderRow(content, yOffset)
+    local assistHeaderBg = content:CreateTexture(nil, "BACKGROUND")
+    assistHeaderBg:SetPoint("TOPLEFT", 15, yOffset)
+    assistHeaderBg:SetPoint("TOPRIGHT", content, "TOPRIGHT", -15, 0)
+    assistHeaderBg:SetHeight(20)
+    assistHeaderBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
+
+    local victimLevelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    victimLevelHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
+    victimLevelHeader:SetText("Level")
+    victimLevelHeader:SetTextColor(1, 0.82, 0)
+
+    local assistZoneHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    assistZoneHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
+    assistZoneHeader:SetText("Zone")
+    assistZoneHeader:SetTextColor(1, 0.82, 0)
+    assistZoneHeader:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
+    assistZoneHeader:SetJustifyH("LEFT")
+
+    local killerHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    killerHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
+    killerHeader:SetText("Killer")
+    killerHeader:SetTextColor(1, 0.82, 0)
+    killerHeader:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    killerHeader:SetJustifyH("LEFT")
+
+    local assistTimeHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    assistTimeHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
+    assistTimeHeader:SetText("Time")
+    assistTimeHeader:SetTextColor(1, 0.82, 0)
+
+    return yOffset - 20
+end
+
+-- Create an entry row for assist history
+local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
+    local bgColor = index % 2 == 0 and {0.1, 0.1, 0.1, 0.3} or {0.15, 0.15, 0.15, 0.3}
+
+    local bg = parent:CreateTexture(nil, "BACKGROUND")
+    bg:SetPoint("TOPLEFT", 15, yOffset)
+    bg:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -15, 0)
+    bg:SetHeight(20)
+    bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4])
+
+    -- Your level when you died (the victim)
+    local levelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    levelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
+    levelText:SetText(assistData.victimLevel == -1 and "??" or tostring(assistData.victimLevel))
+    levelText:SetWidth(PSC_COLUMN_WIDTHS.LEVEL)
+
+    -- Zone where the assist occurred
+    local zoneText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    zoneText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
+    zoneText:SetText(assistData.zone or "Unknown")
+    zoneText:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
+    zoneText:SetJustifyH("LEFT")
+
+    -- Create a frame for the killer info with tooltip
+    local killerFrame = CreateFrame("Frame", nil, parent)
+    killerFrame:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
+    killerFrame:SetSize(100, 20)
+
+    local killerText = killerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    killerText:SetPoint("LEFT", 0, 0)
+    killerText:SetText(assistData.killerName or "Unknown")
+    killerText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    killerText:SetJustifyH("LEFT")
+
+    -- Color the killer name based on class if known
+    local killerInfo = PSC_DB.PlayerInfoCache[assistData.killerName]
+    if killerInfo and killerInfo.class and RAID_CLASS_COLORS[killerInfo.class:upper()] then
+        local color = RAID_CLASS_COLORS[killerInfo.class:upper()]
+        killerText:SetTextColor(color.r, color.g, color.b)
+    else
+        -- Use default white color for unknown players
+        killerText:SetTextColor(1, 1, 1)
+    end
+
+    -- Add tooltip with killer info
+    killerFrame:SetScript("OnEnter", function(self)
+        if not assistData.killerName then return end
+
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Main Killer:", 1, 0.82, 0, 1)
+
+        -- Format killer info with class color if available
+local killerInfo = PSC_DB.PlayerInfoCache[assistData.killerName]
+        if killerInfo then
+            local killerLevel = killerInfo.level == -1 and "??" or tostring(killerInfo.level)
+            local killerClass = killerInfo.class or "Unknown"
+            local color = RAID_CLASS_COLORS[killerClass:upper()] or {r=1, g=1, b=1}
+            local displayText = string.format("%s (Level %s %s)", assistData.killerName, killerLevel, killerClass)
+            GameTooltip:AddLine(displayText, color.r, color.g, color.b)
+        else
+            -- Use white color for unknown players
+            GameTooltip:AddLine(assistData.killerName, 1, 1, 1)
+        end
+
+        -- Add other assisters if any
+        if assistData.otherAssisters and #assistData.otherAssisters > 0 then
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("Other Assisters:", 1, 0.82, 0)
+
+            for _, assister in ipairs(assistData.otherAssisters) do
+                local assisterInfo = PSC_DB.PlayerInfoCache[assister.name]
+                if assisterInfo then
+                    local assisterLevel = assisterInfo.level == -1 and "??" or tostring(assisterInfo.level)
+                    local assisterClass = assisterInfo.class or "Unknown"
+                    local color = RAID_CLASS_COLORS[assisterClass:upper()] or {r=1, g=1, b=1}
+                    local displayText = string.format("%s (Level %s %s)", assister.name, assisterLevel, assisterClass)
+                    GameTooltip:AddLine(displayText, color.r, color.g, color.b)
+                else
+                    -- Use white color for unknown players
+                    GameTooltip:AddLine(assister.name, 1, 1, 1)
+                end
+            end
+        end
+
+        GameTooltip:Show()
+    end)
+
+    killerFrame:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+
+    -- Timestamp
+    local timeText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    timeText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
+    timeText:SetText(PSC_FormatTimestamp(assistData.timestamp))
+
+    return yOffset - 20
+end
+
+-- Collect and display assist history
+local function DisplayAssistHistorySection(content, playerEntry, yOffset)
+    yOffset = CreateSection(content, "Assist History", yOffset)
+    yOffset = CreateAssistHistoryHeaderRow(content, yOffset)
+
+    -- Display assist history entries
+    if playerEntry.assistHistory and #playerEntry.assistHistory > 0 then
+        -- Sort by timestamp descending (most recent first)
+        table.sort(playerEntry.assistHistory, function(a, b)
+            return (a.timestamp or 0) > (b.timestamp or 0)
+        end)
+
+        for i, assistData in ipairs(playerEntry.assistHistory) do
+            yOffset = CreateAssistHistoryEntry(content, assistData, i, yOffset)
+        end
+    else
+        local noAssistDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        noAssistDataText:SetPoint("TOPLEFT", 25, yOffset - 10)
+        noAssistDataText:SetText("No assists by this player have been recorded.")
+        noAssistDataText:SetTextColor(0.7, 0.7, 0.7)
+        yOffset = yOffset - 30
+    end
+
+    return yOffset - 20
 end
 
 -- Main function to display the player detail frame
@@ -494,6 +717,8 @@ function PSC_ShowPlayerDetailFrame(playerName)
     -- Create or reuse frame
     if not PSC_PlayerDetailFrame then
         PSC_PlayerDetailFrame = CreatePlayerDetailFrame()
+        -- Register with frame manager
+        PSC_FrameManager:RegisterFrame(PSC_PlayerDetailFrame, "PlayerDetail")
     else
         CleanupPlayerDetailFrame(PSC_PlayerDetailFrame.content)
     end
@@ -501,7 +726,9 @@ function PSC_ShowPlayerDetailFrame(playerName)
     local content = PSC_PlayerDetailFrame.content
     local titleText = playerName .. " - Player Details"
     PSC_PlayerDetailFrame.TitleText:SetText(titleText)
-    PSC_PlayerDetailFrame:Show()
+
+    -- Use frame manager to show and bring to front
+    PSC_FrameManager:ShowFrame("PlayerDetail")
 
     -- Setup each section
     local yOffset = 0
@@ -514,6 +741,9 @@ function PSC_ShowPlayerDetailFrame(playerName)
 
     -- Death history section
     yOffset = DisplayDeathHistorySection(content, playerEntry, yOffset)
+
+    -- Assist history section
+    yOffset = DisplayAssistHistorySection(content, playerEntry, yOffset)
 
     -- Set final content height
     content:SetHeight(math.abs(yOffset) + 30)

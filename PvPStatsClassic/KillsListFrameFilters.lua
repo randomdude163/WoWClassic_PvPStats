@@ -658,34 +658,37 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
         for nameWithLevel, killData in pairs(charData.Kills or {}) do
             local name = string.match(nameWithLevel, "(.-)%:")
             if name then
-                local levelStr = string.match(nameWithLevel, ":(%d+)") or "-1"
-                local level = tonumber(levelStr) or -1
-                local rank = killData.rank or 0
+                local level = tonumber(string.match(nameWithLevel, ":(%d+)") or "-1") or -1
 
-                -- Get class, race, gender and guild info from player cache if available
+                -- Get player info from cache if available
                 local playerInfo = PSC_DB.PlayerInfoCache[name] or {}
                 local playerClass = playerInfo.class or "Unknown"
                 local playerRace = playerInfo.race or "Unknown"
                 local playerGender = playerInfo.gender or "Unknown"
                 local playerGuild = playerInfo.guild or ""
+                local playerRank = playerInfo.rank or 0
 
+                -- Only add if matches search criteria
                 if searchText == "" or
                    name:lower():find(searchText, 1, true) or
                    playerClass:lower():find(searchText, 1, true) or
                    playerRace:lower():find(searchText, 1, true) or
                    playerGuild:lower():find(searchText, 1, true) then
 
+                    -- Convert lastKill to number to ensure it's properly handled
+                    local lastKillTimestamp = tonumber(killData.lastKill) or 0
+
                     local entry = {
                         name = name,
                         class = playerClass,
                         race = playerRace,
                         gender = playerGender,
-                        levelDisplay = level,  -- Store as number for consistent sorting
-                        rank = rank,
+                        levelDisplay = playerInfo.level or level,
+                        rank = playerRank,
                         guild = playerGuild,
                         zone = killData.zone or "Unknown",
                         kills = killData.kills or 0,
-                        lastKill = killData.lastKill or 0,
+                        lastKill = lastKillTimestamp, -- Make sure it's a number
                         levelAtKill = level,
                         originalKillData = killData
                     }
@@ -709,6 +712,21 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
             local playerLevel = tonumber(playerInfo.level) or -1  -- Ensure it's a number
             local playerRank = playerInfo.rank or 0
 
+            -- Find the most recent zone from death locations
+            local zone = "Unknown"
+            local lastKill = 0
+
+            if deathData.deathLocations and #deathData.deathLocations > 0 then
+                -- Sort death locations by timestamp descending (most recent first)
+                table.sort(deathData.deathLocations, function(a, b)
+                    return (a.timestamp or 0) > (b.timestamp or 0)
+                end)
+
+                -- Get zone from most recent death location
+                zone = deathData.deathLocations[1].zone or zone
+                lastKill = deathData.deathLocations[1].timestamp or lastKill
+            end
+
             -- Only add if matches search criteria
             if searchText == "" or
                killerName:lower():find(searchText, 1, true) or
@@ -724,9 +742,9 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
                     levelDisplay = playerLevel,  -- Store as number for consistent sorting
                     rank = playerRank,
                     guild = playerGuild,
-                    zone = "Unknown",
+                    zone = zone,
                     kills = 0,
-                    lastKill = 0,
+                    lastKill = lastKill,
                     deaths = deathData.deaths or 0,
                     deathHistory = deathData.deathLocations or {}
                 }
@@ -738,12 +756,101 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
     end
 end
 
--- Add death counts to entries
-local function AddDeathCountsToEntries(entries, deathDataByPlayer)
-    for i, entry in ipairs(entries) do
-        local deathData = deathDataByPlayer[entry.name]
-        entry.deaths = deathData and deathData.deaths or 0
-        entry.deathHistory = deathData and deathData.deathLocations or {}
+-- Function to count assists from a player
+local function CountPlayerAssists(playerName, deathDataByPlayer)
+    local assistCount = 0
+
+    for _, deathData in pairs(deathDataByPlayer) do
+        if deathData.deathLocations then
+            for _, location in ipairs(deathData.deathLocations) do
+                if location.assisters then
+                    for _, assister in ipairs(location.assisters) do
+                        if assister.name == playerName then
+                            assistCount = assistCount + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return assistCount
+end
+
+-- Process players who have only assisted in kills but never directly killed you
+local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
+    -- Build a list of players who have assisted in kills
+    local assistPlayerData = {}
+
+    for _, deathData in pairs(deathDataByPlayer) do
+        if deathData.deathLocations then
+            for _, location in ipairs(deathData.deathLocations) do
+                if location.assisters then
+                    for _, assister in ipairs(location.assisters) do
+                        local assisterName = assister.name
+
+                        -- Skip if already processed
+                        if not playerNameMap[assisterName] then
+                            if not assistPlayerData[assisterName] then
+                                assistPlayerData[assisterName] = {
+                                    assists = 0,
+                                    lastAssist = 0,
+                                    zone = "Unknown"
+                                }
+                            end
+
+                            assistPlayerData[assisterName].assists = assistPlayerData[assisterName].assists + 1
+
+                            -- Update latest assist timestamp and zone if more recent
+                            if (location.timestamp or 0) > assistPlayerData[assisterName].lastAssist then
+                                assistPlayerData[assisterName].lastAssist = location.timestamp or 0
+                                assistPlayerData[assisterName].zone = location.zone or "Unknown"
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Create entries for assist-only players
+    for assisterName, assistData in pairs(assistPlayerData) do
+        -- Skip if already added from kills or deaths
+        if not playerNameMap[assisterName] then
+            local playerInfo = PSC_DB.PlayerInfoCache[assisterName] or {}
+            local playerClass = playerInfo.class or "Unknown"
+            local playerRace = playerInfo.race or "Unknown"
+            local playerGender = playerInfo.gender or "Unknown"
+            local playerGuild = playerInfo.guild or ""
+            local playerLevel = tonumber(playerInfo.level) or -1
+            local playerRank = playerInfo.rank or 0
+
+            -- Only add if matches search criteria
+            if searchText == "" or
+               assisterName:lower():find(searchText, 1, true) or
+               playerClass:lower():find(searchText, 1, true) or
+               playerRace:lower():find(searchText, 1, true) or
+               playerGuild:lower():find(searchText, 1, true) then
+
+                local entry = {
+                    name = assisterName,
+                    class = playerClass,
+                    race = playerRace,
+                    gender = playerGender,
+                    levelDisplay = playerLevel,
+                    rank = playerRank,
+                    guild = playerGuild,
+                    zone = assistData.zone,
+                    kills = 0,
+                    deaths = 0,
+                    assists = assistData.assists,
+                    lastKill = assistData.lastAssist  -- Use assist timestamp for sorting
+                }
+
+                playerNameMap[assisterName] = entry
+                table.insert(entries, entry)
+            end
+        end
     end
 end
 
@@ -803,10 +910,21 @@ function PSC_FilterAndSortEntries()
     -- Step 3: Process players who killed you but you haven't killed
     ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
 
-    -- Step 4: Add death counts to all entries
-    AddDeathCountsToEntries(entries, deathDataByPlayer)
+    -- Step 4: Process players who have only assisted in kills but never directly killed you
+    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
 
-    -- Step 5: Sort entries
+    -- Step 5: Add death counts and assists counts to all entries
+    for i, entry in ipairs(entries) do
+        -- Add death data
+        local deathData = deathDataByPlayer[entry.name]
+        entry.deaths = deathData and deathData.deaths or 0
+        entry.deathHistory = deathData and deathData.deathLocations or {}
+
+        -- Add assists data
+        entry.assists = CountPlayerAssists(entry.name, deathDataByPlayer)
+    end
+
+    -- Step 6: Sort entries
     return SortPlayerEntries(entries)
 end
 
