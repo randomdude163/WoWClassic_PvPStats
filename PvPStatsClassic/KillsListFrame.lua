@@ -113,12 +113,15 @@ local function CreateColumnHeaders(content)
     local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
     local genderButton = CreateColumnHeader(content, "Gender", colWidths.gender, raceButton, 0, 0, "gender")
     local levelButton = CreateColumnHeader(content, "Level", colWidths.level, genderButton, 0, 0, "level")
-    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, levelButton, 0, 0, "rank")
+
+    -- Move kills and deaths columns here (between level and rank)
+    local killsButton = CreateColumnHeader(content, "Kills", colWidths.kills, levelButton, 0, 0, "kills")
+    local deathsButton = CreateColumnHeader(content, "Deaths", colWidths.deaths, killsButton, 0, 0, "deaths")
+
+    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, deathsButton, 0, 0, "rank")
     local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, rankButton, 0, 0, "guild")
     local zoneButton = CreateColumnHeader(content, "Zone", colWidths.zone, guildButton, 0, 0, "zone")
-    local killsButton = CreateColumnHeader(content, "Kills", colWidths.kills, zoneButton, 0, 0, "kills")
-    local deathsButton = CreateColumnHeader(content, "Deaths", colWidths.deaths, killsButton, 0, 0, "deaths")
-    local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, deathsButton, 0, 0, "lastKill")
+    local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, zoneButton, 0, 0, "lastKill")
 
     return -30
 end
@@ -353,12 +356,15 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
     local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
     local levelCell = CreateLevelCell(rowContainer, genderCell, entry.levelDisplay, colWidths.level)
-    local rankCell = CreateRankCell(rowContainer, levelCell, entry.rank, colWidths.rank)
+
+    -- Move kills and deaths cells here (between level and rank)
+    local killsCell = CreateKillsCell(rowContainer, levelCell, entry.kills, colWidths.kills)
+    local deathsCell = CreateDeathsCell(rowContainer, killsCell, entry.deaths, colWidths.deaths)
+
+    local rankCell = CreateRankCell(rowContainer, deathsCell, entry.rank, colWidths.rank)
     local guildCell = CreateGuildCell(rowContainer, rankCell, entry.guild, colWidths.guild)
     local zoneCell = CreateZoneCell(rowContainer, guildCell, entry.zone, colWidths.zone)
-    local killsCell = CreateKillsCell(rowContainer, zoneCell, entry.kills, colWidths.kills)
-    local deathsCell = CreateDeathsCell(rowContainer, killsCell, entry.deaths, colWidths.deaths)
-    local lastKillCell = CreateLastKillCell(rowContainer, deathsCell, entry.lastKill, colWidths.lastKill)
+    local lastKillCell = CreateLastKillCell(rowContainer, zoneCell, entry.lastKill, colWidths.lastKill)
 
     -- Add click handler to view detailed history
     rowContainer:SetScript("OnClick", function()

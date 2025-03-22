@@ -324,7 +324,6 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
         assists = {}
     }
 
-    -- Add assists using PSC_GetRandomTestPlayer
     local usedNames = {killerName}
     for i = 1, assistCount do
         local assistPlayer = PSC_GetRandomTestPlayer()
@@ -335,14 +334,16 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
 
         table.insert(usedNames, assistPlayer.name)
 
-        -- Store assist info in cache
-        PSC_StorePlayerInfo(assistPlayer.name, assistPlayer.level, assistPlayer.class,
-                           assistPlayer.race, assistPlayer.gender, assistPlayer.guildName, assistPlayer.rank)
-
+        local rndNumber = math.random(100)
+        if rndNumber <= 50 then
+            -- Sometimes don't store assist info because it might happen that we don't mouseover or target a player that assists in a kill
+            print("Storing assist info for " .. assistPlayer.name)
+            PSC_StorePlayerInfo(assistPlayer.name, assistPlayer.level, assistPlayer.class,
+                            assistPlayer.race, assistPlayer.gender, assistPlayer.guildName, assistPlayer.rank)
+        end
         -- Add assist without guid
         table.insert(killerInfo.assists, {
-            name = assistPlayer.name,
-            level = assistPlayer.level
+            name = assistPlayer.name
         })
     end
 
@@ -368,11 +369,17 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
     if assistCount > 0 then
         local assistNames = {}
         for _, assist in ipairs(killerInfo.assists) do
-            local assistLevel = PSC_DB.PlayerInfoCache[assist.name].level
-            local assistLevelDisplay = assistLevel == -1 and "??" or assistLevel
-            local assistClass = PSC_DB.PlayerInfoCache[assist.name].class
-            table.insert(assistNames, assist.name .. " (Level " .. assistLevelDisplay .. " " .. assistClass .. ")")
+            if PSC_DB.PlayerInfoCache[assist.name] ~= nil then
+                local assistLevel = PSC_DB.PlayerInfoCache[assist.name].level
+                local assistLevelDisplay = assistLevel == -1 and "??" or assistLevel
+                local assistClass = PSC_DB.PlayerInfoCache[assist.name].class
+                table.insert(assistNames, assist.name .. " (Level " .. assistLevelDisplay .. " " .. assistClass .. ")")
+            else
+                table.insert(assistNames, assist.name .. " (Unknown level and class)")
+            end
         end
         PSC_Print("Assists: " .. table.concat(assistNames, ", "))
     end
+
+    PSC_RegisterPlayerKill(killerName)
 end

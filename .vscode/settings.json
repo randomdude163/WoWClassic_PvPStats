@@ -24,7 +24,8 @@
         "FauxScrollFrame_Update",
         "FauxScrollFrame_OnVerticalScroll",
         "FauxScrollFrame_GetOffset",
-        "PanelTemplates_GetSelectedTab"
+        "PanelTemplates_GetSelectedTab",
+        "WorldFrame"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {

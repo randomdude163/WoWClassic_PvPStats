@@ -98,7 +98,7 @@ function PSC_RegisterPlayerDeath(killerInfo)
     if not lossData.Deaths[killerName] then
         lossData.Deaths[killerName] = {
             deaths = 0,
-            lastDeath = "",
+            lastDeath = 0, -- Store as number (time())
             zone = "",
             deathLocations = {},
             assistKills = 0,
@@ -108,7 +108,7 @@ function PSC_RegisterPlayerDeath(killerInfo)
 
     local deathData = lossData.Deaths[killerName]
     deathData.deaths = deathData.deaths + 1
-    deathData.lastDeath = date("%Y-%m-%d %H:%M:%S")
+    deathData.lastDeath = time() -- Use time() instead of formatted string
     deathData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
     -- Store the killer's level at time of death
@@ -137,14 +137,8 @@ function PSC_RegisterPlayerDeath(killerInfo)
         if #killerInfo.assists > 0 then
             assistsWithLevels = {}
             for _, assist in ipairs(killerInfo.assists) do
-                local assistLevel = -1
-                if PSC_DB.PlayerInfoCache[assist.name] then
-                    assistLevel = PSC_DB.PlayerInfoCache[assist.name].level
-                end
-
                 table.insert(assistsWithLevels, {
-                    name = assist.name,
-                    level = assistLevel
+                    name = assist.name
                 })
             end
         end
@@ -153,7 +147,7 @@ function PSC_RegisterPlayerDeath(killerInfo)
             x = x,
             y = y,
             zone = deathData.zone,
-            timestamp = deathData.lastDeath,
+            timestamp = time(), -- Use time() instead of formatted string
             deathNumber = deathData.deaths,
             killerLevel = killerLevel,
             assisters = assistsWithLevels
@@ -198,6 +192,7 @@ function TrackIncomingPetDamage(petGUID, petName, amount)
     if not petGUID or not petName then return end
 
     local ownerGUID = GetPetOwnerGUID(petGUID)
+    print("Pet owner GUID: " .. ownerGUID)
     if not ownerGUID then
         -- If we can't find the owner, just track the pet damage directly
         TrackIncomingPlayerDamage(petGUID, petName, amount)
@@ -205,7 +200,7 @@ function TrackIncomingPetDamage(petGUID, petName, amount)
     end
 
     local ownerName = GetNameFromGUID(ownerGUID) or "Unknown Owner"
-
+    print("Owner Name: " .. ownerName)
     -- Create a merged record with the owner's information
     local existingRecord = PSC_RecentDamageFromPlayers[ownerGUID] or {
         name = ownerName,
@@ -257,6 +252,8 @@ function PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sour
         damageAmount = param4 or 0
     end
 
+    print("Damage amount: " .. damageAmount)
+
     if damageAmount > 0 then
         TrackIncomingPetDamage(sourceGUID, sourceName, damageAmount)
     end
@@ -300,7 +297,7 @@ function PSC_ShowDeathStats()
     table.sort(deaths, function(a, b) return a.total > b.total end)
 
     for i, death in ipairs(deaths) do
-        local dateStr = death.lastDeath and death.lastDeath:match("(%d+%-%d+%-%d+)") or "Unknown"
+        local dateStr = PSC_FormatTimestamp(death.lastDeath)
         PSC_Print(i .. ". " .. death.name .. " - " .. death.total ..
                  " deaths (Solo: " .. death.solo ..
                  ", Group: " .. death.assists ..
