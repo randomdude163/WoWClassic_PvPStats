@@ -89,7 +89,12 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
     local mainKillerName = randomPlayer.name
     local mainKillerGUID = "Player-0-" .. math.random(1000000)
     local mainKillerClass = randomPlayer.class
+    local mainKillerLevel = randomPlayer.level
     PSC_RecentDamageFromPlayers = {}
+
+    -- Store killer level in PlayerInfoCache
+    PSC_StorePlayerInfo(mainKillerName, mainKillerLevel, mainKillerClass,
+        randomPlayer.race, randomPlayer.gender, randomPlayer.guildName, randomPlayer.rank)
 
     local now = GetTime()
 
@@ -104,6 +109,10 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
             assistName = randomPlayer.name
         end
 
+        -- Store assist player level in PlayerInfoCache
+        PSC_StorePlayerInfo(assistName, randomPlayer.level, randomPlayer.class,
+            randomPlayer.race, randomPlayer.gender, randomPlayer.guildName, randomPlayer.rank)
+
         local assistGUID = "Player-0-" .. math.random(1000000)
         TrackIncomingPlayerDamage(assistGUID, assistName, 500)
         table.insert(assistList, assistName)
@@ -115,12 +124,31 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
     local characterKey = PSC_GetCharacterKey()
     if PSC_DB.PvPLossCounts and PSC_DB.PvPLossCounts[characterKey] then
         local deathCount = 0
+        local killerLevel = "unknown"
+
         if PSC_DB.PvPLossCounts[characterKey].Deaths[mainKillerName] then
-            deathCount = PSC_DB.PvPLossCounts[characterKey].Deaths[mainKillerName].deaths
+            local deathData = PSC_DB.PvPLossCounts[characterKey].Deaths[mainKillerName]
+            deathCount = deathData.deaths
+            killerLevel = deathData.killerLevel
         end
 
         PSC_Print("Death simulation complete! Killed by " .. mainKillerName ..
-            " (" .. mainKillerClass .. ") - Total deaths to them: " .. deathCount)
+            " (Level " .. killerLevel .. " " .. mainKillerClass .. ") - Total deaths to them: " .. deathCount)
+
+        -- Show assist information if applicable
+        if assistCount > 0 and PSC_DB.PvPLossCounts[characterKey].Deaths[mainKillerName] then
+            local lastDeath = PSC_DB.PvPLossCounts[characterKey].Deaths[mainKillerName].deathLocations[#PSC_DB.PvPLossCounts[characterKey].Deaths[mainKillerName].deathLocations]
+            if lastDeath and lastDeath.assisters then
+                local assistInfo = "Assisters: "
+                for i, assist in ipairs(lastDeath.assisters) do
+                    assistInfo = assistInfo .. assist.name .. " (Level " .. assist.level .. ")"
+                    if i < #lastDeath.assisters then
+                        assistInfo = assistInfo .. ", "
+                    end
+                end
+                PSC_Print(assistInfo)
+            end
+        end
     end
 end
 
@@ -256,15 +284,6 @@ end
 function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
     PSC_Print("Simulating death by " .. killerCount .. " enemy player(s) with " .. assistCount .. " assists...")
 
-    -- Use the same random names pool as in your kill simulation
-    local randomNames = {
-        "Testplayer", "Gankalicious", "Pwnyou", "Backstabber", "Shadowmelter",
-        "Campmaster", "Roguenstein", "Sneakattack", "Huntard", "Faceroller",
-        "Dotspammer", "Moonbender", "Healnoob", "Ragequitter", "Imbalanced",
-        "Critmaster", "Zerglord", "Epicfail", "Oneshot", "Griefer",
-        "Farmville", "Stunlock", "Procmaster", "Noobslayer", "Bodycamper"
-    }
-
     local zone = zones[math.random(#zones)]
 
     -- Override GetRealZoneText for this simulation
@@ -281,10 +300,23 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
         return { x = randomX / 100, y = randomY / 100 }
     end
 
+    -- Generate a killer using PSC_GetRandomTestPlayer
+    local killerPlayer = PSC_GetRandomTestPlayer()
+    local killerName = killerPlayer.name
+    local killerClass = killerPlayer.class
+    local killerLevel = killerPlayer.level
+    local killerRace = killerPlayer.race
+    local killerGender = killerPlayer.gender
+    local killerGuild = killerPlayer.guildName
+    local killerRank = killerPlayer.rank
+
+    -- Store killer info in cache
+    PSC_StorePlayerInfo(killerName, killerLevel, killerClass, killerRace, killerGender, killerGuild, killerRank)
+
     -- Create a simulated killer info structure
     local killerInfo = {
         killer = {
-            name = randomNames[math.random(#randomNames)],
+            name = killerName,
             guid = "Simulated-Killer-GUID-" .. math.random(1000000),
             damage = 1000,
             isPet = false
@@ -292,16 +324,25 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
         assists = {}
     }
 
-    -- Add assists
+    -- Add assists using PSC_GetRandomTestPlayer
+    local usedNames = {killerName}
     for i = 1, assistCount do
-        local assistName = randomNames[math.random(#randomNames)]
-        while assistName == killerInfo.killer.name do
-            assistName = randomNames[math.random(#randomNames)]
+        local assistPlayer = PSC_GetRandomTestPlayer()
+        -- Ensure unique names
+        while tContains(usedNames, assistPlayer.name) do
+            assistPlayer = PSC_GetRandomTestPlayer()
         end
 
+        table.insert(usedNames, assistPlayer.name)
+
+        -- Store assist info in cache
+        PSC_StorePlayerInfo(assistPlayer.name, assistPlayer.level, assistPlayer.class,
+                           assistPlayer.race, assistPlayer.gender, assistPlayer.guildName, assistPlayer.rank)
+
+        -- Add assist without guid
         table.insert(killerInfo.assists, {
-            name = assistName,
-            guid = "Simulated-Assist-GUID-" .. math.random(1000000)
+            name = assistPlayer.name,
+            level = assistPlayer.level
         })
     end
 
@@ -319,4 +360,19 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
     C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
 
     PSC_Print("Death simulation complete!")
+
+    -- Print summary of death data
+    local killerLevelDisplay = killerLevel == -1 and "??" or killerLevel
+    PSC_Print("Killed by: " .. killerName .. " (Level " .. killerLevelDisplay .. " " .. killerClass .. ")")
+
+    if assistCount > 0 then
+        local assistNames = {}
+        for _, assist in ipairs(killerInfo.assists) do
+            local assistLevel = PSC_DB.PlayerInfoCache[assist.name].level
+            local assistLevelDisplay = assistLevel == -1 and "??" or assistLevel
+            local assistClass = PSC_DB.PlayerInfoCache[assist.name].class
+            table.insert(assistNames, assist.name .. " (Level " .. assistLevelDisplay .. " " .. assistClass .. ")")
+        end
+        PSC_Print("Assists: " .. table.concat(assistNames, ", "))
+    end
 end

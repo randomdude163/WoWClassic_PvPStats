@@ -48,14 +48,12 @@ function PSC_GetKillerInfoOnDeath()
                     local ownerName = GetNameFromGUID(ownerGUID)
                     if ownerName and ownerGUID ~= mainKiller.guid then
                         table.insert(assists, {
-                            name = ownerName,
-                            guid = ownerGUID
+                            name = ownerName
                         })
                     end
                 else
                     table.insert(assists, {
-                        name = killer.name,
-                        guid = killer.guid
+                        name = killer.name
                     })
                 end
             end
@@ -90,6 +88,12 @@ function PSC_RegisterPlayerDeath(killerInfo)
     local killerName = killerInfo.killer.name
     if not killerName then return end
 
+    -- Get killer level from player info cache
+    local killerLevel = -1
+    if PSC_DB.PlayerInfoCache[killerName] then
+        killerLevel = PSC_DB.PlayerInfoCache[killerName].level
+    end
+
     -- Check if we have info for this killer
     if not lossData.Deaths[killerName] then
         lossData.Deaths[killerName] = {
@@ -106,6 +110,9 @@ function PSC_RegisterPlayerDeath(killerInfo)
     deathData.deaths = deathData.deaths + 1
     deathData.lastDeath = date("%Y-%m-%d %H:%M:%S")
     deathData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
+
+    -- Store the killer's level at time of death
+    deathData.killerLevel = killerLevel
 
     -- Track whether it was a solo kill or assist
     if #killerInfo.assists > 0 then
@@ -125,13 +132,31 @@ function PSC_RegisterPlayerDeath(killerInfo)
         local x = position.x * 100
         local y = position.y * 100
 
+        -- Prepare assist information with levels
+        local assistsWithLevels = nil
+        if #killerInfo.assists > 0 then
+            assistsWithLevels = {}
+            for _, assist in ipairs(killerInfo.assists) do
+                local assistLevel = -1
+                if PSC_DB.PlayerInfoCache[assist.name] then
+                    assistLevel = PSC_DB.PlayerInfoCache[assist.name].level
+                end
+
+                table.insert(assistsWithLevels, {
+                    name = assist.name,
+                    level = assistLevel
+                })
+            end
+        end
+
         table.insert(deathData.deathLocations, {
             x = x,
             y = y,
             zone = deathData.zone,
             timestamp = deathData.lastDeath,
             deathNumber = deathData.deaths,
-            assisters = #killerInfo.assists > 0 and killerInfo.assists or nil
+            killerLevel = killerLevel,
+            assisters = assistsWithLevels
         })
     end
 
@@ -142,7 +167,7 @@ function PSC_RegisterPlayerDeath(killerInfo)
         else
             assistText = " (solo kill)"
         end
-        print("Death recorded: killed by " .. killerName .. assistText)
+        print("Death recorded: killed by " .. killerName .. " (Level: " .. killerLevel .. ")" .. assistText)
     end
 end
 
