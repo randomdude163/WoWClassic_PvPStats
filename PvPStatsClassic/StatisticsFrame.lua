@@ -868,7 +868,8 @@ local function gatherStatistics()
 
                     if PSC_DB.PlayerInfoCache[nameWithoutLevel] then
                         local class = PSC_DB.PlayerInfoCache[nameWithoutLevel].class
-                        classData[class] = (classData[class] or 0) + 1
+                        -- Changed from +1 to +kills to count actual kills
+                        classData[class] = (classData[class] or 0) + kills
 
                         local level = nameWithLevel:match(":(%S+)")
                         local levelNum = tonumber(level or "0") or 0
@@ -883,10 +884,12 @@ local function gatherStatistics()
                         end
 
                         local race = PSC_DB.PlayerInfoCache[nameWithoutLevel].race
-                        raceData[race] = (raceData[race] or 0) + 1
+                        -- Changed from +1 to +kills to count actual kills
+                        raceData[race] = (raceData[race] or 0) + kills
 
                         local gender = PSC_DB.PlayerInfoCache[nameWithoutLevel].gender
-                        genderData[gender] = (genderData[gender] or 0) + 1
+                        -- Changed from +1 to +kills to count actual kills
+                        genderData[gender] = (genderData[gender] or 0) + kills
 
                         local zone = killData.zone
                         zoneData[zone] = (zoneData[zone] or 0) + kills
