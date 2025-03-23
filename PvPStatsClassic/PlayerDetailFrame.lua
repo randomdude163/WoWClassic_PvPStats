@@ -119,6 +119,7 @@ local function CreateDetailRow(parent, leftText, rightText, yOffset)
     local rightLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     rightLabel:SetPoint("TOPLEFT", 120, yOffset)
     rightLabel:SetText(rightText)
+    rightLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
 
     return yOffset - 20
 end
@@ -399,6 +400,11 @@ local function CreatePlayerDetailFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
+    -- Add background texture
+    local bgTexture = frame:CreateTexture(nil, "BACKGROUND")
+    bgTexture:SetAllPoints()
+    bgTexture:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Background-Dark")
+
     -- Create scrollable content frame
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 12, -30)
@@ -409,9 +415,6 @@ local function CreatePlayerDetailFrame()
     scrollFrame:SetScrollChild(content)
 
     frame.content = content
-
-    -- Don't add to UISpecialFrames as FrameManager will handle this
-    -- Remove this line: table.insert(UISpecialFrames, "PSC_PlayerDetailFrame")
 
     return frame
 end
@@ -456,14 +459,6 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
         local killsYPosition = initialYOffset - (20 * rowsToKills)
         iconContainer:SetPoint("TOP", 0, killsYPosition)
 
-        -- Create simple circular border texture
-        local borderTexture = iconContainer:CreateTexture(nil, "BACKGROUND")
-        borderTexture:SetSize(classIconSize + 10, classIconSize + 10)
-        borderTexture:SetPoint("CENTER")
-        borderTexture:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
-        borderTexture:SetBlendMode("ADD")
-        borderTexture:SetVertexColor(1, 0.82, 0, 1) -- Golden color to match section headers
-
         -- Create the actual class icon
         local classIcon = iconContainer:CreateTexture(nil, "ARTWORK")
         classIcon:SetSize(classIconSize, classIconSize)
@@ -480,6 +475,21 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
             -- Fallback if coords not found
             classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
         end
+
+        -- Create a circular gold border using a mask
+        local borderSize = classIconSize + 1 -- Thinner border size
+        local borderTexture = iconContainer:CreateTexture(nil, "BORDER")
+        borderTexture:SetSize(borderSize, borderSize)
+        borderTexture:SetPoint("CENTER")
+        borderTexture:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+        borderTexture:SetColorTexture(0.83, 0.69, 0.22) -- Gold color (#d4af37)
+
+        -- Create circular mask for the border
+        local maskTexture = iconContainer:CreateMaskTexture()
+        maskTexture:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        maskTexture:SetSize(borderSize, borderSize)
+        maskTexture:SetPoint("CENTER")
+        borderTexture:AddMaskTexture(maskTexture)
     end
 
     -- Apply class color to the player info text
