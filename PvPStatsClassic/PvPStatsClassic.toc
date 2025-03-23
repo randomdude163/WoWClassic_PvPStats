@@ -4,6 +4,7 @@
 ## Notes: Tracks PvP kills and provides detailed statistics.
 ## SavedVariables: PSC_DB
 ConfigUI.lua
+DataHelpers.lua
 DataStorage.lua
 DeathTracking.lua
 DebugTools.lua

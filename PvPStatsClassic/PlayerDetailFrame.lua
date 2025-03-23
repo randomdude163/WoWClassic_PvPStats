@@ -1,18 +1,18 @@
 PSC_PlayerDetailFrame = nil
-local DETAIL_FRAME_WIDTH = 600
+local DETAIL_FRAME_WIDTH = 500
 local DETAIL_FRAME_HEIGHT = 600
 
 -- Layout constants for column positioning
 PSC_COLUMN_POSITIONS = {
     LEVEL = 25,     -- Level column
     ZONE = 70,      -- Zone column
-    KILLS = 230,    -- Kills/Assisters column
-    TIME = 330      -- Time column
+    KILLS = 225,    -- Kills/Assisters column
+    TIME = 310      -- Time column
 }
 
 PSC_COLUMN_WIDTHS = {
     LEVEL = 40,     -- Level column width
-    ZONE = 140,     -- Zone column width
+    ZONE = 135,     -- Zone column width
     KILLS = 100      -- Kills/Assisters column width
 }
 
@@ -322,7 +322,7 @@ local function FindPlayerEntryByName(playerName)
     end
 
     -- Collect kill history across all characters
-    local charactersToProcess = GetCharactersToProcessForStatistics()
+    local charactersToProcess = PSC_GetCharactersToProcessForStatistics()
     for charKey, charData in pairs(charactersToProcess) do
         for nameWithLevel, killData in pairs(charData.Kills or {}) do
             local name = string.match(nameWithLevel, "(.-)%:")
@@ -350,52 +350,43 @@ local function FindPlayerEntryByName(playerName)
         end
     end
 
-    -- Collect death history and assists from all characters that match this player name
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local lossData = PSC_DB.PvPLossCounts[currentCharacterKey]
+    -- Get death data from all characters
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+    if deathDataByPlayer[playerName] then
+        local deathData = deathDataByPlayer[playerName]
+        entry.deaths = deathData.deaths or 0
+        entry.deathHistory = deathData.deathLocations or {}
+    end
 
-    if lossData and lossData.Deaths then
-        -- Count direct deaths
-        if lossData.Deaths[playerName] then
-            local deathData = lossData.Deaths[playerName]
-            entry.deaths = deathData.deaths or 0
+    -- Count assists and build assist history
+    local assistCount, _ = PSC_CountPlayerAssists(playerName, deathDataByPlayer)
+    entry.assists = assistCount
 
-            -- Add all death locations to history
-            if deathData.deathLocations then
-                for _, location in ipairs(deathData.deathLocations) do
-                    table.insert(entry.deathHistory, location)
-                end
-            end
-        end
+    -- Process assist history
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        if deathData.deathLocations then
+            for _, location in ipairs(deathData.deathLocations) do
+                if location.assisters then
+                    for _, assister in ipairs(location.assisters) do
+                        if assister.name == playerName then
+                            -- Create assist history entry
+                            local assistData = {
+                                killerName = killerName,
+                                killerLevel = location.killerLevel or -1,
+                                victimLevel = entry.levelDisplay,
+                                zone = location.zone or "Unknown",
+                                timestamp = location.timestamp or 0,
+                                otherAssisters = {}
+                            }
 
-        -- Count assists and build assist history
-        for killerName, deathData in pairs(lossData.Deaths) do
-            if deathData.deathLocations then
-                for _, location in ipairs(deathData.deathLocations) do
-                    if location.assisters then
-                        for _, assister in ipairs(location.assisters) do
-                            if assister.name == playerName then
-                                entry.assists = entry.assists + 1
-
-                                -- Create assist history entry
-                                local assistData = {
-                                    killerName = killerName,
-                                    killerLevel = location.killerLevel or -1,
-                                    victimLevel = entry.levelDisplay, -- Use the entry level (which might be -1)
-                                    zone = location.zone or "Unknown",
-                                    timestamp = location.timestamp or 0,
-                                    otherAssisters = {}
-                                }
-
-                                -- Add other assisters (excluding the current player)
-                                for _, otherAssister in ipairs(location.assisters) do
-                                    if otherAssister.name ~= playerName then
-                                        table.insert(assistData.otherAssisters, otherAssister)
-                                    end
+                            -- Add other assisters (excluding the current player)
+                            for _, otherAssister in ipairs(location.assisters) do
+                                if otherAssister.name ~= playerName then
+                                    table.insert(assistData.otherAssisters, otherAssister)
                                 end
-
-                                table.insert(entry.assistHistory, assistData)
                             end
+
+                            table.insert(entry.assistHistory, assistData)
                         end
                     end
                 end
@@ -469,7 +460,7 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
         local iconContainer = CreateFrame("Frame", nil, content)
         iconContainer:SetSize(classIconSize + 10, classIconSize + 10) -- Slightly larger to accommodate border
 
-        iconContainer:SetPoint("LEFT", 400, 0)
+        iconContainer:SetPoint("LEFT", 320, 0)
 
         local initialYOffset = yOffset
         local rowsToKills = 2 -- Player info, Rank (before Total kills)

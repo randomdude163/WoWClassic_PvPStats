@@ -634,6 +634,89 @@ local function AddOrUpdatePlayerEntry(playerNameMap, entries, name, entry)
     end
 end
 
+-- Get the list of characters to process based on account-wide setting
+local function GetCharactersToProcessForStatistics()
+    local charactersToProcess = {}
+
+    if PSC_DB.ShowAccountWideStats then
+        -- Process all characters
+        for charKey, charData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+            charactersToProcess[charKey] = charData
+        end
+    else
+        -- Process only the current character
+        local characterKey = PSC_GetCharacterKey()
+        if PSC_DB.PlayerKillCounts.Characters[characterKey] then
+            charactersToProcess[characterKey] = PSC_DB.PlayerKillCounts.Characters[characterKey]
+        end
+    end
+
+    return charactersToProcess
+end
+
+-- Get death data from all relevant characters
+local function GetDeathDataFromAllCharacters()
+    local deathDataByPlayer = {}
+
+    -- Get characters to process based on account-wide setting
+    local charactersToProcess = {}
+    if PSC_DB.ShowAccountWideStats then
+        for charKey, _ in pairs(PSC_DB.PvPLossCounts) do
+            charactersToProcess[charKey] = true
+        end
+    else
+        local characterKey = PSC_GetCharacterKey()
+        charactersToProcess[characterKey] = true
+    end
+
+    -- Collect death data from all relevant characters
+    for charKey, _ in pairs(charactersToProcess) do
+        local lossData = PSC_DB.PvPLossCounts[charKey]
+        if lossData and lossData.Deaths then
+            for killerName, deathData in pairs(lossData.Deaths) do
+                if not deathDataByPlayer[killerName] then
+                    deathDataByPlayer[killerName] = {
+                        deaths = 0,
+                        deathLocations = {}
+                    }
+                end
+
+                -- Add death count
+                deathDataByPlayer[killerName].deaths = deathDataByPlayer[killerName].deaths + (deathData.deaths or 0)
+
+                -- Add death locations
+                if deathData.deathLocations then
+                    for _, location in ipairs(deathData.deathLocations) do
+                        table.insert(deathDataByPlayer[killerName].deathLocations, location)
+                    end
+                end
+            end
+        end
+    end
+
+    return deathDataByPlayer
+end
+
+-- Get list of player entries for the kills list
+local function GetPlayerEntriesForKillsList(searchText)
+    local entries = {}
+    local playerNameMap = {}
+
+    -- Get death data from all characters
+    local deathDataByPlayer = GetDeathDataFromAllCharacters()
+
+    -- Step 1: Process players you've killed
+    ProcessKilledPlayers(searchText, playerNameMap, entries)
+
+    -- Step 2: Process players who have killed you but you haven't killed
+    ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
+
+    -- Step 3: Process players who have only assisted in your deaths
+    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
+
+    return entries
+end
+
 -- Collect death data for the current character
 local function CollectDeathData()
     local deathDataByPlayer = {}
