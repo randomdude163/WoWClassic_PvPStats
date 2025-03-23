@@ -16,6 +16,23 @@ PSC_COLUMN_WIDTHS = {
     KILLS = 100      -- Kills/Assisters column width
 }
 
+local PVP_RANK_ICONS = {
+    [1] = "Interface\\PvPRankBadges\\PvPRank01",
+    [2] = "Interface\\PvPRankBadges\\PvPRank02",
+    [3] = "Interface\\PvPRankBadges\\PvPRank03",
+    [4] = "Interface\\PvPRankBadges\\PvPRank04",
+    [5] = "Interface\\PvPRankBadges\\PvPRank05",
+    [6] = "Interface\\PvPRankBadges\\PvPRank06",
+    [7] = "Interface\\PvPRankBadges\\PvPRank07",
+    [8] = "Interface\\PvPRankBadges\\PvPRank08",
+    [9] = "Interface\\PvPRankBadges\\PvPRank09",
+    [10] = "Interface\\PvPRankBadges\\PvPRank10",
+    [11] = "Interface\\PvPRankBadges\\PvPRank11",
+    [12] = "Interface\\PvPRankBadges\\PvPRank12",
+    [13] = "Interface\\PvPRankBadges\\PvPRank13",
+    [14] = "Interface\\PvPRankBadges\\PvPRank14"
+}
+
 function PSC_FormatTimestamp(timestamp)
     if not timestamp then return "Unknown" end
 
@@ -490,6 +507,14 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
         maskTexture:SetSize(borderSize, borderSize)
         maskTexture:SetPoint("CENTER")
         borderTexture:AddMaskTexture(maskTexture)
+
+        -- Add PvP rank icon if rank is higher than 0
+        if playerEntry.rank and playerEntry.rank > 0 then
+            local rankIcon = iconContainer:CreateTexture(nil, "OVERLAY")
+            rankIcon:SetSize(32, 32)
+            rankIcon:SetPoint("LEFT", classIcon, "RIGHT", 10, 0) -- Adjust position as needed
+            rankIcon:SetTexture(PVP_RANK_ICONS[playerEntry.rank])
+        end
     end
 
     -- Apply class color to the player info text
