@@ -668,10 +668,12 @@ end
 local function calculateStatistics()
     local totalKills = 0
     local uniqueKills = 0
-    local totalLevels = 0
-    local totalPlayerLevels = 0
+    local totalLevels = 0  -- Target levels
+    local totalPlayerLevelSum = 0  -- Sum of player levels at time of kills
     local killsWithLevelData = 0
-    local unknownLevelKills = 0
+    local levelDiffSum = 0  -- For direct level difference calculation
+    local unknownLevelKills = 0  -- Initialize the variable properly
+
     local mostKilledPlayer = nil
     local mostKilledCount = 0
     local highestKillStreak = 0
@@ -716,15 +718,41 @@ local function calculateStatistics()
                 local level = nameWithLevel:match(":(%S+)")
                 local levelNum = tonumber(level or "0") or 0
 
+                -- Count unknown level kills
                 if levelNum == -1 then
                     unknownLevelKills = unknownLevelKills + kills
-                else
-                    totalLevels = totalLevels + levelNum * kills
                 end
 
-                if killData.playerLevel then
-                    totalPlayerLevels = totalPlayerLevels + (killData.playerLevel * kills)
-                    killsWithLevelData = killsWithLevelData + kills
+                -- Process kill locations for more accurate level difference data
+                if killData.killLocations and #killData.killLocations > 0 then
+                    for _, location in ipairs(killData.killLocations) do
+                        local targetLevel = levelNum
+                        local playerLevel = location.playerLevel or 0
+
+                        if targetLevel > 0 and playerLevel > 0 then
+                            levelDiffSum = levelDiffSum + (playerLevel - targetLevel)
+                            killsWithLevelData = killsWithLevelData + 1
+                        end
+
+                        if playerLevel > 0 then
+                            totalPlayerLevelSum = totalPlayerLevelSum + playerLevel
+                        end
+                    end
+                else
+                    -- Fall back to the old method if no detailed locations
+                    if levelNum > 0 and killData.playerLevel and killData.playerLevel > 0 then
+                        levelDiffSum = levelDiffSum + (killData.playerLevel - levelNum) * kills
+                        killsWithLevelData = killsWithLevelData + kills
+                    end
+
+                    if killData.playerLevel and killData.playerLevel > 0 then
+                        totalPlayerLevelSum = totalPlayerLevelSum + killData.playerLevel * kills
+                    end
+                end
+
+                -- Calculate target level sum for average
+                if levelNum > 0 then
+                    totalLevels = totalLevels + levelNum * kills
                 end
             end
         end
@@ -739,8 +767,8 @@ local function calculateStatistics()
 
     local knownLevelKills = totalKills - unknownLevelKills
     local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
-    local avgPlayerLevel = killsWithLevelData > 0 and (totalPlayerLevels / killsWithLevelData)
-    local avgLevelDiff = avgPlayerLevel - avgLevel
+    local avgPlayerLevel = totalKills > 0 and (totalPlayerLevelSum / totalKills) or 0
+    local avgLevelDiff = killsWithLevelData > 0 and (levelDiffSum / killsWithLevelData) or 0
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
     return {

@@ -407,7 +407,7 @@ function PSC_CheckBattlegroundStatus()
         "Warsong Gulch",
         "Arathi Basin",
         "Alterac Valley",
-        "Elwynn Forest",
+        -- "Elwynn Forest",
         -- "Duskwood"
     }
 

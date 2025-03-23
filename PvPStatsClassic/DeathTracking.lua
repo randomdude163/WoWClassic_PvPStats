@@ -9,22 +9,25 @@ function PSC_GetKillerInfoOnDeath()
 
     for sourceGUID, info in pairs(PSC_RecentDamageFromPlayers) do
         if (now - info.timestamp) <= PLAYER_DAMAGE_WINDOW then
-            if info.totalDamage > highestDamage then
-                highestDamage = info.totalDamage
-                mainKiller = {
+            -- Skip players in our party/raid as they can't be enemies
+            if not UnitInParty(info.name) and not UnitInRaid(info.name) then
+                if info.totalDamage > highestDamage then
+                    highestDamage = info.totalDamage
+                    mainKiller = {
+                        guid = sourceGUID,
+                        name = info.name,
+                        damage = info.totalDamage,
+                        isPet = IsPetGUID(sourceGUID)
+                    }
+                end
+
+                table.insert(killers, {
                     guid = sourceGUID,
                     name = info.name,
                     damage = info.totalDamage,
                     isPet = IsPetGUID(sourceGUID)
-                }
+                })
             end
-
-            table.insert(killers, {
-                guid = sourceGUID,
-                name = info.name,
-                damage = info.totalDamage,
-                isPet = IsPetGUID(sourceGUID)
-            })
         end
     end
 
@@ -43,35 +46,18 @@ function PSC_GetKillerInfoOnDeath()
         local assists = {}
         for _, killer in ipairs(killers) do
             if killer.guid ~= mainKiller.guid and not (killer.isPet and GetPetOwnerGUID(killer.guid) == mainKiller.guid) then
-                -- Check if this is a friendly player (same faction)
-                local isEnemy = true
-
-                -- First check if we have this player in our group/raid
-                if UnitInParty(killer.name) or UnitInRaid(killer.name) then
-                    isEnemy = false
-                else
-                    -- Try to check by GUID if available
-                    local unitID = UnitTokenFromGUID(killer.guid)
-                    if unitID and UnitExists(unitID) and UnitIsFriend("player", unitID) then
-                        isEnemy = false
-                    end
-                end
-
-                -- Only add enemy players as assisters
-                if isEnemy then
-                    if killer.isPet then
-                        local ownerGUID = GetPetOwnerGUID(killer.guid)
-                        local ownerName = GetNameFromGUID(ownerGUID)
-                        if ownerName and ownerGUID ~= mainKiller.guid then
-                            table.insert(assists, {
-                                name = ownerName
-                            })
-                        end
-                    else
+                if killer.isPet then
+                    local ownerGUID = GetPetOwnerGUID(killer.guid)
+                    local ownerName = GetNameFromGUID(ownerGUID)
+                    if ownerName and ownerGUID ~= mainKiller.guid then
                         table.insert(assists, {
-                            name = killer.name
+                            name = ownerName
                         })
                     end
+                else
+                    table.insert(assists, {
+                        name = killer.name
+                    })
                 end
             end
         end
@@ -240,19 +226,81 @@ function TrackIncomingPetDamage(petGUID, petName, amount)
     end
 end
 
-function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
+function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, spellSchool, param1, param4)
     local damageAmount = 0
 
-    -- Handle damage events
+    -- Only track if sourceName exists and isn't in our party/raid
+    if not sourceName or UnitInParty(sourceName) or UnitInRaid(sourceName) then
+        return
+    end
+
+    -- Handle damage events - these already count properly
     if combatEvent == "SWING_DAMAGE" then
         damageAmount = param1 or 0
     elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
         damageAmount = param4 or 0
     elseif combatEvent == "RANGE_DAMAGE" then
         damageAmount = param4 or 0
-    elseif combatEvent:find("SPELL_") then
-        -- Count debuffs and other spell effects as minimal damage for assist credit
-        damageAmount = 1
+    elseif combatEvent == "SPELL_AURA_APPLIED" or combatEvent == "SPELL_CAST_SUCCESS" then
+        -- Only track spells that:
+        -- 1. Are PvP relevant
+        -- 2. Don't already deal damage (which would be caught by damage events)
+        -- 3. Are cast by enemies against you
+
+        -- PvP relevant spell IDs that don't cause damage
+        local pvpRelevantSpellIds = {
+            -- Pure CC without damage components
+            118, 12826, 12825, 12824, 12825, 12826, -- Polymorph and ranks
+            6770, 2070, 11297,               -- Sap and ranks
+            2094,                            -- Blind
+            3355, 14308, 14309,              -- Freezing Trap and ranks
+            19503,                           -- Scatter Shot
+            1776, 1777, 8629, 11285, 11286,  -- Gouge and ranks
+            20549,                           -- War Stomp
+            5782, 6213, 6215,                -- Fear and ranks
+            8122, 8124, 10888, 10890,        -- Psychic Scream and ranks
+            5246,                            -- Intimidating Shout
+
+            -- Disarms and movement impairing effects without damage
+            676,                             -- Disarm
+            3409, 11201,                     -- Crippling Poison and ranks
+            18223,                           -- Curse of Exhaustion
+            12494,                           -- Frostbite
+
+            -- Pure dispels and utility
+            370, 8012, 8017,                 -- Purge and ranks
+            19801,                           -- Tranquilizing Shot
+
+            -- Silences without damage components
+            15487,                           -- Silence
+
+            -- Counterspells without damage
+            2139,                            -- Counterspell
+            19244, 19647,                    -- Spell Lock and rank
+
+            -- Debuffs without direct damage
+            1714, 11719,                     -- Curse of Tongues and rank
+            702, 1108, 6205, 7646, 11707, 11708,  -- Curse of Weakness and ranks
+            704, 7658, 7659, 11717,          -- Curse of Recklessness and ranks
+        }
+
+        -- Check if this is a PvP-relevant spell by ID
+        local isRelevantSpell = false
+        if spellId and spellId > 0 then
+            for _, relevantSpellId in ipairs(pvpRelevantSpellIds) do
+                if spellId == relevantSpellId then
+                    isRelevantSpell = true
+                    if PSC_Debug then
+                        print("PvP relevant spell detected: " .. spellName .. " (ID: " .. spellId .. ")")
+                    end
+                    break
+                end
+            end
+        end
+
+        if isRelevantSpell then
+            damageAmount = 1  -- Just award minimal "contribution" for tracking purposes
+        end
     end
 
     if damageAmount > 0 then

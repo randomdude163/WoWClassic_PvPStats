@@ -12,11 +12,10 @@ local function InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
     if not PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel] then
         PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel] = {
             kills = 0,
-            lastKill = "",
-            playerLevel = playerLevel,
-            zone = "",
+            lastKill = 0,
             killLocations = {},
             rank = 0
+            -- Removed playerLevel and zone, will be stored only in killLocations
         }
     end
 end
@@ -27,8 +26,9 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
 
     killData.kills = killData.kills + 1
     killData.lastKill = time()
-    killData.playerLevel = playerLevel
-    killData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
+
+    -- Removed redundant playerLevel and zone storage at this level
+    local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
     local mapID = C_Map.GetBestMapForUnit("player")
     local position = nil
@@ -36,18 +36,21 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
         position = C_Map.GetPlayerMapPosition(mapID, "player")
     end
 
-    if mapID and position and position.x and position.y then
-        local x = position.x * 100
-        local y = position.y * 100
+    -- Always add a kill location entry, even if we don't have coordinates
+    local newKillLocation = {
+        zone = currentZone,
+        timestamp = killData.lastKill,
+        killNumber = killData.kills,
+        playerLevel = playerLevel
+    }
 
-        table.insert(killData.killLocations, {
-            x = x,
-            y = y,
-            zone = killData.zone,
-            timestamp = killData.lastKill,
-            killNumber = killData.kills
-        })
+    -- Add coordinates if available
+    if mapID and position and position.x and position.y then
+        newKillLocation.x = position.x * 100
+        newKillLocation.y = position.y * 100
     end
+
+    table.insert(killData.killLocations, newKillLocation)
 end
 
 local function UpdateMultiKill()
