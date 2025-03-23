@@ -984,8 +984,8 @@ function PSC_FilterAndSortEntries()
     local searchText = PSC_SearchText or ""
     searchText = searchText:lower()
 
-    -- Step 1: Collect death data
-    local deathDataByPlayer = CollectDeathData()
+    -- Step 1: Get death data from all relevant characters based on account-wide setting
+    local deathDataByPlayer = GetDeathDataFromAllCharacters()
 
     -- Step 2: Process players you've killed
     ProcessKilledPlayers(searchText, playerNameMap, entries)
@@ -997,7 +997,7 @@ function PSC_FilterAndSortEntries()
     ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
 
     -- Step 5: Add death counts and assists counts to all entries
-    for i, entry in ipairs(entries) do
+    for _, entry in ipairs(entries) do
         -- Add death data
         local deathData = deathDataByPlayer[entry.name]
         entry.deaths = deathData and deathData.deaths or 0
@@ -1007,8 +1007,61 @@ function PSC_FilterAndSortEntries()
         entry.assists = CountPlayerAssists(entry.name, deathDataByPlayer)
     end
 
+    -- Apply additional filters
+    local filteredEntries = {}
+
+    for _, entry in ipairs(entries) do
+        local match = true
+
+        -- Level filter
+        if match and (minLevelSearch or maxLevelSearch) then
+            local entryLevel = tonumber(entry.levelDisplay) or -1
+
+            if minLevelSearch == -1 and maxLevelSearch == -1 then
+                -- Filter for unknown levels (-1)
+                match = (entryLevel == -1)
+            elseif minLevelSearch and maxLevelSearch then
+                -- Filter for level range
+                match = (entryLevel >= minLevelSearch and entryLevel <= maxLevelSearch)
+            end
+        end
+
+        -- Class filter
+        if match and classSearchText ~= "" then
+            match = (entry.class:lower():find(classSearchText:lower(), 1, true) ~= nil)
+        end
+
+        -- Race filter
+        if match and raceSearchText ~= "" then
+            match = (entry.race:lower():find(raceSearchText:lower(), 1, true) ~= nil)
+        end
+
+        -- Gender filter
+        if match and genderSearchText ~= "" then
+            match = (entry.gender:lower():find(genderSearchText:lower(), 1, true) ~= nil)
+        end
+
+        -- Zone filter
+        if match and zoneSearchText ~= "" then
+            match = (entry.zone:lower():find(zoneSearchText:lower(), 1, true) ~= nil)
+        end
+
+        -- Rank filter
+        if match and (minRankSearch or maxRankSearch) then
+            local entryRank = tonumber(entry.rank) or 0
+
+            if minRankSearch and maxRankSearch then
+                match = (entryRank >= minRankSearch and entryRank <= maxRankSearch)
+            end
+        end
+
+        if match then
+            table.insert(filteredEntries, entry)
+        end
+    end
+
     -- Step 6: Sort entries
-    return SortPlayerEntries(entries)
+    return SortPlayerEntries(filteredEntries)
 end
 
 function PSC_CreateSearchBar(frame)
