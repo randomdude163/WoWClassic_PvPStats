@@ -1,6 +1,23 @@
 local killMilestoneFrame = nil
 local killMilestoneAutoHideTimer = nil
 
+local PVP_RANK_ICONS = {
+    [1] = "Interface\\PvPRankBadges\\PvPRank01",
+    [2] = "Interface\\PvPRankBadges\\PvPRank02",
+    [3] = "Interface\\PvPRankBadges\\PvPRank03",
+    [4] = "Interface\\PvPRankBadges\\PvPRank04",
+    [5] = "Interface\\PvPRankBadges\\PvPRank05",
+    [6] = "Interface\\PvPRankBadges\\PvPRank06",
+    [7] = "Interface\\PvPRankBadges\\PvPRank07",
+    [8] = "Interface\\PvPRankBadges\\PvPRank08",
+    [9] = "Interface\\PvPRankBadges\\PvPRank09",
+    [10] = "Interface\\PvPRankBadges\\PvPRank10",
+    [11] = "Interface\\PvPRankBadges\\PvPRank11",
+    [12] = "Interface\\PvPRankBadges\\PvPRank12",
+    [13] = "Interface\\PvPRankBadges\\PvPRank13",
+    [14] = "Interface\\PvPRankBadges\\PvPRank14"
+}
+
 local function PSC_CreateKillMilestoneFrame()
     if killMilestoneFrame then return killMilestoneFrame end
 
@@ -133,6 +150,22 @@ function PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
     end
     milestoneFrame.levelText:SetText(levelString)
 
+    -- Add PvP rank icon next to the rank title if rank is higher than 0
+    local rankIconWidth = 0
+    if rank and rank > 0 then
+        if not milestoneFrame.rankIcon then
+            local rankIcon = milestoneFrame:CreateTexture(nil, "OVERLAY")
+            rankIcon:SetSize(16, 16) -- Smaller size for the rank icon
+            rankIcon:SetPoint("LEFT", milestoneFrame.levelText, "RIGHT", 5, 0)
+            milestoneFrame.rankIcon = rankIcon
+        end
+        milestoneFrame.rankIcon:SetTexture(PVP_RANK_ICONS[rank])
+        milestoneFrame.rankIcon:Show()
+        rankIconWidth = 16 + 5 -- Icon width + spacing
+    elseif milestoneFrame.rankIcon then
+        milestoneFrame.rankIcon:Hide()
+    end
+
     local killMessage
     local suffix
     if killCount % 100 >= 11 and killCount % 100 <= 13 then
@@ -163,7 +196,7 @@ function PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
 
     local requiredContentWidth = math.max(levelTextWidth, nameTextWidth, killTextWidth)
 
-    local frameWidth = 20 + 24 + 5 + requiredContentWidth + 20
+    local frameWidth = 20 + 24 + 5 + requiredContentWidth + 20 + rankIconWidth
 
     local minWidth = 140   -- Minimum width
     local maxWidth = 300   -- Maximum width cap
@@ -171,7 +204,7 @@ function PSC_ShowKillMilestone(playerName, level, class, rank, killCount)
 
     milestoneFrame:SetWidth(frameWidth)
 
-    local textWidth = frameWidth - (20 + 24 + 5 + 20) -- Left margin + icon + spacing + right margin
+    local textWidth = frameWidth - (20 + 24 + 5 + 20 + rankIconWidth) -- Left margin + icon + spacing + right margin + rank icon width
     milestoneFrame.nameText:SetWidth(textWidth)
     milestoneFrame.levelText:SetWidth(textWidth)
     milestoneFrame.killText:SetWidth(textWidth)
