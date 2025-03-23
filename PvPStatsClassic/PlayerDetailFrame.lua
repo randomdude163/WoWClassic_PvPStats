@@ -16,6 +16,23 @@ PSC_COLUMN_WIDTHS = {
     KILLS = 100      -- Kills/Assisters column width
 }
 
+local PVP_RANK_ICONS = {
+    [1] = "Interface\\PvPRankBadges\\PvPRank01",
+    [2] = "Interface\\PvPRankBadges\\PvPRank02",
+    [3] = "Interface\\PvPRankBadges\\PvPRank03",
+    [4] = "Interface\\PvPRankBadges\\PvPRank04",
+    [5] = "Interface\\PvPRankBadges\\PvPRank05",
+    [6] = "Interface\\PvPRankBadges\\PvPRank06",
+    [7] = "Interface\\PvPRankBadges\\PvPRank07",
+    [8] = "Interface\\PvPRankBadges\\PvPRank08",
+    [9] = "Interface\\PvPRankBadges\\PvPRank09",
+    [10] = "Interface\\PvPRankBadges\\PvPRank10",
+    [11] = "Interface\\PvPRankBadges\\PvPRank11",
+    [12] = "Interface\\PvPRankBadges\\PvPRank12",
+    [13] = "Interface\\PvPRankBadges\\PvPRank13",
+    [14] = "Interface\\PvPRankBadges\\PvPRank14"
+}
+
 function PSC_FormatTimestamp(timestamp)
     if not timestamp then return "Unknown" end
 
@@ -119,6 +136,7 @@ local function CreateDetailRow(parent, leftText, rightText, yOffset)
     local rightLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     rightLabel:SetPoint("TOPLEFT", 120, yOffset)
     rightLabel:SetText(rightText)
+    rightLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
 
     return yOffset - 20
 end
@@ -399,6 +417,11 @@ local function CreatePlayerDetailFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
+    -- Add background texture
+    local bgTexture = frame:CreateTexture(nil, "BACKGROUND")
+    bgTexture:SetAllPoints()
+    bgTexture:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Background-Dark")
+
     -- Create scrollable content frame
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 12, -30)
@@ -409,9 +432,6 @@ local function CreatePlayerDetailFrame()
     scrollFrame:SetScrollChild(content)
 
     frame.content = content
-
-    -- Don't add to UISpecialFrames as FrameManager will handle this
-    -- Remove this line: table.insert(UISpecialFrames, "PSC_PlayerDetailFrame")
 
     return frame
 end
@@ -435,12 +455,67 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
     playerLabel:SetTextColor(1, 1, 1) -- White color
 
     -- Create player info with class color
-    local infoText = string.format("%s - Level %s %s %s",
-        playerName, playerLevel, playerRace, playerClass)
+    local infoText = string.format("%s - Level %s %s %s%s",
+        playerName, playerLevel, playerRace, playerGender ~= "Unknown" and (playerGender == "Male" and "Male" or "Female") .. " " or "", playerClass)
 
     local playerInfoLabel = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    playerInfoLabel:SetPoint("TOPLEFT", 120, yOffset) -- Match the alignment of other detail rows
+    playerInfoLabel:SetPoint("TOPLEFT", 120, yOffset)
     playerInfoLabel:SetText(infoText)
+
+    -- Add class icon texture
+    if playerClass ~= "Unknown" then
+        local classIconSize = 64
+
+        local iconContainer = CreateFrame("Frame", nil, content)
+        iconContainer:SetSize(classIconSize + 10, classIconSize + 10) -- Slightly larger to accommodate border
+
+        iconContainer:SetPoint("LEFT", 400, 0)
+
+        local initialYOffset = yOffset
+        local rowsToKills = 2 -- Player info, Rank (before Total kills)
+        local killsYPosition = initialYOffset - (20 * rowsToKills)
+        iconContainer:SetPoint("TOP", 0, killsYPosition)
+
+        -- Create the actual class icon
+        local classIcon = iconContainer:CreateTexture(nil, "ARTWORK")
+        classIcon:SetSize(classIconSize, classIconSize)
+        classIcon:SetPoint("CENTER")
+
+        -- Set the appropriate texture based on class
+        local classTexture = "Interface\\TargetingFrame\\UI-Classes-Circles"
+        local coords = CLASS_ICON_TCOORDS[playerClass:upper()]
+
+        if coords then
+            classIcon:SetTexture(classTexture)
+            classIcon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
+        else
+            -- Fallback if coords not found
+            classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+        end
+
+        -- Create a circular gold border using a mask
+        local borderSize = classIconSize + 1 -- Thinner border size
+        local borderTexture = iconContainer:CreateTexture(nil, "BORDER")
+        borderTexture:SetSize(borderSize, borderSize)
+        borderTexture:SetPoint("CENTER")
+        borderTexture:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+        borderTexture:SetColorTexture(0.83, 0.69, 0.22) -- Gold color (#d4af37)
+
+        -- Create circular mask for the border
+        local maskTexture = iconContainer:CreateMaskTexture()
+        maskTexture:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        maskTexture:SetSize(borderSize, borderSize)
+        maskTexture:SetPoint("CENTER")
+        borderTexture:AddMaskTexture(maskTexture)
+
+        -- Add PvP rank icon if rank is higher than 0
+        if playerEntry.rank and playerEntry.rank > 0 then
+            local rankIcon = iconContainer:CreateTexture(nil, "OVERLAY")
+            rankIcon:SetSize(32, 32)
+            rankIcon:SetPoint("LEFT", classIcon, "RIGHT", 10, 0) -- Adjust position as needed
+            rankIcon:SetTexture(PVP_RANK_ICONS[playerEntry.rank])
+        end
+    end
 
     -- Apply class color to the player info text
     if playerClass ~= "Unknown" and RAID_CLASS_COLORS and RAID_CLASS_COLORS[playerClass:upper()] then
@@ -455,10 +530,45 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
 
     -- Add other player stats
     yOffset = CreateDetailRow(content, "Rank:", playerEntry.rank and playerEntry.rank > 0 and tostring(playerEntry.rank) or "0", yOffset)
-    yOffset = CreateDetailRow(content, "Total kills:", tostring(playerEntry.kills), yOffset)
+
+    -- Create Total kills row with conditional coloring
+    local killsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    killsLabel:SetPoint("TOPLEFT", 25, yOffset)
+    killsLabel:SetText("Total kills:")
+    killsLabel:SetTextColor(1, 1, 1)
+
+    local killsValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    killsValue:SetPoint("TOPLEFT", 120, yOffset)
+    killsValue:SetText(tostring(playerEntry.kills))
+
+    -- Apply gold coloring if kills > deaths
+    if playerEntry.kills > playerEntry.deaths then
+        killsValue:SetTextColor(1, 0.82, 0) -- Gold color
+    end
+
+    yOffset = yOffset - 20
+
     yOffset = CreateDetailRow(content, "Total deaths:", tostring(playerEntry.deaths), yOffset)
-    yOffset = CreateDetailRow(content, "Total assists:", tostring(playerEntry.assists), yOffset) -- Add assists to summary
-    yOffset = CreateDetailRow(content, "K/D Ratio:", string.format("%.2f", playerEntry.deaths > 0 and playerEntry.kills / playerEntry.deaths or playerEntry.kills), yOffset)
+    yOffset = CreateDetailRow(content, "Total assists:", tostring(playerEntry.assists), yOffset)
+
+    -- Create K/D Ratio row with conditional coloring
+    local kdLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    kdLabel:SetPoint("TOPLEFT", 25, yOffset)
+    kdLabel:SetText("K/D Ratio:")
+    kdLabel:SetTextColor(1, 1, 1)
+
+    local kdValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    kdValue:SetPoint("TOPLEFT", 120, yOffset)
+
+    local kdRatio = playerEntry.deaths > 0 and playerEntry.kills / playerEntry.deaths or playerEntry.kills
+    kdValue:SetText(string.format("%.2f", kdRatio))
+
+    -- Apply gold coloring if K/D ratio >= 2.0
+    if kdRatio >= 2.0 then
+        kdValue:SetTextColor(1, 0.82, 0) -- Gold color
+    end
+
+    yOffset = yOffset - 20
 
     return yOffset - 20
 end
