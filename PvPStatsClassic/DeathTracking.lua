@@ -43,18 +43,35 @@ function PSC_GetKillerInfoOnDeath()
         local assists = {}
         for _, killer in ipairs(killers) do
             if killer.guid ~= mainKiller.guid and not (killer.isPet and GetPetOwnerGUID(killer.guid) == mainKiller.guid) then
-                if killer.isPet then
-                    local ownerGUID = GetPetOwnerGUID(killer.guid)
-                    local ownerName = GetNameFromGUID(ownerGUID)
-                    if ownerName and ownerGUID ~= mainKiller.guid then
+                -- Check if this is a friendly player (same faction)
+                local isEnemy = true
+
+                -- First check if we have this player in our group/raid
+                if UnitInParty(killer.name) or UnitInRaid(killer.name) then
+                    isEnemy = false
+                else
+                    -- Try to check by GUID if available
+                    local unitID = UnitTokenFromGUID(killer.guid)
+                    if unitID and UnitExists(unitID) and UnitIsFriend("player", unitID) then
+                        isEnemy = false
+                    end
+                end
+
+                -- Only add enemy players as assisters
+                if isEnemy then
+                    if killer.isPet then
+                        local ownerGUID = GetPetOwnerGUID(killer.guid)
+                        local ownerName = GetNameFromGUID(ownerGUID)
+                        if ownerName and ownerGUID ~= mainKiller.guid then
+                            table.insert(assists, {
+                                name = ownerName
+                            })
+                        end
+                    else
                         table.insert(assists, {
-                            name = ownerName
+                            name = killer.name
                         })
                     end
-                else
-                    table.insert(assists, {
-                        name = killer.name
-                    })
                 end
             end
         end
