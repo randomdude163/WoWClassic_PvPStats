@@ -761,6 +761,28 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                     -- Convert lastKill to number to ensure it's properly handled
                     local lastKillTimestamp = tonumber(killData.lastKill) or 0
 
+                    -- Make sure we get the zone data properly
+                    local killZone = killData.zone
+
+                    -- Check all possible location storage formats
+                    if killZone == nil then
+                        -- First check the locations array (newer format)
+                        if killData.locations and #killData.locations > 0 then
+                            -- Sort locations by timestamp (most recent first)
+                            table.sort(killData.locations, function(a, b)
+                                return (tonumber(a.timestamp) or 0) > (tonumber(b.timestamp) or 0)
+                            end)
+                            killZone = killData.locations[1].zone
+                        -- Then check killLocations array (original format from KillsTracking.lua)
+                        elseif killData.killLocations and #killData.killLocations > 0 then
+                            -- Sort killLocations by timestamp (most recent first)
+                            table.sort(killData.killLocations, function(a, b)
+                                return (tonumber(a.timestamp) or 0) > (tonumber(b.timestamp) or 0)
+                            end)
+                            killZone = killData.killLocations[1].zone
+                        end
+                    end
+
                     local entry = {
                         name = name,
                         class = playerClass,
@@ -769,7 +791,7 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                         levelDisplay = playerInfo.level or level,
                         rank = playerRank,
                         guild = playerGuild,
-                        zone = killData.zone or "Unknown",
+                        zone = killZone or "Unknown",
                         kills = killData.kills or 0,
                         lastKill = lastKillTimestamp, -- Make sure it's a number
                         levelAtKill = level,
