@@ -92,6 +92,8 @@ function PSC_SlashCommandHandler(msg)
         PSC_DebugPetKills()
     elseif command == "options" or command == "settings" then
             PSC_CreateConfigUI()
+    elseif command == "roleplayer" then
+        PSC_CreateRoleplayer()
     else
         PrintSlashCommandUsage()
     end

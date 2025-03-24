@@ -247,25 +247,20 @@ local function CreateDeathHistoryEntry(parent, deathData, index, yOffset)
                 end
             end)
 
-            -- Add assisters to tooltip
+            -- Add assisters to tooltip using historical data rather than current info cache
             for _, assister in ipairs(sortedAssisters) do
-                local playerLevel
-                local playerClass
                 local displayText
-                local color
+                local color = {r = 1, g = 1, b = 1} -- Default to white
 
-                if PSC_DB.PlayerInfoCache[assister.name] ~= nil then
-                    local playerInfo = PSC_DB.PlayerInfoCache[assister.name]
-                    playerLevel = playerInfo.level
-                    playerClass = playerInfo.class
-                    local levelDisplay = playerLevel == -1 and "??" or tostring(playerLevel)
-                    color = RAID_CLASS_COLORS[playerClass:upper()]
-                    displayText = assister.name .. " (" .. levelDisplay .. " " .. playerClass .. ")"
-                else
-                    color = {r = 1, g = 1, b = 1} -- Default to white if class not found
-                    displayText = assister.name
+                -- Use the level and class stored at time of kill
+                local levelDisplay = assister.level == -1 and "??" or tostring(assister.level)
+                local classDisplay = assister.class or "Unknown"
+
+                if classDisplay ~= "Unknown" and RAID_CLASS_COLORS[classDisplay:upper()] then
+                    color = RAID_CLASS_COLORS[classDisplay:upper()]
                 end
 
+                displayText = assister.name .. " (" .. levelDisplay .. " " .. classDisplay .. ")"
                 GameTooltip:AddLine(displayText, color.r, color.g, color.b)
             end
 
@@ -415,7 +410,9 @@ local function FindPlayerEntryByName(playerName)
                             local assistData = {
                                 killerName = killerName,
                                 killerLevel = location.killerLevel or -1,
-                                victimLevel = entry.levelDisplay,
+                                killerClass = PSC_DB.PlayerInfoCache[killerName] and PSC_DB.PlayerInfoCache[killerName].class or "Unknown",
+                                -- Use the victim's level at time of death instead of current level
+                                victimLevel = location.victimLevel or -1,
                                 zone = location.zone or "Unknown",
                                 timestamp = location.timestamp or 0,
                                 otherAssisters = {}
@@ -905,7 +902,7 @@ function PSC_ShowPlayerDetailFrame(playerName)
     end
 
     local content = PSC_PlayerDetailFrame.content
-    local titleText = playerName .. " - Player Details"
+    local titleText = "Player History - " .. playerName
     PSC_PlayerDetailFrame.TitleText:SetText(titleText)
 
     -- Use frame manager to show and bring to front
