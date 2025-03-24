@@ -902,6 +902,7 @@ local function gatherStatistics()
                         local level = nameWithLevel:match(":(%S+)")
                         local levelNum = tonumber(level or "0") or 0
 
+                        -- Count unknown level kills
                         if levelNum == -1 then
                             unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
                             levelData["??"] = (levelData["??"] or 0) + kills
@@ -912,15 +913,18 @@ local function gatherStatistics()
                         end
 
                         local race = PSC_DB.PlayerInfoCache[nameWithoutLevel].race
-                        -- Changed from +1 to +kills to count actual kills
                         raceData[race] = (raceData[race] or 0) + kills
 
                         local gender = PSC_DB.PlayerInfoCache[nameWithoutLevel].gender
-                        -- Changed from +1 to +kills to count actual kills
                         genderData[gender] = (genderData[gender] or 0) + kills
 
-                        local zone = killData.zone
-                        zoneData[zone] = (zoneData[zone] or 0) + kills
+                        -- Get zone from kill locations instead of top-level attribute
+                        if killData.killLocations and #killData.killLocations > 0 then
+                            for _, location in ipairs(killData.killLocations) do
+                                local zone = location.zone or "Unknown"
+                                zoneData[zone] = (zoneData[zone] or 0) + 1
+                            end
+                        end
 
                         local guild = PSC_DB.PlayerInfoCache[nameWithoutLevel].guild
                         if guild ~= "" then
