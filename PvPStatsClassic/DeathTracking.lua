@@ -95,14 +95,6 @@ function PSC_GetKillerInfoOnDeath()
     local mainKiller = nil
     local highestDamage = 0
 
-    -- Debug output to check what we have in PSC_RecentDamageFromPlayers
-    if PSC_Debug then
-        print("Recent Damage From Players:")
-        for sourceID, info in pairs(PSC_RecentDamageFromPlayers) do
-            print("- " .. info.name .. " (" .. sourceID .. "): " .. info.totalDamage)
-        end
-    end
-
     for sourceID, info in pairs(PSC_RecentDamageFromPlayers) do
         -- Make sure the damage is recent enough
         if (now - info.timestamp) <= PLAYER_DAMAGE_WINDOW then
