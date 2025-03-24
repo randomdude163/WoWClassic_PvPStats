@@ -2,7 +2,7 @@ PSC_KillsListFrame = nil
 
 PSC_SortKillsListBy = "lastKill"
 PSC_SortKillsListAscending = false
-local KILLS_FRAME_WIDTH = 1050
+local KILLS_FRAME_WIDTH = 1055
 local KILLS_FRAME_HEIGHT = 550
 
 local colWidths = {
@@ -17,7 +17,7 @@ local colWidths = {
     rank = 60,
     guild = 150,
     zone = 140,
-    lastKill = 185
+    lastKill = 190
 }
 
 local function CleanupFrameElements(content)
@@ -90,19 +90,24 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
 
         -- Add tooltips for specific columns
         if columnId == "kills" then
-            GameTooltip:SetOwner(self, "ANCHOR_TOP") -- Changed from ANCHOR_BOTTOM to ANCHOR_TOP
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
             GameTooltip:SetText("Kills", 1, 0.82, 0)
             GameTooltip:AddLine("The number of times you have killed this player", 1, 1, 1, true)
             GameTooltip:Show()
         elseif columnId == "deaths" then
-            GameTooltip:SetOwner(self, "ANCHOR_TOP") -- Changed from ANCHOR_BOTTOM to ANCHOR_TOP
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
             GameTooltip:SetText("Deaths", 1, 0.82, 0)
             GameTooltip:AddLine("The number of times this player has dealt a killing blow against you", 1, 1, 1, true)
             GameTooltip:Show()
         elseif columnId == "assists" then
-            GameTooltip:SetOwner(self, "ANCHOR_TOP") -- Changed from ANCHOR_BOTTOM to ANCHOR_TOP
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
             GameTooltip:SetText("Assists", 1, 0.82, 0)
             GameTooltip:AddLine("The number of times this player damaged you without dealing a killing blow when you died", 1, 1, 1, true)
+            GameTooltip:Show()
+        elseif columnId == "lastKill" then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText("Last Encounter", 1, 0.82, 0)
+            GameTooltip:AddLine("The date and time of your most recent PvP interaction with this player (kill, death, or assist)", 1, 1, 1, true)
             GameTooltip:Show()
         end
     end)
@@ -140,7 +145,7 @@ local function CreateColumnHeaders(content)
     local zoneButton = CreateColumnHeader(content, "Zone", colWidths.zone, guildButton, 0, 0, "zone")
     local raceButton = CreateColumnHeader(content, "Race", colWidths.race, zoneButton, 0, 0, "race")
     local genderButton = CreateColumnHeader(content, "Gender", colWidths.gender, raceButton, 0, 0, "gender")
-    local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, genderButton, 0, 0, "lastKill")
+    local lastKillButton = CreateColumnHeader(content, "Last Encounter", colWidths.lastKill, genderButton, 0, 0, "lastKill")
 
     return -30
 end
@@ -266,8 +271,20 @@ local function FormatLastKillDate(timestamp)
 end
 
 local function CreateLastKillCell(content, anchorTo, lastKill, width)
-    local lastKillText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    lastKillText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    local lastKillContainer = CreateFrame("Frame", nil, content)
+    lastKillContainer:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    lastKillContainer:SetSize(width, 16)
+
+    local dateText = lastKillContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    dateText:SetPoint("LEFT", 0, 0)
+    dateText:SetJustifyH("LEFT")
+
+    local timeSpanText = lastKillContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    timeSpanText:SetPoint("LEFT", dateText, "RIGHT", 0, 0)
+    timeSpanText:SetJustifyH("LEFT")
+
+    -- Use a soft blue color for the timespan text
+    timeSpanText:SetTextColor(0.6, 0.8, 1.0)
 
     local dateString = FormatLastKillDate(lastKill)
     local timespan = ""
@@ -276,14 +293,14 @@ local function CreateLastKillCell(content, anchorTo, lastKill, width)
     if lastKill and lastKill > 0 then
         local timeSinceLastKill = PSC_FormatLastKillTimespan(lastKill)
         if timeSinceLastKill then
-            timespan = " (" .. timeSinceLastKill .. " ago)"
+            timespan = "  (" .. timeSinceLastKill .. " ago)"
         end
     end
 
-    lastKillText:SetText(dateString .. timespan)
-    lastKillText:SetWidth(width)
-    lastKillText:SetJustifyH("LEFT")
-    return lastKillText
+    dateText:SetText(dateString)
+    timeSpanText:SetText(timespan)
+
+    return lastKillContainer
 end
 
 local function CreateZoneCell(content, anchorTo, zone, width)
@@ -448,7 +465,19 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         if rankCell and rankCell.SetTextColor then rankCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
         if guildCell and guildCell.SetTextColor then guildCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
         if zoneCell and zoneCell.SetTextColor then zoneCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
-        if lastKillCell and lastKillCell.SetTextColor then lastKillCell:SetTextColor(grayColor.r, grayColor.g, grayColor.b) end
+
+        -- Handle last kill cell which is a container frame with multiple text elements
+        if lastKillCell then
+            -- Get all text elements inside the container and set their color
+            local regions = {lastKillCell:GetRegions()}
+            for _, region in pairs(regions) do
+---@diagnostic disable-next-line: undefined-field
+                if region.SetTextColor then
+---@diagnostic disable-next-line: undefined-field
+                    region:SetTextColor(grayColor.r, grayColor.g, grayColor.b)
+                end
+            end
+        end
     end
 
     rowContainer:SetScript("OnEnter", function(self)
