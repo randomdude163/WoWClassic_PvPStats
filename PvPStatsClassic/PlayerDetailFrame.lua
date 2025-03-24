@@ -399,7 +399,6 @@ local function FindPlayerEntryByName(playerName)
     local assistCount, _ = PSC_CountPlayerAssists(playerName, deathDataByPlayer)
     entry.assists = assistCount
 
-    -- Process assist history
     for killerName, deathData in pairs(deathDataByPlayer) do
         if deathData.deathLocations then
             for _, location in ipairs(deathData.deathLocations) do
@@ -408,11 +407,12 @@ local function FindPlayerEntryByName(playerName)
                         if assister.name == playerName then
                             -- Create assist history entry
                             local assistData = {
-                                killerName = killerName,
+                                assisterName = playerName,           -- The player whose history we're viewing
+                                assisterLevel = assister.level,      -- Level of this player when they assisted
+                                killerName = killerName,             -- The main killer
                                 killerLevel = location.killerLevel or -1,
                                 killerClass = PSC_DB.PlayerInfoCache[killerName] and PSC_DB.PlayerInfoCache[killerName].class or "Unknown",
-                                -- Use the victim's level at time of death instead of current level
-                                victimLevel = location.victimLevel or -1,
+                                victimLevel = location.victimLevel or -1, -- Your level when you died
                                 zone = location.zone or "Unknown",
                                 timestamp = location.timestamp or 0,
                                 otherAssisters = {}
@@ -754,7 +754,7 @@ local function CreateAssistHistoryHeaderRow(content, yOffset)
     return yOffset - 20
 end
 
--- Fix the CreateAssistHistoryEntry function
+
 local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
     local bgColor = index % 2 == 0 and {0.1, 0.1, 0.1, 0.3} or {0.15, 0.15, 0.15, 0.3}
 
@@ -764,10 +764,25 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
     bg:SetHeight(20)
     bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4])
 
-    -- Your level when you died (the victim)
+    -- Display the assister level instead of victim level
+    -- We're looking at the history of this player, so we want to know their level when they assisted
     local levelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     levelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
-    levelText:SetText(assistData.victimLevel == -1 and "??" or tostring(assistData.victimLevel))
+
+    -- Get the level from the assister in assistData - this is what we need to fix
+    -- In the assistHistory data, each enemy who assisted has their level at the time of assist
+    for _, otherAssister in ipairs(assistData.otherAssisters) do
+        if otherAssister.name == assistData.assisterName then
+            levelText:SetText(otherAssister.level == -1 and "??" or tostring(otherAssister.level))
+            break
+        end
+    end
+
+    -- If we couldn't find level specifically for this event, fall back to the player's base level
+    if not levelText:GetText() then
+        levelText:SetText(assistData.assisterLevel == -1 and "??" or tostring(assistData.assisterLevel))
+    end
+
     levelText:SetWidth(PSC_COLUMN_WIDTHS.LEVEL)
 
     -- Zone where the assist occurred
@@ -779,12 +794,10 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
 
     -- Create a frame for the killer info with tooltip
     local killerFrame = CreateFrame("Frame", nil, parent)
-    -- Fix: Properly align with other columns by using the same y-offset
     killerFrame:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     killerFrame:SetSize(100, 20)
 
     local killerText = killerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    -- Fix: Align text to top of frame so it matches other columns' vertical position
     killerText:SetPoint("TOPLEFT", 0, 0)
     killerText:SetText(assistData.killerName or "Unknown")
     killerText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
