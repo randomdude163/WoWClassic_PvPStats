@@ -21,10 +21,21 @@ PSC_lastInBattlegroundValue = false
 local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
     PSC_GetAndStorePlayerInfoFromUnit("targettarget")
+
+    -- Check for pet owner information
+    PSC_UpdatePetOwnerFromUnit("target")
+
+    -- Also check targettarget for pet owner info
+    if UnitExists("targettarget") then
+        PSC_UpdatePetOwnerFromUnit("targettarget")
+    end
 end
 
 local function OnUpdateMouseoverUnit()
     PSC_GetAndStorePlayerInfoFromUnit("mouseover")
+
+    -- Check for pet owner information
+    PSC_UpdatePetOwnerFromUnit("mouseover")
 end
 
 local function HandleCombatState(inCombatNow)
@@ -318,10 +329,10 @@ local function HandleCombatLogEvent()
             PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
         elseif IsPetGUID(sourceGUID) then
             -- This does not work properly, yet.
-            -- if PSC_Debug then
-            --     print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
-            -- end
-            -- PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+            if PSC_Debug then
+                print("Pet damage event from " .. (sourceName) .. ": " .. combatEvent)
+            end
+            PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
         end
     end
 

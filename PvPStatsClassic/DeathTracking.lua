@@ -1,5 +1,93 @@
 PSC_RecentDamageFromPlayers = {}
 local PLAYER_DAMAGE_WINDOW = 30.0
+-- Add pet owner tracking dictionary
+PSC_PetOwnerCache = {}
+-- Track unattributed pet damage until we discover its owner
+PSC_UnattributedPetDamage = {}
+
+-- This function extracts pet owner information from tooltip for any unit
+function PSC_UpdatePetOwnerFromUnit(unitID)
+    if not unitID or not UnitExists(unitID) then return end
+
+    -- Skip if this isn't a pet (skip players and non-creatures)
+    if UnitIsPlayer(unitID) then return end
+
+    if UnitIsFriend("player", unitID) then
+        return
+    end
+
+    local petName = UnitName(unitID)
+    if not petName then return end
+
+    -- Skip if we already know this pet's owner
+    if PSC_PetOwnerCache[petName] then
+        print("Found cached pet owner: " .. petName .. " -> " .. PSC_PetOwnerCache[petName])
+        return PSC_PetOwnerCache[petName]
+    end
+
+    -- Create a hidden tooltip to scan pet information
+    local scanTooltip = CreateFrame("GameTooltip", "PSCScanTooltip", nil, "GameTooltipTemplate")
+    scanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
+
+    -- Set the tooltip to examine the specified unit
+    scanTooltip:SetUnit(unitID)
+
+    -- Scan tooltip lines for pet owner formats
+    for i = 1, scanTooltip:NumLines() do
+        local line = _G["PSCScanTooltipTextLeft" .. i]:GetText()
+        if line then
+            -- Check for regular pets: "<Owner name>'s Pet"
+            local owner = line:match("(.+)'s [Pp]et")
+
+            -- Check for warlock minions: "<Owner name>'s Minion"
+            if not owner then
+                owner = line:match("(.+)'s [Mm]inion")
+            end
+
+            if owner then
+                if PSC_Debug then
+                    print("Found pet owner: " .. owner .. " for pet/minion: " .. petName)
+                end
+
+                PSC_PetOwnerCache[petName] = owner
+
+                -- Check if we have unattributed damage from this pet
+                if PSC_UnattributedPetDamage[petName] then
+                    local petInfo = PSC_UnattributedPetDamage[petName]
+
+                    -- Create a name-based key for the owner
+                    local ownerName = owner
+
+                    -- Get or create owner record
+                    local existingRecord = PSC_RecentDamageFromPlayers[ownerName] or {
+                        name = owner,
+                        class = "Unknown",
+                        totalDamage = 0,
+                        timestamp = 0
+                    }
+
+                    -- Update with pet damage
+                    existingRecord.totalDamage = existingRecord.totalDamage + petInfo.totalDamage
+                    existingRecord.timestamp = GetTime()
+
+                    -- Store updated record
+                    PSC_RecentDamageFromPlayers[ownerName] = existingRecord
+
+                    if PSC_Debug then
+                        print("Retroactively attributed " .. petInfo.totalDamage ..
+                              " damage from " .. petName .. " to owner " .. owner)
+                    end
+                    -- Clear the unattributed damage
+                    PSC_UnattributedPetDamage[petName] = nil
+                end
+
+                return owner
+            end
+        end
+    end
+
+    return nil
+end
 
 function PSC_GetKillerInfoOnDeath()
     local now = GetTime()
@@ -31,52 +119,41 @@ function PSC_GetKillerInfoOnDeath()
         end
     end
 
-    if mainKiller then
-        if mainKiller.isPet then
-            local ownerGUID = GetPetOwnerGUID(mainKiller.guid)
-            local ownerName = GetNameFromGUID(ownerGUID)
-
-            if ownerName then
-                mainKiller.name = ownerName
-                mainKiller.guid = ownerGUID
-                mainKiller.isPet = false
-            end
-        end
-
-        local assists = {}
-        for _, killer in ipairs(killers) do
-            if killer.guid ~= mainKiller.guid and not (killer.isPet and GetPetOwnerGUID(killer.guid) == mainKiller.guid) then
-                if killer.isPet then
-                    local ownerGUID = GetPetOwnerGUID(killer.guid)
-                    local ownerName = GetNameFromGUID(ownerGUID)
-                    if ownerName and ownerGUID ~= mainKiller.guid then
-                        table.insert(assists, {
-                            name = ownerName
-                        })
-                    end
-                else
-                    table.insert(assists, {
-                        name = killer.name
-                    })
-                end
-            end
-        end
-
-        if PSC_Debug then
-            print("Main Killer: " .. mainKiller.name)
-            local assistNames = {}
-            for _, assist in ipairs(assists) do
-                table.insert(assistNames, assist.name)
-            end
-            print("Assists: " .. table.concat(assistNames, ", "))
-        end
-        return {
-            killer = mainKiller,
-            assists = assists
-        }
+    -- Return early if no killers found
+    if not mainKiller then
+        return nil
     end
 
-    return nil
+    -- Process assists, checking for duplicates (player and their pet)
+    local assists = {}
+    local addedPlayers = {}
+
+    for _, killer in ipairs(killers) do
+        -- Skip if this is the main killer
+        if killer.guid ~= mainKiller.guid then
+            -- For player assists, add them directly if not already added
+            if not addedPlayers[killer.name] then
+                table.insert(assists, {
+                    name = killer.name
+                })
+                addedPlayers[killer.name] = true
+            end
+        end
+    end
+
+    if PSC_Debug then
+        print("Main Killer: " .. mainKiller.name)
+        local assistNames = {}
+        for _, assist in ipairs(assists) do
+            table.insert(assistNames, assist.name)
+        end
+        print("Assists: " .. table.concat(assistNames, ", "))
+    end
+
+    return {
+        killer = mainKiller,
+        assists = assists
+    }
 end
 
 function PSC_RegisterPlayerDeath(killerInfo)
@@ -191,35 +268,48 @@ function TrackIncomingPlayerDamage(sourceGUID, sourceName, amount)
     -- end
 end
 
+-- Fix for the TrackIncomingPetDamage function
 function TrackIncomingPetDamage(petGUID, petName, amount)
     if not petGUID or not petName then return end
 
-    -- This doesn't work properly, yet.
-    local ownerGUID = GetPetOwnerGUID(petGUID)
+    -- First check our cache for the pet owner
+    local ownerName = PSC_PetOwnerCache[petName]
 
-    print("Pet owner GUID: " .. ownerGUID)
-    if not ownerGUID then
-        -- If we can't find the owner, just track the pet damage directly
-        TrackIncomingPlayerDamage(petGUID, petName, amount)
+    -- If we couldn't find the owner in our cache
+    if not ownerName then
+        -- Store the damage with the pet temporarily
+        PSC_UnattributedPetDamage[petName] = PSC_UnattributedPetDamage[petName] or {
+            totalDamage = 0,
+            timestamp = GetTime()
+        }
+
+        -- Update unattributed damage
+        PSC_UnattributedPetDamage[petName].totalDamage = PSC_UnattributedPetDamage[petName].totalDamage + amount
+        PSC_UnattributedPetDamage[petName].timestamp = GetTime()
+
+        if PSC_Debug then
+            print("Storing unattributed pet damage from " .. petName .. ": " .. amount)
+        end
         return
     end
 
-    local ownerName = GetNameFromGUID(ownerGUID) or "Unknown Owner"
-    print("Owner Name: " .. ownerName)
+    -- If we know the owner, attribute damage directly to them
+    -- Create a name-based key instead of relying on GUID
+    local ownerKey = "Player-" .. ownerName
+
     -- Create a merged record with the owner's information
-    local existingRecord = PSC_RecentDamageFromPlayers[ownerGUID] or {
+    local existingRecord = PSC_RecentDamageFromPlayers[ownerKey] or {
         name = ownerName,
-        class = select(2, GetPlayerInfoByGUID(ownerGUID)) or "Unknown",
+        class = "Unknown", -- We may not be able to get the class reliably
         totalDamage = 0,
         timestamp = 0
     }
-
     -- Update with new damage info
     existingRecord.totalDamage = existingRecord.totalDamage + amount
     existingRecord.timestamp = GetTime()
 
-    -- Store updated record
-    PSC_RecentDamageFromPlayers[ownerGUID] = existingRecord
+    -- Store updated record - FIX: use ownerKey instead of ownerGUID
+    PSC_RecentDamageFromPlayers[ownerKey] = existingRecord
 
     if PSC_Debug then
         print("Incoming damage from " .. ownerName .. "'s pet (" .. petName .. "): " .. amount)
@@ -319,13 +409,24 @@ function PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sour
         damageAmount = param4 or 0
     end
 
-    print("Damage amount: " .. damageAmount)
-
     if damageAmount > 0 then
         TrackIncomingPetDamage(sourceGUID, sourceName, damageAmount)
     end
 end
 
+-- Add this function to clean up unattributed pet damage
+function PSC_CleanupUnattributedPetDamage()
+    local now = GetTime()
+    local cutoff = now - PLAYER_DAMAGE_WINDOW
+
+    for petName, info in pairs(PSC_UnattributedPetDamage) do
+        if info.timestamp < cutoff then
+            PSC_UnattributedPetDamage[petName] = nil
+        end
+    end
+end
+
+-- Update the cleanup function to also clean unattributed pet damage
 function PSC_CleanupRecentDamageFromPlayers()
     local now = GetTime()
     local cutoff = now - PLAYER_DAMAGE_WINDOW
@@ -335,6 +436,9 @@ function PSC_CleanupRecentDamageFromPlayers()
             PSC_RecentDamageFromPlayers[guid] = nil
         end
     end
+
+    -- Also clean up unattributed pet damage
+    PSC_CleanupUnattributedPetDamage()
 end
 
 function PSC_ShowDeathStats()
