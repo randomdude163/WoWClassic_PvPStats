@@ -95,25 +95,32 @@ function PSC_GetKillerInfoOnDeath()
     local mainKiller = nil
     local highestDamage = 0
 
-    for sourceGUID, info in pairs(PSC_RecentDamageFromPlayers) do
+    -- Debug output to check what we have in PSC_RecentDamageFromPlayers
+    if PSC_Debug then
+        print("Recent Damage From Players:")
+        for sourceID, info in pairs(PSC_RecentDamageFromPlayers) do
+            print("- " .. info.name .. " (" .. sourceID .. "): " .. info.totalDamage)
+        end
+    end
+
+    for sourceID, info in pairs(PSC_RecentDamageFromPlayers) do
+        -- Make sure the damage is recent enough
         if (now - info.timestamp) <= PLAYER_DAMAGE_WINDOW then
             -- Skip players in our party/raid as they can't be enemies
             if not UnitInParty(info.name) and not UnitInRaid(info.name) then
                 if info.totalDamage > highestDamage then
                     highestDamage = info.totalDamage
                     mainKiller = {
-                        guid = sourceGUID,
+                        guid = sourceID,  -- This could be either a GUID or player name now
                         name = info.name,
-                        damage = info.totalDamage,
-                        isPet = IsPetGUID(sourceGUID)
+                        damage = info.totalDamage
                     }
                 end
 
                 table.insert(killers, {
-                    guid = sourceGUID,
+                    guid = sourceID,  -- This could be either a GUID or player name now
                     name = info.name,
-                    damage = info.totalDamage,
-                    isPet = IsPetGUID(sourceGUID)
+                    damage = info.totalDamage
                 })
             end
         end
@@ -121,33 +128,44 @@ function PSC_GetKillerInfoOnDeath()
 
     -- Return early if no killers found
     if not mainKiller then
+        if PSC_Debug then
+            print("No killers found!")
+        end
         return nil
     end
 
-    -- Process assists, checking for duplicates (player and their pet)
+    -- Process assists, checking for duplicates
     local assists = {}
     local addedPlayers = {}
 
     for _, killer in ipairs(killers) do
         -- Skip if this is the main killer
-        if killer.guid ~= mainKiller.guid then
-            -- For player assists, add them directly if not already added
+        if killer.name ~= mainKiller.name then
+            -- We're now using name-based tracking, so check by name
             if not addedPlayers[killer.name] then
                 table.insert(assists, {
                     name = killer.name
                 })
                 addedPlayers[killer.name] = true
+
+                if PSC_Debug then
+                    print("Added assist: " .. killer.name .. " with damage: " .. killer.damage)
+                end
             end
         end
     end
 
     if PSC_Debug then
-        print("Main Killer: " .. mainKiller.name)
+        print("Main Killer: " .. mainKiller.name .. " with damage: " .. mainKiller.damage)
         local assistNames = {}
         for _, assist in ipairs(assists) do
             table.insert(assistNames, assist.name)
         end
-        print("Assists: " .. table.concat(assistNames, ", "))
+        if #assistNames > 0 then
+            print("Assists: " .. table.concat(assistNames, ", "))
+        else
+            print("No assists")
+        end
     end
 
     return {
@@ -248,8 +266,11 @@ end
 function TrackIncomingPlayerDamage(sourceGUID, sourceName, amount)
     if not sourceGUID or not sourceName then return end
 
+    -- Always use player name as the key for consistency
+    local playerKey = sourceName
+
     -- Get or create the damage record
-    local existingRecord = PSC_RecentDamageFromPlayers[sourceGUID] or {
+    local existingRecord = PSC_RecentDamageFromPlayers[playerKey] or {
         name = sourceName,
         class = select(2, GetPlayerInfoByGUID(sourceGUID)) or "Unknown",
         totalDamage = 0,
@@ -260,12 +281,12 @@ function TrackIncomingPlayerDamage(sourceGUID, sourceName, amount)
     existingRecord.totalDamage = existingRecord.totalDamage + amount
     existingRecord.timestamp = GetTime()
 
-    -- Store updated record
-    PSC_RecentDamageFromPlayers[sourceGUID] = existingRecord
+    -- Store updated record using player name as key
+    PSC_RecentDamageFromPlayers[playerKey] = existingRecord
 
-    -- if PSC_Debug then
-    --     print("Incoming damage from " .. sourceName .. ": " .. amount)
-    -- end
+    if PSC_Debug then
+        print("Incoming damage from " .. sourceName .. ": " .. amount)
+    end
 end
 
 -- Fix for the TrackIncomingPetDamage function
@@ -294,22 +315,22 @@ function TrackIncomingPetDamage(petGUID, petName, amount)
     end
 
     -- If we know the owner, attribute damage directly to them
-    -- Create a name-based key instead of relying on GUID
-    local ownerKey = "Player-" .. ownerName
+    -- Use the owner's name directly as the key for consistency with TrackIncomingPlayerDamage
 
-    -- Create a merged record with the owner's information
-    local existingRecord = PSC_RecentDamageFromPlayers[ownerKey] or {
+    -- Get or create owner record
+    local existingRecord = PSC_RecentDamageFromPlayers[ownerName] or {
         name = ownerName,
         class = "Unknown", -- We may not be able to get the class reliably
         totalDamage = 0,
         timestamp = 0
     }
+
     -- Update with new damage info
     existingRecord.totalDamage = existingRecord.totalDamage + amount
     existingRecord.timestamp = GetTime()
 
-    -- Store updated record - FIX: use ownerKey instead of ownerGUID
-    PSC_RecentDamageFromPlayers[ownerKey] = existingRecord
+    -- Store updated record
+    PSC_RecentDamageFromPlayers[ownerName] = existingRecord
 
     if PSC_Debug then
         print("Incoming damage from " .. ownerName .. "'s pet (" .. petName .. "): " .. amount)
@@ -319,12 +340,10 @@ end
 function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, param1, param4)
     local damageAmount = 0
 
-    -- Only track if sourceName exists and isn't in our party/raid
     if not sourceName or UnitInParty(sourceName) or UnitInRaid(sourceName) then
         return
     end
 
-    -- Handle damage events - these already count properly
     if combatEvent == "SWING_DAMAGE" then
         damageAmount = param1 or 0
     elseif combatEvent == "SPELL_DAMAGE" or combatEvent == "SPELL_PERIODIC_DAMAGE" then
@@ -389,7 +408,7 @@ function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spe
         end
 
         if isRelevantSpell then
-            damageAmount = 1  -- Just award minimal "contribution" for tracking purposes
+            damageAmount = 1
         end
     end
 
@@ -414,7 +433,6 @@ function PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sour
     end
 end
 
--- Add this function to clean up unattributed pet damage
 function PSC_CleanupUnattributedPetDamage()
     local now = GetTime()
     local cutoff = now - PLAYER_DAMAGE_WINDOW
@@ -426,7 +444,6 @@ function PSC_CleanupUnattributedPetDamage()
     end
 end
 
--- Update the cleanup function to also clean unattributed pet damage
 function PSC_CleanupRecentDamageFromPlayers()
     local now = GetTime()
     local cutoff = now - PLAYER_DAMAGE_WINDOW
@@ -437,7 +454,6 @@ function PSC_CleanupRecentDamageFromPlayers()
         end
     end
 
-    -- Also clean up unattributed pet damage
     PSC_CleanupUnattributedPetDamage()
 end
 

@@ -321,12 +321,11 @@ local function HandleCombatLogEvent()
     end
 
     if destGUID == PSC_PlayerGUID then
-        if sourceGUID == PSC_PlayerGUID then return end  -- Ignore self-damage or auras
+        if sourceGUID == PSC_PlayerGUID then return end
+
         if bit.band(sourceFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
-            -- Extract spell information
             local spellId, spellName
             if combatEvent == "SWING_DAMAGE" then
-                -- Swing doesn't have spell info
                 spellId = 0
                 spellName = "Melee"
             else
@@ -334,9 +333,9 @@ local function HandleCombatLogEvent()
                 spellName = param2
             end
 
-            PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, param4, param7)
+            PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, param1, param4)
         elseif IsPetGUID(sourceGUID) then
-            -- This does not work properly, yet.
+            -- Handle pet damage
             if PSC_Debug then
                 print("Pet damage event from " .. (sourceName) .. ": " .. combatEvent)
             end
