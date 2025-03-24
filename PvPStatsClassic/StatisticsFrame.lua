@@ -672,7 +672,10 @@ local function calculateStatistics()
     local totalPlayerLevelSum = 0  -- Sum of player levels at time of kills
     local killsWithLevelData = 0
     local levelDiffSum = 0  -- For direct level difference calculation
-    local unknownLevelKills = 0  -- Initialize the variable properly
+    local unknownLevelKills = 0
+
+    -- For improved unique player level calculation
+    local uniquePlayerLevels = {}
 
     local mostKilledPlayer = nil
     local mostKilledCount = 0
@@ -717,6 +720,20 @@ local function calculateStatistics()
 
                 local level = nameWithLevel:match(":(%S+)")
                 local levelNum = tonumber(level or "0") or 0
+
+                -- Initialize unique player level tracking if needed
+                if levelNum > 0 then
+                    if not uniquePlayerLevels[playerName] then
+                        uniquePlayerLevels[playerName] = {
+                            sum = 0,
+                            count = 0
+                        }
+                    end
+
+                    -- Add this level instance to the player's running total
+                    uniquePlayerLevels[playerName].sum = uniquePlayerLevels[playerName].sum + levelNum
+                    uniquePlayerLevels[playerName].count = uniquePlayerLevels[playerName].count + 1
+                end
 
                 -- Count unknown level kills
                 if levelNum == -1 then
@@ -765,8 +782,21 @@ local function calculateStatistics()
         end
     end
 
+    -- Calculate average of unique victim levels (first average each player's levels, then average those)
+    local uniqueLevelSum = 0
+    local uniquePlayersWithLevel = 0
+
+    for _, playerLevelData in pairs(uniquePlayerLevels) do
+        if playerLevelData.count > 0 then
+            -- Add this player's average level to the sum
+            uniqueLevelSum = uniqueLevelSum + (playerLevelData.sum / playerLevelData.count)
+            uniquePlayersWithLevel = uniquePlayersWithLevel + 1
+        end
+    end
+
     local knownLevelKills = totalKills - unknownLevelKills
     local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
+    local avgUniqueLevel = uniquePlayersWithLevel > 0 and (uniqueLevelSum / uniquePlayersWithLevel) or 0
     local avgPlayerLevel = totalKills > 0 and (totalPlayerLevelSum / totalKills) or 0
     local avgLevelDiff = killsWithLevelData > 0 and (levelDiffSum / killsWithLevelData) or 0
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
@@ -775,7 +805,7 @@ local function calculateStatistics()
         totalKills = totalKills,
         uniqueKills = uniqueKills,
         unknownLevelKills = unknownLevelKills,
-        avgLevel = avgLevel,
+        avgLevel = avgUniqueLevel, -- Using the improved unique player average
         avgLevelDiff = avgLevelDiff,
         avgKillsPerPlayer = avgKillsPerPlayer,
         mostKilledPlayer = mostKilledPlayer or "None",
