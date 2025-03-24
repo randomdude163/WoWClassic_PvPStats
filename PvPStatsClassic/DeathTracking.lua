@@ -291,7 +291,7 @@ function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spe
                 if spellId == relevantSpellId then
                     isRelevantSpell = true
                     if PSC_Debug then
-                        print("PvP relevant spell detected: " .. spellName .. " (ID: " .. spellId .. ")")
+                        print("PvP relevant spell detected from " .. sourceName .. ": " .. spellName .. " (ID: " .. spellId .. ")")
                     end
                     break
                 end
