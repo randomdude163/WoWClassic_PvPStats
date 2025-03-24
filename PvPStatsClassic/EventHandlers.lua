@@ -410,17 +410,19 @@ function PSC_CheckBattlegroundStatus()
         return
     end
 
-    local currentZone = GetRealZoneText() or ""
-    local battlegroundZones = {
-        "Warsong Gulch",
-        "Arathi Basin",
-        "Alterac Valley",
-        -- "Elwynn Forest",
-        -- "Duskwood"
+    local currentMapId = C_Map.GetBestMapForUnit("player")
+    print(currentMapId)
+
+    local battlegroundZoneIds = {
+        92, -- "Warsong Gulch"
+        93, -- "Arathi Basin"
+        1537, -- "Alterac Valley"
+        1429, -- "Elwynn Forest"
+        47, -- "Duskwood"
     }
 
-    for _, bgName in ipairs(battlegroundZones) do
-        if (currentZone == bgName) then
+    for _, bgMapId in ipairs(battlegroundZoneIds) do
+        if (currentMapId == bgMapId) then
             if not PSC_lastInBattlegroundValue then
                 local msg = "[PvPStats]: Entered battleground. "
                 -- if PSC_DB.CountKillsInBattlegrounds then
