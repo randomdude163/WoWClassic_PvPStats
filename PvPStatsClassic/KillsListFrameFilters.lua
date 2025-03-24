@@ -697,42 +697,6 @@ local function GetDeathDataFromAllCharacters()
     return deathDataByPlayer
 end
 
--- Get list of player entries for the kills list
-local function GetPlayerEntriesForKillsList(searchText)
-    local entries = {}
-    local playerNameMap = {}
-
-    -- Get death data from all characters
-    local deathDataByPlayer = GetDeathDataFromAllCharacters()
-
-    -- Step 1: Process players you've killed
-    ProcessKilledPlayers(searchText, playerNameMap, entries)
-
-    -- Step 2: Process players who have killed you but you haven't killed
-    ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
-
-    -- Step 3: Process players who have only assisted in your deaths
-    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
-
-    return entries
-end
-
--- Collect death data for the current character
-local function CollectDeathData()
-    local deathDataByPlayer = {}
-    local characterKey = PSC_GetCharacterKey()
-
-    if PSC_DB.PvPLossCounts and PSC_DB.PvPLossCounts[characterKey] then
-        local lossData = PSC_DB.PvPLossCounts[characterKey]
-
-        for killerName, deathData in pairs(lossData.Deaths or {}) do
-            deathDataByPlayer[killerName] = deathData
-        end
-    end
-
-    return deathDataByPlayer
-end
-
 -- Process and collect all players you have killed
 local function ProcessKilledPlayers(searchText, playerNameMap, entries)
     local charactersToProcess = GetCharactersToProcessForStatistics()
