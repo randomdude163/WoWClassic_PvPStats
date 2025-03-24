@@ -198,7 +198,8 @@ function PSC_RegisterPlayerDeath(killerInfo)
     deathData.lastDeath = time()
     deathData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
-    deathData.killerLevel = killerLevel
+    -- Remove redundant killerLevel from top-level death data
+    -- deathData.killerLevel = killerLevel
 
     if #killerInfo.assists > 0 then
         deathData.assistKills = deathData.assistKills + 1
@@ -212,8 +213,18 @@ function PSC_RegisterPlayerDeath(killerInfo)
     if #killerInfo.assists > 0 then
         assistsWithLevels = {}
         for _, assist in ipairs(killerInfo.assists) do
+            local assisterLevel = -1
+            local assisterClass = "Unknown"
+            -- Capture assister's level at time of kill from cache if available
+            if PSC_DB.PlayerInfoCache[assist.name] then
+                assisterLevel = PSC_DB.PlayerInfoCache[assist.name].level
+                assisterClass = PSC_DB.PlayerInfoCache[assist.name].class
+            end
+
             table.insert(assistsWithLevels, {
-                name = assist.name
+                name = assist.name,
+                level = assisterLevel,
+                class = assisterClass
             })
         end
     end
