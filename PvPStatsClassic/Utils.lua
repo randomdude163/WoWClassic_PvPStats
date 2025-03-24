@@ -143,10 +143,29 @@ function GetMultiKillText(count)
     return "Multi-kill of " .. count
 end
 
-function GetPlayerCoordinates()
+function PSC_GetPlayerCoordinates()
     local mapID = C_Map.GetBestMapForUnit("player")
     local position = C_Map.GetPlayerMapPosition(mapID, "player")
     local x = position.x * 100
     local y = position.y * 100
     return x, y
+end
+
+function PSC_FormatLastKillTimespan(lastKillTimestamp)
+    if not lastKillTimestamp then
+        return nil
+    end
+
+    local currentTime = time()
+    local timeDiff = currentTime - lastKillTimestamp
+
+    if timeDiff < 60 then
+        return format("%ds", timeDiff)
+    elseif timeDiff < 3600 then
+        return format("%dm", math.floor(timeDiff/60))
+    elseif timeDiff < 86400 then
+        return format("%dh", math.floor(timeDiff/3600))
+    else
+        return format("%dd", math.floor(timeDiff/86400))
+    end
 end

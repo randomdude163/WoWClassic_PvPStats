@@ -21,10 +21,21 @@ PSC_lastInBattlegroundValue = false
 local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
     PSC_GetAndStorePlayerInfoFromUnit("targettarget")
+
+    -- Check for pet owner information
+    PSC_UpdatePetOwnerFromUnit("target")
+
+    -- Also check targettarget for pet owner info
+    if UnitExists("targettarget") then
+        PSC_UpdatePetOwnerFromUnit("targettarget")
+    end
 end
 
 local function OnUpdateMouseoverUnit()
     PSC_GetAndStorePlayerInfoFromUnit("mouseover")
+
+    -- Check for pet owner information
+    PSC_UpdatePetOwnerFromUnit("mouseover")
 end
 
 local function HandleCombatState(inCombatNow)
@@ -51,9 +62,6 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     local killerClass = PSC_DB.PlayerInfoCache[killerName].class
 
     if killerLevel ~= -1 then
-        if PSC_Debug then
-            print("Not sending warning for " .. killerName .. ", level " .. killerLevel .. " (not ??)")
-        end
         return
     end
 
@@ -302,26 +310,29 @@ end
 
 local function HandleCombatLogEvent()
     local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
-          destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
+          destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4, param5, param6, param7, param8 = CombatLogGetCurrentEventInfo()
 
     if CombatLogDestFlagsEnemyPlayer(destFlags) then
         HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
-        HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)  -- Add this line
+        HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
     end
 
     if destGUID == PSC_PlayerGUID then
-        if sourceGUID == PSC_PlayerGUID then return end  -- Ignore self-damage or auras
+        if sourceGUID == PSC_PlayerGUID then return end
+
         if bit.band(sourceFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
-            -- if PSC_Debug then
-            --     print("Player damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
-            -- end
-            PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
+            local spellId, spellName
+            if combatEvent == "SWING_DAMAGE" then
+                spellId = 0
+                spellName = "Melee"
+            else
+                spellId = param1
+                spellName = param2
+            end
+
+            PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, param1, param4)
         elseif IsPetGUID(sourceGUID) then
-            -- This does not work properly, yet.
-            -- if PSC_Debug then
-            --     print("Pet damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
-            -- end
-            -- PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
+            PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
         end
     end
 
@@ -372,9 +383,6 @@ function PSC_RegisterEvents()
         elseif event == "UPDATE_MOUSEOVER_UNIT" then
             OnUpdateMouseoverUnit()
         elseif event == "PLAYER_DEAD" then
-            if PSC_Debug then
-                print("PLAYER_DEAD event received")
-            end
             HandlePlayerDeath()
         elseif event == "PLAYER_REGEN_DISABLED" then
             HandleCombatState(true)
@@ -407,7 +415,7 @@ function PSC_CheckBattlegroundStatus()
         "Warsong Gulch",
         "Arathi Basin",
         "Alterac Valley",
-        "Elwynn Forest",
+        -- "Elwynn Forest",
         -- "Duskwood"
     }
 
@@ -471,25 +479,6 @@ function PSC_SetupMouseoverTooltip()
         return lastKill > 0 and lastKill or nil
     end
 
-    local function FormatLastKillTimespan(lastKillTimestamp)
-        if not lastKillTimestamp then
-            return nil
-        end
-
-        local currentTime = time()
-        local timeDiff = currentTime - lastKillTimestamp
-
-        if timeDiff < 60 then
-            return format("%ds", timeDiff)
-        elseif timeDiff < 3600 then
-            return format("%dm", math.floor(timeDiff/60))
-        elseif timeDiff < 86400 then
-            return format("%dh", math.floor(timeDiff/3600))
-        else
-            return format("%dd", math.floor(timeDiff/86400))
-        end
-    end
-
     local function GetDeathsByPlayerName(playerName)
         local characterKey = PSC_GetCharacterKey()
         if not PSC_DB.PvPLossCounts or not PSC_DB.PvPLossCounts[characterKey] or
@@ -515,7 +504,7 @@ function PSC_SetupMouseoverTooltip()
             scoreText = "Score " .. kills .. ":" .. deaths
 
             if kills > 0 then
-                local lastKillTimespan = FormatLastKillTimespan(lastKill)
+                local lastKillTimespan = PSC_FormatLastKillTimespan(lastKill)
                 if lastKillTimespan then
                     scoreText = scoreText .. " - Last kill " .. lastKillTimespan .. " ago"
                 end

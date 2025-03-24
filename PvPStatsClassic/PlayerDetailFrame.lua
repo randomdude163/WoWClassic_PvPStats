@@ -1,18 +1,18 @@
 PSC_PlayerDetailFrame = nil
-local DETAIL_FRAME_WIDTH = 600
+local DETAIL_FRAME_WIDTH = 500
 local DETAIL_FRAME_HEIGHT = 600
 
 -- Layout constants for column positioning
 PSC_COLUMN_POSITIONS = {
     LEVEL = 25,     -- Level column
     ZONE = 70,      -- Zone column
-    KILLS = 230,    -- Kills/Assisters column
-    TIME = 330      -- Time column
+    KILLS = 225,    -- Kills/Assisters column
+    TIME = 310      -- Time column
 }
 
 PSC_COLUMN_WIDTHS = {
     LEVEL = 40,     -- Level column width
-    ZONE = 140,     -- Zone column width
+    ZONE = 135,     -- Zone column width
     KILLS = 100      -- Kills/Assisters column width
 }
 
@@ -161,11 +161,13 @@ local function CreateKillHistoryEntry(parent, killData, index, yOffset)
     zoneText:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
     zoneText:SetJustifyH("LEFT")
 
-    local killsText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killsText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
-    killsText:SetText(killData.kills and tostring(killData.kills) or "1")
-    killsText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
-    killsText:SetJustifyH("LEFT")
+    -- Fix: Use playerLevel for the "Your Level" column instead of kills
+    local yourLevelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    yourLevelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
+    -- Use playerLevel from kill data if available, otherwise fall back to default
+    yourLevelText:SetText(tostring(killData.playerLevel))
+    yourLevelText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    yourLevelText:SetJustifyH("LEFT")
 
     local timeText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     timeText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
@@ -174,6 +176,7 @@ local function CreateKillHistoryEntry(parent, killData, index, yOffset)
     return yOffset - 20
 end
 
+-- Fix the CreateDeathHistoryEntry function
 local function CreateDeathHistoryEntry(parent, deathData, index, yOffset)
     local bgColor = index % 2 == 0 and {0.1, 0.1, 0.1, 0.3} or {0.15, 0.15, 0.15, 0.3}
 
@@ -196,14 +199,23 @@ local function CreateDeathHistoryEntry(parent, deathData, index, yOffset)
 
     -- Create a frame for the assisters column to handle tooltip
     local assistFrame = CreateFrame("Frame", nil, parent)
+    -- Fix: Properly align with other columns by using the same y-offset
     assistFrame:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     assistFrame:SetSize(100, 20)
 
     local assistText = assistFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    assistText:SetPoint("LEFT", 0, 0)
+    -- Fix: Align text to top of frame so it matches other columns' vertical position
+    assistText:SetPoint("TOPLEFT", 0, 0)
 
     local assistCount = deathData.assisters and #deathData.assisters or 0
-    local assistDisplay = assistCount > 0 and tostring(assistCount) .. " players" or "-"
+    local assistDisplay
+    if assistCount == 0 then
+        assistDisplay = "Solo kill"
+    elseif assistCount == 1 then
+        assistDisplay = "1 player"
+    else
+        assistDisplay = tostring(assistCount) .. " players"
+    end
     assistText:SetText(assistDisplay)
     assistText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
     assistText:SetJustifyH("LEFT")
@@ -304,6 +316,7 @@ local function FindPlayerEntryByName(playerName)
         deaths = 0,
         assists = 0,
         lastKill = 0,
+        zone = "Unknown", -- Default zone
         killHistory = {},
         deathHistory = {},
         assistHistory = {}
@@ -322,7 +335,7 @@ local function FindPlayerEntryByName(playerName)
     end
 
     -- Collect kill history across all characters
-    local charactersToProcess = GetCharactersToProcessForStatistics()
+    local charactersToProcess = PSC_GetCharactersToProcessForStatistics()
     for charKey, charData in pairs(charactersToProcess) do
         for nameWithLevel, killData in pairs(charData.Kills or {}) do
             local name = string.match(nameWithLevel, "(.-)%:")
@@ -332,70 +345,90 @@ local function FindPlayerEntryByName(playerName)
                 -- Update total kills
                 entry.kills = entry.kills + (killData.kills or 0)
 
-                -- Keep track of the most recent kill timestamp
-                if (killData.lastKill or 0) > entry.lastKill then
-                    entry.lastKill = killData.lastKill
-                    entry.zone = killData.zone or "Unknown"
+                -- Get latest kill info from kill locations
+                local latestKillTimestamp = 0
+                local latestZone = "Unknown"
+
+                if killData.killLocations and #killData.killLocations > 0 then
+                    -- Find the most recent kill location
+                    for _, location in ipairs(killData.killLocations) do
+                        if (location.timestamp or 0) > latestKillTimestamp then
+                            latestKillTimestamp = location.timestamp
+                            latestZone = location.zone or "Unknown"
+                        end
+                    end
                 end
 
-                -- Add to kill history
-                table.insert(entry.killHistory, {
-                    level = level,
-                    zone = killData.zone or "Unknown",
-                    timestamp = killData.lastKill or 0,
-                    rank = killData.rank or 0,
-                    kills = killData.kills or 0
-                })
+                -- Keep track of the most recent kill timestamp
+                if latestKillTimestamp > entry.lastKill then
+                    entry.lastKill = latestKillTimestamp
+                    entry.zone = latestZone
+                end
+
+                -- Extract kill history for each location entry
+                if killData.killLocations and #killData.killLocations > 0 then
+                    for _, location in ipairs(killData.killLocations) do
+                        table.insert(entry.killHistory, {
+                            level = level,
+                            zone = location.zone or "Unknown",
+                            timestamp = location.timestamp or 0,
+                            rank = killData.rank or 0,
+                            playerLevel = location.playerLevel or UnitLevel("player"),
+                            characterKey = charKey
+                        })
+                    end
+                else
+                    -- Fallback if no killLocations available
+                    table.insert(entry.killHistory, {
+                        level = level,
+                        zone = killData.zone or "Unknown", -- Legacy data might still have top-level zone
+                        timestamp = killData.lastKill or 0,
+                        rank = killData.rank or 0,
+                        playerLevel = killData.playerLevel or UnitLevel("player"), -- Legacy data might have top-level playerLevel
+                        characterKey = charKey
+                    })
+                end
             end
         end
     end
 
-    -- Collect death history and assists from all characters that match this player name
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local lossData = PSC_DB.PvPLossCounts[currentCharacterKey]
+    -- Get death data from all characters
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+    if deathDataByPlayer[playerName] then
+        local deathData = deathDataByPlayer[playerName]
+        entry.deaths = deathData.deaths or 0
+        entry.deathHistory = deathData.deathLocations or {}
+    end
 
-    if lossData and lossData.Deaths then
-        -- Count direct deaths
-        if lossData.Deaths[playerName] then
-            local deathData = lossData.Deaths[playerName]
-            entry.deaths = deathData.deaths or 0
+    -- Count assists and build assist history
+    local assistCount, _ = PSC_CountPlayerAssists(playerName, deathDataByPlayer)
+    entry.assists = assistCount
 
-            -- Add all death locations to history
-            if deathData.deathLocations then
-                for _, location in ipairs(deathData.deathLocations) do
-                    table.insert(entry.deathHistory, location)
-                end
-            end
-        end
+    -- Process assist history
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        if deathData.deathLocations then
+            for _, location in ipairs(deathData.deathLocations) do
+                if location.assisters then
+                    for _, assister in ipairs(location.assisters) do
+                        if assister.name == playerName then
+                            -- Create assist history entry
+                            local assistData = {
+                                killerName = killerName,
+                                killerLevel = location.killerLevel or -1,
+                                victimLevel = entry.levelDisplay,
+                                zone = location.zone or "Unknown",
+                                timestamp = location.timestamp or 0,
+                                otherAssisters = {}
+                            }
 
-        -- Count assists and build assist history
-        for killerName, deathData in pairs(lossData.Deaths) do
-            if deathData.deathLocations then
-                for _, location in ipairs(deathData.deathLocations) do
-                    if location.assisters then
-                        for _, assister in ipairs(location.assisters) do
-                            if assister.name == playerName then
-                                entry.assists = entry.assists + 1
-
-                                -- Create assist history entry
-                                local assistData = {
-                                    killerName = killerName,
-                                    killerLevel = location.killerLevel or -1,
-                                    victimLevel = entry.levelDisplay, -- Use the entry level (which might be -1)
-                                    zone = location.zone or "Unknown",
-                                    timestamp = location.timestamp or 0,
-                                    otherAssisters = {}
-                                }
-
-                                -- Add other assisters (excluding the current player)
-                                for _, otherAssister in ipairs(location.assisters) do
-                                    if otherAssister.name ~= playerName then
-                                        table.insert(assistData.otherAssisters, otherAssister)
-                                    end
+                            -- Add other assisters (excluding the current player)
+                            for _, otherAssister in ipairs(location.assisters) do
+                                if otherAssister.name ~= playerName then
+                                    table.insert(assistData.otherAssisters, otherAssister)
                                 end
-
-                                table.insert(entry.assistHistory, assistData)
                             end
+
+                            table.insert(entry.assistHistory, assistData)
                         end
                     end
                 end
@@ -403,7 +436,6 @@ local function FindPlayerEntryByName(playerName)
         end
     end
 
-    -- Always return an entry even if incomplete
     return entry
 end
 
@@ -464,12 +496,12 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
 
     -- Add class icon texture
     if playerClass ~= "Unknown" then
-        local classIconSize = 64
+        local classIconSize = 32
 
         local iconContainer = CreateFrame("Frame", nil, content)
         iconContainer:SetSize(classIconSize + 10, classIconSize + 10) -- Slightly larger to accommodate border
 
-        iconContainer:SetPoint("LEFT", 400, 0)
+        iconContainer:SetPoint("LEFT", 320, 0)
 
         local initialYOffset = yOffset
         local rowsToKills = 2 -- Player info, Rank (before Total kills)
@@ -573,22 +605,59 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
     return yOffset - 20
 end
 
+-- Function to display the kill history section with individual entries
 local function DisplayKillHistorySection(content, playerEntry, yOffset)
     yOffset = CreateSection(content, "Kill History", yOffset)
-    yOffset = CreateKillHistoryHeaderRow(content, yOffset)
 
-    -- Kill history entries
-    if playerEntry.killHistory and #playerEntry.killHistory > 0 then
+    -- Create header for individual kill entries
+    local headerBg = content:CreateTexture(nil, "BACKGROUND")
+    headerBg:SetPoint("TOPLEFT", 15, yOffset)
+    headerBg:SetPoint("TOPRIGHT", content, "TOPRIGHT", -15, 0)
+    headerBg:SetHeight(20)
+    headerBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
+
+    -- Column headers
+    local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    levelHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
+    levelHeader:SetText("Level")
+    levelHeader:SetTextColor(1, 0.82, 0)
+
+    local zoneHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    zoneHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
+    zoneHeader:SetText("Zone")
+    zoneHeader:SetTextColor(1, 0.82, 0)
+    zoneHeader:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
+    zoneHeader:SetJustifyH("LEFT")
+
+    local yourLevelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    yourLevelHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
+    yourLevelHeader:SetText("Your Level")
+    yourLevelHeader:SetTextColor(1, 0.82, 0)
+    yourLevelHeader:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    yourLevelHeader:SetJustifyH("LEFT")
+
+    local timeHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    timeHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
+    timeHeader:SetText("Time")
+    timeHeader:SetTextColor(1, 0.82, 0)
+
+    yOffset = yOffset - 20
+
+    -- Process kill history entries
+    if playerEntry and playerEntry.killHistory and #playerEntry.killHistory > 0 then
         -- Sort by timestamp descending (most recent first)
-        local sortedKillHistory = SortKillHistoryByTimestamp(playerEntry.killHistory)
+        table.sort(playerEntry.killHistory, function(a, b)
+            return (a.timestamp or 0) > (b.timestamp or 0)
+        end)
 
-        for i, killData in ipairs(sortedKillHistory) do
+        -- Display each kill history entry
+        for i, killData in ipairs(playerEntry.killHistory) do
             yOffset = CreateKillHistoryEntry(content, killData, i, yOffset)
         end
     else
         local noDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         noDataText:SetPoint("TOPLEFT", 25, yOffset - 10)
-        noDataText:SetText("No kills for this player have been recorded.")
+        noDataText:SetText("No kill history available for this player.")
         noDataText:SetTextColor(0.7, 0.7, 0.7)
         yOffset = yOffset - 30
     end
@@ -688,7 +757,7 @@ local function CreateAssistHistoryHeaderRow(content, yOffset)
     return yOffset - 20
 end
 
--- Create an entry row for assist history
+-- Fix the CreateAssistHistoryEntry function
 local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
     local bgColor = index % 2 == 0 and {0.1, 0.1, 0.1, 0.3} or {0.15, 0.15, 0.15, 0.3}
 
@@ -713,11 +782,13 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
 
     -- Create a frame for the killer info with tooltip
     local killerFrame = CreateFrame("Frame", nil, parent)
+    -- Fix: Properly align with other columns by using the same y-offset
     killerFrame:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     killerFrame:SetSize(100, 20)
 
     local killerText = killerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killerText:SetPoint("LEFT", 0, 0)
+    -- Fix: Align text to top of frame so it matches other columns' vertical position
+    killerText:SetPoint("TOPLEFT", 0, 0)
     killerText:SetText(assistData.killerName or "Unknown")
     killerText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
     killerText:SetJustifyH("LEFT")
@@ -740,7 +811,7 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
         GameTooltip:SetText("Main Killer:", 1, 0.82, 0, 1)
 
         -- Format killer info with class color if available
-local killerInfo = PSC_DB.PlayerInfoCache[assistData.killerName]
+        local killerInfo = PSC_DB.PlayerInfoCache[assistData.killerName]
         if killerInfo then
             local killerLevel = killerInfo.level == -1 and "??" or tostring(killerInfo.level)
             local killerClass = killerInfo.class or "Unknown"

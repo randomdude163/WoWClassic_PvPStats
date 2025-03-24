@@ -634,6 +634,89 @@ local function AddOrUpdatePlayerEntry(playerNameMap, entries, name, entry)
     end
 end
 
+-- Get the list of characters to process based on account-wide setting
+local function GetCharactersToProcessForStatistics()
+    local charactersToProcess = {}
+
+    if PSC_DB.ShowAccountWideStats then
+        -- Process all characters
+        for charKey, charData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+            charactersToProcess[charKey] = charData
+        end
+    else
+        -- Process only the current character
+        local characterKey = PSC_GetCharacterKey()
+        if PSC_DB.PlayerKillCounts.Characters[characterKey] then
+            charactersToProcess[characterKey] = PSC_DB.PlayerKillCounts.Characters[characterKey]
+        end
+    end
+
+    return charactersToProcess
+end
+
+-- Get death data from all relevant characters
+local function GetDeathDataFromAllCharacters()
+    local deathDataByPlayer = {}
+
+    -- Get characters to process based on account-wide setting
+    local charactersToProcess = {}
+    if PSC_DB.ShowAccountWideStats then
+        for charKey, _ in pairs(PSC_DB.PvPLossCounts) do
+            charactersToProcess[charKey] = true
+        end
+    else
+        local characterKey = PSC_GetCharacterKey()
+        charactersToProcess[characterKey] = true
+    end
+
+    -- Collect death data from all relevant characters
+    for charKey, _ in pairs(charactersToProcess) do
+        local lossData = PSC_DB.PvPLossCounts[charKey]
+        if lossData and lossData.Deaths then
+            for killerName, deathData in pairs(lossData.Deaths) do
+                if not deathDataByPlayer[killerName] then
+                    deathDataByPlayer[killerName] = {
+                        deaths = 0,
+                        deathLocations = {}
+                    }
+                end
+
+                -- Add death count
+                deathDataByPlayer[killerName].deaths = deathDataByPlayer[killerName].deaths + (deathData.deaths or 0)
+
+                -- Add death locations
+                if deathData.deathLocations then
+                    for _, location in ipairs(deathData.deathLocations) do
+                        table.insert(deathDataByPlayer[killerName].deathLocations, location)
+                    end
+                end
+            end
+        end
+    end
+
+    return deathDataByPlayer
+end
+
+-- Get list of player entries for the kills list
+local function GetPlayerEntriesForKillsList(searchText)
+    local entries = {}
+    local playerNameMap = {}
+
+    -- Get death data from all characters
+    local deathDataByPlayer = GetDeathDataFromAllCharacters()
+
+    -- Step 1: Process players you've killed
+    ProcessKilledPlayers(searchText, playerNameMap, entries)
+
+    -- Step 2: Process players who have killed you but you haven't killed
+    ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
+
+    -- Step 3: Process players who have only assisted in your deaths
+    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
+
+    return entries
+end
+
 -- Collect death data for the current character
 local function CollectDeathData()
     local deathDataByPlayer = {}
@@ -678,6 +761,28 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                     -- Convert lastKill to number to ensure it's properly handled
                     local lastKillTimestamp = tonumber(killData.lastKill) or 0
 
+                    -- Make sure we get the zone data properly
+                    local killZone = killData.zone
+
+                    -- Check all possible location storage formats
+                    if killZone == nil then
+                        -- First check the locations array (newer format)
+                        if killData.locations and #killData.locations > 0 then
+                            -- Sort locations by timestamp (most recent first)
+                            table.sort(killData.locations, function(a, b)
+                                return (tonumber(a.timestamp) or 0) > (tonumber(b.timestamp) or 0)
+                            end)
+                            killZone = killData.locations[1].zone
+                        -- Then check killLocations array (original format from KillsTracking.lua)
+                        elseif killData.killLocations and #killData.killLocations > 0 then
+                            -- Sort killLocations by timestamp (most recent first)
+                            table.sort(killData.killLocations, function(a, b)
+                                return (tonumber(a.timestamp) or 0) > (tonumber(b.timestamp) or 0)
+                            end)
+                            killZone = killData.killLocations[1].zone
+                        end
+                    end
+
                     local entry = {
                         name = name,
                         class = playerClass,
@@ -686,7 +791,7 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                         levelDisplay = playerInfo.level or level,
                         rank = playerRank,
                         guild = playerGuild,
-                        zone = killData.zone or "Unknown",
+                        zone = killZone or "Unknown",
                         kills = killData.kills or 0,
                         lastKill = lastKillTimestamp, -- Make sure it's a number
                         levelAtKill = level,
@@ -901,8 +1006,8 @@ function PSC_FilterAndSortEntries()
     local searchText = PSC_SearchText or ""
     searchText = searchText:lower()
 
-    -- Step 1: Collect death data
-    local deathDataByPlayer = CollectDeathData()
+    -- Step 1: Get death data from all relevant characters based on account-wide setting
+    local deathDataByPlayer = GetDeathDataFromAllCharacters()
 
     -- Step 2: Process players you've killed
     ProcessKilledPlayers(searchText, playerNameMap, entries)
@@ -914,7 +1019,7 @@ function PSC_FilterAndSortEntries()
     ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
 
     -- Step 5: Add death counts and assists counts to all entries
-    for i, entry in ipairs(entries) do
+    for _, entry in ipairs(entries) do
         -- Add death data
         local deathData = deathDataByPlayer[entry.name]
         entry.deaths = deathData and deathData.deaths or 0
@@ -924,8 +1029,61 @@ function PSC_FilterAndSortEntries()
         entry.assists = CountPlayerAssists(entry.name, deathDataByPlayer)
     end
 
+    -- Apply additional filters
+    local filteredEntries = {}
+
+    for _, entry in ipairs(entries) do
+        local match = true
+
+        -- Level filter
+        if match and (minLevelSearch or maxLevelSearch) then
+            local entryLevel = tonumber(entry.levelDisplay) or -1
+
+            if minLevelSearch == -1 and maxLevelSearch == -1 then
+                -- Filter for unknown levels (-1)
+                match = (entryLevel == -1)
+            elseif minLevelSearch and maxLevelSearch then
+                -- Filter for level range
+                match = (entryLevel >= minLevelSearch and entryLevel <= maxLevelSearch)
+            end
+        end
+
+        -- Class filter
+        if match and classSearchText ~= "" then
+            match = (entry.class:lower():find(classSearchText:lower(), 1, true) ~= nil)
+        end
+
+        -- Race filter
+        if match and raceSearchText ~= "" then
+            match = (entry.race:lower():find(raceSearchText:lower(), 1, true) ~= nil)
+        end
+
+        -- Gender filter
+        if match and genderSearchText ~= "" then
+            match = (entry.gender:lower():find(genderSearchText:lower(), 1, true) ~= nil)
+        end
+
+        -- Zone filter
+        if match and zoneSearchText ~= "" then
+            match = (entry.zone:lower():find(zoneSearchText:lower(), 1, true) ~= nil)
+        end
+
+        -- Rank filter
+        if match and (minRankSearch or maxRankSearch) then
+            local entryRank = tonumber(entry.rank) or 0
+
+            if minRankSearch and maxRankSearch then
+                match = (entryRank >= minRankSearch and entryRank <= maxRankSearch)
+            end
+        end
+
+        if match then
+            table.insert(filteredEntries, entry)
+        end
+    end
+
     -- Step 6: Sort entries
-    return SortPlayerEntries(entries)
+    return SortPlayerEntries(filteredEntries)
 end
 
 function PSC_CreateSearchBar(frame)
