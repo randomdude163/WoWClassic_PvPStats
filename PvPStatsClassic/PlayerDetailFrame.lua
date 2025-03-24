@@ -161,11 +161,13 @@ local function CreateKillHistoryEntry(parent, killData, index, yOffset)
     zoneText:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
     zoneText:SetJustifyH("LEFT")
 
-    local killsText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killsText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
-    killsText:SetText(killData.kills and tostring(killData.kills) or "1")
-    killsText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
-    killsText:SetJustifyH("LEFT")
+    -- Fix: Use playerLevel for the "Your Level" column instead of kills
+    local yourLevelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    yourLevelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
+    -- Use playerLevel from kill data if available, otherwise fall back to default
+    yourLevelText:SetText(tostring(killData.playerLevel))
+    yourLevelText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
+    yourLevelText:SetJustifyH("LEFT")
 
     local timeText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     timeText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
@@ -174,6 +176,7 @@ local function CreateKillHistoryEntry(parent, killData, index, yOffset)
     return yOffset - 20
 end
 
+-- Fix the CreateDeathHistoryEntry function
 local function CreateDeathHistoryEntry(parent, deathData, index, yOffset)
     local bgColor = index % 2 == 0 and {0.1, 0.1, 0.1, 0.3} or {0.15, 0.15, 0.15, 0.3}
 
@@ -196,14 +199,23 @@ local function CreateDeathHistoryEntry(parent, deathData, index, yOffset)
 
     -- Create a frame for the assisters column to handle tooltip
     local assistFrame = CreateFrame("Frame", nil, parent)
+    -- Fix: Properly align with other columns by using the same y-offset
     assistFrame:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     assistFrame:SetSize(100, 20)
 
     local assistText = assistFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    assistText:SetPoint("LEFT", 0, 0)
+    -- Fix: Align text to top of frame so it matches other columns' vertical position
+    assistText:SetPoint("TOPLEFT", 0, 0)
 
     local assistCount = deathData.assisters and #deathData.assisters or 0
-    local assistDisplay = assistCount > 0 and tostring(assistCount) .. " players" or "-"
+    local assistDisplay
+    if assistCount == 0 then
+        assistDisplay = "Solo kill"
+    elseif assistCount == 1 then
+        assistDisplay = "1 player"
+    else
+        assistDisplay = tostring(assistCount) .. " players"
+    end
     assistText:SetText(assistDisplay)
     assistText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
     assistText:SetJustifyH("LEFT")
@@ -653,50 +665,6 @@ local function DisplayKillHistorySection(content, playerEntry, yOffset)
     return yOffset - 20
 end
 
--- Function to create a single kill history entry row
-local function CreateKillHistoryEntry(parent, killData, index, yOffset)
-    local bgColor = index % 2 == 0 and {0.1, 0.1, 0.1, 0.3} or {0.15, 0.15, 0.15, 0.3}
-
-    local bg = parent:CreateTexture(nil, "BACKGROUND")
-    bg:SetPoint("TOPLEFT", 15, yOffset)
-    bg:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -15, 0)
-    bg:SetHeight(20)
-    bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4])
-
-    -- Add character indicator if showing account-wide stats
-    local characterText = ""
-    if PSC_DB.ShowAccountWideStats and killData.characterKey then
-        characterText = " (" .. killData.characterKey .. ")"
-    end
-
-    -- Target level column - use the level stored in the killData
-    local levelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    levelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
-    levelText:SetText(killData.level == -1 and "??" or tostring(killData.level))
-    levelText:SetWidth(PSC_COLUMN_WIDTHS.LEVEL)
-
-    -- Zone column
-    local zoneText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    zoneText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
-    zoneText:SetText(killData.zone or "Unknown")
-    zoneText:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
-    zoneText:SetJustifyH("LEFT")
-
-    -- Your level column
-    local yourLevelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    yourLevelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
-    yourLevelText:SetText(tostring(killData.playerLevel or "?") .. characterText)
-    yourLevelText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
-    yourLevelText:SetJustifyH("LEFT")
-
-    -- Time column
-    local timeText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    timeText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
-    timeText:SetText(PSC_FormatTimestamp(killData.timestamp))
-
-    return yOffset - 20
-end
-
 local function CreateDeathHistoryHeaderRow(content, yOffset)
     local deathHeaderBg = content:CreateTexture(nil, "BACKGROUND")
     deathHeaderBg:SetPoint("TOPLEFT", 15, yOffset)
@@ -789,7 +757,7 @@ local function CreateAssistHistoryHeaderRow(content, yOffset)
     return yOffset - 20
 end
 
--- Create an entry row for assist history
+-- Fix the CreateAssistHistoryEntry function
 local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
     local bgColor = index % 2 == 0 and {0.1, 0.1, 0.1, 0.3} or {0.15, 0.15, 0.15, 0.3}
 
@@ -814,11 +782,13 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
 
     -- Create a frame for the killer info with tooltip
     local killerFrame = CreateFrame("Frame", nil, parent)
+    -- Fix: Properly align with other columns by using the same y-offset
     killerFrame:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
     killerFrame:SetSize(100, 20)
 
     local killerText = killerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killerText:SetPoint("LEFT", 0, 0)
+    -- Fix: Align text to top of frame so it matches other columns' vertical position
+    killerText:SetPoint("TOPLEFT", 0, 0)
     killerText:SetText(assistData.killerName or "Unknown")
     killerText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
     killerText:SetJustifyH("LEFT")
@@ -841,7 +811,7 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
         GameTooltip:SetText("Main Killer:", 1, 0.82, 0, 1)
 
         -- Format killer info with class color if available
-local killerInfo = PSC_DB.PlayerInfoCache[assistData.killerName]
+        local killerInfo = PSC_DB.PlayerInfoCache[assistData.killerName]
         if killerInfo then
             local killerLevel = killerInfo.level == -1 and "??" or tostring(killerInfo.level)
             local killerClass = killerInfo.class or "Unknown"
