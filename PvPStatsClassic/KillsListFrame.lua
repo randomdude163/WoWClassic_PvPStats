@@ -2,7 +2,7 @@ PSC_KillsListFrame = nil
 
 PSC_SortKillsListBy = "lastKill"
 PSC_SortKillsListAscending = false
-local KILLS_FRAME_WIDTH = 1000
+local KILLS_FRAME_WIDTH = 1050
 local KILLS_FRAME_HEIGHT = 550
 
 local colWidths = {
@@ -11,13 +11,13 @@ local colWidths = {
     race = 65,
     gender = 80,
     level = 45,
-    kills = 35,
-    deaths = 35,
-    assists = 35, -- New column for assists
+    kills = 33,
+    deaths = 33,
+    assists = 33, -- New column for assists
     rank = 60,
     guild = 150,
     zone = 140,
-    lastKill = 135
+    lastKill = 185
 }
 
 local function CleanupFrameElements(content)
@@ -131,16 +131,16 @@ end
 local function CreateColumnHeaders(content)
     local nameButton = CreateColumnHeader(content, "Name", colWidths.name, nil, 10, 0, "name")
     local classButton = CreateColumnHeader(content, "Class", colWidths.class, nameButton, 0, 0, "class")
-    local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
-    local genderButton = CreateColumnHeader(content, "Gender", colWidths.gender, raceButton, 0, 0, "gender")
-    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, genderButton, 0, 0, "levelDisplay")
-    local killsButton = CreateColumnHeader(content, "K", colWidths.kills, levelButton, 0, 0, "kills")
+    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, classButton, 0, 0, "levelDisplay")
+    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, levelButton, 0, 0, "rank")
+    local killsButton = CreateColumnHeader(content, "K", colWidths.kills, rankButton, 0, 0, "kills")
     local deathsButton = CreateColumnHeader(content, "D", colWidths.deaths, killsButton, 0, 0, "deaths")
     local assistsButton = CreateColumnHeader(content, "A", colWidths.assists, deathsButton, 0, 0, "assists")
-    local rankButton = CreateColumnHeader(content, "Rank", colWidths.rank, assistsButton, 0, 0, "rank")
-    local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, rankButton, 0, 0, "guild")
+    local guildButton = CreateColumnHeader(content, "Guild", colWidths.guild, assistsButton, 0, 0, "guild")
     local zoneButton = CreateColumnHeader(content, "Zone", colWidths.zone, guildButton, 0, 0, "zone")
-    local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, zoneButton, 0, 0, "lastKill")
+    local raceButton = CreateColumnHeader(content, "Race", colWidths.race, zoneButton, 0, 0, "race")
+    local genderButton = CreateColumnHeader(content, "Gender", colWidths.gender, raceButton, 0, 0, "gender")
+    local lastKillButton = CreateColumnHeader(content, "Last Killed", colWidths.lastKill, genderButton, 0, 0, "lastKill")
 
     return -30
 end
@@ -268,7 +268,19 @@ end
 local function CreateLastKillCell(content, anchorTo, lastKill, width)
     local lastKillText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     lastKillText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
-    lastKillText:SetText(FormatLastKillDate(lastKill))
+
+    local dateString = FormatLastKillDate(lastKill)
+    local timespan = ""
+
+    -- Only add timespan if we have a valid lastKill timestamp
+    if lastKill and lastKill > 0 then
+        local timeSinceLastKill = PSC_FormatLastKillTimespan(lastKill)
+        if timeSinceLastKill then
+            timespan = " (" .. timeSinceLastKill .. " ago)"
+        end
+    end
+
+    lastKillText:SetText(dateString .. timespan)
     lastKillText:SetWidth(width)
     lastKillText:SetJustifyH("LEFT")
     return lastKillText
@@ -394,16 +406,16 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
 
     local nameCell = CreateNameCell(rowContainer, 0, 0, entry.name, colWidths.name)
     local classCell = CreateClassCell(rowContainer, nameCell, entry.class, colWidths.class)
-    local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
-    local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
-    local levelCell = CreateLevelCell(rowContainer, genderCell, entry.levelDisplay, colWidths.level)
-    local killsCell = CreateKillsCell(rowContainer, levelCell, entry.kills, colWidths.kills)
+    local levelCell = CreateLevelCell(rowContainer, classCell, entry.levelDisplay, colWidths.level)
+    local rankCell = CreateRankCell(rowContainer, levelCell, entry.rank, colWidths.rank)
+    local killsCell = CreateKillsCell(rowContainer, rankCell, entry.kills, colWidths.kills)
     local deathsCell = CreateDeathsCell(rowContainer, killsCell, entry.deaths, colWidths.deaths)
     local assistsCell = CreateAssistsCell(rowContainer, deathsCell, entry.assists or 0, colWidths.assists)
-    local rankCell = CreateRankCell(rowContainer, assistsCell, entry.rank, colWidths.rank)
-    local guildCell = CreateGuildCell(rowContainer, rankCell, entry.guild, colWidths.guild)
+    local guildCell = CreateGuildCell(rowContainer, assistsCell, entry.guild, colWidths.guild)
     local zoneCell = CreateZoneCell(rowContainer, guildCell, entry.zone, colWidths.zone)
-    local lastKillCell = CreateLastKillCell(rowContainer, zoneCell, entry.lastKill, colWidths.lastKill)
+    local raceCell = CreateRaceCell(rowContainer, zoneCell, entry.race, colWidths.race)
+    local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
+    local lastKillCell = CreateLastKillCell(rowContainer, genderCell, entry.lastKill, colWidths.lastKill)
 
     -- Add click handler to view detailed history
     rowContainer:SetScript("OnClick", function()

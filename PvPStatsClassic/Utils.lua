@@ -150,3 +150,22 @@ function GetPlayerCoordinates()
     local y = position.y * 100
     return x, y
 end
+
+function PSC_FormatLastKillTimespan(lastKillTimestamp)
+    if not lastKillTimestamp then
+        return nil
+    end
+
+    local currentTime = time()
+    local timeDiff = currentTime - lastKillTimestamp
+
+    if timeDiff < 60 then
+        return format("%ds", timeDiff)
+    elseif timeDiff < 3600 then
+        return format("%dm", math.floor(timeDiff/60))
+    elseif timeDiff < 86400 then
+        return format("%dh", math.floor(timeDiff/3600))
+    else
+        return format("%dd", math.floor(timeDiff/86400))
+    end
+end

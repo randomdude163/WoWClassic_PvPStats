@@ -489,25 +489,6 @@ function PSC_SetupMouseoverTooltip()
         return lastKill > 0 and lastKill or nil
     end
 
-    local function FormatLastKillTimespan(lastKillTimestamp)
-        if not lastKillTimestamp then
-            return nil
-        end
-
-        local currentTime = time()
-        local timeDiff = currentTime - lastKillTimestamp
-
-        if timeDiff < 60 then
-            return format("%ds", timeDiff)
-        elseif timeDiff < 3600 then
-            return format("%dm", math.floor(timeDiff/60))
-        elseif timeDiff < 86400 then
-            return format("%dh", math.floor(timeDiff/3600))
-        else
-            return format("%dd", math.floor(timeDiff/86400))
-        end
-    end
-
     local function GetDeathsByPlayerName(playerName)
         local characterKey = PSC_GetCharacterKey()
         if not PSC_DB.PvPLossCounts or not PSC_DB.PvPLossCounts[characterKey] or
@@ -533,7 +514,7 @@ function PSC_SetupMouseoverTooltip()
             scoreText = "Score " .. kills .. ":" .. deaths
 
             if kills > 0 then
-                local lastKillTimespan = FormatLastKillTimespan(lastKill)
+                local lastKillTimespan = PSC_FormatLastKillTimespan(lastKill)
                 if lastKillTimespan then
                     scoreText = scoreText .. " - Last kill " .. lastKillTimespan .. " ago"
                 end
