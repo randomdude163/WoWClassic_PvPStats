@@ -62,9 +62,6 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     local killerClass = PSC_DB.PlayerInfoCache[killerName].class
 
     if killerLevel ~= -1 then
-        if PSC_Debug then
-            print("Not sending warning for " .. killerName .. ", level " .. killerLevel .. " (not ??)")
-        end
         return
     end
 
@@ -335,10 +332,6 @@ local function HandleCombatLogEvent()
 
             PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, param1, param4)
         elseif IsPetGUID(sourceGUID) then
-            -- Handle pet damage
-            if PSC_Debug then
-                print("Pet damage event from " .. (sourceName) .. ": " .. combatEvent)
-            end
             PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sourceName, param1, param4)
         end
     end
@@ -390,9 +383,6 @@ function PSC_RegisterEvents()
         elseif event == "UPDATE_MOUSEOVER_UNIT" then
             OnUpdateMouseoverUnit()
         elseif event == "PLAYER_DEAD" then
-            if PSC_Debug then
-                print("PLAYER_DEAD event received")
-            end
             HandlePlayerDeath()
         elseif event == "PLAYER_REGEN_DISABLED" then
             HandleCombatState(true)

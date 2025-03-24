@@ -27,16 +27,8 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     killData.kills = killData.kills + 1
     killData.lastKill = time()
 
-    -- Removed redundant playerLevel and zone storage at this level
     local currentZone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
-    local mapID = C_Map.GetBestMapForUnit("player")
-    local position = nil
-    if mapID then
-        position = C_Map.GetPlayerMapPosition(mapID, "player")
-    end
-
-    -- Always add a kill location entry, even if we don't have coordinates
     local newKillLocation = {
         zone = currentZone,
         timestamp = killData.lastKill,
@@ -44,11 +36,7 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
         playerLevel = playerLevel
     }
 
-    -- Add coordinates if available
-    if mapID and position and position.x and position.y then
-        newKillLocation.x = position.x * 100
-        newKillLocation.y = position.y * 100
-    end
+    newKillLocation.x, newKillLocation.y = PSC_GetPlayerCoordinates()
 
     table.insert(killData.killLocations, newKillLocation)
 end

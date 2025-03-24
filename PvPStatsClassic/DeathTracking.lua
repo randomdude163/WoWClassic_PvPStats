@@ -21,7 +21,6 @@ function PSC_UpdatePetOwnerFromUnit(unitID)
 
     -- Skip if we already know this pet's owner
     if PSC_PetOwnerCache[petName] then
-        print("Found cached pet owner: " .. petName .. " -> " .. PSC_PetOwnerCache[petName])
         return PSC_PetOwnerCache[petName]
     end
 
@@ -46,7 +45,7 @@ function PSC_UpdatePetOwnerFromUnit(unitID)
 
             if owner then
                 if PSC_Debug then
-                    print("Found pet owner: " .. owner .. " for pet/minion: " .. petName)
+                    print("Pet " .. petName .. " -> Owner: " .. owner)
                 end
 
                 PSC_PetOwnerCache[petName] = owner
@@ -178,17 +177,15 @@ function PSC_RegisterPlayerDeath(killerInfo)
     local killerName = killerInfo.killer.name
     if not killerName then return end
 
-    -- Get killer level from player info cache
     local killerLevel = -1
     if PSC_DB.PlayerInfoCache[killerName] then
         killerLevel = PSC_DB.PlayerInfoCache[killerName].level
     end
 
-    -- Check if we have info for this killer
     if not lossData.Deaths[killerName] then
         lossData.Deaths[killerName] = {
             deaths = 0,
-            lastDeath = 0, -- Store as number (time())
+            lastDeath = 0,
             zone = "",
             deathLocations = {},
             assistKills = 0,
@@ -198,51 +195,38 @@ function PSC_RegisterPlayerDeath(killerInfo)
 
     local deathData = lossData.Deaths[killerName]
     deathData.deaths = deathData.deaths + 1
-    deathData.lastDeath = time() -- Use time() instead of formatted string
+    deathData.lastDeath = time()
     deathData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
 
-    -- Store the killer's level at time of death
     deathData.killerLevel = killerLevel
 
-    -- Track whether it was a solo kill or assist
     if #killerInfo.assists > 0 then
         deathData.assistKills = deathData.assistKills + 1
     else
         deathData.soloKills = deathData.soloKills + 1
     end
 
-    -- Save location data
-    local mapID = C_Map.GetBestMapForUnit("player")
-    local position = nil
-    if mapID then
-        position = C_Map.GetPlayerMapPosition(mapID, "player")
-    end
+    local x, y = PSC_GetPlayerCoordinates()
 
-    if mapID and position and position.x and position.y then
-        local x = position.x * 100
-        local y = position.y * 100
-
-        -- Prepare assist information with levels
-        local assistsWithLevels = nil
-        if #killerInfo.assists > 0 then
-            assistsWithLevels = {}
-            for _, assist in ipairs(killerInfo.assists) do
-                table.insert(assistsWithLevels, {
-                    name = assist.name
-                })
-            end
+    local assistsWithLevels = nil
+    if #killerInfo.assists > 0 then
+        assistsWithLevels = {}
+        for _, assist in ipairs(killerInfo.assists) do
+            table.insert(assistsWithLevels, {
+                name = assist.name
+            })
         end
-
-        table.insert(deathData.deathLocations, {
-            x = x,
-            y = y,
-            zone = deathData.zone,
-            timestamp = time(), -- Use time() instead of formatted string
-            deathNumber = deathData.deaths,
-            killerLevel = killerLevel,
-            assisters = assistsWithLevels
-        })
     end
+
+    table.insert(deathData.deathLocations, {
+        x = x,
+        y = y,
+        zone = deathData.zone,
+        timestamp = time(),
+        deathNumber = deathData.deaths,
+        killerLevel = killerLevel,
+        assisters = assistsWithLevels
+    })
 
     if PSC_Debug then
         local assistText = ""
@@ -277,7 +261,7 @@ function TrackIncomingPlayerDamage(sourceGUID, sourceName, amount)
     PSC_RecentDamageFromPlayers[playerKey] = existingRecord
 
     if PSC_Debug then
-        print("Incoming damage from " .. sourceName .. ": " .. amount)
+        -- print("Incoming damage from " .. sourceName .. ": " .. amount)
     end
 end
 

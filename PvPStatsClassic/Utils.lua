@@ -143,7 +143,7 @@ function GetMultiKillText(count)
     return "Multi-kill of " .. count
 end
 
-function GetPlayerCoordinates()
+function PSC_GetPlayerCoordinates()
     local mapID = C_Map.GetBestMapForUnit("player")
     local position = C_Map.GetPlayerMapPosition(mapID, "player")
     local x = position.x * 100
