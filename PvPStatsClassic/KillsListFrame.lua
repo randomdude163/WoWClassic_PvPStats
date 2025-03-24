@@ -411,7 +411,8 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     end)
 
     -- Check if entry has incomplete information
-    local hasIncompleteInfo = (entry.class == "Unknown" or entry.race == "Unknown" or entry.gender == "Unknown" or entry.levelDisplay == -1)
+    -- Fix: Don't consider level -1 as incomplete if it's a "??" level since that's valid data
+    local hasIncompleteInfo = (entry.class == "Unknown" or entry.race == "Unknown" or entry.gender == "Unknown")
 
     -- Apply class color to name but keep class text white
     if not hasIncompleteInfo and RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class:upper()] then
