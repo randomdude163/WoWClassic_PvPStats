@@ -316,7 +316,7 @@ function TrackIncomingPetDamage(petGUID, petName, amount)
     end
 end
 
-function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, spellSchool, param1, param4)
+function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, param1, param4)
     local damageAmount = 0
 
     -- Only track if sourceName exists and isn't in our party/raid

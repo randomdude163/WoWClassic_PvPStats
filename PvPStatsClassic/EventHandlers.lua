@@ -313,20 +313,28 @@ end
 
 local function HandleCombatLogEvent()
     local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
-          destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4 = CombatLogGetCurrentEventInfo()
+          destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4, param5, param6, param7, param8 = CombatLogGetCurrentEventInfo()
 
     if CombatLogDestFlagsEnemyPlayer(destFlags) then
         HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
-        HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)  -- Add this line
+        HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
     end
 
     if destGUID == PSC_PlayerGUID then
         if sourceGUID == PSC_PlayerGUID then return end  -- Ignore self-damage or auras
         if bit.band(sourceFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
-            -- if PSC_Debug then
-            --     print("Player damage from: " .. (sourceName or "Unknown") .. " - Event: " .. combatEvent)
-            -- end
-            PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, param1, param4)
+            -- Extract spell information
+            local spellId, spellName
+            if combatEvent == "SWING_DAMAGE" then
+                -- Swing doesn't have spell info
+                spellId = 0
+                spellName = "Melee"
+            else
+                spellId = param1
+                spellName = param2
+            end
+
+            PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spellId, spellName, param4, param7)
         elseif IsPetGUID(sourceGUID) then
             -- This does not work properly, yet.
             if PSC_Debug then
