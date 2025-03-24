@@ -44,6 +44,8 @@ Kills, Kill streaks and Multi-kills:
 ### Kills List:
 
 <img src="PvPStatsClassic/img/kills_list.png" width="800">
+<img src="PvPStatsClassic/img/player_history.png" width="500">
+<img src="PvPStatsClassic/img/player_history_assists.png" width="500">
 
 ### Statistics:
 
