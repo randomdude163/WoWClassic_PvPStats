@@ -533,6 +533,7 @@ function PSC_SetupMouseoverTooltip()
     end
 
     local function OnTooltipShow(tooltip)
+        if not PSC_DB.ShowScoreInPlayerTooltip then return end
         if not tooltip:IsShown() then return end
 
         local line1 = _G[tooltip:GetName().."TextLeft1"]
