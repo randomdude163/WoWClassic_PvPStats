@@ -484,7 +484,7 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
 
     -- Add class icon texture
     if playerClass ~= "Unknown" then
-        local classIconSize = 64
+        local classIconSize = 32
 
         local iconContainer = CreateFrame("Frame", nil, content)
         iconContainer:SetSize(classIconSize + 10, classIconSize + 10) -- Slightly larger to accommodate border
