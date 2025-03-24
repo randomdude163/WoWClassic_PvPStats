@@ -411,7 +411,6 @@ function PSC_CheckBattlegroundStatus()
     end
 
     local currentMapId = C_Map.GetBestMapForUnit("player")
-    print(currentMapId)
 
     local battlegroundZoneIds = {
         92, -- "Warsong Gulch"

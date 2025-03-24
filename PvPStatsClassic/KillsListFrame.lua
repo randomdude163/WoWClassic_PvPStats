@@ -520,7 +520,7 @@ local function CreateMainFrame()
     frame:RegisterForDrag("LeftButton")
 
     table.insert(UISpecialFrames, "PSC_KillStatsFrame")
-    local titleText = GetFrameTitleTextWithCharacterText("Player Kills")
+    local titleText = GetFrameTitleTextWithCharacterText("PvP History")
     frame.TitleText:SetText(titleText)
 
     return frame
@@ -535,7 +535,7 @@ function RefreshKillsListFrame()
         return
     end
 
-    local titleText = GetFrameTitleTextWithCharacterText("Player Kills")
+    local titleText = GetFrameTitleTextWithCharacterText("PvP History")
     PSC_KillsListFrame.TitleText:SetText(titleText)
 
     CleanupFrameElements(content)
