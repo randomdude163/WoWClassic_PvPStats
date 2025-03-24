@@ -28,17 +28,13 @@ Kills, Kill streaks and Multi-kills:
 
 ### Kill milestones:
 
-<img src="PvPStatsClassic/img/kill_milestone_1.png" width="170">
-<img src="PvPStatsClassic/img/kill_milestone_2.png" width="197">
-<img src="PvPStatsClassic/img/kill_milestone_3.png" width="194">
+<img src="PvPStatsClassic/img/kill_milestone_1.png" width="170"><img src="PvPStatsClassic/img/kill_milestone_2.png" width="197"><img src="PvPStatsClassic/img/kill_milestone_3.png" width="194">
 
 ### Customizable Mouseover tooltips:
 
-<img src="PvPStatsClassic/img/corpse_tooltip_simple.png" width="165">
-<img src="PvPStatsClassic/img/corpse_tooltip_detailed.png" width="220">
+<img src="PvPStatsClassic/img/corpse_tooltip_simple.png" width="165"><img src="PvPStatsClassic/img/corpse_tooltip_detailed.png" width="220">
 
-<img src="PvPStatsClassic/img/player_tooltip_simple.png" width="230">
-<img src="PvPStatsClassic/img/player_tooltip_detailed.png" width="231">
+<img src="PvPStatsClassic/img/player_tooltip_simple.png" width="230"><img src="PvPStatsClassic/img/player_tooltip_detailed.png" width="231">
 
 
 ### Kills List:
