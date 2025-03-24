@@ -1,7 +1,7 @@
 ## Interface: 11506
 ## Title: PvP Stats Classic
-## Author: Severussnipe, Hkfarmer <Redridge Police>
-## Notes: Tracks PvP kills and provides detailed statistics.
+## Author: Severussnipe & Hkfarmer <Redridge Police>
+## Notes: Tracks PvP history and provides detailed statistics.
 ## SavedVariables: PSC_DB
 ConfigUI.lua
 DataHelpers.lua
