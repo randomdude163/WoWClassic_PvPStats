@@ -19,40 +19,40 @@ PvP Stats tracks your PvP history and provides detailed statistics and customiza
 ### Customizable Party announce messages:
 Kills, Kill streaks and Multi-kills:
 
-<img src="PvPStatsClassic/img/party_kill_announce_with_killstreak.png" width="650">
+<img src="PvPStatsClassic/img/Screenshots/party_kill_announce_with_killstreak.png" width="650">
 
 
-<img src="PvPStatsClassic/img/kill_streak_ended.png" width="450">
+<img src="PvPStatsClassic/img/Screenshots/kill_streak_ended.png" width="450">
 
-<img src="PvPStatsClassic/img/personal_best_multi_kill.png" width="430">
+<img src="PvPStatsClassic/img/Screenshots/personal_best_multi_kill.png" width="430">
 
 ### Kill milestones:
 
-<img src="PvPStatsClassic/img/kill_milestone_1.png" width="170"><img src="PvPStatsClassic/img/kill_milestone_2.png" width="197"><img src="PvPStatsClassic/img/kill_milestone_3.png" width="194">
+<img src="PvPStatsClassic/img/Screenshots/kill_milestone_1.png" width="170"><img src="PvPStatsClassic/img/Screenshots/kill_milestone_2.png" width="197"><img src="PvPStatsClassic/img/Screenshots/kill_milestone_3.png" width="194">
 
 ### Customizable Mouseover tooltips:
 
-<img src="PvPStatsClassic/img/corpse_tooltip_simple.png" width="165"><img src="PvPStatsClassic/img/corpse_tooltip_detailed.png" width="220">
+<img src="PvPStatsClassic/img/Screenshots/corpse_tooltip_simple.png" width="165"><img src="PvPStatsClassic/img/Screenshots/corpse_tooltip_detailed.png" width="220">
 
-<img src="PvPStatsClassic/img/player_tooltip_simple.png" width="230"><img src="PvPStatsClassic/img/player_tooltip_detailed.png" width="231">
+<img src="PvPStatsClassic/img/Screenshots/player_tooltip_simple.png" width="230"><img src="PvPStatsClassic/img/Screenshots/player_tooltip_detailed.png" width="231">
 
 
 ### Kills List:
 
-<img src="PvPStatsClassic/img/kills_list.png" width="800">
-<img src="PvPStatsClassic/img/player_history.png" width="500">
-<img src="PvPStatsClassic/img/player_history_assists.png" width="500">
+<img src="PvPStatsClassic/img/Screenshots/kills_list.png" width="800">
+<img src="PvPStatsClassic/img/Screenshots/player_history.png" width="500">
+<img src="PvPStatsClassic/img/Screenshots/player_history_assists.png" width="500">
 
 ### Statistics:
 
-<img src="PvPStatsClassic/img/statistics_1.png" width="800">
-<img src="PvPStatsClassic/img/statistics_2.png" width="800">
+<img src="PvPStatsClassic/img/Screenshots/statistics_1.png" width="800">
+<img src="PvPStatsClassic/img/Screenshots/statistics_2.png" width="800">
 
 ### Configuration / Customization:
 
-<img src="PvPStatsClassic/img/config_general.png" width="600">
+<img src="PvPStatsClassic/img/Screenshots/config_general.png" width="600">
 
-<img src="PvPStatsClassic/img/config_messages.png" width="600">
+<img src="PvPStatsClassic/img/Screenshots/config_messages.png" width="600">
 
 
 
