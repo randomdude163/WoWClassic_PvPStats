@@ -115,13 +115,17 @@ end
 
 function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     local playerLevel = UnitLevel("player")
-    if not PSC_DB.PlayerInfoCache[playerName] then
+
+    local infoKey = PSC_GetInfoKeyFromName(playerName)
+
+    if not PSC_DB.PlayerInfoCache[infoKey] then
         if PSC_Debug then
             print("Player not found in cache: " .. playerName .. ", ignoring kill.")
         end
         return
     end
-    local level = PSC_DB.PlayerInfoCache[playerName].level
+
+    local level = PSC_DB.PlayerInfoCache[infoKey].level
     local nameWithLevel = playerName .. ":" .. level
     local characterKey = PSC_GetCharacterKey()
 
@@ -141,13 +145,13 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     UpdateMultiKill()
 
     local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
-    local playerRank = PSC_DB.PlayerInfoCache[playerName].rank or 0
+    local playerRank = PSC_DB.PlayerInfoCache[infoKey].rank or 0
 
     AnnounceKill(playerName, level, nameWithLevel, playerLevel)
 
     local totalKills = PSC_GetTotalsKillsForPlayer(playerName)
     if (totalKills == 1 and PSC_DB.ShowMilestoneForFirstKill) or totalKills >= 2 then
-        PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[playerName].class, playerRank, totalKills)
+        PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class, playerRank, totalKills)
     end
 end
 

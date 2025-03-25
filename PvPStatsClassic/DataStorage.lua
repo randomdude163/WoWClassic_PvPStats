@@ -77,16 +77,93 @@ local function GetPlayerInfoFromUnit(unit)
     return name, level, class, race, gender, guildName, rank
 end
 
-function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
-    if not PSC_DB.PlayerInfoCache[name] then
-        PSC_DB.PlayerInfoCache[name] = {}
+function PSC_GetPlayerInfoKey(name, realm)
+    if not realm then
+        -- For backward compatibility or same realm players
+        realm = PSC_RealmName
     end
-    PSC_DB.PlayerInfoCache[name].level = level
-    PSC_DB.PlayerInfoCache[name].class = class
-    PSC_DB.PlayerInfoCache[name].race = race
-    PSC_DB.PlayerInfoCache[name].gender = gender
-    PSC_DB.PlayerInfoCache[name].guild = guildName
-    PSC_DB.PlayerInfoCache[name].rank = rank
+    return name .. "-" .. realm
+end
+
+function PSC_GetPlayerNameFromInfoKey(infoKey)
+    if not infoKey or not string.find(infoKey, "-") then
+        return infoKey
+    end
+    return string.match(infoKey, "^(.+)%-")
+end
+
+function PSC_GetRealmFromInfoKey(infoKey)
+    if not infoKey or not string.find(infoKey, "-") then
+        return PSC_RealmName
+    end
+    return string.match(infoKey, "%-(.+)$")
+end
+
+function PSC_GetInfoKeyFromName(playerName)
+    -- Extract realm name if present in player name
+    local name, realm = playerName:match("^(.+)%-(.+)$")
+
+    if name then
+        -- Player name already includes realm
+        return PSC_GetPlayerInfoKey(name, realm)
+    else
+        -- No realm in name, use default realm
+        return PSC_GetPlayerInfoKey(playerName)
+    end
+end
+
+function PSC_MigratePlayerInfoCache()
+    if not PSC_DB.PlayerInfoCacheMigrated then
+        print("[PvPStats]: Migrating player cache to support cross-realm players...")
+
+        local oldCache = PSC_DB.PlayerInfoCache
+        local newCache = {}
+
+        -- Migrate existing entries to the new format with realm names
+        for name, data in pairs(oldCache) do
+            -- Only process entries that don't already have realm name format
+            if not string.find(name, "-") then
+                local infoKey = PSC_GetPlayerInfoKey(name)
+                newCache[infoKey] = data
+            else
+                -- If it already has a dash, keep it as is (shouldn't happen in current data)
+                newCache[name] = data
+            end
+        end
+
+        -- Replace the old cache with the new one
+        PSC_DB.PlayerInfoCache = newCache
+        PSC_DB.PlayerInfoCacheMigrated = true
+
+        print("[PvPStats]: Player cache migration complete!")
+    end
+end
+
+function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
+    local playerName, playerRealm = name:match("^(.+)%-(.+)$")
+
+    local realm
+    if playerName then
+        name = playerName
+        realm = playerRealm
+    else
+        -- Otherwise use current realm
+        realm = PSC_RealmName
+    end
+
+    local infoKey = PSC_GetPlayerInfoKey(name, realm)
+
+    if not PSC_DB.PlayerInfoCache[infoKey] then
+        PSC_DB.PlayerInfoCache[infoKey] = {}
+    end
+
+    PSC_DB.PlayerInfoCache[infoKey].level = level
+    PSC_DB.PlayerInfoCache[infoKey].class = class
+    PSC_DB.PlayerInfoCache[infoKey].race = race
+    PSC_DB.PlayerInfoCache[infoKey].gender = gender
+    PSC_DB.PlayerInfoCache[infoKey].guild = guildName
+    PSC_DB.PlayerInfoCache[infoKey].rank = rank
+
     -- if PSC_Debug then
     --     print("Stored player info: " .. name .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
     -- end
@@ -118,7 +195,7 @@ function PSC_CleanupPlayerInfoCache()
             if killData.kills and killData.kills > 0 then
                 local name = nameWithLevel:match("([^:]+)")
                 if name then
-                    playersToKeep[name] = true
+                    playersToKeep[PSC_GetInfoKeyFromName(name)] = true
                 end
             end
         end
@@ -129,7 +206,7 @@ function PSC_CleanupPlayerInfoCache()
         if lossData.Deaths then
             for killerName, deathData in pairs(lossData.Deaths) do
                 if deathData.deaths and deathData.deaths > 0 then
-                    playersToKeep[killerName] = true
+                    playersToKeep[PSC_GetInfoKeyFromName(killerName)] = true
 
                     -- Also keep info for players who have assisted in killing us
                     if deathData.deathLocations then
@@ -137,7 +214,7 @@ function PSC_CleanupPlayerInfoCache()
                             if location.assisters then
                                 for _, assister in ipairs(location.assisters) do
                                     if assister.name then
-                                        playersToKeep[assister.name] = true
+                                        playersToKeep[PSC_GetInfoKeyFromName(assister.name)] = true
                                     end
                                 end
                             end
@@ -148,10 +225,10 @@ function PSC_CleanupPlayerInfoCache()
         end
     end
 
-    -- Only keep info for relevant players (those we've killed or those who've killed us)
-    for name, data in pairs(PSC_DB.PlayerInfoCache) do
-        if playersToKeep[name] then
-            cleanedInfoCache[name] = data
+    -- Only keep info for relevant players
+    for infoKey, data in pairs(PSC_DB.PlayerInfoCache) do
+        if playersToKeep[infoKey] then
+            cleanedInfoCache[infoKey] = data
         end
     end
 

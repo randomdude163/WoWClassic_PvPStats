@@ -707,8 +707,10 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
             if name then
                 local level = tonumber(string.match(nameWithLevel, ":(%d+)") or "-1") or -1
 
+                local infoKey = PSC_GetInfoKeyFromName(name)
+
                 -- Get player info from cache if available
-                local playerInfo = PSC_DB.PlayerInfoCache[name] or {}
+                local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
                 local playerClass = playerInfo.class or "Unknown"
                 local playerRace = playerInfo.race or "Unknown"
                 local playerGender = playerInfo.gender or "Unknown"
@@ -773,7 +775,9 @@ end
 local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
     for killerName, deathData in pairs(deathDataByPlayer) do
         if not playerNameMap[killerName] then
-            local playerInfo = PSC_DB.PlayerInfoCache[killerName] or {}
+            local infoKey = PSC_GetInfoKeyFromName(killerName)
+
+            local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
             local playerClass = playerInfo.class or "Unknown"
             local playerRace = playerInfo.race or "Unknown"
             local playerGender = playerInfo.gender or "Unknown"
@@ -886,7 +890,9 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deat
     for assisterName, assistData in pairs(assistPlayerData) do
         -- Skip if already added from kills or deaths
         if not playerNameMap[assisterName] then
-            local playerInfo = PSC_DB.PlayerInfoCache[assisterName] or {}
+            local infoKey = PSC_GetInfoKeyFromName(assisterName)
+
+            local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
             local playerClass = playerInfo.class or "Unknown"
             local playerRace = playerInfo.race or "Unknown"
             local playerGender = playerInfo.gender or "Unknown"
