@@ -317,8 +317,11 @@ local function FindPlayerEntryByName(playerName)
         assistHistory = {}
     }
 
+    -- Convert player name to proper info key format
+    local infoKey = PSC_GetInfoKeyFromName(playerName)
+
     -- Try to get player info from the database cache
-    local playerInfo = PSC_DB.PlayerInfoCache[playerName]
+    local playerInfo = PSC_DB.PlayerInfoCache[infoKey]
     if playerInfo then
         -- Update with available information
         entry.class = playerInfo.class or "Unknown"
@@ -411,7 +414,8 @@ local function FindPlayerEntryByName(playerName)
                                 assisterLevel = assister.level,      -- Level of this player when they assisted
                                 killerName = killerName,             -- The main killer
                                 killerLevel = location.killerLevel or -1,
-                                killerClass = PSC_DB.PlayerInfoCache[killerName] and PSC_DB.PlayerInfoCache[killerName].class or "Unknown",
+                                killerClass = PSC_DB.PlayerInfoCache[PSC_GetInfoKeyFromName(killerName)] and
+                                             PSC_DB.PlayerInfoCache[PSC_GetInfoKeyFromName(killerName)].class or "Unknown",
                                 victimLevel = location.victimLevel or -1, -- Your level when you died
                                 zone = location.zone or "Unknown",
                                 timestamp = location.timestamp or 0,
@@ -804,7 +808,8 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
     killerText:SetJustifyH("LEFT")
 
     -- Color the killer name based on class if known
-    local killerInfo = PSC_DB.PlayerInfoCache[assistData.killerName]
+    local killerInfoKey = PSC_GetInfoKeyFromName(assistData.killerName)
+    local killerInfo = PSC_DB.PlayerInfoCache[killerInfoKey]
     if killerInfo and killerInfo.class and RAID_CLASS_COLORS[killerInfo.class:upper()] then
         local color = RAID_CLASS_COLORS[killerInfo.class:upper()]
         killerText:SetTextColor(color.r, color.g, color.b)
@@ -821,7 +826,8 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
         GameTooltip:SetText("Main Killer:", 1, 0.82, 0, 1)
 
         -- Format killer info with class color if available
-        local killerInfo = PSC_DB.PlayerInfoCache[assistData.killerName]
+        local killerInfoKey = PSC_GetInfoKeyFromName(assistData.killerName)
+        local killerInfo = PSC_DB.PlayerInfoCache[killerInfoKey]
         if killerInfo then
             local killerLevel = killerInfo.level == -1 and "??" or tostring(killerInfo.level)
             local killerClass = killerInfo.class or "Unknown"
@@ -839,7 +845,8 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
             GameTooltip:AddLine("Other Assisters:", 1, 0.82, 0)
 
             for _, assister in ipairs(assistData.otherAssisters) do
-                local assisterInfo = PSC_DB.PlayerInfoCache[assister.name]
+                local assisterInfoKey = PSC_GetInfoKeyFromName(assister.name)
+                local assisterInfo = PSC_DB.PlayerInfoCache[assisterInfoKey]
                 if assisterInfo then
                     local assisterLevel = assisterInfo.level == -1 and "??" or tostring(assisterInfo.level)
                     local assisterClass = assisterInfo.class or "Unknown"

@@ -51,15 +51,17 @@ end
 local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     local killerName = killerInfo.killer.name
 
-    if not PSC_DB.PlayerInfoCache[killerName] then
+    local infoKey = PSC_GetInfoKeyFromName(killerName)
+
+    if not PSC_DB.PlayerInfoCache[infoKey] then
         if PSC_Debug then
             print("Warning: Killer " .. killerName .. " not found in player info cache")
         end
         return
     end
 
-    local killerLevel = PSC_DB.PlayerInfoCache[killerName].level
-    local killerClass = PSC_DB.PlayerInfoCache[killerName].class
+    local killerLevel = PSC_DB.PlayerInfoCache[infoKey].level
+    local killerClass = PSC_DB.PlayerInfoCache[infoKey].class
 
     if killerLevel ~= -1 then
         return
@@ -367,12 +369,16 @@ function PSC_RegisterEvents()
                 PSC_LoadDefaultSettings()
                 ResetAllStatsToDefault()
             end
+
+            -- Migrate player info cache to include realm names
+            PSC_MigratePlayerInfoCache()
+
             PSC_InitializePlayerKillCounts()
             PSC_InitializePlayerLossCounts()
             PSC_UpdateMinimapButtonPosition()
             PSC_SetupMouseoverTooltip()
             PSC_InCombat = UnitAffectingCombat("player")
-            PSC_CheckBattlegroundStatus()  -- Check BG status on login/reload
+            PSC_CheckBattlegroundStatus()
             if UnitIsDeadOrGhost("player") then
                 HandlePlayerDeath()
             end

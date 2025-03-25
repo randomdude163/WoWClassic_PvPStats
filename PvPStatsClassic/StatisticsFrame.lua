@@ -589,8 +589,10 @@ local function createGuildTable(parent, x, y, width, height)
                     local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
                     local kills = killData.kills or 0
 
-                    if PSC_DB.PlayerInfoCache[playerNameWithoutLevel] then
-                        local guild = PSC_DB.PlayerInfoCache[playerNameWithoutLevel].guild
+                    local infoKey = PSC_GetInfoKeyFromName(playerNameWithoutLevel)
+
+                    if PSC_DB.PlayerInfoCache[infoKey] then
+                        local guild = PSC_DB.PlayerInfoCache[infoKey].guild
                         if guild ~= "" then
                             guildKills[guild] = (guildKills[guild] or 0) + kills
                         end
@@ -924,8 +926,10 @@ local function gatherStatistics()
                     local nameWithoutLevel = nameWithLevel:match("([^:]+)")
                     local kills = killData.kills
 
-                    if PSC_DB.PlayerInfoCache[nameWithoutLevel] then
-                        local class = PSC_DB.PlayerInfoCache[nameWithoutLevel].class
+                    local infoKey = PSC_GetInfoKeyFromName(nameWithoutLevel)
+
+                    if PSC_DB.PlayerInfoCache[infoKey] then
+                        local class = PSC_DB.PlayerInfoCache[infoKey].class
                         -- Changed from +1 to +kills to count actual kills
                         classData[class] = (classData[class] or 0) + kills
 
@@ -942,10 +946,10 @@ local function gatherStatistics()
                             end
                         end
 
-                        local race = PSC_DB.PlayerInfoCache[nameWithoutLevel].race
+                        local race = PSC_DB.PlayerInfoCache[infoKey].race
                         raceData[race] = (raceData[race] or 0) + kills
 
-                        local gender = PSC_DB.PlayerInfoCache[nameWithoutLevel].gender
+                        local gender = PSC_DB.PlayerInfoCache[infoKey].gender
                         genderData[gender] = (genderData[gender] or 0) + kills
 
                         -- Get zone from kill locations instead of top-level attribute
@@ -956,7 +960,7 @@ local function gatherStatistics()
                             end
                         end
 
-                        local guild = PSC_DB.PlayerInfoCache[nameWithoutLevel].guild
+                        local guild = PSC_DB.PlayerInfoCache[infoKey].guild
                         if guild ~= "" then
                             guildStatusData["In Guild"] = guildStatusData["In Guild"] + kills
                         else

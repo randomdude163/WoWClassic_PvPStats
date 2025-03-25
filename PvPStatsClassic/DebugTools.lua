@@ -201,9 +201,11 @@ end
 local function CreateKillDebugMessage(playerName, nameWithLevel, killerName, killerGUID)
     local debugMsg = "Killed: " .. playerName
 
-    local level = PSC_DB.PlayerInfoCache[playerName].level
-    local class = PSC_DB.PlayerInfoCache[playerName].class
-    local race = PSC_DB.PlayerInfoCache[playerName].race
+    local infoKey = PSC_GetInfoKeyFromName(playerName)
+
+    local level = PSC_DB.PlayerInfoCache[infoKey].level
+    local class = PSC_DB.PlayerInfoCache[infoKey].class
+    local race = PSC_DB.PlayerInfoCache[infoKey].race
 
     local playerLevel = UnitLevel("player")
     local levelDifference = level > 0 and (level - playerLevel) or 0
@@ -214,6 +216,11 @@ local function CreateKillDebugMessage(playerName, nameWithLevel, killerName, kil
     end
 
     debugMsg = debugMsg .. class .. ", " .. race .. ")"
+
+    local rank = PSC_DB.PlayerKillCounts[nameWithLevel].rank or 0
+    if rank > 0 then
+        debugMsg = debugMsg .. " [Rank: " .. rank .. "]"
+    end
 
     local rank = PSC_DB.PlayerKillCounts[nameWithLevel].rank or 0
     if rank > 0 then
@@ -369,10 +376,12 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
     if assistCount > 0 then
         local assistNames = {}
         for _, assist in ipairs(killerInfo.assists) do
-            if PSC_DB.PlayerInfoCache[assist.name] ~= nil then
-                local assistLevel = PSC_DB.PlayerInfoCache[assist.name].level
+            local assistInfoKey = PSC_GetInfoKeyFromName(assist.name)
+
+            if PSC_DB.PlayerInfoCache[assistInfoKey] ~= nil then
+                local assistLevel = PSC_DB.PlayerInfoCache[assistInfoKey].level
                 local assistLevelDisplay = assistLevel == -1 and "??" or assistLevel
-                local assistClass = PSC_DB.PlayerInfoCache[assist.name].class
+                local assistClass = PSC_DB.PlayerInfoCache[assistInfoKey].class
                 table.insert(assistNames, assist.name .. " (Level " .. assistLevelDisplay .. " " .. assistClass .. ")")
             else
                 table.insert(assistNames, assist.name .. " (Unknown level and class)")
