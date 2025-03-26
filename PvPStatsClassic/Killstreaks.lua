@@ -9,7 +9,7 @@ function UpdateKillStreak()
     if characterData.CurrentKillStreak > characterData.HighestKillStreak then
         characterData.HighestKillStreak = characterData.CurrentKillStreak
 
-        if characterData.HighestKillStreak > 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+        if characterData.HighestKillStreak > 10 and PSC_DB.EnableRecordAnnounceMessages and characterData.CurrentKillStreak % 10 == 0 and IsInGroup() then
             local recordMsg = string.gsub(PSC_DB.NewKillStreakRecordMessage, "STREAKCOUNT", characterData.HighestKillStreak)
             SendChatMessage(recordMsg, "PARTY")
         end
@@ -17,7 +17,7 @@ function UpdateKillStreak()
 end
 
 local function IsKillStreakMilestone(count)
-    local killstreakMilestones = {25, 50, 75, 100, 150, 200, 250, 300}
+    local killstreakMilestones = {25, 50, 75, 100, 150, 200, 250, 300, 400, 500}
 
     for _, milestone in ipairs(killstreakMilestones) do
         if count == milestone then
