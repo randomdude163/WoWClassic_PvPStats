@@ -58,7 +58,6 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
 
     local bg = button:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
-    bg:SetColorTexture(0.1, 0.1, 0.1, 0.7)
 
     button:SetScript("OnClick", function()
         if PSC_SortKillsListBy == columnId then
@@ -134,6 +133,13 @@ function GetCharactersToProcessForStatistics()
 end
 
 local function CreateColumnHeaders(content)
+    -- Add a background texture behind all the headers to create a unified header row
+    local headerRowBg = content:CreateTexture(nil, "BACKGROUND")
+    headerRowBg:SetPoint("TOPLEFT", 10, 0)
+    headerRowBg:SetPoint("TOPRIGHT", content, "TOPRIGHT", -10, 0)
+    headerRowBg:SetHeight(24)
+    headerRowBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)  -- Match the PlayerDetailFrame header background
+
     local nameButton = CreateColumnHeader(content, "Name", colWidths.name, nil, 10, 0, "name")
     local classButton = CreateColumnHeader(content, "Class", colWidths.class, nameButton, 0, 0, "class")
     local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, classButton, 0, 0, "levelDisplay")
