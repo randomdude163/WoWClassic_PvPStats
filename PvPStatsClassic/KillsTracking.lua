@@ -139,7 +139,7 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     end
 
     UpdateKillStreak()
-    ShowKillStreakMilestone(PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak)
+    ShowKillStreakMilestone(PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreak)
     InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
     UpdateKillCountEntry(nameWithLevel, playerLevel)
     UpdateMultiKill()
