@@ -1,19 +1,20 @@
 # PvP Stats (Classic)
-PvP Stats tracks your PvP history and provides detailed statistics and customizable notifications. Whether you're ganking in the open world or dominating BGs, this addon greatly enhances your PvP experience!
+PvP Stats tracks your PvP history, kill streaks and multi-kills and provides detailed statistics and customizable notifications. Whether you're ganking in the open world or playing BGs, this addon greatly enhances your PvP experience! Checkout the screenshots.
 
 ### Key Features:
-- **Kill Tracking**: Details of enemy players kills are stored: name, level, class, race, guild and PvP rank
-- **Kill Statistics**: View your most killed classes, races, zones, and individual players
-- **Kills List**: See all your kills at a glance and filter them by player name, class, race, level, PvP rank or zone
-- **Death and Assists Tracking**: See who killed you when, where and who assisted
-- **Party Chat Announcements**: Customizable messages for announcing kills, kill streaks and achievements
-- **Kill Streaks & Multi-Kills**: Visual and acoustic notifications for kill streaks and multi-kills
-- **Kill Milestones**: Notifications when you kill players for the 1st, 5th, 10th, ... time
-- **Mouseover Tooltip**: Quickly see how often you killed players when hovering your mouse over them
-- **Battleground Mode**: Party chat announcements are automatically disabled when you join a BG to prevent spam
-- **Fully Customizable**: Set custom announcement messages, kill streak/milestone notification thresholds and disable/enable any feature as you like it
-- **And much more...**
+- **Kill Streaks & Multi-Kills**: Visual and acoustic notifications for kill streaks and multi-kills.
+- **Party Chat Announcements:** Customizable messages for announcing kills, kill streaks and personal bests.
+- **Battleground Mode**: Party chat announcements are automatically disabled when you join a BG and you can also choose to disable kills and/or deaths tracking in BGs entirely.
 
+- **Kill Milestones**: Notifications when you kill players for the 1st, 5th, 10th, ... (customizable) time.
+- **Deaths and Assists Tracking**: See who killed you when, where and who assisted them.
+- **Mouseover Tooltip**: Quickly see your score against an enemy player when you hover your mouse over them.
+
+- **PvP History List**: See all your encounters at a glance and filter them by player name, class, race, level, PvP rank or zone.
+- **PvP History per Player**: See all kills, deaths and assists with timestamp and location for every single enemy player.
+- **Kill Statistics**: View your most killed classes, races, zones, and individual players.
+
+- **Fully Customizable**: Set custom announcement messages, kill streak/milestone notification thresholds and disable/enable any feature as you like it
 
 ## Screenshots
 ### Customizable Party announce messages:
