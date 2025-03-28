@@ -1,5 +1,5 @@
 PSC_RecentPlayerDamage = {}
-PSC_ASSIST_DAMAGE_WINDOW = 45.0  -- 45 second window for kill assist credit
+PSC_ASSIST_DAMAGE_WINDOW = 60.0  -- 45 second window for kill assist credit
 
 PSC_RecentlyCountedKills = {}
 local KILL_TRACKING_WINDOW = 1.0
@@ -208,13 +208,6 @@ function PSC_RecordPlayerDamage(sourceGUID, sourceName, targetGUID, targetName, 
 end
 
 function PSC_CleanupRecentPlayerDamage()
-    local now = GetTime()
-    local cutoff = now - PSC_ASSIST_DAMAGE_WINDOW
-
-    for guid, info in pairs(PSC_RecentPlayerDamage) do
-        if info.timestamp < cutoff then
-            PSC_RecentPlayerDamage[guid] = nil
-        end
-    end
+    PSC_RecentPlayerDamage = {}
 end
 

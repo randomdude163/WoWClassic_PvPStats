@@ -1,5 +1,5 @@
 PSC_RecentDamageFromPlayers = {}
-local PLAYER_DAMAGE_WINDOW = 30.0
+local PLAYER_DAMAGE_WINDOW = 60.0
 -- Add pet owner tracking dictionary
 PSC_PetOwnerCache = {}
 -- Track unattributed pet damage until we discover its owner
@@ -423,25 +423,11 @@ function PSC_HandleReceivedPlayerDamageByEnemyPets(combatEvent, sourceGUID, sour
 end
 
 function PSC_CleanupUnattributedPetDamage()
-    local now = GetTime()
-    local cutoff = now - PLAYER_DAMAGE_WINDOW
-
-    for petName, info in pairs(PSC_UnattributedPetDamage) do
-        if info.timestamp < cutoff then
-            PSC_UnattributedPetDamage[petName] = nil
-        end
-    end
+    PSC_UnattributedPetDamage = {}
 end
 
 function PSC_CleanupRecentDamageFromPlayers()
-    local now = GetTime()
-    local cutoff = now - PLAYER_DAMAGE_WINDOW
-
-    for guid, info in pairs(PSC_RecentDamageFromPlayers) do
-        if info.timestamp < cutoff then
-            PSC_RecentDamageFromPlayers[guid] = nil
-        end
-    end
+    PSC_RecentDamageFromPlayers = {}
 
     PSC_CleanupUnattributedPetDamage()
 end
