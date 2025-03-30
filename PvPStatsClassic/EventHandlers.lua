@@ -1,6 +1,6 @@
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = false
+PSC_Debug = true
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
@@ -10,22 +10,21 @@ local PET_DAMAGE_WINDOW = 0.05
 
 PSC_InCombat = false
 
--- Add this variable to track the last death time
 PSC_LastDeathTime = 0
 PSC_DEATH_EVENT_COOLDOWN = 2 -- seconds to ignore duplicate death events
 
 PSC_CurrentlyInBattleground = false
 PSC_lastInBattlegroundValue = false
 
+PSC_PendingHunterEvents = {}
+local HUNTER_VERIFICATION_WINDOW = 3.0 -- Seconds to wait before confirming
+local HUNTER_ABILITY_MIN_LEVEL = 1 -- Hunters learn this ability at level 30
 
 local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
     PSC_GetAndStorePlayerInfoFromUnit("targettarget")
-
-    -- Check for pet owner information
     PSC_UpdatePetOwnerFromUnit("target")
 
-    -- Also check targettarget for pet owner info
     if UnitExists("targettarget") then
         PSC_UpdatePetOwnerFromUnit("targettarget")
     end
@@ -33,8 +32,6 @@ end
 
 local function OnUpdateMouseoverUnit()
     PSC_GetAndStorePlayerInfoFromUnit("mouseover")
-
-    -- Check for pet owner information
     PSC_UpdatePetOwnerFromUnit("mouseover")
 end
 
@@ -85,7 +82,6 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
 end
 
 function HandlePlayerDeath()
-    -- Check if this is a duplicate death event within the cooldown period
     local now = GetTime()
     if (now - PSC_LastDeathTime) < PSC_DEATH_EVENT_COOLDOWN then
         if PSC_Debug then
@@ -94,7 +90,6 @@ function HandlePlayerDeath()
         return
     end
 
-    -- Update the last death time
     PSC_LastDeathTime = now
 
     local characterKey = PSC_GetCharacterKey()
@@ -137,7 +132,6 @@ local function CleanupRecentPetDamage()
 end
 
 function CombatLogDestFlagsEnemyPlayer(destFlags)
-    -- return true
     return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
            bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
 end
@@ -170,27 +164,62 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
            combatEvent == "SPELL_AURA_REFRESH" or
            combatEvent == "SPELL_AURA_REMOVED" then
         isUtilitySpell = true
-        damageAmount = 1  -- Treat utility spells as minimal damage for assist tracking
+        damageAmount = 1
     end
 
     if damageAmount > 0 or isUtilitySpell then
         HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, damageAmount, nil)
-
-        -- if isUtilitySpell and PSC_Debug then
-        --     print("Utility spell (" .. combatEvent .. ") on " .. destName .. " counted for assist credit")
-        -- end
     end
 end
 
-local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
-    local countKill = false
+function PSC_IsSpecialHunterCase(destName)
+    local infoKey = PSC_GetInfoKeyFromName(destName)
+    if not PSC_DB.PlayerInfoCache[infoKey] then
+        return false
+    end
 
+    local isHunter = true -- PSC_DB.PlayerInfoCache[infoKey].class == "Hunter"
+    local level = PSC_DB.PlayerInfoCache[infoKey].level
+
+    if not isHunter or level < HUNTER_ABILITY_MIN_LEVEL then
+        return false
+    end
+
+    return true
+end
+
+function PSC_ScheduleHunterValidation(destGUID, destName, eventType, validationData)
+    if not PSC_IsSpecialHunterCase(destName) then
+        return false
+    end
+
+    if PSC_Debug then
+        print("Hunter " .. destName .. " might be using their special ability - validating...")
+    end
+
+    PSC_PendingHunterEvents[destGUID] = {
+        name = destName,
+        timestamp = GetTime(),
+        eventType = eventType,
+        gotDamagedAfter = false,
+        validationData = validationData
+    }
+
+    C_Timer.After(HUNTER_VERIFICATION_WINDOW, function()
+        PSC_ValidateHunterEvent(destGUID)
+    end)
+
+    return true
+end
+
+local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
         if PSC_Debug then print("BG Mode: Kill tracking disabled in battlegrounds") end
         return
     end
 
-    -- print("Party Kill Event: " .. sourceName .. " (" .. sourceGUID .. ") killed " .. destName .. " (" .. destGUID .. ")")
+    local countKill = false
+
     if PSC_CurrentlyInBattleground then
         if sourceGUID == PSC_PlayerGUID then
             countKill = true
@@ -216,9 +245,6 @@ end
 
 local function HandleUnitDiedEvent(destGUID, destName)
     if PSC_RecentlyCountedKills[destGUID] then
-        -- if PSC_Debug then
-        --     print("Skipping duplicate kill for: " .. destName)
-        -- end
         return
     end
 
@@ -227,11 +253,9 @@ local function HandleUnitDiedEvent(destGUID, destName)
     end
 
     local countKill = false
-
     local petDamage = RecentPetDamage[destGUID]
 
     if petDamage and (GetTime() - petDamage.timestamp) <= PET_DAMAGE_WINDOW then
-        -- In BG mode, only count the player's own pet kills
         if PSC_CurrentlyInBattleground then
             if petDamage.ownerGUID == PSC_PlayerGUID then
                 countKill = true
@@ -242,7 +266,6 @@ local function HandleUnitDiedEvent(destGUID, destName)
             else
                 if PSC_Debug then print("BG Mode: Pet killing blow ignored (not your pet)") end
             end
-        -- In normal mode, also accept party/raid member pets
         else
             if petDamage.ownerGUID == PSC_PlayerGUID then
                 countKill = true
@@ -250,7 +273,6 @@ local function HandleUnitDiedEvent(destGUID, destName)
                     print("Normal Mode: Your pet killing blow detected")
                 end
             else
-                -- Check if owner is in party/raid
                 local ownerName = GetNameFromGUID(petDamage.ownerGUID)
                 if ownerName and (UnitInParty(ownerName) or UnitInRaid(ownerName)) then
                     countKill = true
@@ -269,11 +291,9 @@ local function HandleUnitDiedEvent(destGUID, destName)
         end
     end
 
-    -- If not a pet kill, check for assist kill
     local playerDamage = PSC_RecentPlayerDamage[destGUID]
     if playerDamage and (GetTime() - playerDamage.timestamp) <= PSC_ASSIST_DAMAGE_WINDOW then
         if playerDamage.totalDamage > 0 then
-            -- In BG mode, only count assists if the setting is enabled
             if PSC_CurrentlyInBattleground and not PSC_DB.CountAssistsInBattlegrounds then
                 if PSC_Debug then
                     print("BG Mode: Assist kill ignored (assists disabled in BGs)")
@@ -310,9 +330,59 @@ local function HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName,
     end
 end
 
+function PSC_ValidateHunterEvent(destGUID)
+    local eventData = PSC_PendingHunterEvents[destGUID]
+    if not eventData then return end
+
+    -- If hunter received damage after the "pretend" event, ignore it
+    if eventData.gotDamagedAfter then
+        if PSC_Debug then
+            print("Validation: Hunter " .. eventData.name ..
+                  " received damage after event - ignoring as likely special ability")
+        end
+
+        PSC_PendingHunterEvents[destGUID] = nil
+        return
+    end
+
+    -- No damage received during validation window, process as a real event
+    if PSC_Debug then
+        print("Validation: Hunter " .. eventData.name ..
+              " received no damage after event - processing as normal")
+    end
+
+    -- Simply call the appropriate handler based on event type
+    if eventData.eventType == "PARTY_KILL" then
+        local sourceGUID = eventData.validationData.sourceGUID
+        local sourceName = eventData.validationData.sourceName
+
+        -- Call the existing party kill handler
+        HandlePartyKillEvent(sourceGUID, sourceName, destGUID, eventData.name)
+
+    elseif eventData.eventType == "UNIT_EVENT" then
+        -- Call the existing unit died handler
+        HandleUnitDiedEvent(destGUID, eventData.name)
+    end
+
+    -- Clean up the pending event
+    PSC_PendingHunterEvents[destGUID] = nil
+end
+
 local function HandleCombatLogEvent()
     local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
           destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4, param5, param6, param7, param8 = CombatLogGetCurrentEventInfo()
+
+    if destGUID and PSC_PendingHunterEvents[destGUID] and
+       (combatEvent == "SWING_DAMAGE" or
+        combatEvent == "SPELL_DAMAGE" or
+        combatEvent == "SPELL_PERIODIC_DAMAGE" or
+        combatEvent == "RANGE_DAMAGE") then
+        PSC_PendingHunterEvents[destGUID].gotDamagedAfter = true
+
+        if PSC_Debug then
+            print("Hunter " .. destName .. " received damage after event - likely using special ability")
+        end
+    end
 
     if CombatLogDestFlagsEnemyPlayer(destFlags) then
         HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
@@ -339,11 +409,33 @@ local function HandleCombatLogEvent()
     end
 
     if combatEvent == "PARTY_KILL" and CombatLogDestFlagsEnemyPlayer(destFlags) then
-        HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
+        local isScheduled = PSC_ScheduleHunterValidation(destGUID, destName, "PARTY_KILL", {
+            sourceGUID = sourceGUID,
+            sourceName = sourceName
+        })
+
+        if not isScheduled then
+            HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
+        end
     end
 
     if combatEvent == "UNIT_DIED" and CombatLogDestFlagsEnemyPlayer(destFlags) then
-        HandleUnitDiedEvent(destGUID, destName)
+        local isScheduled = PSC_ScheduleHunterValidation(destGUID, destName, "UNIT_EVENT", {})
+
+        if not isScheduled then
+            HandleUnitDiedEvent(destGUID, destName)
+        end
+    end
+end
+
+function PSC_CleanupPendingHunterEvents()
+    local now = GetTime()
+    local cutoff = now - (HUNTER_VERIFICATION_WINDOW * 2)
+
+    for guid, data in pairs(PSC_PendingHunterEvents) do
+        if data.timestamp < cutoff then
+            PSC_PendingHunterEvents[guid] = nil
+        end
     end
 end
 
@@ -370,7 +462,6 @@ function PSC_RegisterEvents()
                 ResetAllStatsToDefault()
             end
 
-            -- Migrate player info cache to include realm names
             PSC_MigratePlayerInfoCache()
 
             PSC_InitializePlayerKillCounts()
@@ -381,6 +472,9 @@ function PSC_RegisterEvents()
             PSC_CheckBattlegroundStatus()
             if UnitIsDeadOrGhost("player") then
                 HandlePlayerDeath()
+            end
+            if PSC_Debug then
+                print("[PvPStats]: Debug mode enabled.")
             end
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
@@ -398,6 +492,7 @@ function PSC_RegisterEvents()
             PSC_CleanupRecentlyCountedKillsDict()
             PSC_CleanupRecentPlayerDamage()
             PSC_CleanupRecentDamageFromPlayers()
+            PSC_CleanupPendingHunterEvents()
         elseif event == "PLAYER_LOGOUT" then
             PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
@@ -474,7 +569,6 @@ function PSC_SetupMouseoverTooltip()
         local characterKey = PSC_GetCharacterKey()
         local lastKill = 0
 
-        -- Find the most recent kill timestamp for this player (across different level entries)
         for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts.Characters[characterKey].Kills) do
             local storedName = nameWithLevel:match("^(.+):")
             if storedName == playerName and data.lastKill and data.lastKill > lastKill then
@@ -496,17 +590,14 @@ function PSC_SetupMouseoverTooltip()
     end
 
     local function AddPvPInfoToTooltip(tooltip, playerName, kills, deaths)
-        -- Check if we've already added PvP info to this tooltip
         if tooltip.pvpStatsAdded then return end
 
         local lastKill = GetLastKillTimestamp(playerName)
         local scoreText = ""
 
-        -- Basic format just shows kills
         if not PSC_DB.ShowExtendedTooltipInfo then
             scoreText = "Kills: " .. kills
         else
-            -- Extended format shows kills:deaths ratio and time since last kill
             scoreText = "Score " .. kills .. ":" .. deaths
 
             if kills > 0 then
@@ -519,7 +610,7 @@ function PSC_SetupMouseoverTooltip()
 
         tooltip:AddLine(scoreText, 1, 1, 1)
         tooltip.pvpStatsAdded = true
-        tooltip:Show() -- Force refresh to show the new line
+        tooltip:Show()
     end
 
     local function OnTooltipSetUnit(tooltip)
@@ -559,9 +650,8 @@ function PSC_SetupMouseoverTooltip()
     GameTooltip:HookScript("OnTooltipSetUnit", OnTooltipSetUnit)
     GameTooltip:HookScript("OnShow", OnTooltipShow)
 
-    -- The OnTooltipCleared event might fire too early, so we also use a small timer
     GameTooltip:HookScript("OnTooltipCleared", function(tooltip)
-        tooltip.pvpStatsAdded = nil  -- Reset the flag when tooltip is cleared
+        tooltip.pvpStatsAdded = nil
         C_Timer.After(0.01, function()
             if tooltip:IsShown() then
                 OnTooltipShow(tooltip)
