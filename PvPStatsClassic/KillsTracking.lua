@@ -84,7 +84,7 @@ local function UpdateMultiKill()
 end
 
 local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
-    if PSC_CurrentlyInBattleground or not PSC_DB.EnableKillAnnounceMessages or not IsInGroup() then return end
+    if PSC_CurrentlyInBattleground or not PSC_DB.EnableKillAnnounceMessages then return end
 
     local characterKey = PSC_GetCharacterKey()
     local killMessage = string.gsub(PSC_DB.KillAnnounceMessage, "Enemyplayername", killedPlayer)
@@ -104,9 +104,15 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
     if characterData.CurrentKillStreak >= 10 and characterData.CurrentKillStreak % 5 == 0 then
         killMessage = killMessage .. " - Kill Streak: " .. characterData.CurrentKillStreak
+        if not IsInGroup() then
+            print("[PvPStats]: " .. killMessage)
+        end
     end
 
-    SendChatMessage(killMessage, "PARTY")
+    if IsInGroup() then
+        SendChatMessage(killMessage, "PARTY")
+    end
+
 
     if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold then
         local multiKillText = GetMultiKillText(PSC_MultiKillCount)
