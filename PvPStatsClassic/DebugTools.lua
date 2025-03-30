@@ -53,7 +53,7 @@ function PSC_DebugPetKills()
 end
 
 function PSC_DebugCombatLogEvents()
-    print("Enabling enhanced combat log debugging for 30 seconds...")
+    print("Enabling enhanced combat log debugging for 60 seconds...")
 
     local originalHandler = HandleCombatLogEvent
 
@@ -62,19 +62,16 @@ function PSC_DebugCombatLogEvents()
         destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
 
         -- Print out kill-related events
-        if (combatEvent == "UNIT_DIED" or combatEvent == "PARTY_KILL") and
-            bit.band(destFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER or 0) > 0 then
-            print("EVENT: " .. combatEvent)
-            print("SOURCE: " .. (sourceName or "nil") .. " (" .. (sourceGUID or "nil") .. ")")
-            print("TARGET: " .. (destName or "nil") .. " (" .. (destGUID or "nil") .. ")")
-            print("FLAGS: source=" .. (sourceFlags or 0) .. ", dest=" .. (destFlags or 0))
-            print("-----------------------------------")
-        end
+        print("EVENT: " .. combatEvent)
+        print("SOURCE: " .. (sourceName or "nil") .. " (" .. (sourceGUID or "nil") .. ")")
+        print("TARGET: " .. (destName or "nil") .. " (" .. (destGUID or "nil") .. ")")
+        print("FLAGS: source=" .. (sourceFlags or 0) .. ", dest=" .. (destFlags or 0))
+        print("-----------------------------------")
 
         originalHandler()
     end
 
-    C_Timer.After(30, function()
+    C_Timer.After(60, function()
         print("Combat log debugging ended.")
         HandleCombatLogEvent = originalHandler
     end)
