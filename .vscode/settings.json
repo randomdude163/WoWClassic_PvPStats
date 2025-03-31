@@ -26,7 +26,8 @@
         "FauxScrollFrame_GetOffset",
         "PanelTemplates_GetSelectedTab",
         "WorldFrame",
-        "DEAD"
+        "DEAD",
+        "AchievementFrame"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {

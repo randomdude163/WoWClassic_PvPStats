@@ -1,69 +1,5 @@
 local addonName, PVPSC = ...
 
--- Add this function at the top of your file, after the local addonName, PVPSC = ... line
-local function getTableKeys(tbl)
-    local keys = {}
-    for k in pairs(tbl) do
-        table.insert(keys, k)
-    end
-    return keys
-end
-
--- Add this function right after the getTableKeys function
-local function PSC_GetTotalsKillsByClass()
-    local classKills = {
-        PALADIN = 0,
-        PRIEST = 0,
-        WARRIOR = 0,
-        MAGE = 0,
-        ROGUE = 0,
-        WARLOCK = 0,
-        DRUID = 0,
-        SHAMAN = 0,
-        HUNTER = 0
-    }
-
-    local genderKills = {
-        MALE = 0,
-        FEMALE = 0
-    }
-
-    local charactersToProcess = {}
-    local characterKey = PSC_GetCharacterKey()
-
-    if PSC_DB.ShowAccountWideStats then
-        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
-    else
-        charactersToProcess = {[characterKey] = PSC_DB.PlayerKillCounts.Characters[characterKey]}
-    end
-
-    for charKey, characterData in pairs(charactersToProcess) do
-        if characterData and characterData.Kills then
-            for nameWithLevel, killData in pairs(characterData.Kills) do
-                local playerName = nameWithLevel:match("([^:]+)")
-                local infoKey = PSC_GetInfoKeyFromName(playerName)
-
-                if PSC_DB.PlayerInfoCache[infoKey] then
-                    local playerInfo = PSC_DB.PlayerInfoCache[infoKey]
-                    local kills = killData.kills or 0
-
-                    -- Add class kills
-                    if playerInfo.class then
-                        classKills[playerInfo.class] = (classKills[playerInfo.class] or 0) + kills
-                    end
-
-                    -- Add gender kills
-                    if playerInfo.gender then
-                        genderKills[playerInfo.gender] = (genderKills[playerInfo.gender] or 0) + kills
-                    end
-                end
-            end
-        end
-    end
-
-    return classKills, genderKills
-end
-
 -- Create Achievement Overview Frame
 local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
 AchievementFrame:SetSize(650, 500)
@@ -185,49 +121,64 @@ local function UpdateAchievementLayout()
         local targetValue = 0
         local currentProgress = 0
 
-        -- Get total kills by class and gender
-        local classKills, genderKills = PSC_GetTotalsKillsByClass()
+        local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
+            PSC_CalculateBarChartStatistics()
 
-        -- Debug prints - keep for troubleshooting
-        print("Class Kills:", table.concat({
-            "PALADIN: "..(classKills["PALADIN"] or 0),
-            "PRIEST: "..(classKills["PRIEST"] or 0),
-            "WARRIOR: "..(classKills["WARRIOR"] or 0),
-            "MAGE: "..(classKills["MAGE"] or 0),
-            "ROGUE: "..(classKills["ROGUE"] or 0),
-            "WARLOCK: "..(classKills["WARLOCK"] or 0),
-            "DRUID: "..(classKills["DRUID"] or 0),
-            "SHAMAN: "..(classKills["SHAMAN"] or 0),
-            "HUNTER: "..(classKills["HUNTER"] or 0)
-        }, ", "))
+        local function countTableEntries(t)
+            local count = 0
+            for _ in pairs(t) do count = count + 1 end
+            return count
+        end
 
-        print("Gender Kills: MALE: ".. (genderKills["MALE"] or 0) ..", FEMALE: ".. (genderKills["FEMALE"] or 0))
-        print("Using account-wide stats:", PSC_DB.ShowAccountWideStats and "Yes" or "No")
+        -- Debug print using the correct counting method
+        print("Entries in tables:",
+            countTableEntries(classData),
+            countTableEntries(raceData),
+            countTableEntries(genderData),
+            countTableEntries(unknownLevelClassData),
+            countTableEntries(zoneData),
+            countTableEntries(levelData),
+            countTableEntries(guildStatusData))
+
+        for className, kills in pairs(classData) do
+            print("Class " .. className .. " - " .. kills .. " kills")
+        end
+
+        local summaryStatistics = PSC_CalculateSummaryStatistics()
+        local totalKills = summaryStatistics.totalKills
+        print("Total Kills: ", totalKills)
+
+        local guildKills = PSC_CalculateGuildKills()
+        for guildName, kills in pairs(guildKills) do
+            print("Guild " .. guildName .. " - " .. kills .. " kills")
+        end
+
+        -- print("Using account-wide stats:", PSC_DB.ShowAccountWideStats and "Yes" or "No")
 
         if achievement.id == "id_1" then -- HOLY MOLY (Paladins)
             targetValue = 500
-            currentProgress = classKills["PALADIN"] or 0
+            currentProgress = classData["Paladin"] or 0
         elseif achievement.id == "id_2" then -- Shadow Hunter (Priests)
             targetValue = 300
-            currentProgress = classKills["PRIEST"] or 0
+            currentProgress = classData["Priest"] or 0
         elseif achievement.id == "id_3" then -- Warrior Slayer
             targetValue = 1000
-            currentProgress = classKills["WARRIOR"] or 0
+            currentProgress = classData["Warrior"] or 0
         elseif achievement.id == "id_4" then -- Mage Crusher
             targetValue = 400
-            currentProgress = classKills["MAGE"] or 0
+            currentProgress = classData["Mage"] or 0
         elseif achievement.id == "id_5" then -- Rogue Hunter
             targetValue = 250
-            currentProgress = classKills["ROGUE"] or 0
+            currentProgress = classData["Rogue"] or 0
         elseif achievement.id == "id_6" then -- Warlock Nemesis
             targetValue = 350
-            currentProgress = classKills["WARLOCK"] or 0
+            currentProgress = classData["Warlock"] or 0
         elseif achievement.id == "id_7" then -- Wife Beater
             targetValue = 100
-            currentProgress = genderKills["FEMALE"] or 0
+            currentProgress = genderData["Female"] or 0
         elseif achievement.id == "id_8" then -- Gentleman's Bane
             targetValue = 100
-            currentProgress = genderKills["MALE"] or 0
+            currentProgress = genderData["Male"] or 0
         end
 
         -- First create the progress text FontString
