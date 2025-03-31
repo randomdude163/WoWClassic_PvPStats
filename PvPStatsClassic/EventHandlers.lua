@@ -514,21 +514,11 @@ function PSC_CheckBattlegroundStatus()
     local currentMapId = C_Map.GetBestMapForUnit("player")
 
     local battlegroundZoneIds = {
-        91, -- Alterac Valley
+        -- Correct IDs from here (all marked with patch 1.13.2:
+        -- https://wowpedia.fandom.com/wiki/UiMapID
         1459, -- "Alterac Valley"
-        1537,
-
-        92, -- "Warsong Gulch"
-        859, -- "Warsong Gulch"
-        1339, -- "Warsong Gulch"
         1460, -- "Warsong Gulch"
-
-        93, -- "Arathi Basin"
-        837, -- "Arathi Basin"
-        844, -- "Arathi Basin"
-        1366, -- "Arathi Basin",
-        1383, -- "Arathi Basin"
-        1461, -- "Arathi Basin"
+        1461 -- "Arathi Basin"
     }
 
     for _, bgMapId in ipairs(battlegroundZoneIds) do
