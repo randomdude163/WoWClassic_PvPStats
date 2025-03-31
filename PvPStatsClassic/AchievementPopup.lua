@@ -176,6 +176,26 @@ AchievementSystem.achievements = {
             return (playerStats.classKills and playerStats.classKills["WARLOCK"] or 0) >= 350
         end,
         unlocked = false
+    },
+    {
+        id = "id_7",
+        title = "Wife Beater",
+        description = "Defeat 100 female characters",
+        iconID = 132938, -- spell-holy-powerwordshield, a protective shield icon
+        condition = function(playerStats)
+            return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 100
+        end,
+        unlocked = false
+    },
+    {
+        id = "id_8",
+        title = "Gentleman's Bane",
+        description = "Defeat 100 male characters",
+        iconID = 132333, -- ability-warrior-bladestorm, a spinning blades icon
+        condition = function(playerStats)
+            return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 100
+        end,
+        unlocked = false
     }
 }
 

@@ -630,7 +630,7 @@ local function CreateTestAchievementButton(parent)
 
         -- Increment counter, reset to 1 if we've shown all achievements
         currentTestAchievement = currentTestAchievement + 1
-        if currentTestAchievement > 6 then
+        if currentTestAchievement > 8 then  -- Changed from 6 to 8 to include all achievements
             currentTestAchievement = 1
         end
     end)
