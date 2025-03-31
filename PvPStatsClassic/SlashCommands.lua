@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local function PrintSlashCommandUsage()
     -- PSC_Print("Usage: /psc settings - Open settings UI")
     -- PSC_Print("Usage: /psc stats - Show PvP history")
