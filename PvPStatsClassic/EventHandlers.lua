@@ -18,7 +18,7 @@ PSC_lastInBattlegroundValue = false
 
 PSC_PendingHunterEvents = {}
 local HUNTER_VERIFICATION_WINDOW = 3.0 -- Seconds to wait before confirming
-local HUNTER_ABILITY_MIN_LEVEL = 1 -- Hunters learn this ability at level 30
+local HUNTER_ABILITY_MIN_LEVEL = 30 -- Hunters learn this ability at level 30
 
 local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
@@ -178,7 +178,7 @@ function PSC_IsSpecialHunterCase(destName)
         return false
     end
 
-    local isHunter = true -- PSC_DB.PlayerInfoCache[infoKey].class == "Hunter"
+    local isHunter = PSC_DB.PlayerInfoCache[infoKey].class == "Hunter"
     local level = PSC_DB.PlayerInfoCache[infoKey].level
 
     if not isHunter or level < HUNTER_ABILITY_MIN_LEVEL then
