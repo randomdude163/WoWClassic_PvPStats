@@ -226,9 +226,6 @@ end
 
 -- Test function to show the achievement popup
 function AchievementSystem:TestAchievementPopup(achievementID)
-    -- Default to "id_1" if no ID is provided
-    achievementID = achievementID or "id_1"
-
     -- Find the achievement
     local achievement
     for _, ach in ipairs(self.achievements) do
@@ -239,9 +236,30 @@ function AchievementSystem:TestAchievementPopup(achievementID)
     end
 
     if achievement then
-        -- Set the achievement as unlocked with current date
+        -- Set the achievement as unlocked and store completion date
         achievement.unlocked = true
         achievement.completedDate = date("%d/%m/%Y %H:%M")
+
+        -- Update progress data to show as completed
+        local characterKey = PSC_GetCharacterKey()
+        if not PSC_DB.PlayerKillCounts.Characters[characterKey].classKills then
+            PSC_DB.PlayerKillCounts.Characters[characterKey].classKills = {}
+        end
+        if not PSC_DB.PlayerKillCounts.Characters[characterKey].genderKills then
+            PSC_DB.PlayerKillCounts.Characters[characterKey].genderKills = {}
+        end
+
+        -- Set the appropriate kill count based on achievement type
+        if achievement.id:match("^id_%d$") then
+            local class = achievement.title:match("(%u%w+)")
+            if class then
+                PSC_DB.PlayerKillCounts.Characters[characterKey].classKills[class:upper()] = achievement.targetValue
+            end
+        elseif achievement.id == "id_7" then
+            PSC_DB.PlayerKillCounts.Characters[characterKey].genderKills["FEMALE"] = 100
+        elseif achievement.id == "id_8" then
+            PSC_DB.PlayerKillCounts.Characters[characterKey].genderKills["MALE"] = 100
+        end
 
         -- Show the popup
         PVPStatsClassic_ShowAchievementPopup({
@@ -249,6 +267,11 @@ function AchievementSystem:TestAchievementPopup(achievementID)
             title = achievement.title,
             description = achievement.description
         })
+
+        -- Update achievement frame if it's visible
+        if AchievementFrame and AchievementFrame:IsShown() then
+            PVPSC.UpdateAchievementLayout()
+        end
     end
 end
 

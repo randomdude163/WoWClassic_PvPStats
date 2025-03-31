@@ -1,5 +1,69 @@
 local addonName, PVPSC = ...
 
+-- Add this function at the top of your file, after the local addonName, PVPSC = ... line
+local function getTableKeys(tbl)
+    local keys = {}
+    for k in pairs(tbl) do
+        table.insert(keys, k)
+    end
+    return keys
+end
+
+-- Add this function right after the getTableKeys function
+local function PSC_GetTotalsKillsByClass()
+    local classKills = {
+        PALADIN = 0,
+        PRIEST = 0,
+        WARRIOR = 0,
+        MAGE = 0,
+        ROGUE = 0,
+        WARLOCK = 0,
+        DRUID = 0,
+        SHAMAN = 0,
+        HUNTER = 0
+    }
+
+    local genderKills = {
+        MALE = 0,
+        FEMALE = 0
+    }
+
+    local charactersToProcess = {}
+    local characterKey = PSC_GetCharacterKey()
+
+    if PSC_DB.ShowAccountWideStats then
+        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    else
+        charactersToProcess = {[characterKey] = PSC_DB.PlayerKillCounts.Characters[characterKey]}
+    end
+
+    for charKey, characterData in pairs(charactersToProcess) do
+        if characterData and characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                local playerName = nameWithLevel:match("([^:]+)")
+                local infoKey = PSC_GetInfoKeyFromName(playerName)
+
+                if PSC_DB.PlayerInfoCache[infoKey] then
+                    local playerInfo = PSC_DB.PlayerInfoCache[infoKey]
+                    local kills = killData.kills or 0
+
+                    -- Add class kills
+                    if playerInfo.class then
+                        classKills[playerInfo.class] = (classKills[playerInfo.class] or 0) + kills
+                    end
+
+                    -- Add gender kills
+                    if playerInfo.gender then
+                        genderKills[playerInfo.gender] = (genderKills[playerInfo.gender] or 0) + kills
+                    end
+                end
+            end
+        end
+    end
+
+    return classKills, genderKills
+end
+
 -- Create Achievement Overview Frame
 local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
 AchievementFrame:SetSize(650, 500)
@@ -112,22 +176,79 @@ local function UpdateAchievementLayout()
 
         -- Add status bar for progress under the icon
         local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
-        progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10) -- Adjust width
-        progressBar:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -5) -- Position directly below the icon
+        progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10)
+        progressBar:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -5)
         progressBar:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
-        progressBar:SetStatusBarColor(0.0, 0.65, 0.0) -- Green color
-        progressBar:SetMinMaxValues(0, 500) -- Example max value (replace with real data later)
-        progressBar:SetValue(achievement.unlocked and 500 or 0) -- Example progress (replace with real data later)
+        progressBar:SetStatusBarColor(0.0, 0.65, 0.0)
 
-        -- Add progress text to the status bar
+        -- Get the target value and current progress based on achievement type
+        local targetValue = 0
+        local currentProgress = 0
+
+        -- Get total kills by class and gender
+        local classKills, genderKills = PSC_GetTotalsKillsByClass()
+
+        -- Debug prints - keep for troubleshooting
+        print("Class Kills:", table.concat({
+            "PALADIN: "..(classKills["PALADIN"] or 0),
+            "PRIEST: "..(classKills["PRIEST"] or 0),
+            "WARRIOR: "..(classKills["WARRIOR"] or 0),
+            "MAGE: "..(classKills["MAGE"] or 0),
+            "ROGUE: "..(classKills["ROGUE"] or 0),
+            "WARLOCK: "..(classKills["WARLOCK"] or 0),
+            "DRUID: "..(classKills["DRUID"] or 0),
+            "SHAMAN: "..(classKills["SHAMAN"] or 0),
+            "HUNTER: "..(classKills["HUNTER"] or 0)
+        }, ", "))
+
+        print("Gender Kills: MALE: ".. (genderKills["MALE"] or 0) ..", FEMALE: ".. (genderKills["FEMALE"] or 0))
+        print("Using account-wide stats:", PSC_DB.ShowAccountWideStats and "Yes" or "No")
+
+        if achievement.id == "id_1" then -- HOLY MOLY (Paladins)
+            targetValue = 500
+            currentProgress = classKills["PALADIN"] or 0
+        elseif achievement.id == "id_2" then -- Shadow Hunter (Priests)
+            targetValue = 300
+            currentProgress = classKills["PRIEST"] or 0
+        elseif achievement.id == "id_3" then -- Warrior Slayer
+            targetValue = 1000
+            currentProgress = classKills["WARRIOR"] or 0
+        elseif achievement.id == "id_4" then -- Mage Crusher
+            targetValue = 400
+            currentProgress = classKills["MAGE"] or 0
+        elseif achievement.id == "id_5" then -- Rogue Hunter
+            targetValue = 250
+            currentProgress = classKills["ROGUE"] or 0
+        elseif achievement.id == "id_6" then -- Warlock Nemesis
+            targetValue = 350
+            currentProgress = classKills["WARLOCK"] or 0
+        elseif achievement.id == "id_7" then -- Wife Beater
+            targetValue = 100
+            currentProgress = genderKills["FEMALE"] or 0
+        elseif achievement.id == "id_8" then -- Gentleman's Bane
+            targetValue = 100
+            currentProgress = genderKills["MALE"] or 0
+        end
+
+        -- First create the progress text FontString
         local progressText = progressBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         progressText:SetPoint("CENTER", progressBar, "CENTER", 0, 0)
-        progressText:SetText(achievement.unlocked and "500/500" or "0/500") -- Example progress text (replace with real data later)
 
-        -- Add "Completed" label under the progress bar
+        -- Then set the progress bar and text values
+        if achievement.unlocked then
+            progressBar:SetMinMaxValues(0, targetValue)
+            progressBar:SetValue(targetValue)
+            progressText:SetText(targetValue.."/"..targetValue)
+        else
+            progressBar:SetMinMaxValues(0, targetValue)
+            progressBar:SetValue(currentProgress)
+            progressText:SetText(currentProgress.."/"..targetValue)
+        end
+
+        -- Add "Completed" label under the progress bar only if unlocked
         if achievement.unlocked and achievement.completedDate then
             local completionDate = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            completionDate:SetPoint("TOPLEFT", progressBar, "BOTTOMLEFT", 0, -5) -- Position under the progress bar
+            completionDate:SetPoint("TOPLEFT", progressBar, "BOTTOMLEFT", 0, -5)
             completionDate:SetText("Completed: " .. achievement.completedDate)
             completionDate:SetTextColor(0.7, 0.7, 0.7)
         end
