@@ -1,6 +1,6 @@
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = true
+PSC_Debug = false
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
