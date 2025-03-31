@@ -16,9 +16,9 @@ AchievementFrame:Hide()
 -- Add to special frames so it closes with Escape key
 tinsert(UISpecialFrames, "PVPSCAchievementFrame")
 
--- Style the frame with a darker background
+-- Style the frame with a completely solid dark background
 AchievementFrame:SetBackdrop({
-    bgFile = "Interface\\BUTTONS\\WHITE8X8", -- Use solid white texture
+    bgFile = "Interface\\BUTTONS\\WHITE8X8",
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
     tile = true,
     tileSize = 32,
@@ -26,8 +26,8 @@ AchievementFrame:SetBackdrop({
     insets = { left = 11, right = 11, top = 12, bottom = 11 }
 })
 
--- Set the background color to nearly black with slight transparency
-AchievementFrame:SetBackdropColor(0.05, 0.05, 0.05, 0.95)
+-- Set the background color to pure black with no transparency
+AchievementFrame:SetBackdropColor(0, 0, 0, 1) -- Fully opaque black
 
 -- Add title
 local titleText = AchievementFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -70,13 +70,9 @@ local function UpdateAchievementLayout()
         return
     end
 
-    local rowCount = math.ceil(#achievements / ACHIEVEMENTS_PER_ROW)
-    local totalWidth = ACHIEVEMENTS_PER_ROW * ACHIEVEMENT_WIDTH + (ACHIEVEMENTS_PER_ROW - 1) * ACHIEVEMENT_SPACING_H
-    local totalHeight = rowCount * ACHIEVEMENT_HEIGHT + (rowCount - 1) * ACHIEVEMENT_SPACING_V
-
-    contentFrame:SetSize(totalWidth, totalHeight)
-
+    -- Update the layout for each achievement
     for i, achievement in ipairs(achievements) do
+        -- Calculate column and row positions
         local column = (i - 1) % ACHIEVEMENTS_PER_ROW
         local row = math.floor((i - 1) / ACHIEVEMENTS_PER_ROW)
 
@@ -88,7 +84,7 @@ local function UpdateAchievementLayout()
         tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT)
         tile:SetPoint("TOPLEFT", xPos, yPos)
 
-        -- Style the tile with a better contrast for the dark background
+        -- Style the tile
         tile:SetBackdrop({
             bgFile = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
             edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -114,6 +110,28 @@ local function UpdateAchievementLayout()
             icon:SetDesaturated(true)
         end
 
+        -- Add status bar for progress under the icon
+        local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
+        progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10) -- Adjust width
+        progressBar:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -5) -- Position directly below the icon
+        progressBar:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
+        progressBar:SetStatusBarColor(0.0, 0.65, 0.0) -- Green color
+        progressBar:SetMinMaxValues(0, 500) -- Example max value (replace with real data later)
+        progressBar:SetValue(achievement.unlocked and 500 or 0) -- Example progress (replace with real data later)
+
+        -- Add progress text to the status bar
+        local progressText = progressBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        progressText:SetPoint("CENTER", progressBar, "CENTER", 0, 0)
+        progressText:SetText(achievement.unlocked and "500/500" or "0/500") -- Example progress text (replace with real data later)
+
+        -- Add "Completed" label under the progress bar
+        if achievement.unlocked and achievement.completedDate then
+            local completionDate = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            completionDate:SetPoint("TOPLEFT", progressBar, "BOTTOMLEFT", 0, -5) -- Position under the progress bar
+            completionDate:SetText("Completed: " .. achievement.completedDate)
+            completionDate:SetTextColor(0.7, 0.7, 0.7)
+        end
+
         -- Add achievement title
         local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
@@ -137,41 +155,12 @@ local function UpdateAchievementLayout()
         else
             desc:SetTextColor(0.9, 0.9, 0.9)
         end
-
-        -- Add completion date if achievement is unlocked
-        if achievement.unlocked and achievement.completedDate then
-            local completionDate = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            completionDate:SetPoint("BOTTOMRIGHT", tile, "BOTTOMRIGHT", -10, 5)
-            completionDate:SetText("Completed: " .. achievement.completedDate)
-            completionDate:SetTextColor(0.7, 0.7, 0.7)
-        end
-
-        -- Adjust the achievement tile size to accommodate the completion date
-        tile:SetSize(ACHIEVEMENT_WIDTH, achievement.unlocked and ACHIEVEMENT_HEIGHT + 20 or ACHIEVEMENT_HEIGHT)
-
-        -- Add tooltip
-        tile:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(achievement.title, 1, 0.82, 0, 1)
-            GameTooltip:AddLine(achievement.description, 1, 1, 1, true)
-
-            if not achievement.unlocked then
-                GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Not yet unlocked", 0.6, 0.6, 0.6)
-            else
-                GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Achievement Unlocked!", 0, 1, 0)
-                if achievement.completedDate then
-                    GameTooltip:AddLine("Completed: " .. achievement.completedDate, 0.7, 0.7, 0.7)
-                end
-            end
-
-            GameTooltip:Show()
-        end)
-        tile:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
     end
+
+    -- Adjust the content frame size to include vertical spacing
+    local rowCount = math.ceil(#achievements / ACHIEVEMENTS_PER_ROW)
+    local totalHeight = rowCount * (ACHIEVEMENT_HEIGHT + ACHIEVEMENT_SPACING_V)
+    contentFrame:SetSize(contentFrame:GetWidth(), totalHeight)
 end
 
 -- Show the achievement frame
