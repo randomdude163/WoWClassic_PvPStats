@@ -81,7 +81,7 @@ local function UpdateAchievementLayout()
 
         -- Create achievement tile
         local tile = CreateFrame("Button", nil, contentFrame, BackdropTemplateMixin and "BackdropTemplate")
-        tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT)
+        tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT + 5) -- Increased height by 5 pixels
         tile:SetPoint("TOPLEFT", xPos, yPos)
 
         -- Style the tile
@@ -159,7 +159,7 @@ local function UpdateAchievementLayout()
 
     -- Adjust the content frame size to include vertical spacing
     local rowCount = math.ceil(#achievements / ACHIEVEMENTS_PER_ROW)
-    local totalHeight = rowCount * (ACHIEVEMENT_HEIGHT + ACHIEVEMENT_SPACING_V)
+    local totalHeight = rowCount * (ACHIEVEMENT_HEIGHT + 5 + ACHIEVEMENT_SPACING_V) -- Include the increased height
     contentFrame:SetSize(contentFrame:GetWidth(), totalHeight)
 end
 
