@@ -16,15 +16,18 @@ AchievementFrame:Hide()
 -- Add to special frames so it closes with Escape key
 tinsert(UISpecialFrames, "PVPSCAchievementFrame")
 
--- Style the frame with a darker background to match the Statistics window
+-- Style the frame with a darker background
 AchievementFrame:SetBackdrop({
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+    bgFile = "Interface\\BUTTONS\\WHITE8X8", -- Use solid white texture
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
     tile = true,
     tileSize = 32,
     edgeSize = 32,
     insets = { left = 11, right = 11, top = 12, bottom = 11 }
 })
+
+-- Set the background color to nearly black with slight transparency
+AchievementFrame:SetBackdropColor(0.05, 0.05, 0.05, 0.95)
 
 -- Add title
 local titleText = AchievementFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -135,6 +138,17 @@ local function UpdateAchievementLayout()
             desc:SetTextColor(0.9, 0.9, 0.9)
         end
 
+        -- Add completion date if achievement is unlocked
+        if achievement.unlocked and achievement.completedDate then
+            local completionDate = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            completionDate:SetPoint("BOTTOMRIGHT", tile, "BOTTOMRIGHT", -10, 5)
+            completionDate:SetText("Completed: " .. achievement.completedDate)
+            completionDate:SetTextColor(0.7, 0.7, 0.7)
+        end
+
+        -- Adjust the achievement tile size to accommodate the completion date
+        tile:SetSize(ACHIEVEMENT_WIDTH, achievement.unlocked and ACHIEVEMENT_HEIGHT + 20 or ACHIEVEMENT_HEIGHT)
+
         -- Add tooltip
         tile:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -147,6 +161,9 @@ local function UpdateAchievementLayout()
             else
                 GameTooltip:AddLine(" ")
                 GameTooltip:AddLine("Achievement Unlocked!", 0, 1, 0)
+                if achievement.completedDate then
+                    GameTooltip:AddLine("Completed: " .. achievement.completedDate, 0.7, 0.7, 0.7)
+                end
             end
 
             GameTooltip:Show()

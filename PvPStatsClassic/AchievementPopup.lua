@@ -125,7 +125,8 @@ AchievementSystem.achievements = {
         condition = function(playerStats)
             return (playerStats.classKills and playerStats.classKills["PALADIN"] or 0) >= 500
         end,
-        unlocked = false
+        unlocked = false,
+        completedDate = nil -- Add completion date field
     },
     {
         id = "id_2",
@@ -135,7 +136,8 @@ AchievementSystem.achievements = {
         condition = function(playerStats)
             return (playerStats.classKills and playerStats.classKills["PRIEST"] or 0) >= 300
         end,
-        unlocked = false
+        unlocked = false,
+        completedDate = nil
     },
     {
         id = "id_3",
@@ -145,7 +147,8 @@ AchievementSystem.achievements = {
         condition = function(playerStats)
             return (playerStats.classKills and playerStats.classKills["WARRIOR"] or 0) >= 1000
         end,
-        unlocked = false
+        unlocked = false,
+        completedDate = nil
     },
     {
         id = "id_4",
@@ -155,7 +158,8 @@ AchievementSystem.achievements = {
         condition = function(playerStats)
             return (playerStats.classKills and playerStats.classKills["MAGE"] or 0) >= 400
         end,
-        unlocked = false
+        unlocked = false,
+        completedDate = nil
     },
     {
         id = "id_5",
@@ -165,7 +169,8 @@ AchievementSystem.achievements = {
         condition = function(playerStats)
             return (playerStats.classKills and playerStats.classKills["ROGUE"] or 0) >= 250
         end,
-        unlocked = false
+        unlocked = false,
+        completedDate = nil
     },
     {
         id = "id_6",
@@ -175,7 +180,8 @@ AchievementSystem.achievements = {
         condition = function(playerStats)
             return (playerStats.classKills and playerStats.classKills["WARLOCK"] or 0) >= 350
         end,
-        unlocked = false
+        unlocked = false,
+        completedDate = nil
     },
     {
         id = "id_7",
@@ -185,7 +191,8 @@ AchievementSystem.achievements = {
         condition = function(playerStats)
             return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 100
         end,
-        unlocked = false
+        unlocked = false,
+        completedDate = nil
     },
     {
         id = "id_8",
@@ -195,7 +202,8 @@ AchievementSystem.achievements = {
         condition = function(playerStats)
             return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 100
         end,
-        unlocked = false
+        unlocked = false,
+        completedDate = nil
     }
 }
 
@@ -206,6 +214,7 @@ function AchievementSystem:CheckAchievements()
     for _, achievement in ipairs(self.achievements) do
         if not achievement.unlocked and achievement.condition(playerStats) then
             achievement.unlocked = true
+            achievement.completedDate = date("%d/%m/%Y %H:%M") -- Set completion date
             PVPStatsClassic_ShowAchievementPopup({
                 icon = achievement.iconID,
                 title = achievement.title,
@@ -230,8 +239,9 @@ function AchievementSystem:TestAchievementPopup(achievementID)
     end
 
     if achievement then
-        -- Set the achievement as unlocked
+        -- Set the achievement as unlocked with current date
         achievement.unlocked = true
+        achievement.completedDate = date("%d/%m/%Y %H:%M")
 
         -- Show the popup
         PVPStatsClassic_ShowAchievementPopup({
