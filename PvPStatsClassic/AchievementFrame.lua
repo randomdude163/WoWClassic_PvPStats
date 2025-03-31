@@ -67,25 +67,13 @@ local function UpdateAchievementLayout()
         return
     end
 
-    -- Duplicate the paladin achievement 12 times for demonstration
-    local displayAchievements = {}
-    for i = 1, 12 do
-        table.insert(displayAchievements, {
-            id = "HOLY_MOLY" .. i,
-            title = "HOLY MOLY! #" .. i,
-            description = "Slay 500 Paladins",
-            iconID = 135971, -- spell-holy-sealofwrath
-            unlocked = (i % 3 == 0) -- Every third achievement is unlocked for demonstration
-        })
-    end
-
-    local rowCount = math.ceil(#displayAchievements / ACHIEVEMENTS_PER_ROW)
+    local rowCount = math.ceil(#achievements / ACHIEVEMENTS_PER_ROW)
     local totalWidth = ACHIEVEMENTS_PER_ROW * ACHIEVEMENT_WIDTH + (ACHIEVEMENTS_PER_ROW - 1) * ACHIEVEMENT_SPACING_H
     local totalHeight = rowCount * ACHIEVEMENT_HEIGHT + (rowCount - 1) * ACHIEVEMENT_SPACING_V
 
     contentFrame:SetSize(totalWidth, totalHeight)
 
-    for i, achievement in ipairs(displayAchievements) do
+    for i, achievement in ipairs(achievements) do
         local column = (i - 1) % ACHIEVEMENTS_PER_ROW
         local row = math.floor((i - 1) / ACHIEVEMENTS_PER_ROW)
 
@@ -129,7 +117,6 @@ local function UpdateAchievementLayout()
         title:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
         title:SetJustifyH("LEFT")
         title:SetText(achievement.title)
-        -- Make sure achievement titles have good visibility on dark backgrounds
         if not achievement.unlocked then
             title:SetTextColor(0.5, 0.5, 0.5)
         else
@@ -142,11 +129,10 @@ local function UpdateAchievementLayout()
         desc:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
         desc:SetJustifyH("LEFT")
         desc:SetText(achievement.description)
-        -- Make description text more visible
         if not achievement.unlocked then
             desc:SetTextColor(0.4, 0.4, 0.4)
         else
-            desc:SetTextColor(0.9, 0.9, 0.9) -- Brighter text for unlocked achievements
+            desc:SetTextColor(0.9, 0.9, 0.9)
         end
 
         -- Add tooltip
