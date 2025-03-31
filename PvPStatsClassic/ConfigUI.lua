@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local configFrame = nil
 
 local PSC_CONFIG_HEADER_R = 1.0
@@ -613,6 +615,8 @@ local function CreateActionButtons(parent)
     }
 end
 
+local currentTestAchievement = 1
+
 local function CreateTestAchievementButton(parent)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetSize(200, 22)
@@ -620,13 +624,15 @@ local function CreateTestAchievementButton(parent)
     button:SetPoint("TOPLEFT", 20, -240)
 
     button:SetScript("OnClick", function()
-        PVPStatsClassic_ShowAchievementPopup({
-            id = "test_achievement",
-            title = "HOLY MOLY!",
-            description = "Slay 500 Paladins",
-            icon = 135971,
-            earned = true
-        })
+        -- Cycle through achievements
+        local achievementID = "id_" .. currentTestAchievement
+        PVPSC.AchievementSystem:TestAchievementPopup(achievementID)
+
+        -- Increment counter, reset to 1 if we've shown all achievements
+        currentTestAchievement = currentTestAchievement + 1
+        if currentTestAchievement > 6 then
+            currentTestAchievement = 1
+        end
     end)
 
     return button

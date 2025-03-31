@@ -117,9 +117,8 @@ end
 
 -- Achievement data structure
 AchievementSystem.achievements = {
-    -- Example achievement
     {
-        id = "HOLY_MOLY",
+        id = "id_1",
         title = "HOLY MOLY!",
         description = "Slay 500 Paladins",
         iconID = 135971, -- spell-holy-sealofwrath
@@ -128,7 +127,56 @@ AchievementSystem.achievements = {
         end,
         unlocked = false
     },
-    -- Add more achievements here following the same structure
+    {
+        id = "id_2",
+        title = "Shadow Hunter",
+        description = "Defeat 300 Priests",
+        iconID = 136207, -- spell-shadow-shadowwordpain
+        condition = function(playerStats)
+            return (playerStats.classKills and playerStats.classKills["PRIEST"] or 0) >= 300
+        end,
+        unlocked = false
+    },
+    {
+        id = "id_3",
+        title = "Warrior Slayer",
+        description = "Eliminate 1000 Warriors",
+        iconID = 132355, -- ability-warrior-charge
+        condition = function(playerStats)
+            return (playerStats.classKills and playerStats.classKills["WARRIOR"] or 0) >= 1000
+        end,
+        unlocked = false
+    },
+    {
+        id = "id_4",
+        title = "Mage Crusher",
+        description = "Defeat 400 Mages",
+        iconID = 135846, -- spell-frost-frostbolt02
+        condition = function(playerStats)
+            return (playerStats.classKills and playerStats.classKills["MAGE"] or 0) >= 400
+        end,
+        unlocked = false
+    },
+    {
+        id = "id_5",
+        title = "Rogue Hunter",
+        description = "Uncover and defeat 250 Rogues",
+        iconID = 132320, -- ability-rogue-sinisterstrike
+        condition = function(playerStats)
+            return (playerStats.classKills and playerStats.classKills["ROGUE"] or 0) >= 250
+        end,
+        unlocked = false
+    },
+    {
+        id = "id_6",
+        title = "Warlock Nemesis",
+        description = "Banish 350 Warlocks",
+        iconID = 136197, -- spell-shadow-shadowbolt
+        condition = function(playerStats)
+            return (playerStats.classKills and playerStats.classKills["WARLOCK"] or 0) >= 350
+        end,
+        unlocked = false
+    }
 }
 
 -- Function to check achievements and show popup if newly unlocked
@@ -149,20 +197,23 @@ end
 
 -- Test function to show the achievement popup
 function AchievementSystem:TestAchievementPopup(achievementID)
-    local achievement
+    -- Default to "id_1" if no ID is provided
+    achievementID = achievementID or "id_1"
 
-    if achievementID then
-        for _, ach in ipairs(self.achievements) do
-            if ach.id == achievementID then
-                achievement = ach
-                break
-            end
+    -- Find the achievement
+    local achievement
+    for _, ach in ipairs(self.achievements) do
+        if ach.id == achievementID then
+            achievement = ach
+            break
         end
-    else
-        achievement = self.achievements[1] -- Default to first achievement if none specified
     end
 
     if achievement then
+        -- Set the achievement as unlocked
+        achievement.unlocked = true
+
+        -- Show the popup
         PVPStatsClassic_ShowAchievementPopup({
             icon = achievement.iconID,
             title = achievement.title,
