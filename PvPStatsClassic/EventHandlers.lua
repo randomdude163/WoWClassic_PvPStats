@@ -16,9 +16,9 @@ PSC_DEATH_EVENT_COOLDOWN = 2 -- seconds to ignore duplicate death events
 PSC_CurrentlyInBattleground = false
 PSC_lastInBattlegroundValue = false
 
-PSC_PendingHunterEvents = {}
-local HUNTER_VERIFICATION_WINDOW = 3.0 -- Seconds to wait before confirming
-local HUNTER_ABILITY_MIN_LEVEL = 30 -- Hunters learn this ability at level 30
+PSC_PendingHunterKills = {}
+local HUNTER_FEIGN_DEATH_CHECK_WINDOW = 3.0 -- Seconds to wait before confirming kill
+local HUNTER_FEIGN_DEATH_MIN_LEVEL = 30
 
 local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
@@ -172,7 +172,7 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
     end
 end
 
-function PSC_IsSpecialHunterCase(destName)
+function IsHunterAndCanFeignDeath(destName)
     local infoKey = PSC_GetInfoKeyFromName(destName)
     if not PSC_DB.PlayerInfoCache[infoKey] then
         return false
@@ -181,15 +181,15 @@ function PSC_IsSpecialHunterCase(destName)
     local isHunter = PSC_DB.PlayerInfoCache[infoKey].class == "Hunter"
     local level = PSC_DB.PlayerInfoCache[infoKey].level
 
-    if not isHunter or level < HUNTER_ABILITY_MIN_LEVEL then
+    if not isHunter or level < HUNTER_FEIGN_DEATH_MIN_LEVEL then
         return false
     end
 
     return true
 end
 
-function PSC_ScheduleHunterValidation(destGUID, destName, eventType, validationData)
-    if not PSC_IsSpecialHunterCase(destName) then
+function PSC_ScheduleHunterKillValidation(destGUID, destName, eventType, validationData)
+    if not IsHunterAndCanFeignDeath(destName) then
         return false
     end
 
@@ -197,7 +197,7 @@ function PSC_ScheduleHunterValidation(destGUID, destName, eventType, validationD
         print("Hunter " .. destName .. " might be using their special ability - validating...")
     end
 
-    PSC_PendingHunterEvents[destGUID] = {
+    PSC_PendingHunterKills[destGUID] = {
         name = destName,
         timestamp = GetTime(),
         eventType = eventType,
@@ -205,8 +205,8 @@ function PSC_ScheduleHunterValidation(destGUID, destName, eventType, validationD
         validationData = validationData
     }
 
-    C_Timer.After(HUNTER_VERIFICATION_WINDOW, function()
-        PSC_ValidateHunterEvent(destGUID)
+    C_Timer.After(HUNTER_FEIGN_DEATH_CHECK_WINDOW, function()
+        PSC_ValidateHunterKill(destGUID)
     end)
 
     return true
@@ -330,25 +330,24 @@ local function HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName,
     end
 end
 
-function PSC_ValidateHunterEvent(destGUID)
-    local eventData = PSC_PendingHunterEvents[destGUID]
+function PSC_ValidateHunterKill(destGUID)
+    local eventData = PSC_PendingHunterKills[destGUID]
     if not eventData then return end
 
-    -- If hunter received damage after the "pretend" event, ignore it
     if eventData.gotDamagedAfter then
         if PSC_Debug then
             print("Validation: Hunter " .. eventData.name ..
-                  " received damage after event - ignoring as likely special ability")
+                  " received damage after event - ignoring as likely feign death")
         end
 
-        PSC_PendingHunterEvents[destGUID] = nil
+        PSC_PendingHunterKills[destGUID] = nil
         return
     end
 
     -- No damage received during validation window, process as a real event
     if PSC_Debug then
         print("Validation: Hunter " .. eventData.name ..
-              " received no damage after event - processing as normal")
+              " received no damage after death - processing as normal kill")
     end
 
     -- Simply call the appropriate handler based on event type
@@ -365,19 +364,19 @@ function PSC_ValidateHunterEvent(destGUID)
     end
 
     -- Clean up the pending event
-    PSC_PendingHunterEvents[destGUID] = nil
+    PSC_PendingHunterKills[destGUID] = nil
 end
 
 local function HandleCombatLogEvent()
     local timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags,
           destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4, param5, param6, param7, param8 = CombatLogGetCurrentEventInfo()
 
-    if destGUID and PSC_PendingHunterEvents[destGUID] and
+    if destGUID and PSC_PendingHunterKills[destGUID] and
        (combatEvent == "SWING_DAMAGE" or
         combatEvent == "SPELL_DAMAGE" or
         combatEvent == "SPELL_PERIODIC_DAMAGE" or
         combatEvent == "RANGE_DAMAGE") then
-        PSC_PendingHunterEvents[destGUID].gotDamagedAfter = true
+        PSC_PendingHunterKills[destGUID].gotDamagedAfter = true
 
         if PSC_Debug then
             print("Hunter " .. destName .. " received damage after event - likely using special ability")
@@ -409,7 +408,7 @@ local function HandleCombatLogEvent()
     end
 
     if combatEvent == "PARTY_KILL" and CombatLogDestFlagsEnemyPlayer(destFlags) then
-        local isScheduled = PSC_ScheduleHunterValidation(destGUID, destName, "PARTY_KILL", {
+        local isScheduled = PSC_ScheduleHunterKillValidation(destGUID, destName, "PARTY_KILL", {
             sourceGUID = sourceGUID,
             sourceName = sourceName
         })
@@ -420,7 +419,7 @@ local function HandleCombatLogEvent()
     end
 
     if combatEvent == "UNIT_DIED" and CombatLogDestFlagsEnemyPlayer(destFlags) then
-        local isScheduled = PSC_ScheduleHunterValidation(destGUID, destName, "UNIT_EVENT", {})
+        local isScheduled = PSC_ScheduleHunterKillValidation(destGUID, destName, "UNIT_EVENT", {})
 
         if not isScheduled then
             HandleUnitDiedEvent(destGUID, destName)
@@ -428,13 +427,13 @@ local function HandleCombatLogEvent()
     end
 end
 
-function PSC_CleanupPendingHunterEvents()
+function PSC_CleanupPendingHunterKills()
     local now = GetTime()
-    local cutoff = now - (HUNTER_VERIFICATION_WINDOW * 2)
+    local cutoff = now - (HUNTER_FEIGN_DEATH_CHECK_WINDOW * 2)
 
-    for guid, data in pairs(PSC_PendingHunterEvents) do
+    for guid, data in pairs(PSC_PendingHunterKills) do
         if data.timestamp < cutoff then
-            PSC_PendingHunterEvents[guid] = nil
+            PSC_PendingHunterKills[guid] = nil
         end
     end
 end
@@ -492,7 +491,7 @@ function PSC_RegisterEvents()
             PSC_CleanupRecentlyCountedKillsDict()
             PSC_CleanupRecentPlayerDamage()
             PSC_CleanupRecentDamageFromPlayers()
-            PSC_CleanupPendingHunterEvents()
+            PSC_CleanupPendingHunterKills()
         elseif event == "PLAYER_LOGOUT" then
             PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
