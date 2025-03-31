@@ -613,6 +613,25 @@ local function CreateActionButtons(parent)
     }
 end
 
+local function CreateTestAchievementButton(parent)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(200, 22)
+    button:SetText("Test Achievement Popup")
+    button:SetPoint("TOPLEFT", 20, -240)
+
+    button:SetScript("OnClick", function()
+        PVPStatsClassic_ShowAchievementPopup({
+            id = "test_achievement",
+            title = "HOLY MOLY!",
+            description = "Slay 500 Paladins",
+            icon = 135971,
+            earned = true
+        })
+    end)
+
+    return button
+end
+
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(600, 660)
@@ -912,6 +931,8 @@ function PSC_CreateConfigFrame()
 
     local resetButtons = CreateActionButtons(tabFrames[3])
     configFrame.resetButtons = resetButtons
+
+    local testAchievementButton = CreateTestAchievementButton(tabFrames[3])
 
     CreateAboutTab(tabFrames[4])
 
