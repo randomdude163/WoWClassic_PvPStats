@@ -9,7 +9,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "paladin_1",
     title = "Holy Moly",
     description = "Slay 100 Paladins",
-    iconID = 135971, -- spell-holy-sealofwrath
+    iconID = 626003,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PALADIN"] or 0) >= 100
     end,
@@ -20,7 +20,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "paladin_2",
     title = "Holy Moly Epic",
     description = "Slay 500 Paladins",
-    iconID = 135971, -- spell-holy-sealofwrath
+    iconID = 135962,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PALADIN"] or 0) >= 500
     end,
@@ -31,7 +31,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "paladin_3",
     title = "Holy Moly Legendary",
     description = "Slay 1000 Paladins",
-    iconID = 135971, -- spell-holy-sealofwrath
+    iconID = 133176,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PALADIN"] or 0) >= 1000
     end,
@@ -43,7 +43,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "priest_1",
     title = "Shadow Hunter",
     description = "Defeat 100 Priests",
-    iconID = 136207, -- spell-shadow-shadowwordpain
+    iconID = 626004,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PRIEST"] or 0) >= 100
     end,
@@ -54,7 +54,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "priest_2",
     title = "Shadow Hunter Epic",
     description = "Defeat 300 Priests",
-    iconID = 136207, -- spell-shadow-shadowwordpain
+    iconID = 136221,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PRIEST"] or 0) >= 300
     end,
@@ -65,7 +65,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "priest_3",
     title = "Shadow Hunter Legendary",
     description = "Defeat 600 Priests",
-    iconID = 136207, -- spell-shadow-shadowwordpain
+    iconID = 136224,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PRIEST"] or 0) >= 600
     end,
@@ -77,7 +77,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "druid_1",
     title = "Bear Necessities",
     description = "Take down 100 Druids",
-    iconID = 132276, -- ability_druid_maul
+    iconID = 625999,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["DRUID"] or 0) >= 100
     end,
@@ -88,7 +88,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "druid_2",
     title = "Feral Menace",
     description = "Take down 300 Druids",
-    iconID = 132276,
+    iconID = 236167,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["DRUID"] or 0) >= 300
     end,
@@ -99,7 +99,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "druid_3",
     title = "Druid Destroyer",
     description = "Take down 600 Druids",
-    iconID = 132276,
+    iconID = 132138,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["DRUID"] or 0) >= 600
     end,
@@ -111,7 +111,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "shaman_1",
     title = "Totem Smasher",
     description = "Defeat 100 Shamans",
-    iconID = 136097, -- spell_nature_bloodlust
+    iconID = 626006,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["SHAMAN"] or 0) >= 100
     end,
@@ -122,7 +122,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "shaman_2",
     title = "Elemental Reckoning",
     description = "Defeat 300 Shamans",
-    iconID = 136097,
+    iconID = 237589,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["SHAMAN"] or 0) >= 300
     end,
@@ -133,7 +133,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "shaman_3",
     title = "Shamanic Exorcism",
     description = "Defeat 600 Shamans",
-    iconID = 136097,
+    iconID = 136088,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["SHAMAN"] or 0) >= 600
     end,
@@ -145,7 +145,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "hunter_1",
     title = "Pet Collector",
     description = "Take down 100 Hunters",
-    iconID = 132213, -- ability_marksmanship
+    iconID = 626000, -- ability_marksmanship
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["HUNTER"] or 0) >= 100
     end,
@@ -156,7 +156,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "hunter_2",
     title = "Deadeye Nemesis",
     description = "Take down 300 Hunters",
-    iconID = 132213,
+    iconID = 132208,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["HUNTER"] or 0) >= 300
     end,
@@ -167,7 +167,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "hunter_3",
     title = "Hunter Becomes the Hunted",
     description = "Take down 600 Hunters",
-    iconID = 132213,
+    iconID = 132329,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["HUNTER"] or 0) >= 600
     end,
@@ -179,7 +179,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "warrior_1",
     title = "Warrior Slayer",
     description = "Eliminate 200 Warriors",
-    iconID = 132355, -- ability-warrior-charge
+    iconID = 626008,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["WARRIOR"] or 0) >= 200
     end,
@@ -190,7 +190,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "warrior_2",
     title = "Warrior Slayer Epic",
     description = "Eliminate 500 Warriors",
-    iconID = 132355, -- ability-warrior-charge
+    iconID = 132342,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["WARRIOR"] or 0) >= 500
     end,
@@ -201,7 +201,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "warrior_3",
     title = "Warrior Slayer Legendary",
     description = "Eliminate 1000 Warriors",
-    iconID = 132355, -- ability-warrior-charge
+    iconID = 132346,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["WARRIOR"] or 0) >= 1000
     end,
@@ -213,7 +213,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "mage_1",
     title = "Mage Hunter",
     description = "Defeat 100 Mages",
-    iconID = 135846, -- spell-frost-frostbolt02
+    iconID = 626001,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["MAGE"] or 0) >= 100
     end,
@@ -224,7 +224,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "mage_2",
     title = "Mage Crusher Epic",
     description = "Defeat 400 Mages",
-    iconID = 135846, -- spell-frost-frostbolt02
+    iconID = 135812,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["MAGE"] or 0) >= 400
     end,
@@ -235,7 +235,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "mage_3",
     title = "Mage Crusher Legendary",
     description = "Defeat 800 Mages",
-    iconID = 135846, -- spell-frost-frostbolt02
+    iconID = 135808,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["MAGE"] or 0) >= 800
     end,
@@ -247,7 +247,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "rogue_1",
     title = "Rogue Spotter",
     description = "Uncover and defeat 100 Rogues",
-    iconID = 132320, -- ability-rogue-sinisterstrike
+    iconID = 626005,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["ROGUE"] or 0) >= 100
     end,
@@ -258,7 +258,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "rogue_2",
     title = "Rogue Hunter Epic",
     description = "Uncover and defeat 250 Rogues",
-    iconID = 132320, -- ability-rogue-sinisterstrike
+    iconID = 132308,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["ROGUE"] or 0) >= 250
     end,
@@ -269,7 +269,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "rogue_3",
     title = "Rogue Hunter Legendary",
     description = "Uncover and defeat 500 Rogues",
-    iconID = 132320, -- ability-rogue-sinisterstrike
+    iconID = 135975,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["ROGUE"] or 0) >= 500
     end,
@@ -281,7 +281,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "warlock_1",
     title = "Warlock Banisher",
     description = "Banish 100 Warlocks",
-    iconID = 136197, -- spell-shadow-shadowbolt
+    iconID = 626007,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["WARLOCK"] or 0) >= 100
     end,
@@ -292,7 +292,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "warlock_2",
     title = "Warlock Nemesis Epic",
     description = "Banish 350 Warlocks",
-    iconID = 136197, -- spell-shadow-shadowbolt
+    iconID = 136140,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["WARLOCK"] or 0) >= 350
     end,
@@ -303,7 +303,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "warlock_3",
     title = "Warlock Nemesis Legendary",
     description = "Banish 700 Warlocks",
-    iconID = 136197, -- spell-shadow-shadowbolt
+    iconID = 135770,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["WARLOCK"] or 0) >= 700
     end,
