@@ -57,7 +57,7 @@ scrollFrame:SetScrollChild(scrollContent)
 
 -- Debug function to help identify issues with data
 local function DebugPrint(message)
-    if PVPSC.debug then
+    if PSC_Debug then
         print("[PvPStats Debug]: " .. message)
     end
 end
@@ -96,13 +96,30 @@ local ACHIEVEMENT_SPACING_H = 20
 local ACHIEVEMENT_SPACING_V = 15
 local ACHIEVEMENTS_PER_ROW = 3
 
--- Enable debug mode to help troubleshoot
-PVPSC.debug = true
+
+-- Helper function to get player stats from PSC_DB
+local function GetPlayerStats()
+    local characterKey = PSC_GetCharacterKey()
+    local playerStats = {}
+
+    if PSC_DB and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey] then
+        -- Get kill streak data
+        playerStats.currentKillStreak = PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreak or 0
+        playerStats.highestKillStreak = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak or 0
+
+        -- Additional stats if available
+        if PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill then
+            playerStats.highestMultiKill = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
+        end
+    end
+
+    return playerStats
+end
 
 -- Helper function to calculate statistics that displays them for debugging
 local function GetStatistics()
-    -- Get statistics from PVPSC
-    local playerStats = PVPSC.playerStats or {}
+    -- Get statistics from PSC_DB
+    local playerStats = GetPlayerStats()
 
     -- First, try to get the calculated statistics from the StatisticsFrame
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = {}, {}, {}, {}, {}, {}, {}
@@ -113,7 +130,7 @@ local function GetStatistics()
             PSC_CalculateBarChartStatistics()
 
         -- Debug data
-        if PVPSC.debug then
+        if PSC_Debug then
             DebugPrint("Class data from PSC_CalculateBarChartStatistics:")
             for k, v in pairs(classData) do
                 DebugPrint("  " .. k .. ": " .. v)
@@ -125,44 +142,39 @@ local function GetStatistics()
     local summaryStats = {}
     if PSC_CalculateSummaryStatistics then
         summaryStats = PSC_CalculateSummaryStatistics()
-    end
 
-    -- Add kill streak data to playerStats if not already present
-    if not playerStats.highestKillStreak and summaryStats.highestKillStreak then
-        playerStats.highestKillStreak = summaryStats.highestKillStreak
+        -- Update player stats with summary data
+        if summaryStats.highestKillStreak and (not playerStats.highestKillStreak or summaryStats.highestKillStreak > playerStats.highestKillStreak) then
+            playerStats.highestKillStreak = summaryStats.highestKillStreak
+        end
     end
 
     -- Add guild status data to playerStats if not already present
-    if not playerStats.guildedKills and guildStatusData and guildStatusData["In Guild"] then
+    if guildStatusData and guildStatusData["In Guild"] then
         playerStats.guildedKills = guildStatusData["In Guild"]
     end
 
-    if not playerStats.loneWolfKills and guildStatusData and guildStatusData["No Guild"] then
+    if guildStatusData and guildStatusData["No Guild"] then
         playerStats.loneWolfKills = guildStatusData["No Guild"]
     end
 
     -- Log for debugging
-    if PVPSC.debug then
+    if PSC_Debug then
         DebugPrint("Statistics Summary:")
-        if summaryStats.highestKillStreak then
-            DebugPrint("Highest Kill Streak: " .. summaryStats.highestKillStreak)
+        if playerStats.highestKillStreak then
+            DebugPrint("Highest Kill Streak: " .. playerStats.highestKillStreak)
         end
 
-        if guildStatusData["In Guild"] then
+        if guildStatusData and guildStatusData["In Guild"] then
             DebugPrint("Guild Kills: " .. guildStatusData["In Guild"])
         end
 
-        if guildStatusData["No Guild"] then
+        if guildStatusData and guildStatusData["No Guild"] then
             DebugPrint("Lone Wolf Kills: " .. guildStatusData["No Guild"])
         end
-
-        DebugPrint("Player Stats with updated values:")
-        DebugPrint("Highest Kill Streak: " .. (playerStats.highestKillStreak or 0))
-        DebugPrint("Guild Kills: " .. (playerStats.guildedKills or 0))
-        DebugPrint("Lone Wolf Kills: " .. (playerStats.loneWolfKills or 0))
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats, playerStats
 end
 
 -- Function to update achievement layout
@@ -179,23 +191,9 @@ local function UpdateAchievementLayout()
         return
     end
 
-    -- Get player stats
-    local playerStats = PVPSC.playerStats or {}
-
-    -- Get statistics
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats =
+    -- Get statistics and player stats
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats, playerStats =
         GetStatistics()
-
-    -- Update playerStats with summary statistics data for achievements
-    if summaryStats then
-        playerStats.highestKillStreak = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-    end
-
-    -- Update guild-related stats
-    if guildStatusData then
-        playerStats.guildedKills = guildStatusData["In Guild"] or playerStats.guildedKills or 0
-        playerStats.loneWolfKills = guildStatusData["No Guild"] or playerStats.loneWolfKills or 0
-    end
 
     -- Log for debugging
     DebugPrint("Highest Kill Streak: " .. (playerStats.highestKillStreak or 0))
@@ -516,6 +514,16 @@ local function UpdateAchievementLayout()
                         description = achievement.description
                     })
                 end
+
+                -- Store achievement completion in PSC_DB
+                if not PSC_DB.Achievements then
+                    PSC_DB.Achievements = {}
+                end
+
+                PSC_DB.Achievements[achievement.id] = {
+                    unlocked = true,
+                    completedDate = achievement.completedDate
+                }
             else
                 -- Still working on this achievement
                 progressBar:SetMinMaxValues(0, targetValue)
@@ -555,11 +563,29 @@ local function UpdateAchievementLayout()
     scrollContent:SetSize(scrollContent:GetWidth(), math.max(totalHeight, 1))
 end
 
+-- Function to check if achievements are already completed from PSC_DB
+local function LoadAchievementCompletionStatus()
+    if not PSC_DB.Achievements then return end
+
+    local achievements = PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements or {}
+
+    for _, achievement in ipairs(achievements) do
+        local savedData = PSC_DB.Achievements[achievement.id]
+        if savedData and savedData.unlocked then
+            achievement.unlocked = true
+            achievement.completedDate = savedData.completedDate
+        end
+    end
+end
+
 -- Show the achievement frame
 local function ToggleAchievementFrame()
     if AchievementFrame:IsShown() then
         AchievementFrame:Hide()
     else
+        -- Load achievement completion status
+        LoadAchievementCompletionStatus()
+
         -- Update achievement layout
         UpdateAchievementLayout()
         AchievementFrame:Show()
@@ -569,9 +595,10 @@ end
 -- Export functions to the PVPSC namespace
 PVPSC.AchievementFrame = AchievementFrame
 PVPSC.ToggleAchievementFrame = ToggleAchievementFrame
+PVPSC.UpdateAchievementLayout = UpdateAchievementLayout
 
 -- If no minimap button exists, provide another way to open it
 SLASH_PVPSCACHIEVEMENTS1 = "/pvpachievements"
 SlashCmdList["PVPSCACHIEVEMENTS"] = function()
-    PVPSC:ToggleAchievementFrame()
+    ToggleAchievementFrame()
 end

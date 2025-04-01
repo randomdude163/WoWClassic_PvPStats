@@ -3,9 +3,6 @@
 ## Author: Severussnipe & Hkfarmer <Redridge Police>
 ## Notes: Tracks PvP history and provides detailed statistics.
 ## SavedVariables: PSC_DB
-AchievementFrame.lua
-AchievementPopup.lua
-Achievements.lua
 ConfigUI.lua
 DataHelpers.lua
 DataStorage.lua
@@ -25,3 +22,6 @@ StatisticsFrame.lua
 Utils.lua
 TestData.lua
 PvPStatsClassic.lua
+AchievementFrame.lua
+AchievementPopup.lua
+Achievements.lua
