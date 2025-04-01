@@ -5,6 +5,7 @@
 ## SavedVariables: PSC_DB
 AchievementFrame.lua
 AchievementPopup.lua
+Achievements.lua
 ConfigUI.lua
 DataHelpers.lua
 DataStorage.lua

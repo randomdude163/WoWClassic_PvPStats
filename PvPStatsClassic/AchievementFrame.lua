@@ -124,61 +124,103 @@ local function UpdateAchievementLayout()
         local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
             PSC_CalculateBarChartStatistics()
 
-        local function countTableEntries(t)
-            local count = 0
-            for _ in pairs(t) do count = count + 1 end
-            return count
-        end
-
-        -- Debug print using the correct counting method
-        print("Entries in tables:",
-            countTableEntries(classData),
-            countTableEntries(raceData),
-            countTableEntries(genderData),
-            countTableEntries(unknownLevelClassData),
-            countTableEntries(zoneData),
-            countTableEntries(levelData),
-            countTableEntries(guildStatusData))
-
-        for className, kills in pairs(classData) do
-            print("Class " .. className .. " - " .. kills .. " kills")
-        end
-
-        local summaryStatistics = PSC_CalculateSummaryStatistics()
-        local totalKills = summaryStatistics.totalKills
-        print("Total Kills: ", totalKills)
-
-        local guildKills = PSC_CalculateGuildKills()
-        for guildName, kills in pairs(guildKills) do
-            print("Guild " .. guildName .. " - " .. kills .. " kills")
-        end
-
-        -- print("Using account-wide stats:", PSC_DB.ShowAccountWideStats and "Yes" or "No")
-
-        if achievement.id == "id_1" then -- HOLY MOLY (Paladins)
+        -- Determine targetValue and currentProgress based on achievement ID
+        if achievement.id == "paladin_1" then
+            targetValue = 100
+            currentProgress = classData["Paladin"] or 0
+        elseif achievement.id == "paladin_2" then
             targetValue = 500
             currentProgress = classData["Paladin"] or 0
-        elseif achievement.id == "id_2" then -- Shadow Hunter (Priests)
+        elseif achievement.id == "paladin_3" then
+            targetValue = 1000
+            currentProgress = classData["Paladin"] or 0
+        elseif achievement.id == "priest_1" then
+            targetValue = 100
+            currentProgress = classData["Priest"] or 0
+        elseif achievement.id == "priest_2" then
             targetValue = 300
             currentProgress = classData["Priest"] or 0
-        elseif achievement.id == "id_3" then -- Warrior Slayer
+        elseif achievement.id == "priest_3" then
+            targetValue = 600
+            currentProgress = classData["Priest"] or 0
+        elseif achievement.id == "warrior_1" then
+            targetValue = 200
+            currentProgress = classData["Warrior"] or 0
+        elseif achievement.id == "warrior_2" then
+            targetValue = 500
+            currentProgress = classData["Warrior"] or 0
+        elseif achievement.id == "warrior_3" then
             targetValue = 1000
             currentProgress = classData["Warrior"] or 0
-        elseif achievement.id == "id_4" then -- Mage Crusher
+        elseif achievement.id == "mage_1" then
+            targetValue = 100
+            currentProgress = classData["Mage"] or 0
+        elseif achievement.id == "mage_2" then
             targetValue = 400
             currentProgress = classData["Mage"] or 0
-        elseif achievement.id == "id_5" then -- Rogue Hunter
+        elseif achievement.id == "mage_3" then
+            targetValue = 800
+            currentProgress = classData["Mage"] or 0
+        elseif achievement.id == "rogue_1" then
+            targetValue = 100
+            currentProgress = classData["Rogue"] or 0
+        elseif achievement.id == "rogue_2" then
             targetValue = 250
             currentProgress = classData["Rogue"] or 0
-        elseif achievement.id == "id_6" then -- Warlock Nemesis
+        elseif achievement.id == "rogue_3" then
+            targetValue = 500
+            currentProgress = classData["Rogue"] or 0
+        elseif achievement.id == "warlock_1" then
+            targetValue = 100
+            currentProgress = classData["Warlock"] or 0
+        elseif achievement.id == "warlock_2" then
             targetValue = 350
             currentProgress = classData["Warlock"] or 0
-        elseif achievement.id == "id_7" then -- Wife Beater
+        elseif achievement.id == "warlock_3" then
+            targetValue = 700
+            currentProgress = classData["Warlock"] or 0
+        elseif achievement.id == "gender_female_1" then
+            targetValue = 50
+            currentProgress = genderData["Female"] or 0
+        elseif achievement.id == "gender_female_2" then
             targetValue = 100
             currentProgress = genderData["Female"] or 0
-        elseif achievement.id == "id_8" then -- Gentleman's Bane
+        elseif achievement.id == "gender_female_3" then
+            targetValue = 200
+            currentProgress = genderData["Female"] or 0
+        elseif achievement.id == "gender_male_1" then
+            targetValue = 50
+            currentProgress = genderData["Male"] or 0
+        elseif achievement.id == "gender_male_2" then
             targetValue = 100
             currentProgress = genderData["Male"] or 0
+        elseif achievement.id == "gender_male_3" then
+            targetValue = 200
+            currentProgress = genderData["Male"] or 0
+        end
+
+        -- Add achievement title first (before we try to reference it)
+        local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
+        title:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
+        title:SetJustifyH("LEFT")
+        title:SetText(achievement.title)
+        if achievement.unlocked then
+            title:SetTextColor(1, 0.82, 0)  -- Gold color for unlocked
+        else
+            title:SetTextColor(0.5, 0.5, 0.5)  -- Gray color for locked
+        end
+
+        -- Add achievement description
+        local desc = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
+        desc:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
+        desc:SetJustifyH("LEFT")
+        desc:SetText(achievement.description)
+        if achievement.unlocked then
+            desc:SetTextColor(0.9, 0.9, 0.9)  -- Light gray for unlocked
+        else
+            desc:SetTextColor(0.4, 0.4, 0.4)  -- Dark gray for locked
         end
 
         -- First create the progress text FontString
@@ -191,9 +233,55 @@ local function UpdateAchievementLayout()
             progressBar:SetValue(targetValue)
             progressText:SetText(targetValue.."/"..targetValue)
         else
-            progressBar:SetMinMaxValues(0, targetValue)
-            progressBar:SetValue(currentProgress)
-            progressText:SetText(currentProgress.."/"..targetValue)
+            -- Check if the achievement should be unlocked based on current progress
+            if currentProgress >= targetValue then
+                -- Achievement should be unlocked
+                achievement.unlocked = true
+                achievement.completedDate = date("%d/%m/%Y %H:%M")
+
+                -- Update the UI for newly unlocked achievement
+                progressBar:SetMinMaxValues(0, targetValue)
+                progressBar:SetValue(targetValue)
+                progressText:SetText(targetValue.."/"..targetValue)
+
+                -- Update icon to show as unlocked
+                icon:SetDesaturated(false)
+
+                -- Remove the gray overlay if it exists
+                for _, child in pairs({tile:GetChildren()}) do
+                    if child:IsObjectType("Texture") and child:GetObjectType() == "Texture" then
+                        if child:GetAlpha() == 0.5 then
+                            child:Hide()
+                        end
+                    end
+                end
+
+                -- Update title text color to gold
+                title:SetTextColor(1, 0.82, 0)
+
+                -- Update description text color to normal
+                desc:SetTextColor(0.9, 0.9, 0.9)
+
+                -- Add completion date text
+                local completionDate = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                completionDate:SetPoint("TOP", progressBar, "BOTTOM", 0, -5)
+                completionDate:SetText("Completed: " .. achievement.completedDate)
+                completionDate:SetTextColor(0.7, 0.7, 0.7)
+
+                -- Show achievement unlock popup
+                if PVPSC.AchievementPopup then
+                    PVPSC.AchievementPopup:ShowPopup({
+                        icon = achievement.iconID,
+                        title = achievement.title,
+                        description = achievement.description
+                    })
+                end
+            else
+                -- Still working on this achievement
+                progressBar:SetMinMaxValues(0, targetValue)
+                progressBar:SetValue(currentProgress)
+                progressText:SetText(currentProgress.."/"..targetValue)
+            end
         end
 
         -- Add "Completed" label under the progress bar only if unlocked
@@ -204,29 +292,21 @@ local function UpdateAchievementLayout()
             completionDate:SetTextColor(0.7, 0.7, 0.7)
         end
 
-        -- Add achievement title
-        local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
-        title:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
-        title:SetJustifyH("LEFT")
-        title:SetText(achievement.title)
-        if not achievement.unlocked then
-            title:SetTextColor(0.5, 0.5, 0.5)
-        else
-            title:SetTextColor(1, 0.82, 0) -- Gold color for unlocked achievements
-        end
+        -- Add mouse interaction to show tooltips with subText
+        tile:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(achievement.title, 1, 0.82, 0)
+            GameTooltip:AddLine(achievement.description, 1, 1, 1, true)
+            if achievement.subText then
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine(achievement.subText, 0.7, 0.7, 1, true)
+            end
+            GameTooltip:Show()
+        end)
 
-        -- Add achievement description
-        local desc = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
-        desc:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
-        desc:SetJustifyH("LEFT")
-        desc:SetText(achievement.description)
-        if not achievement.unlocked then
-            desc:SetTextColor(0.4, 0.4, 0.4)
-        else
-            desc:SetTextColor(0.9, 0.9, 0.9)
-        end
+        tile:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
     end
 
     -- Adjust the content frame size to include vertical spacing
@@ -240,6 +320,10 @@ function PVPSC:ToggleAchievementFrame()
     if AchievementFrame:IsShown() then
         AchievementFrame:Hide()
     else
+        -- Make sure we have the latest achievements from the AchievementSystem
+        -- This debug line can help us see if achievements are being loaded properly
+        print("Loading achievements: " .. (PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements and #PVPSC.AchievementSystem.achievements or "None found"))
+
         UpdateAchievementLayout()
         AchievementFrame:Show()
     end
