@@ -2,7 +2,7 @@ local addonName, PVPSC = ...
 
 -- Create Achievement Overview Frame
 local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-AchievementFrame:SetSize(650, 500)
+AchievementFrame:SetSize(800, 500)  -- Increased width from 650 to 800
 AchievementFrame:SetPoint("CENTER")
 AchievementFrame:SetFrameStrata("HIGH")
 AchievementFrame:SetMovable(true)
@@ -51,7 +51,7 @@ contentFrame:SetSize(scrollFrame:GetWidth(), 1) -- Height will be adjusted dynam
 scrollFrame:SetScrollChild(contentFrame)
 
 -- Constants for achievement layout
-local ACHIEVEMENT_WIDTH = 180
+local ACHIEVEMENT_WIDTH = 230  -- Increased width from 180 to 230
 local ACHIEVEMENT_HEIGHT = 80
 local ACHIEVEMENT_SPACING_H = 20
 local ACHIEVEMENT_SPACING_V = 15
@@ -113,7 +113,7 @@ local function UpdateAchievementLayout()
         -- Add status bar for progress under the icon
         local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
         progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10)
-        progressBar:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -5)
+        progressBar:SetPoint("TOPLEFT", tile, "TOPLEFT", (ACHIEVEMENT_WIDTH - (ACHIEVEMENT_WIDTH - 60)) / 2, -55)  -- Center horizontally
         progressBar:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
         progressBar:SetStatusBarColor(0.0, 0.65, 0.0)
 
@@ -199,7 +199,7 @@ local function UpdateAchievementLayout()
         -- Add "Completed" label under the progress bar only if unlocked
         if achievement.unlocked and achievement.completedDate then
             local completionDate = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            completionDate:SetPoint("TOPLEFT", progressBar, "BOTTOMLEFT", 0, -5)
+            completionDate:SetPoint("TOP", progressBar, "BOTTOM", 0, -5)  -- Center the completion date
             completionDate:SetText("Completed: " .. achievement.completedDate)
             completionDate:SetTextColor(0.7, 0.7, 0.7)
         end

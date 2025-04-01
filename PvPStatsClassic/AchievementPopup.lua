@@ -3,76 +3,64 @@ local addonName, PVPSC = ...
 PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
-local POPUP_DISPLAY_TIME = 4
-local POPUP_FADE_TIME = 1
+PVPSC.AchievementPopup = {}
 
+local POPUP_DISPLAY_TIME = 5 -- Display for 5 seconds
+local POPUP_FADE_TIME = 1 -- Fade out over 1 second
+
+-- Create the popup frame
 local function CreateAchievementPopupFrame()
     local frame = CreateFrame("Frame", "PVPStatsClassicAchievementPopup", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(200, 82)
+    frame:SetSize(300, 100)
     frame:SetPoint("TOP", UIParent, "TOP", 0, -100)
-    frame:SetFrameStrata("MEDIUM")
+    frame:SetFrameStrata("HIGH")
     frame:SetMovable(true)
     frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
     frame:SetClampedToScreen(true)
 
-    -- Set up the backdrop similar to KillMilestone
-    local backdrop = {
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    -- Match the AchievementFrame background design
+    frame:SetBackdrop({
+        bgFile = "Interface\\BUTTONS\\WHITE8X8",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
         tile = true,
         tileSize = 32,
         edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
-    }
-
-    if frame.SetBackdrop then
-        frame:SetBackdrop(backdrop)
-    else
-        local bg = frame:CreateTexture(nil, "BACKGROUND")
-        bg:SetTexture(backdrop.bgFile)
-        bg:SetAllPoints(frame)
-        bg:SetTexCoord(0, 1, 0, 1)
-
-        local border = frame:CreateTexture(nil, "BORDER")
-        border:SetTexture(backdrop.edgeFile)
-        border:SetPoint("TOPLEFT", frame, "TOPLEFT", -backdrop.edgeSize/2, backdrop.edgeSize/2)
-        border:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", backdrop.edgeSize/2, -backdrop.edgeSize/2)
-    end
+        insets = { left = 11, right = 11, top = 12, bottom = 11 }
+    })
+    frame:SetBackdropColor(0, 0, 0, 1) -- Fully opaque black background
 
     -- Title
-    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetPoint("TOP", frame, "TOP", 0, -15)
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", frame, "TOP", 0, -10)
     title:SetText("Achievement Unlocked!")
-    title:SetTextColor(1, 0.82, 0)
+    title:SetTextColor(1, 0.82, 0) -- Gold text
+    title:SetJustifyH("CENTER") -- Center horizontally
     frame.title = title
 
-    local leftMargin = 20
-
-    -- Achievement Icon
+    -- Icon
     local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(24, 24)
-    icon:SetPoint("TOPLEFT", frame, "TOPLEFT", leftMargin, -30)
+    icon:SetSize(40, 40)
+    icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -40)
     frame.icon = icon
 
     -- Achievement Name
     local achievementName = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    achievementName:SetPoint("TOPLEFT", icon, "TOPRIGHT", 5, 0)
-    achievementName:SetJustifyH("LEFT")
-    achievementName:SetTextColor(1, 0.82, 0)
+    achievementName:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
+    achievementName:SetPoint("RIGHT", frame, "RIGHT", -10, 0)
+    achievementName:SetTextColor(1, 0.82, 0) -- Gold text
+    achievementName:SetJustifyH("LEFT") -- Align left
     frame.achievementName = achievementName
 
     -- Description
-    local description = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    local description = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     description:SetPoint("TOPLEFT", achievementName, "BOTTOMLEFT", 0, -5)
-    description:SetTextColor(0.8, 0.8, 0.8)
-    description:SetJustifyH("LEFT")
+    description:SetPoint("RIGHT", frame, "RIGHT", -10, 0)
+    description:SetTextColor(0.9, 0.9, 0.9) -- Light gray text
+    description:SetJustifyH("LEFT") -- Align left
     frame.description = description
-
-    -- Close Button
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
-    close:SetSize(20, 20)
-    close:SetScript("OnClick", function() frame:Hide() end)
 
     frame:Hide()
     return frame
@@ -80,31 +68,20 @@ end
 
 local popupFrame = CreateAchievementPopupFrame()
 
-function PVPStatsClassic_ShowAchievementPopup(achievementData)
+-- Show the popup
+function PVPSC.AchievementPopup:ShowPopup(achievementData)
     if not achievementData then return end
 
     popupFrame.icon:SetTexture(achievementData.icon)
     popupFrame.achievementName:SetText(achievementData.title)
     popupFrame.description:SetText(achievementData.description)
 
-    -- Adjust frame width based on text
-    local nameWidth = popupFrame.achievementName:GetStringWidth()
-    local descWidth = popupFrame.description:GetStringWidth()
-    local requiredWidth = math.max(nameWidth, descWidth)
-    local frameWidth = math.max(200, math.min(300, requiredWidth + 70)) -- 70 for margins and icon
-
-    popupFrame:SetWidth(frameWidth)
-    popupFrame.achievementName:SetWidth(frameWidth - 70)
-    popupFrame.description:SetWidth(frameWidth - 70)
-
-    -- Show popup with animation
     popupFrame:Show()
     popupFrame:SetAlpha(1)
 
-    -- Play sound
-    PlaySound(8213) -- Same sound as kill milestone
+    PlaySound(8173)
 
-    -- Set up fade out
+    -- Fade out after 5 seconds
     C_Timer.After(POPUP_DISPLAY_TIME, function()
         local fadeInfo = {
             mode = "OUT",
@@ -215,7 +192,7 @@ function AchievementSystem:CheckAchievements()
         if not achievement.unlocked and achievement.condition(playerStats) then
             achievement.unlocked = true
             achievement.completedDate = date("%d/%m/%Y %H:%M") -- Set completion date
-            PVPStatsClassic_ShowAchievementPopup({
+            PVPSC.AchievementPopup:ShowPopup({
                 icon = achievement.iconID,
                 title = achievement.title,
                 description = achievement.description
@@ -262,7 +239,7 @@ function AchievementSystem:TestAchievementPopup(achievementID)
         end
 
         -- Show the popup
-        PVPStatsClassic_ShowAchievementPopup({
+        PVPSC.AchievementPopup:ShowPopup({
             icon = achievement.iconID,
             title = achievement.title,
             description = achievement.description
