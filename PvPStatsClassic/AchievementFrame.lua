@@ -2,7 +2,7 @@ local addonName, PVPSC = ...
 
 -- Create Achievement Overview Frame
 local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-AchievementFrame:SetSize(800, 500)  -- Increased width from 650 to 800
+AchievementFrame:SetSize(800, 500)  -- Width and height
 AchievementFrame:SetPoint("CENTER")
 AchievementFrame:SetFrameStrata("HIGH")
 AchievementFrame:SetMovable(true)
@@ -40,35 +40,167 @@ local closeButton = CreateFrame("Button", nil, AchievementFrame, "UIPanelCloseBu
 closeButton:SetPoint("TOPRIGHT", -5, -5)
 closeButton:SetScript("OnClick", function() AchievementFrame:Hide() end)
 
--- Create scroll frame for achievements
-local scrollFrame = CreateFrame("ScrollFrame", "PVPSCAchievementScrollFrame", AchievementFrame, "UIPanelScrollFrameTemplate")
-scrollFrame:SetPoint("TOPLEFT", 20, -50)
-scrollFrame:SetPoint("BOTTOMRIGHT", -40, 20)
+-- Create content area
+local contentFrame = CreateFrame("Frame", nil, AchievementFrame)
+contentFrame:SetPoint("TOPLEFT", AchievementFrame, "TOPLEFT", 20, -50)
+contentFrame:SetPoint("BOTTOMRIGHT", AchievementFrame, "BOTTOMRIGHT", -20, 20)
 
--- Create content frame for the scroll frame
-local contentFrame = CreateFrame("Frame", "PVPSCAchievementContentFrame", scrollFrame)
-contentFrame:SetSize(scrollFrame:GetWidth(), 1) -- Height will be adjusted dynamically
-scrollFrame:SetScrollChild(contentFrame)
+-- Create scroll frame for achievements
+local scrollFrame = CreateFrame("ScrollFrame", "PVPSCAchievementScrollFrame", contentFrame, "UIPanelScrollFrameTemplate")
+scrollFrame:SetPoint("TOPLEFT", 0, 0)
+scrollFrame:SetPoint("BOTTOMRIGHT", -30, 0)
+
+-- Create content for the scroll frame
+local scrollContent = CreateFrame("Frame", "PVPSCAchievementContent", scrollFrame)
+scrollContent:SetSize(scrollFrame:GetWidth(), 1) -- Height will be adjusted dynamically
+scrollFrame:SetScrollChild(scrollContent)
+
+-- Debug function to help identify issues with data
+local function DebugPrint(message)
+    if PVPSC.debug then
+        print("[PvPStats Debug]: " .. message)
+    end
+end
+
+-- Function to dump table contents for debugging
+local function DumpTable(tbl, indent)
+    if not tbl then return "nil" end
+    if not indent then indent = 0 end
+    local toprint = string.rep(" ", indent) .. "{\n"
+    indent = indent + 2
+    for k, v in pairs(tbl) do
+        toprint = toprint .. string.rep(" ", indent)
+        if (type(k) == "number") then
+            toprint = toprint .. "[" .. k .. "] = "
+        elseif (type(k) == "string") then
+            toprint = toprint  .. k ..  " = "
+        end
+        if (type(v) == "number") then
+            toprint = toprint .. v .. ",\n"
+        elseif (type(v) == "string") then
+            toprint = toprint .. "\"" .. v .. "\",\n"
+        elseif (type(v) == "table") then
+            toprint = toprint .. DumpTable(v, indent + 2) .. ",\n"
+        else
+            toprint = toprint .. "\"" .. tostring(v) .. "\",\n"
+        end
+    end
+    toprint = toprint .. string.rep(" ", indent-2) .. "}"
+    return toprint
+end
 
 -- Constants for achievement layout
-local ACHIEVEMENT_WIDTH = 230  -- Increased width from 180 to 230
+local ACHIEVEMENT_WIDTH = 230
 local ACHIEVEMENT_HEIGHT = 80
 local ACHIEVEMENT_SPACING_H = 20
 local ACHIEVEMENT_SPACING_V = 15
 local ACHIEVEMENTS_PER_ROW = 3
 
+-- Enable debug mode to help troubleshoot
+PVPSC.debug = true
+
+-- Helper function to calculate statistics that displays them for debugging
+local function GetStatistics()
+    -- Get statistics from PVPSC
+    local playerStats = PVPSC.playerStats or {}
+
+    -- First, try to get the calculated statistics from the StatisticsFrame
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = {}, {}, {}, {}, {}, {}, {}
+
+    -- Try to access the function for calculating stats directly
+    if PSC_CalculateBarChartStatistics then
+        classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
+            PSC_CalculateBarChartStatistics()
+
+        -- Debug data
+        if PVPSC.debug then
+            DebugPrint("Class data from PSC_CalculateBarChartStatistics:")
+            for k, v in pairs(classData) do
+                DebugPrint("  " .. k .. ": " .. v)
+            end
+        end
+    end
+
+    -- Get summary statistics which include kill streak data
+    local summaryStats = {}
+    if PSC_CalculateSummaryStatistics then
+        summaryStats = PSC_CalculateSummaryStatistics()
+    end
+
+    -- Add kill streak data to playerStats if not already present
+    if not playerStats.highestKillStreak and summaryStats.highestKillStreak then
+        playerStats.highestKillStreak = summaryStats.highestKillStreak
+    end
+
+    -- Add guild status data to playerStats if not already present
+    if not playerStats.guildedKills and guildStatusData and guildStatusData["In Guild"] then
+        playerStats.guildedKills = guildStatusData["In Guild"]
+    end
+
+    if not playerStats.loneWolfKills and guildStatusData and guildStatusData["No Guild"] then
+        playerStats.loneWolfKills = guildStatusData["No Guild"]
+    end
+
+    -- Log for debugging
+    if PVPSC.debug then
+        DebugPrint("Statistics Summary:")
+        if summaryStats.highestKillStreak then
+            DebugPrint("Highest Kill Streak: " .. summaryStats.highestKillStreak)
+        end
+
+        if guildStatusData["In Guild"] then
+            DebugPrint("Guild Kills: " .. guildStatusData["In Guild"])
+        end
+
+        if guildStatusData["No Guild"] then
+            DebugPrint("Lone Wolf Kills: " .. guildStatusData["No Guild"])
+        end
+
+        DebugPrint("Player Stats with updated values:")
+        DebugPrint("Highest Kill Streak: " .. (playerStats.highestKillStreak or 0))
+        DebugPrint("Guild Kills: " .. (playerStats.guildedKills or 0))
+        DebugPrint("Lone Wolf Kills: " .. (playerStats.loneWolfKills or 0))
+    end
+
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats
+end
+
 -- Function to update achievement layout
 local function UpdateAchievementLayout()
     -- Clear existing achievement frames first
-    for _, child in pairs({contentFrame:GetChildren()}) do
+    for _, child in pairs({scrollContent:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
 
-    local achievements = PVPSC.AchievementSystem.achievements
-    if not achievements or #achievements == 0 then
+    local achievements = PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements or {}
+    if #achievements == 0 then
+        DebugPrint("No achievements found")
         return
     end
+
+    -- Get player stats
+    local playerStats = PVPSC.playerStats or {}
+
+    -- Get statistics
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats =
+        GetStatistics()
+
+    -- Update playerStats with summary statistics data for achievements
+    if summaryStats then
+        playerStats.highestKillStreak = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+    end
+
+    -- Update guild-related stats
+    if guildStatusData then
+        playerStats.guildedKills = guildStatusData["In Guild"] or playerStats.guildedKills or 0
+        playerStats.loneWolfKills = guildStatusData["No Guild"] or playerStats.loneWolfKills or 0
+    end
+
+    -- Log for debugging
+    DebugPrint("Highest Kill Streak: " .. (playerStats.highestKillStreak or 0))
+    DebugPrint("Guild Kills: " .. (playerStats.guildedKills or 0))
+    DebugPrint("Lone Wolf Kills: " .. (playerStats.loneWolfKills or 0))
 
     -- Update the layout for each achievement
     for i, achievement in ipairs(achievements) do
@@ -80,7 +212,7 @@ local function UpdateAchievementLayout()
         local yPos = -row * (ACHIEVEMENT_HEIGHT + ACHIEVEMENT_SPACING_V)
 
         -- Create achievement tile
-        local tile = CreateFrame("Button", nil, contentFrame, BackdropTemplateMixin and "BackdropTemplate")
+        local tile = CreateFrame("Button", nil, scrollContent, BackdropTemplateMixin and "BackdropTemplate")
         tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT + 5) -- Increased height by 5 pixels
         tile:SetPoint("TOPLEFT", xPos, yPos)
 
@@ -121,13 +253,11 @@ local function UpdateAchievementLayout()
         local targetValue = 0
         local currentProgress = 0
 
-        local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
-            PSC_CalculateBarChartStatistics()
-
         -- Determine targetValue and currentProgress based on achievement ID
         if achievement.id == "paladin_1" then
             targetValue = 100
             currentProgress = classData["Paladin"] or 0
+            DebugPrint("Paladin kills: " .. currentProgress)
         elseif achievement.id == "paladin_2" then
             targetValue = 500
             currentProgress = classData["Paladin"] or 0
@@ -137,6 +267,7 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "priest_1" then
             targetValue = 100
             currentProgress = classData["Priest"] or 0
+            DebugPrint("Priest kills: " .. currentProgress)
         elseif achievement.id == "priest_2" then
             targetValue = 300
             currentProgress = classData["Priest"] or 0
@@ -146,6 +277,7 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "warrior_1" then
             targetValue = 200
             currentProgress = classData["Warrior"] or 0
+            DebugPrint("Warrior kills: " .. currentProgress)
         elseif achievement.id == "warrior_2" then
             targetValue = 500
             currentProgress = classData["Warrior"] or 0
@@ -179,6 +311,33 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "warlock_3" then
             targetValue = 700
             currentProgress = classData["Warlock"] or 0
+        elseif achievement.id == "druid_1" then
+            targetValue = 100
+            currentProgress = classData["Druid"] or 0
+        elseif achievement.id == "druid_2" then
+            targetValue = 300
+            currentProgress = classData["Druid"] or 0
+        elseif achievement.id == "druid_3" then
+            targetValue = 600
+            currentProgress = classData["Druid"] or 0
+        elseif achievement.id == "shaman_1" then
+            targetValue = 100
+            currentProgress = classData["Shaman"] or 0
+        elseif achievement.id == "shaman_2" then
+            targetValue = 300
+            currentProgress = classData["Shaman"] or 0
+        elseif achievement.id == "shaman_3" then
+            targetValue = 600
+            currentProgress = classData["Shaman"] or 0
+        elseif achievement.id == "hunter_1" then
+            targetValue = 100
+            currentProgress = classData["Hunter"] or 0
+        elseif achievement.id == "hunter_2" then
+            targetValue = 300
+            currentProgress = classData["Hunter"] or 0
+        elseif achievement.id == "hunter_3" then
+            targetValue = 600
+            currentProgress = classData["Hunter"] or 0
         elseif achievement.id == "gender_female_1" then
             targetValue = 50
             currentProgress = genderData["Female"] or 0
@@ -197,6 +356,87 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "gender_male_3" then
             targetValue = 200
             currentProgress = genderData["Male"] or 0
+        elseif achievement.id:match("^race_") then
+            local race = achievement.id:match("^race_([^_]+)")
+            local level = achievement.id:match("_(%d+)$")
+
+            if race and level then
+                if level == "1" then
+                    targetValue = 50
+                elseif level == "2" then
+                    targetValue = 100
+                elseif level == "3" then
+                    targetValue = 200
+                end
+
+                -- Handle different race name formats with proper casing
+                if race:lower() == "nightelf" then
+                    currentProgress = raceData["Night Elf"] or 0
+                    DebugPrint("Night Elf kills: " .. currentProgress)
+                elseif race:lower() == "gnome" then
+                    currentProgress = raceData["Gnome"] or 0
+                    DebugPrint("Gnome kills: " .. currentProgress)
+                elseif race:lower() == "human" then
+                    currentProgress = raceData["Human"] or 0
+                    DebugPrint("Human kills: " .. currentProgress)
+                elseif race:lower() == "dwarf" then
+                    currentProgress = raceData["Dwarf"] or 0
+                    DebugPrint("Dwarf kills: " .. (raceData["Dwarf"] or 0))
+                elseif race:lower() == "orc" then
+                    currentProgress = raceData["Orc"] or 0
+                    DebugPrint("Orc kills: " .. (raceData["Orc"] or 0))
+                elseif race:lower() == "troll" then
+                    currentProgress = raceData["Troll"] or 0
+                    DebugPrint("Troll kills: " .. (raceData["Troll"] or 0))
+                elseif race:lower() == "tauren" then
+                    currentProgress = raceData["Tauren"] or 0
+                    DebugPrint("Tauren kills: " .. (raceData["Tauren"] or 0))
+                elseif race:lower() == "undead" then
+                    currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
+                    DebugPrint("Undead kills: " .. (raceData["Undead"] or raceData["Scourge"] or 0))
+                else
+                    -- Properly capitalize the race name for lookup
+                    local properRace = race:sub(1,1):upper() .. race:sub(2):lower()
+                    currentProgress = raceData[properRace] or 0
+                    DebugPrint(properRace .. " kills: " .. (raceData[properRace] or 0))
+                end
+            end
+        elseif achievement.id == "guild_prey_kills_1" then
+            targetValue = 250
+            currentProgress = guildStatusData["In Guild"] or playerStats.guildedKills or 0
+            DebugPrint("Guild prey kills: " .. currentProgress)
+        elseif achievement.id == "guild_prey_kills_2" then
+            targetValue = 500
+            currentProgress = guildStatusData["In Guild"] or playerStats.guildedKills or 0
+        elseif achievement.id == "guild_prey_kills_3" then
+            targetValue = 700
+            currentProgress = guildStatusData["In Guild"] or playerStats.guildedKills or 0
+        elseif achievement.id == "lone_prey_kills_1" then
+            targetValue = 250
+            currentProgress = guildStatusData["No Guild"] or playerStats.loneWolfKills or 0
+            DebugPrint("Lone wolf kills: " .. currentProgress)
+        elseif achievement.id == "lone_prey_kills_2" then
+            targetValue = 500
+            currentProgress = guildStatusData["No Guild"] or playerStats.loneWolfKills or 0
+        elseif achievement.id == "lone_prey_kills_3" then
+            targetValue = 700
+            currentProgress = guildStatusData["No Guild"] or playerStats.loneWolfKills or 0
+        elseif achievement.id == "killing_spree_1" then
+            targetValue = 25
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            DebugPrint("Kill Streak for achievement killing_spree_1: " .. currentProgress)
+        elseif achievement.id == "killing_spree_2" then
+            targetValue = 50
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            DebugPrint("Kill Streak for achievement killing_spree_2: " .. currentProgress)
+        elseif achievement.id == "killing_spree_3" then
+            targetValue = 75
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            DebugPrint("Kill Streak for achievement killing_spree_3: " .. currentProgress)
+        elseif achievement.id == "killing_spree_4" then
+            targetValue = 100
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            DebugPrint("Kill Streak for achievement killing_spree_4: " .. currentProgress)
         end
 
         -- Add achievement title first (before we try to reference it)
@@ -311,64 +551,26 @@ local function UpdateAchievementLayout()
 
     -- Adjust the content frame size to include vertical spacing
     local rowCount = math.ceil(#achievements / ACHIEVEMENTS_PER_ROW)
-    local totalHeight = rowCount * (ACHIEVEMENT_HEIGHT + 5 + ACHIEVEMENT_SPACING_V) -- Include the increased height
-    contentFrame:SetSize(contentFrame:GetWidth(), totalHeight)
+    local totalHeight = rowCount * (ACHIEVEMENT_HEIGHT + 5 + ACHIEVEMENT_SPACING_V)
+    scrollContent:SetSize(scrollContent:GetWidth(), math.max(totalHeight, 1))
 end
 
 -- Show the achievement frame
-function PVPSC:ToggleAchievementFrame()
+local function ToggleAchievementFrame()
     if AchievementFrame:IsShown() then
         AchievementFrame:Hide()
     else
-        -- Make sure we have the latest achievements from the AchievementSystem
-        -- This debug line can help us see if achievements are being loaded properly
-        print("Loading achievements: " .. (PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements and #PVPSC.AchievementSystem.achievements or "None found"))
-
+        -- Update achievement layout
         UpdateAchievementLayout()
         AchievementFrame:Show()
     end
 end
+
+-- Export functions to the PVPSC namespace
+PVPSC.AchievementFrame = AchievementFrame
+PVPSC.ToggleAchievementFrame = ToggleAchievementFrame
 
 -- If no minimap button exists, provide another way to open it
-SLASH_PVPSCACHIEVEMENTS1 = "/pvpachievements"
-SlashCmdList["PVPSCACHIEVEMENTS"] = function()
-    PVPSC:ToggleAchievementFrame()
-end
-
--- Make sure achievement frames are updated when achievements change
-if PVPSC.AchievementSystem then
-    local oldShowPopup = PVPSC.AchievementSystem.ShowAchievementPopup
-    PVPSC.AchievementSystem.ShowAchievementPopup = function(self, achievement)
-        oldShowPopup(self, achievement)
-        -- Update layout if frame is visible
-        if AchievementFrame:IsShown() then
-            UpdateAchievementLayout()
-        end
-    end
-end
-
--- Initialize when addon is fully loaded
-local initFrame = CreateFrame("Frame")
-initFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-initFrame:SetScript("OnEvent", function(self, event)
-    if event == "PLAYER_ENTERING_WORLD" then
-        self:UnregisterAllEvents()
-    end
-end)
-
--- Export functions
-PVPSC.AchievementFrame = AchievementFrame
-PVPSC.UpdateAchievementLayout = UpdateAchievementLayout
-PVPSC.ToggleAchievementFrame = function()
-    if AchievementFrame:IsShown() then
-        AchievementFrame:Hide()
-    else
-        UpdateAchievementLayout()
-        AchievementFrame:Show()
-    end
-end
-
--- Also add a slash command
 SLASH_PVPSCACHIEVEMENTS1 = "/pvpachievements"
 SlashCmdList["PVPSCACHIEVEMENTS"] = function()
     PVPSC:ToggleAchievementFrame()
