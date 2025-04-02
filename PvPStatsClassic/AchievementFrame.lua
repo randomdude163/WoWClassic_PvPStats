@@ -89,13 +89,25 @@ local function DumpTable(tbl, indent)
     return toprint
 end
 
+-- Function to get player name for achievement text
+local function GetPlayerName()
+    local playerName = UnitName("player")
+    return playerName or "You"
+end
+
+-- Function to replace placeholders in text with player name
+local function PersonalizeText(text)
+    if not text then return "" end
+    local playerName = GetPlayerName()
+    return text:gsub("%[YOUR NAME%]", playerName)
+end
+
 -- Constants for achievement layout
 local ACHIEVEMENT_WIDTH = 230
 local ACHIEVEMENT_HEIGHT = 80
 local ACHIEVEMENT_SPACING_H = 20
 local ACHIEVEMENT_SPACING_V = 15
 local ACHIEVEMENTS_PER_ROW = 3
-
 
 -- Helper function to get player stats from PSC_DB
 local function GetPlayerStats()
@@ -135,6 +147,11 @@ local function GetStatistics()
             for k, v in pairs(classData) do
                 DebugPrint("  " .. k .. ": " .. v)
             end
+
+            DebugPrint("Zone data from PSC_CalculateBarChartStatistics:")
+            for k, v in pairs(zoneData) do
+                DebugPrint("  " .. k .. ": " .. v)
+            end
         end
     end
 
@@ -146,6 +163,15 @@ local function GetStatistics()
         -- Update player stats with summary data
         if summaryStats.highestKillStreak and (not playerStats.highestKillStreak or summaryStats.highestKillStreak > playerStats.highestKillStreak) then
             playerStats.highestKillStreak = summaryStats.highestKillStreak
+        end
+
+        -- Get total and unique kills data
+        if summaryStats.totalKills then
+            playerStats.totalKills = summaryStats.totalKills
+        end
+
+        if summaryStats.uniqueKills then
+            playerStats.uniqueKills = summaryStats.uniqueKills
         end
     end
 
@@ -163,6 +189,14 @@ local function GetStatistics()
         DebugPrint("Statistics Summary:")
         if playerStats.highestKillStreak then
             DebugPrint("Highest Kill Streak: " .. playerStats.highestKillStreak)
+        end
+
+        if playerStats.totalKills then
+            DebugPrint("Total Kills: " .. playerStats.totalKills)
+        end
+
+        if playerStats.uniqueKills then
+            DebugPrint("Unique Kills: " .. playerStats.uniqueKills)
         end
 
         if guildStatusData and guildStatusData["In Guild"] then
@@ -435,6 +469,42 @@ local function UpdateAchievementLayout()
             targetValue = 100
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
             DebugPrint("Kill Streak for achievement killing_spree_4: " .. currentProgress)
+        elseif achievement.id == "zone_redridge" then
+            targetValue = 500
+            currentProgress = zoneData["Redridge Mountains"] or 0
+            DebugPrint("Redridge Mountains kills: " .. (currentProgress or 0))
+        elseif achievement.id == "zone_elwynn" then
+            targetValue = 100
+            currentProgress = zoneData["Elwynn Forest"] or 0
+            DebugPrint("Elwynn Forest kills: " .. (currentProgress or 0))
+        elseif achievement.id == "zone_duskwood" then
+            targetValue = 100
+            currentProgress = zoneData["Duskwood"] or 0
+            DebugPrint("Duskwood kills: " .. (currentProgress or 0))
+        elseif achievement.id == "total_kills_1" then
+            targetValue = 500
+            currentProgress = summaryStats.totalKills or 0
+            DebugPrint("Total kills progress for achievement total_kills_1: " .. (currentProgress or 0))
+        elseif achievement.id == "total_kills_2" then
+            targetValue = 1000
+            currentProgress = summaryStats.totalKills or 0
+            DebugPrint("Total kills progress for achievement total_kills_2: " .. (currentProgress or 0))
+        elseif achievement.id == "total_kills_3" then
+            targetValue = 3000
+            currentProgress = summaryStats.totalKills or 0
+            DebugPrint("Total kills progress for achievement total_kills_3: " .. (currentProgress or 0))
+        elseif achievement.id == "unique_kills_1" then
+            targetValue = 400
+            currentProgress = summaryStats.uniqueKills or 0
+            DebugPrint("Unique kills progress for achievement unique_kills_1: " .. (currentProgress or 0))
+        elseif achievement.id == "unique_kills_2" then
+            targetValue = 800
+            currentProgress = summaryStats.uniqueKills or 0
+            DebugPrint("Unique kills progress for achievement unique_kills_2: " .. (currentProgress or 0))
+        elseif achievement.id == "unique_kills_3" then
+            targetValue = 2400
+            currentProgress = summaryStats.uniqueKills or 0
+            DebugPrint("Unique kills progress for achievement unique_kills_3: " .. (currentProgress or 0))
         end
 
         -- Add achievement title first (before we try to reference it)
@@ -547,7 +617,9 @@ local function UpdateAchievementLayout()
             GameTooltip:AddLine(achievement.description, 1, 1, 1, true)
             if achievement.subText then
                 GameTooltip:AddLine(" ")
-                GameTooltip:AddLine(achievement.subText, 0.7, 0.7, 1, true)
+                -- Personalize the subtext by replacing [YOUR NAME] with actual player name
+                local personalizedSubText = PersonalizeText(achievement.subText)
+                GameTooltip:AddLine(personalizedSubText, 0.7, 0.7, 1, true)
             end
             GameTooltip:Show()
         end)

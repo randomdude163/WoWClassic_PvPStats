@@ -7,7 +7,7 @@ local AchievementSystem = PVPSC.AchievementSystem
 AchievementSystem.achievements = { -- Paladin Achievements
 {
     id = "paladin_1",
-    title = "Holy Moly",
+    title = "Bubble Popper",
     description = "Slay 100 Paladins",
     iconID = 626003,
     condition = function(playerStats)
@@ -15,10 +15,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Paladins can be tough opponents with their healing abilities and plate armor. Take down 100 of these holy warriors to earn this achievement."
+    subText = "100 Divine Shield bubbles popped! Turns out, the Light doesn't save you when I'm around."
 }, {
     id = "paladin_2",
-    title = "Holy Moly Epic",
+    title = "Bubble Heartbreaker",
     description = "Slay 500 Paladins",
     iconID = 135962,
     condition = function(playerStats)
@@ -26,10 +26,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Your reputation as a Paladin hunter grows. Defeat 500 Paladins to truly establish yourself as their nemesis."
+    subText = "500 Paladins discovered their Hearthstone was on cooldown. The Light abandoned them faster than their guild after a wipe."
 }, {
     id = "paladin_3",
-    title = "Holy Moly Legendary",
+    title = "The Light Extinguisher",
     description = "Slay 1000 Paladins",
     iconID = 133176,
     condition = function(playerStats)
@@ -37,11 +37,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The ultimate achievement for Paladin slayers. With 1000 Paladin eliminations, you've become a walking nightmare for anyone wielding the Light."
+    subText = "1000 holy warriors sent to meet their maker! The churches are empty, plate armor is on clearance sale, and bubble bath sales have plummeted."
 }, -- Priest Achievements
 {
     id = "priest_1",
-    title = "Shadow Hunter",
+    title = "Faith Healer Killer",
     description = "Defeat 100 Priests",
     iconID = 626004,
     condition = function(playerStats)
@@ -49,10 +49,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Priests may be healers, but they're no match for your combat skills. Eliminate 100 Priests to earn this achievement."
+    subText = "100 Priests discovered healing can't fix a severed head. They've got a holy problem that prayer won't solve!"
 }, {
     id = "priest_2",
-    title = "Shadow Hunter Epic",
+    title = "Scripture Shreader",
     description = "Defeat 300 Priests",
     iconID = 136221,
     condition = function(playerStats)
@@ -60,10 +60,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Your hatred for the cloth-wearing healers burns with intensity. Take down 300 Priests to prove your dedication."
+    subText = "300 Priests deleted! Churches are hiring bouncers and confession booths now come with panic buttons."
 }, {
     id = "priest_3",
-    title = "Shadow Hunter Legendary",
+    title = "Religious Persecution",
     description = "Defeat 600 Priests",
     iconID = 136224,
     condition = function(playerStats)
@@ -71,11 +71,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Neither Light nor Shadow can save them from you. With 600 Priest kills, you've become the ultimate Priest hunter."
+    subText = "600 holy rollers permanently laid to rest! The seminary is empty and religious texts now include a chapter titled 'What to do when you see [YOUR NAME]'."
 }, -- Druid Achievements
 {
     id = "druid_1",
-    title = "Bear Necessities",
+    title = "Tree Trimmer",
     description = "Take down 100 Druids",
     iconID = 625999,
     condition = function(playerStats)
@@ -83,10 +83,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Druids always think they can run away. 100 of them learned the hard way."
+    subText = "100 Druids chopped down! Shape-shifting doesn't help when all forms end up as a corpse."
 }, {
     id = "druid_2",
-    title = "Feral Menace",
+    title = "Animal Control",
     description = "Take down 300 Druids",
     iconID = 236167,
     condition = function(playerStats)
@@ -94,10 +94,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Tree-huggers, cat-dashers, bear-soakers – 300 less to deal with."
+    subText = "300 Druids exterminated! Cat form, bear form, dead form – you've seen them all. PETA has issued a statement."
 }, {
     id = "druid_3",
-    title = "Druid Destroyer",
+    title = "Nature's Nemesis",
     description = "Take down 600 Druids",
     iconID = 132138,
     condition = function(playerStats)
@@ -105,11 +105,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "600 Druids realized Nature isn't always kind."
+    subText = "600 Druids composted! The Cenarion Circle has declared you a natural disaster and Moonglade now has your picture at all entrances."
 }, -- Shaman Achievements
 {
     id = "shaman_1",
-    title = "Totem Smasher",
+    title = "Totem Kicker",
     description = "Defeat 100 Shamans",
     iconID = 626006,
     condition = function(playerStats)
@@ -117,10 +117,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Windfury doesn’t help when you're already dead. 100 Shamans learned that."
+    subText = "100 Shamans discovered the elements don't answer when they're dead. You've kicked more totems than a clumsy tauren!"
 }, {
     id = "shaman_2",
-    title = "Elemental Reckoning",
+    title = "Spirit Breaker",
     description = "Defeat 300 Shamans",
     iconID = 237589,
     condition = function(playerStats)
@@ -128,10 +128,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "300 Shamans down, yet they never saw it coming. Their ancestors are disappointed."
+    subText = "300 Shamans sent to commune with their ancestors! The elements have filed a restraining order against you."
 }, {
     id = "shaman_3",
-    title = "Shamanic Exorcism",
+    title = "Element Bender",
     description = "Defeat 600 Shamans",
     iconID = 136088,
     condition = function(playerStats)
@@ -139,11 +139,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "600 Shamans sent back to their Spirit World express delivery."
+    subText = "600 Shamans permanently grounded! Totem vendors are going bankrupt and the spirit world is overloaded with complaints about you."
 }, -- Hunter Achievements
 {
     id = "hunter_1",
-    title = "Pet Collector",
+    title = "Pet Cemetery Director",
     description = "Take down 100 Hunters",
     iconID = 626000, -- ability_marksmanship
     condition = function(playerStats)
@@ -151,10 +151,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "100 Hunters, 100 confused pets still looking for their master."
+    subText = "100 Hunters become the hunted! Their pets are still waiting for them to respawn... poor little things."
 }, {
     id = "hunter_2",
-    title = "Deadeye Nemesis",
+    title = "Feign Death Verifier",
     description = "Take down 300 Hunters",
     iconID = 132208,
     condition = function(playerStats)
@@ -162,10 +162,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "You dodged 300 Scatter Shots and still won. Respect."
+    subText = "300 Hunters learned Feign Death doesn't work when you're actually dead. The pet treat market has crashed!"
 }, {
     id = "hunter_3",
-    title = "Hunter Becomes the Hunted",
+    title = "Apex Predator",
     description = "Take down 600 Hunters",
     iconID = 132329,
     condition = function(playerStats)
@@ -173,11 +173,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "600 Hunters thought they were the apex predator. They were wrong."
+    subText = "600 Hunters eliminated! Pet stables are empty, bow strings are untensed, and 'How to survive [YOUR NAME]' is now standard reading at hunter training."
 }, -- Warrior Achievements
 {
     id = "warrior_1",
-    title = "Warrior Slayer",
+    title = "Rage Drain",
     description = "Eliminate 200 Warriors",
     iconID = 626008,
     condition = function(playerStats)
@@ -185,10 +185,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Warriors are everywhere on the battlefield. Show them who's boss by taking down 200 of these plate-wearers."
+    subText = "200 Warriors rage-quit the battlefield! Their tantrums were almost as entertaining as their death animations."
 }, {
     id = "warrior_2",
-    title = "Warrior Slayer Epic",
+    title = "Plate Recycler",
     description = "Eliminate 500 Warriors",
     iconID = 132342,
     condition = function(playerStats)
@@ -196,10 +196,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The battlefield is littered with the armor of Warriors you've defeated. Add 500 more to your tally."
+    subText = "500 Warriors worth of scrap metal collected! The goblin recycling center named you Employee of the Month."
 }, {
     id = "warrior_3",
-    title = "Warrior Slayer Legendary",
+    title = "The Real Warrior",
     description = "Eliminate 1000 Warriors",
     iconID = 132346,
     condition = function(playerStats)
@@ -207,11 +207,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "With 1000 Warrior kills, you've become a legend. Even the mightiest Warriors tremble at the mention of your name."
+    subText = "1000 so-called 'Warriors' demolished! The armor vendor is having a going-out-of-business sale and the rage management support group is at full capacity."
 }, -- Mage Achievements
 {
     id = "mage_1",
-    title = "Mage Hunter",
+    title = "Arcane Exterminator",
     description = "Defeat 100 Mages",
     iconID = 626001,
     condition = function(playerStats)
@@ -219,10 +219,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Mages may control the elements, but they can't control you. Defeat 100 of these spell-slingers."
+    subText = "100 Mages turned into sheep food! Turns out, fireballs aren't so hot when you're lying face down in the dirt."
 }, {
     id = "mage_2",
-    title = "Mage Crusher Epic",
+    title = "Frost Melter",
     description = "Defeat 400 Mages",
     iconID = 135812,
     condition = function(playerStats)
@@ -230,10 +230,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Fire, Frost, or Arcane - it doesn't matter to you. Take down 400 Mages to show your mastery."
+    subText = "400 Mages deleted! Ice Block sales have plummeted and the Teleport spell now comes with a warning label: 'May not work when [YOUR NAME] is nearby.'"
 }, {
     id = "mage_3",
-    title = "Mage Crusher Legendary",
+    title = "The Anti-Mage",
     description = "Defeat 800 Mages",
     iconID = 135808,
     condition = function(playerStats)
@@ -241,11 +241,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "With 800 Mage kills, you've become immune to their spells through sheer experience. The arcane arts hold no mystery for you."
+    subText = "800 spell-slingers sent to the shadow realm! The Kirin Tor has issued a travel advisory and magical colleges now offer a course called 'How to Avoid [YOUR NAME].'"
 }, -- Rogue Achievements
 {
     id = "rogue_1",
-    title = "Rogue Spotter",
+    title = "Stealth Detector",
     description = "Uncover and defeat 100 Rogues",
     iconID = 626005,
     condition = function(playerStats)
@@ -253,10 +253,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Stealth won't save them from your keen senses. Find and eliminate 100 Rogues."
+    subText = "100 Rogues discovered invisibility isn't invincibility! Their last words were usually 'How did you see me?!'"
 }, {
     id = "rogue_2",
-    title = "Rogue Hunter Epic",
+    title = "Vanish This!",
     description = "Uncover and defeat 250 Rogues",
     iconID = 132308,
     condition = function(playerStats)
@@ -264,10 +264,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The shadows can't hide them from you anymore. Take down 250 Rogues to prove your vigilance."
+    subText = "250 Rogues learned their Vanish button has a fatal delay. The dagger market is experiencing a surplus!"
 }, {
     id = "rogue_3",
-    title = "Rogue Hunter Legendary",
+    title = "Backstabber Backstabber",
     description = "Uncover and defeat 500 Rogues",
     iconID = 135975,
     condition = function(playerStats)
@@ -275,11 +275,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "With 500 Rogue eliminations, you've become the nightmare that haunts their dreams. No place to hide, no tricks left to play."
+    subText = "500 Rogues permanently stealthed! The Shady Dealer's Union has declared bankruptcy and 'How To Avoid [YOUR NAME]' is now required reading in Rogue training."
 }, -- Warlock Achievements
 {
     id = "warlock_1",
-    title = "Warlock Banisher",
+    title = "Demon Dispatcher",
     description = "Banish 100 Warlocks",
     iconID = 626007,
     condition = function(playerStats)
@@ -287,10 +287,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Those who dabble in dark magic must face justice. Eliminate 100 Warlocks to begin your crusade."
+    subText = "100 Warlocks discovered their soul stones were just pretty rocks. Their demons have filed for hazard pay!"
 }, {
     id = "warlock_2",
-    title = "Warlock Nemesis Epic",
+    title = "Soul Harvester",
     description = "Banish 350 Warlocks",
     iconID = 136140,
     condition = function(playerStats)
@@ -298,10 +298,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The demons they summon cannot save them from your wrath. Defeat 350 Warlocks to continue your mission."
+    subText = "350 Warlocks permanently banished! The Burning Legion has started a support group for demons who lost their masters to you."
 }, {
     id = "warlock_3",
-    title = "Warlock Nemesis Legendary",
+    title = "The Exorcist",
     description = "Banish 700 Warlocks",
     iconID = 135770,
     condition = function(playerStats)
@@ -309,11 +309,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "With 700 Warlock kills, you've become a cleansing flame against the darkness. Your legend strikes fear into the hearts of fel-wielders everywhere."
+    subText = "700 Warlocks exorcised from Azeroth! Demon pets are forming a union, and the Twisting Nether now has a restraining order against you."
 }, -- Female Gender Achievement
 {
     id = "gender_female_1",
-    title = "Ladies' Bane",
+    title = "Wife Beater",
     description = "Defeat 50 female characters",
     iconID = 132938, -- spell-holy-powerwordshield
     condition = function(playerStats)
@@ -321,10 +321,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "On the battlefield, you show no favoritism. Defeat 50 female characters to earn this achievement."
+    subText = "Equal opportunity combat at its finest. You've sent 50 ladies to respawn and didn't even hold the graveyard gate open for them."
 }, {
     id = "gender_female_2",
-    title = "Ladies' Bane Epic",
+    title = "Wife Beater EPIC",
     description = "Defeat 100 female characters",
     iconID = 132938, -- spell-holy-powerwordshield
     condition = function(playerStats)
@@ -332,10 +332,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Your reputation for dispatching female opponents has grown. Eliminate 100 to prove your equal-opportunity approach to combat."
+    subText = "100 female characters deleted with extreme prejudice. The Ironforge Women's Protection Society has placed a bounty on your head."
 }, {
     id = "gender_female_3",
-    title = "Ladies' Bane Legendary",
+    title = "Wife Beater LEGENDARY",
     description = "Defeat 200 female characters",
     iconID = 132938, -- spell-holy-powerwordshield
     condition = function(playerStats)
@@ -343,11 +343,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "With 200 female character defeats, you've shown that chivalry has no place on the battlefield. Victory knows no gender."
+    subText = "200 female characters obliterated! Your battle cry 'Equal rights means equal fights!' echoes across Azeroth. You've been banned from every tavern in Stormwind."
 }, -- Male Gender Achievement
 {
     id = "gender_male_1",
-    title = "Gentleman's Bane",
+    title = "Widowmaker",
     description = "Defeat 50 male characters",
     iconID = 132333, -- ability-warrior-bladestorm
     condition = function(playerStats)
@@ -355,10 +355,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Male characters often dominate the battlefields. Take down 50 of them to start making your mark."
+    subText = "50 husbands never made it home for dinner. Their wives thank you for the insurance payouts."
 }, {
     id = "gender_male_2",
-    title = "Gentleman's Bane Epic",
+    title = "Widowmaker EPIC",
     description = "Defeat 100 male characters",
     iconID = 132333, -- ability-warrior-bladestorm
     condition = function(playerStats)
@@ -366,10 +366,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Continue your campaign against male opponents by defeating 100 of them in battle."
+    subText = "100 male characters destroyed! You're single-handedly responsible for a dating app boom in Azeroth. Lonely hearts everywhere."
 }, {
     id = "gender_male_3",
-    title = "Gentleman's Bane Legendary",
+    title = "Widowmaker LEGENDARY",
     description = "Defeat 200 male characters",
     iconID = 132333, -- ability-warrior-bladestorm
     condition = function(playerStats)
@@ -377,428 +377,141 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "With 200 male character defeats, you've carved out a fearsome reputation. The battlefields echo with tales of your prowess."
-},
+    subText = "200 males sent to their maker! The orphanages are overflowing and the wedding ring market has crashed. Economics, baby!"
+}, -- Zone-specific Achievements
 {
-    id = "race_human_1",
-    title = "Extinction Event: Humanity",
-    description = "Slay 50 Humans",
-    iconID = 236456, -- ability_warrior_cleav
+    id = "zone_redridge",
+    title = "Redridge Renovation",
+    description = "Eliminate 500 players in Redridge Mountains",
+    iconID = 135759,
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["HUMAN"] or 0) >= 50
+        return (playerStats.zoneKills and playerStats.zoneKills["Redridge Mountains"] or 0) >= 500
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "They built cities, wrote history, and thought they were special. You’re here to prove them wrong."
+    subText = "500 kills in Redridge! At this point, the Horde is considering annexing the territory and renaming it 'Corpseridge.' The flight master has started charging hazard pay."
 }, {
-    id = "race_human_2",
-    title = "The Human Purge",
-    description = "Slay 100 Humans",
-    iconID = 236456,
+    id = "zone_elwynn",
+    title = "Elwynn Exterminator",
+    description = "Eliminate 100 players in Elwynn Forest",
+    iconID = 135763,
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["HUMAN"] or 0) >= 100
+        return (playerStats.zoneKills and playerStats.zoneKills["Elwynn Forest"] or 0) >= 100
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Tired of hearing about ‘the Alliance’? Send 100 of them to their precious Light."
+    subText = "100 players slain in Elwynn Forest! Goldshire Inn has a permanent memorial to your victims, and Stormwind is considering building a wall to keep you out. Even the kobolds are afraid to take your candle."
 }, {
-    id = "race_human_3",
-    title = "No More Kings",
-    description = "Slay 200 Humans",
-    iconID = 236456,
+    id = "zone_duskwood",
+    title = "Darkshire Destroyer",
+    description = "Eliminate 100 players in Duskwood",
+    iconID = 136223,
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["HUMAN"] or 0) >= 200
+        return (playerStats.zoneKills and playerStats.zoneKills["Duskwood"] or 0) >= 100
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Stormwind calls for aid, but no one is left to answer. You are the reckoning."
-},
--- Dwarf Achievements
+    subText = "100 players sent to permanent darkness in Duskwood! Local undead are holding job fairs due to increased competition. The Night Watch now checks under beds for you instead of monsters."
+}, -- Total Kills Achievements
 {
-    id = "race_dwarf_1",
-    title = "Short-Lived",
-    description = "Slay 50 Dwarves",
-    iconID = 132333, -- ability_warrior_decisivestrike
+    id = "total_kills_1",
+    title = "Body Count Rising",
+    description = "Slay 500 players in total",
+    iconID = 236293, -- spell_shadow_shadowfury
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["DWARF"] or 0) >= 50
+        return (playerStats.totalKills or 0) >= 500
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "You’d think centuries of drinking would prepare them for this. Guess not."
+    subText = "500 players sent to the graveyard. At this rate, the Spirit Healers are considering you for their employee of the month program."
 }, {
-    id = "race_dwarf_2",
-    title = "Drunken Massacre",
-    description = "Slay 100 Dwarves",
-    iconID = 132333,
+    id = "total_kills_2",
+    title = "Graveyard Entrepreneur",
+    description = "Slay 1000 players in total",
+    iconID = 135872, -- ability_creature_disease_05
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["DWARF"] or 0) >= 100
+        return (playerStats.totalKills or 0) >= 1000
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Sober or smashed, they all fall the same way."
+    subText = "1000 kills! Spirit Healers are now offering you a commission for each body you send their way. The local gravediggers have named their shovels after you."
 }, {
-    id = "race_dwarf_3",
-    title = "Stone Meets Steel",
-    description = "Slay 200 Dwarves",
-    iconID = 132333,
+    id = "total_kills_3",
+    title = "Death Incorporated",
+    description = "Slay 3000 players in total",
+    iconID = 136119, -- spell_shadow_deathscream
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["DWARF"] or 0) >= 200
+        return (playerStats.totalKills or 0) >= 3000
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Legends say Dwarves are tough as mountains. You just turned 200 of them into gravel."
-},
--- Night Elf Achievements
+    subText = "3000 souls harvested! The Lich King himself just sent you a job application. Spirit Healers have unionized just to deal with your workload."
+}, -- Unique Player Kills Achievements
 {
-    id = "race_nightelf_1",
-    title = "Treehugger Takedown",
-    description = "Slay 50 Night Elves",
-    iconID = 136074, -- spell_nature_starfall
+    id = "unique_kills_1",
+    title = "Variety Slayer",
+    description = "Defeat 400 unique players",
+    iconID = 132368, -- ability_warrior_challange
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["NIGHTELF"] or 0) >= 50
+        return (playerStats.uniqueKills or 0) >= 400
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Nature won’t save you now, hippie."
+    subText = "400 different players have met your blade. You're like a murderous butterfly collector, except instead of butterflies, it's players, and instead of collecting, it's... well, you know."
 }, {
-    id = "race_nightelf_2",
-    title = "Forest Fire",
-    description = "Slay 100 Night Elves",
-    iconID = 136074,
+    id = "unique_kills_2",
+    title = "Equal Opportunity Executioner",
+    description = "Defeat 800 unique players",
+    iconID = 132307, -- ability_warrior_warcry
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["NIGHTELF"] or 0) >= 100
+        return (playerStats.uniqueKills or 0) >= 800
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "100 centuries of wisdom—undone in seconds."
+    subText = "800 unique names in your death ledger! You're not a killer, you're a collector of last moments. Some players now transfer servers when they see you log in."
 }, {
-    id = "race_nightelf_3",
-    title = "Teldrassil’s Second Burning",
-    description = "Slay 200 Night Elves",
-    iconID = 136074,
+    id = "unique_kills_3",
+    title = "The Ultimate Black Book",
+    description = "Defeat 2400 unique players",
+    iconID = 132336, -- ability_warrior_battleshout
     condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["NIGHTELF"] or 0) >= 200
+        return (playerStats.uniqueKills or 0) >= 2400
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Ashes to ashes. And more ashes."
-},
--- Gnome Achievements
-{
-    id = "race_gnome_1",
-    title = "Small Victories",
-    description = "Slay 50 Gnomes",
-    iconID = 132484, -- inv_misc_gear_01
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["GNOME"] or 0) >= 50
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "50 Gnomes eliminated. One stomp at a time."
-}, {
-    id = "race_gnome_2",
-    title = "Pint-Sized Peril",
-    description = "Slay 100 Gnomes",
-    iconID = 132484,
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["GNOME"] or 0) >= 100
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "100 Gnomes crushed. Their machines couldn't save them."
-}, {
-    id = "race_gnome_3",
-    title = "Gnomeslayer Supreme",
-    description = "Slay 200 Gnomes",
-    iconID = 132484,
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["GNOME"] or 0) >= 200
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "200 Gnomes sent back to the scrap heap. Leper Gnomes might actually outnumber them now."
-},
--- Orc Achievements
-{
-    id = "race_orc_1",
-    title = "Green Menace",
-    description = "Slay 50 Orc players",
-    iconID = 236456, -- inv_axe_1h_orcwarrior_c_01
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["ORC"] or 0) >= 50
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "Orcs live for battle. Send 50 of them to the afterlife to prove who's boss."
-},
-{
-    id = "race_orc_2",
-    title = "Orcslayer",
-    description = "Slay 100 Orc players",
-    iconID = 236457, -- inv_axe_2h_orcwarrior_c_01
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["ORC"] or 0) >= 100
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "They said the Horde would never fall. Prove them wrong—one corpse at a time."
-},
-{
-    id = "race_orc_3",
-    title = "Extinction Event",
-    description = "Slay 200 Orc players",
-    iconID = 236458, -- inv_axe_2h_orcwarrior_d_01
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["ORC"] or 0) >= 200
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "You've cut down 200 Orcs. Their ancestors are weeping in Orgrimmar."
-},
-
--- Undead Achievements
-{
-    id = "race_undead_1",
-    title = "Corpse Collector",
-    description = "Slay 50 Undead players",
-    iconID = 135789, -- spell_shadow_deathanddecay
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["UNDEAD"] or 0) >= 50
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "They’ve died once already. Send them back to the grave 50 more times."
-},
-{
-    id = "race_undead_2",
-    title = "Second Death",
-    description = "Slay 100 Undead players",
-    iconID = 135788, -- spell_shadow_requiem
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["UNDEAD"] or 0) >= 100
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "100 Forsaken down. Maybe they’ll stay buried this time."
-},
-{
-    id = "race_undead_3",
-    title = "Necromancer's Nightmare",
-    description = "Slay 200 Undead players",
-    iconID = 135787, -- spell_shadow_haunting
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["UNDEAD"] or 0) >= 200
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "200 Undead eliminated. Sylvanas is running out of soldiers."
-},
-
--- Tauren Achievements
-{
-    id = "race_tauren_1",
-    title = "Steak Dinner",
-    description = "Slay 50 Tauren players",
-    iconID = 133974, -- inv_misc_food_meat_raw_04
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["TAUREN"] or 0) >= 50
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "50 Tauren down. Time to fire up the grill."
-},
-{
-    id = "race_tauren_2",
-    title = "Bullfighter Extraordinaire",
-    description = "Slay 100 Tauren players",
-    iconID = 236189, -- inv_misc_food_meat_cooked_01
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["TAUREN"] or 0) >= 100
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "100 Tauren have fallen to your blade. Who’s the real beast now?"
-},
-{
-    id = "race_tauren_3",
-    title = "Bovine Genocide",
-    description = "Slay 200 Tauren players",
-    iconID = 133975, -- inv_misc_food_meat_raw_03
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["TAUREN"] or 0) >= 200
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "200 Tauren down. The fields of Mulgore are empty."
-},
-
--- Troll Achievements
-{
-    id = "race_troll_1",
-    title = "No More Voodoo",
-    description = "Slay 50 Troll players",
-    iconID = 236471, -- inv_wand_1h_troll_d_01
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["TROLL"] or 0) >= 50
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "50 Trolls down. Their gods didn’t help them."
-},
-{
-    id = "race_troll_2",
-    title = "Darkspear Extinction",
-    description = "Slay 100 Troll players",
-    iconID = 236472, -- inv_wand_1h_troll_b_01
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["TROLL"] or 0) >= 100
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "100 Trolls have fallen. Soon, there’ll be no more left to dance."
-},
-{
-    id = "race_troll_3",
-    title = "Blood Ritual",
-    description = "Slay 200 Troll players",
-    iconID = 236473, -- inv_wand_1h_troll_c_01
-    condition = function(playerStats)
-        return (playerStats.raceKills and playerStats.raceKills["TROLL"] or 0) >= 200
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "200 Trolls sacrificed. Their spirits whisper your name in fear."
-},
--- Killing Guilded Players Achievements
-{
-    id = "guild_prey_kills_1",
-    title = "Shatter the Brotherhood",
-    description = "Defeat 250 enemies who are in a guild",
-    iconID = 132485, -- inv_bannerpvp_01
-    condition = function(playerStats)
-        return (playerStats.guildedKills or 0) >= 250
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "No oath can protect them. Tear down 250 guilded enemies and leave their allies to mourn."
-}, {
-    id = "guild_prey_kills_2",
-    title = "Executioner of Legacies",
-    description = "Defeat 500 enemies who are in a guild",
-    iconID = 132485, -- inv_bannerpvp_01
-    condition = function(playerStats)
-        return (playerStats.guildedKills or 0) >= 500
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "They thought their banners made them untouchable. 500 of their corpses now rot in the mud."
-}, {
-    id = "guild_prey_kills_3",
-    title = "Ender of Bloodlines",
-    description = "Defeat 700 enemies who are in a guild",
-    iconID = 132485, -- inv_bannerpvp_01
-    condition = function(playerStats)
-        return (playerStats.guildedKills or 0) >= 700
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "700 guilded warriors silenced. Their comrades whisper your name, knowing they are next."
-},
-
--- Killing Lone Wolves Achievements
-{
-    id = "lone_prey_kills_1",
-    title = "Hunting the Stray",
-    description = "Defeat 250 enemies who are not in a guild",
-    iconID = 236687, -- ability_rogue_shadowdance
-    condition = function(playerStats)
-        return (playerStats.loneWolfKills or 0) >= 250
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "No allies, no safety, no mercy. Slaughter 250 lone wolves who thought they could survive alone."
-}, {
-    id = "lone_prey_kills_2",
-    title = "Extinction of the Lone",
-    description = "Defeat 500 enemies who are not in a guild",
-    iconID = 236687, -- ability_rogue_shadowdance
-    condition = function(playerStats)
-        return (playerStats.loneWolfKills or 0) >= 500
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "They wander the battlefield, believing they are predators. 500 have learned otherwise."
-}, {
-    id = "lone_prey_kills_3",
-    title = "Death Stalks the Drifter",
-    description = "Defeat 700 enemies who are not in a guild",
-    iconID = 236687, -- ability_rogue_shadowdance
-    condition = function(playerStats)
-        return (playerStats.loneWolfKills or 0) >= 700
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "The loners, the outcasts, the rogues—all meet the same fate at your hands. 700 fallen, and still you hunger."
-},
--- Killing Spree Achievements
-{
-    id = "killing_spree_1",
-    title = "Unstoppable Force",
-    description = "Defeat 25 players in a row without dying",
-    iconID = 236310, -- ability_warrior_endlessrage
-    condition = function(playerStats)
-        return (playerStats.highestKillStreak or 0) >= 25
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "You're picking up speed. 25 kills, no deaths. The battlefield is starting to notice."
-}, {
-    id = "killing_spree_2",
-    title = "Warlord’s Momentum",
-    description = "Defeat 50 players in a row without dying",
-    iconID = 132344, -- ability_dualwield
-    condition = function(playerStats)
-        return (playerStats.highestKillStreak or 0) >= 50
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "The weak have fled, the brave have fallen. 50 kills, and nothing can stop you now."
-}, {
-    id = "killing_spree_3",
-    title = "The Untouchable",
-    description = "Defeat 75 players in a row without dying",
-    iconID = 236273, -- spell_shadow_demonicpact
-    condition = function(playerStats)
-        return (playerStats.highestKillStreak or 0) >= 75
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "You don’t just fight—you dominate. 75 kills without falling? That’s legendary."
-}, {
-    id = "killing_spree_4",
-    title = "Immortal Onslaught",
-    description = "Defeat 100 players in a row without dying",
-    iconID = 132275, -- inv_sword_48
-    condition = function(playerStats)
-        return (playerStats.highestKillStreak or 0) >= 100
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = "A hundred enemies have tried. A hundred enemies have failed. You are the storm, the legend, the nightmare they whisper about."
+    subText = "2400 unique souls claimed! At this point, it's easier to list who you HAVEN'T killed. Your name is now used to scare children into eating their vegetables on multiple realms."
 }}
+
+-- Function to get player name for achievement text
+local function GetPlayerName()
+    local playerName = UnitName("player")
+    return playerName or "You"
+end
+
+-- Function to replace placeholders in text with player name
+local function PersonalizeText(text)
+    if not text then return "" end
+    local playerName = GetPlayerName()
+    return text:gsub("%[YOUR NAME%]", playerName)
+end
 
 -- Function to check achievements and show popup if newly unlocked
 function AchievementSystem:CheckAchievements()
     local playerStats = PVPSC.playerStats or {}
+    local playerName = GetPlayerName()
 
     for _, achievement in ipairs(self.achievements) do
         if not achievement.unlocked and achievement.condition(playerStats) then
             achievement.unlocked = true
             achievement.completedDate = date("%d/%m/%Y %H:%M") -- Set completion date
+
+            -- Personalize achievement text before showing popup
+            local personalizedDescription = PersonalizeText(achievement.description)
+
             PVPSC.AchievementPopup:ShowPopup({
                 icon = achievement.iconID,
                 title = achievement.title,
-                description = achievement.description
+                description = personalizedDescription
             })
         end
     end
