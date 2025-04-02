@@ -75,7 +75,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
 }, -- Druid Achievements
 {
     id = "druid_1",
-    title = "Tree Trimmer",
+    title = "Roadkill Royale",
     description = "Take down 250 Druids",
     iconID = 625999,
     condition = function(playerStats)
@@ -83,7 +83,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "250 Druids chopped down! Shape-shifting doesn't help when all forms end up as a corpse."
+    subText = "Feral Druids brag about their movement speed—until they realize they’ve sprinted straight into 250 unavoidable deaths. Some say Travel Form is fast. You know what’s faster? A corpse run."
 }, {
     id = "druid_2",
     title = "Animal Control",
@@ -97,7 +97,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "500 Druids exterminated! Cat form, bear form, dead form – you've seen them all. PETA has issued a statement."
 }, {
     id = "druid_3",
-    title = "Nature's Nemesis",
+    title = "Master of None",
     description = "Take down 750 Druids",
     iconID = 132138,
     condition = function(playerStats)
@@ -105,7 +105,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 Druids returned to nature... permanently! Moonglade installed a warning siren and their travel form is now exclusively 'dead weight'."
+    subText = "Druids claim they can do it all—tank, heal, DPS. 750 of them just proved they can also die in every imaginable way. At this point, even their Innervate couldn't restore their dignity."
 }, -- Shaman Achievements
 {
     id = "shaman_1",
@@ -128,10 +128,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Shamans permanently ghost wolfed! The spirit world is experiencing unprecedented immigration levels."
+    subText = "500 Shamans deleted their characters after realizing casting Lightning Bolt in melee range isn’t actually a good strategy. Their ancestors are embarrassed."
 }, {
     id = "shaman_3",
-    title = "Element Bender",
+    title = "Windfury Wipeout",
     description = "Defeat 750 Shamans",
     iconID = 136088,
     condition = function(playerStats)
@@ -139,11 +139,11 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 Shamans permanently grounded! Totem vendors are going bankrupt and the spirit world is overloaded with complaints about you."
+    subText = "The world is down 750 Shamans, and yet not a single one landed that mythical 3x Windfury crit. Meanwhile, Warriors are still laughing."
 }, -- Hunter Achievements
 {
     id = "hunter_1",
-    title = "Pet Project",
+    title = "Need on Everything",
     description = "Take down 250 Hunters",
     iconID = 626000,
     condition = function(playerStats)
@@ -151,10 +151,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "250 Hunters donated their pets to the shelter! Feign Death wasn't very effective."
+    subText = "250 Hunters down, yet they still rolled Need on their own funeral. Some habits never die."
 }, {
     id = "hunter_2",
-    title = "Bad Dog Day",
+    title = "No More AFK Farmers and Backpedalers",
     description = "Take down 500 Hunters",
     iconID = 132208,
     condition = function(playerStats)
@@ -162,12 +162,12 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Hunters and their pets had a ruff time! The stable master is running an adoption special."
+    subText = "500 Hunters eliminated—most didn’t even notice. Their corpses still have Auto Shot toggled on. And the other half are still backpedaling to the graveyard."
 }, {
     id = "hunter_3",
     title = "Click… No Ammo",
     description = "Take down 750 Hunters",
-    iconID = 132329,
+    iconID = 135618,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["HUNTER"] or 0) >= 750
     end,
@@ -355,7 +355,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "50 husbands never made it home for dinner. Their wives thank you for the GG (Goblin Greed) insurance payouts."
+    subText = "50 husbands never made it home for dinner! Their wives are spending the Goblin Life Insurance payouts at the Auction House while spamming 'ty for gold' in trade chat."
 }, {
     id = "gender_male_2",
     title = "Widowmaker EPIC",
