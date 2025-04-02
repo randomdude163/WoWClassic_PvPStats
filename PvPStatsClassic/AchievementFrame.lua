@@ -287,88 +287,88 @@ local function UpdateAchievementLayout()
 
         -- Determine targetValue and currentProgress based on achievement ID
         if achievement.id == "paladin_1" then
-            targetValue = 100
+            targetValue = 250
             currentProgress = classData["Paladin"] or 0
             DebugPrint("Paladin kills: " .. currentProgress)
         elseif achievement.id == "paladin_2" then
             targetValue = 500
             currentProgress = classData["Paladin"] or 0
         elseif achievement.id == "paladin_3" then
-            targetValue = 1000
+            targetValue = 750
             currentProgress = classData["Paladin"] or 0
         elseif achievement.id == "priest_1" then
-            targetValue = 100
+            targetValue = 250
             currentProgress = classData["Priest"] or 0
             DebugPrint("Priest kills: " .. currentProgress)
         elseif achievement.id == "priest_2" then
-            targetValue = 300
+            targetValue = 500
             currentProgress = classData["Priest"] or 0
         elseif achievement.id == "priest_3" then
-            targetValue = 600
+            targetValue = 750
             currentProgress = classData["Priest"] or 0
         elseif achievement.id == "warrior_1" then
-            targetValue = 200
+            targetValue = 250
             currentProgress = classData["Warrior"] or 0
             DebugPrint("Warrior kills: " .. currentProgress)
         elseif achievement.id == "warrior_2" then
             targetValue = 500
             currentProgress = classData["Warrior"] or 0
         elseif achievement.id == "warrior_3" then
-            targetValue = 1000
+            targetValue = 750
             currentProgress = classData["Warrior"] or 0
         elseif achievement.id == "mage_1" then
-            targetValue = 100
+            targetValue = 250
             currentProgress = classData["Mage"] or 0
         elseif achievement.id == "mage_2" then
-            targetValue = 400
+            targetValue = 500
             currentProgress = classData["Mage"] or 0
         elseif achievement.id == "mage_3" then
-            targetValue = 800
+            targetValue = 750
             currentProgress = classData["Mage"] or 0
         elseif achievement.id == "rogue_1" then
-            targetValue = 100
-            currentProgress = classData["Rogue"] or 0
-        elseif achievement.id == "rogue_2" then
             targetValue = 250
             currentProgress = classData["Rogue"] or 0
-        elseif achievement.id == "rogue_3" then
+        elseif achievement.id == "rogue_2" then
             targetValue = 500
             currentProgress = classData["Rogue"] or 0
+        elseif achievement.id == "rogue_3" then
+            targetValue = 750
+            currentProgress = classData["Rogue"] or 0
         elseif achievement.id == "warlock_1" then
-            targetValue = 100
+            targetValue = 250
             currentProgress = classData["Warlock"] or 0
         elseif achievement.id == "warlock_2" then
-            targetValue = 350
+            targetValue = 500
             currentProgress = classData["Warlock"] or 0
         elseif achievement.id == "warlock_3" then
-            targetValue = 700
+            targetValue = 750
             currentProgress = classData["Warlock"] or 0
         elseif achievement.id == "druid_1" then
-            targetValue = 100
+            targetValue = 250
             currentProgress = classData["Druid"] or 0
         elseif achievement.id == "druid_2" then
-            targetValue = 300
+            targetValue = 500
             currentProgress = classData["Druid"] or 0
         elseif achievement.id == "druid_3" then
-            targetValue = 600
+            targetValue = 750
             currentProgress = classData["Druid"] or 0
         elseif achievement.id == "shaman_1" then
-            targetValue = 100
+            targetValue = 250
             currentProgress = classData["Shaman"] or 0
         elseif achievement.id == "shaman_2" then
-            targetValue = 300
+            targetValue = 500
             currentProgress = classData["Shaman"] or 0
         elseif achievement.id == "shaman_3" then
-            targetValue = 600
+            targetValue = 750
             currentProgress = classData["Shaman"] or 0
         elseif achievement.id == "hunter_1" then
-            targetValue = 100
+            targetValue = 250
             currentProgress = classData["Hunter"] or 0
         elseif achievement.id == "hunter_2" then
-            targetValue = 300
+            targetValue = 500
             currentProgress = classData["Hunter"] or 0
         elseif achievement.id == "hunter_3" then
-            targetValue = 600
+            targetValue = 750
             currentProgress = classData["Hunter"] or 0
         elseif achievement.id == "gender_female_1" then
             targetValue = 50
