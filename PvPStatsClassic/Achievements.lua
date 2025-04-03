@@ -355,7 +355,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "50 husbands never made it home for dinner! Their wives are spending the Goblin Life Insurance payouts at the Auction House while spamming 'ty for gold' in trade chat."
+    subText = "50 husbands never made it home for dinner! Their wives are spending the Goblin Life Insurance payouts at the Auction House."
 }, {
     id = "gender_male_2",
     title = "Widowmaker EPIC",
@@ -493,10 +493,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The Stormwind job market is in shambles after losing 250 employees! Local guards are now accepting Murlocs into their ranks."
+    subText = "250 Humans deleted! The most basic race in Azeroth, chosen by people who couldn’t be bothered to click twice. They died as they lived—completely unremarkable."
 }, {
     id = "race_human_2",
-    title = "Stormwind Unemployment Office",
+    title = "Peak Meta, Peak Failure",
     description = "Eliminate 500 Humans",
     iconID = 236448,
     condition = function(playerStats)
@@ -505,10 +505,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Real estate prices in Stormwind dropped by 90% after 500 residents checked out permanently! Even the kobolds are turning down property viewings."
+    subText = "500 Humans down! They picked the ‘best PvP race’ for the racial bonuses but forgot to read the part about positioning and cooldowns."
 }, {
     id = "race_human_3",
-    title = "Every Human for Themselves",
+    title = "Honorless Duelists",
     description = "Eliminate 750 Humans",
     iconID = 133730,
     condition = function(playerStats)
@@ -517,13 +517,13 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 humans learned their racial isn't so great after all! Varian is considering rebranding Stormwind as 'Ghost Town - Now with 100% more spirit healers!'"
+    subText = "Stormwind's population just dropped by 750! Their precious Diplomacy racial couldn't talk their way out of a shallow grave. Undertakers are working overtime, and the Defias Brotherhood sent you a gift basket for finishing what they started. The Kingdom's orphanages are so overcrowded they're converting the Stockade into a daycare. Even the Lich King would tell you to chill out."
 },
 
 -- Night Elf Achievements
 {
     id = "race_nightelf_1",
-    title = "Tree Hugger Terminator",
+    title = "Shadowmeld Won't Save You",
     description = "Eliminate 250 Night Elves",
     iconID = 236449,
     condition = function(playerStats)
@@ -532,10 +532,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "After 250 Night Elves discovered Shadowmeld doesn't work against you, Darnassus tourism dropped faster than their corpses!"
+    subText = "250 Night Elves eliminated! They thought they disappeared… but all you saw was a free honor kill waiting to happen."
 }, {
     id = "race_nightelf_2",
-    title = "Immortality Canceled",
+    title = "One with Nature, Now One with the Dirt",
     description = "Eliminate 500 Night Elves",
     iconID = 236450,
     condition = function(playerStats)
@@ -544,10 +544,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The Emerald Dream is getting crowded with 500 new permanent residents! Turns out, flips don't dodge arrows."
+    subText = "500 Night Elves have discovered that Shadowmeld doesn't work against players who can smell fear. Their wisps are forming support groups now. These immortal beings never expected to die so many times in the same week. Darnassus real estate prices are crashing faster than Night Elves jumping off Teldrassil to avoid you."
 }, {
     id = "race_nightelf_3",
-    title = "Hippy Recycling Program",
+    title = "Eternal No More",
     description = "Eliminate 750 Night Elves",
     iconID = 134161,
     condition = function(playerStats)
@@ -556,7 +556,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 Night Elves are now literally one with nature! Teldrassil real estate now advertised as 'Pre-burned condition'."
+    subText = "750 Night Elves in the dirt! All that jumping around didn't save them from [YOUR NAME]. Each one was still typing 'shadows meld me!' when you ended them. Most died while taking screenshots of sunsets or AFKing in character-select poses. Their precious 'front flip' jumping animation is much less impressive from a corpse."
 },
 
 -- Dwarf Achievements
@@ -571,7 +571,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The Ironforge beer consumption dropped by 250 mugs! Stone form turned out to be just fancy rigor mortis."
+    subText = "250 Dwarves crushed! Short, stout, and now six feet under. Their ‘legendary resilience’ apparently doesn’t apply when getting farmed for honor."
 }, {
     id = "race_dwarf_2",
     title = "Beard Trimmer",
@@ -610,7 +610,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "250 Gnomes learned that Engineering doesn't have a 'Resurrect' schematic! Their death animations are still playing at 0.5x speed."
+    subText = "250 Gnomes punted out of existence! Their last words? 'Size doesn’t matter!' Their respawn timer says otherwise."
 }, {
     id = "race_gnome_2",
     title = "Garden Gnome Collection",
@@ -622,7 +622,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Gnomes discovered that Escape Artist doesn't work on death! Now they're permanent lawn ornaments."
+    subText = "500 gnomes eliminated! OSHA has cited you for workplace hazards after these tiny players couldn't reach the 'Exit Game' button fast enough. Most died typing highly technical insults nobody understood. According to Guinness World Records, you've now punted more gnomes than anyone in recorded history. Their elaborate escape plans failed faster than their Escape Artist racial."
 }, {
     id = "race_gnome_3",
     title = "Small Problems Solved",
@@ -650,7 +650,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "250 Orcs learned that Blood Fury is just a fancy name for a nosebleed! Thrall is considering a 'No Dying' policy in Orgrimmar."
+    subText = "Zug zug? More like zug zugged into the grave. 250 Orcs charged in, expecting an easy win—turns out, yelling ‘Lok’tar Ogar!’ doesn’t make you invincible."
 }, {
     id = "race_orc_2",
     title = "Anger Management Expert",
@@ -662,10 +662,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Orcs discovered that Hardiness doesn't reduce death duration! The Warchief is now accepting applications from Murlocs."
+    subText = "500 Orcs have rage-quit after meeting you! These keyboard smashers with names like 'Gr1msk0ll' and 'Axemastr' spent more time perfecting their /flex macro than learning to dodge. Greenpeace has formally requested you stop this endangered species extinction event. Their Blood Fury racial activated IRL as they typed angry whispers to you from the graveyard."
 }, {
     id = "race_orc_3",
-    title = "Green Peace Treaty",
+    title = "Green Graveyard",
     description = "Eliminate 750 Orcs",
     iconID = 134170,
     condition = function(playerStats)
@@ -674,7 +674,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Durotar's population decreased by 750! Now the spikes are just load-bearing decorations for empty buildings."
+    subText = "750 min-maxing Orc players just discovered their PvP racial doesn't help when they keyboard turn! These meta-chasers who rolled the 'optimal race' couldn't optimize their way out of a [YOUR NAME] beatdown. All those forum guides didn't prepare them for someone who actually knows how to play. Should've practiced instead of bragging about stun resistance in trade chat!"
 },
 
 -- Undead Achievements
@@ -689,7 +689,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "250 Forsaken discovered you can die twice! Will of the Forsaken now comes with a stern warning label."
+    subText = "250 Forsaken sent back to the character creation screen. Turns out, playing ‘the most hardcore race’ doesn’t make you any less of a free HK. Sylvanas won’t miss them—she doesn’t even miss her own people."
 }, {
     id = "race_undead_2",
     title = "Zombies't",
@@ -701,7 +701,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Undead are now Twice-Dead! Sylvanas is running out of resurrection juice, and the Apothecary is offering two-for-one deals."
+    subText = "500 Forsaken ganked! They picked Undead to look cool and ended up looking clueless. No, ‘Will of the Forsaken’ doesn’t make you invincible—if it did, they wouldn’t all be face-down in the dirt"
 }, {
     id = "race_undead_3",
     title = "Permanent Death Status",
@@ -713,7 +713,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 Undead finally achieved true death! The Dark Lady's 'Death to the Living' slogan needs revision after meeting you."
+    subText = "750 Forsaken now even more dead than before! The Dark Lady's weekly newsletter now includes a [YOUR NAME] survival guide. These edgelords thought being already-dead made them cool until you showed them what 'dead-dead' feels like. Now Brill is a ghost town (even more than usual), and Tirisfal Glades real estate is free for the taking. Even the Scarlet Crusade thinks you're taking this whole 'purging the undead' thing too far."
 },
 
 -- Troll Achievements
@@ -728,7 +728,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "250 Trolls discovered that regeneration has a fatal flaw! Their final words were 'Ya got me, mon...'"
+    subText = "Da spirits be VERY angry wit' you mon, after 250 trolls found out their regeneration can't outpace your damage output. Their hunched backs didn't help them dodge your attacks—just made it easier for you to spot them from a distance. Zul'jin is considering therapy after watching your killing spree. Stay away from da voodoo!"
 }, {
     id = "race_troll_2",
     title = "Berserking Backfire",
@@ -740,10 +740,10 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Trolls won't be regenerating from this! Da voodoo shuffle couldn't dodge your killing blows, mon."
+    subText = "500 trolls be dead, and their witch doctors can't figure out why! Their Berserking racial just helped them die faster. They attacked 15% quicker, but you still killed them 100% dead. The Echo Isles are now placing 'BEWARE: [YOUR NAME]' signs along the coast. Sen'jin Village is considering tribute payments just to appease you."
 }, {
     id = "race_troll_3",
-    title = "Rastafarian Retirement",
+    title = "Hunched Back, Hunched Over in Defeat",
     description = "Eliminate 750 Trolls",
     iconID = 134177,
     condition = function(playerStats)
@@ -752,13 +752,13 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 Trolls be taking the eternal voodoo nap, mon! Sen'jin Village is now offering discount mojo - previous owners won't be needing it."
+    subText = "750 Trolls down! Their posture wasn’t the only thing broken today. Maybe they should’ve berserked their way to a real strategy instead of just hoping their racial would carry them."
 },
 
 -- Tauren Achievements
 {
     id = "race_tauren_1",
-    title = "Sacred Cow Tipper",
+    title = "Biggest Hitbox, Biggest Target",
     description = "Eliminate 250 Tauren",
     iconID = 236453,
     condition = function(playerStats)
@@ -767,7 +767,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Thunder Bluff elevator claims fewer lives than you after 250 Tauren took their last step! War Stomp doesn't work in ghost form."
+    subText = "250 Tauren down! These walking steaks chose the biggest hitbox in the game then complained when your attacks connected. McDonald's just offered you a sponsorship deal after your record-breaking beef production. The 'got milk?' campaign is suing you for destroying their mascots. Next time they'll think twice before picking a race that can be seen from the other continent."
 }, {
     id = "race_tauren_2",
     title = "No More Bull",
@@ -779,7 +779,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Tauren discovered that Nature Resistance doesn't protect against you! Mulgore is now accepting applications for lawn maintenance."
+    subText = "500 Tauren players got exactly what they deserved for picking the 'gentle giant' stereotype! Their 5% bonus health just meant they died 3 seconds slower while panic-pressing War Stomp. The real stampede was them rushing to the forums to complain about 'unfair pvp balance.'"
 }, {
     id = "race_tauren_3",
     title = "Cattle Depopulation",
@@ -791,7 +791,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "After 750 Tauren deaths, Thunder Bluff is renaming itself to 'Empty Pasture'! The Grimtotem are taking notes on your technique."
+    subText = "You've slaughtered 750 Tauren! Thunder Bluff elevator accidents are now the SECOND leading cause of Tauren death. These gentle giants had 5% more health than other races, which gave them exactly 3 extra seconds to contemplate their life choices before you ended them. Mulgore's milk industry has collapsed, and the Grimtotem are sending you fan mail. The Earth Mother has filed a restraining order against you."
 }, -- Guild Achievements
 {
     id = "guild_kills",
@@ -804,7 +804,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 guild players deleted! Their guild banks are full of soulbound gear, and their Discord is just /gquit screenshots. Even Ragnaros is less toxic than their officer chat right now."
+    subText = "500 so-called 'guildmates' slaughtered! Turns out, that guild tag above their heads didn’t make them any less squishy. Maybe they should try a PvE guild—less world PvP, more coping in raid chat."
 }, {
     id = "guildless_kills",
     title = "Lone Wolf Hunter",
