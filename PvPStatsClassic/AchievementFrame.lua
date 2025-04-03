@@ -388,71 +388,109 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "gender_male_3" then
             targetValue = 200
             currentProgress = genderData["Male"] or 0
-        elseif achievement.id:match("^race_") then
-            local race = achievement.id:match("^race_([^_]+)")
-            local level = achievement.id:match("_(%d+)$")
-
-            if race and level then
-                if level == "1" then
-                    targetValue = 50
-                elseif level == "2" then
-                    targetValue = 100
-                elseif level == "3" then
-                    targetValue = 200
-                end
-
-                -- Handle different race name formats with proper casing
-                if race:lower() == "nightelf" then
-                    currentProgress = raceData["Night Elf"] or 0
-                    DebugPrint("Night Elf kills: " .. currentProgress)
-                elseif race:lower() == "gnome" then
-                    currentProgress = raceData["Gnome"] or 0
-                    DebugPrint("Gnome kills: " .. currentProgress)
-                elseif race:lower() == "human" then
-                    currentProgress = raceData["Human"] or 0
-                    DebugPrint("Human kills: " .. currentProgress)
-                elseif race:lower() == "dwarf" then
-                    currentProgress = raceData["Dwarf"] or 0
-                    DebugPrint("Dwarf kills: " .. (raceData["Dwarf"] or 0))
-                elseif race:lower() == "orc" then
-                    currentProgress = raceData["Orc"] or 0
-                    DebugPrint("Orc kills: " .. (raceData["Orc"] or 0))
-                elseif race:lower() == "troll" then
-                    currentProgress = raceData["Troll"] or 0
-                    DebugPrint("Troll kills: " .. (raceData["Troll"] or 0))
-                elseif race:lower() == "tauren" then
-                    currentProgress = raceData["Tauren"] or 0
-                    DebugPrint("Tauren kills: " .. (raceData["Tauren"] or 0))
-                elseif race:lower() == "undead" then
-                    currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
-                    DebugPrint("Undead kills: " .. (raceData["Undead"] or raceData["Scourge"] or 0))
-                else
-                    -- Properly capitalize the race name for lookup
-                    local properRace = race:sub(1,1):upper() .. race:sub(2):lower()
-                    currentProgress = raceData[properRace] or 0
-                    DebugPrint(properRace .. " kills: " .. (raceData[properRace] or 0))
-                end
-            end
-        elseif achievement.id == "guild_prey_kills_1" then
+        -- ALLIANCE RACES
+        -- Human achievements
+        elseif achievement.id == "race_human_1" then
             targetValue = 250
-            currentProgress = guildStatusData["In Guild"] or playerStats.guildedKills or 0
+            currentProgress = raceData["Human"] or 0
+            DebugPrint("Human kills: " .. currentProgress)
+        elseif achievement.id == "race_human_2" then
+            targetValue = 500
+            currentProgress = raceData["Human"] or 0
+        elseif achievement.id == "race_human_3" then
+            targetValue = 750
+            currentProgress = raceData["Human"] or 0
+        -- Night Elf achievements
+        elseif achievement.id == "race_nightelf_1" then
+            targetValue = 250
+            currentProgress = raceData["Night Elf"] or 0
+            DebugPrint("Night Elf kills: " .. currentProgress)
+        elseif achievement.id == "race_nightelf_2" then
+            targetValue = 500
+            currentProgress = raceData["Night Elf"] or 0
+        elseif achievement.id == "race_nightelf_3" then
+            targetValue = 750
+            currentProgress = raceData["Night Elf"] or 0
+        -- Dwarf achievements
+        elseif achievement.id == "race_dwarf_1" then
+            targetValue = 250
+            currentProgress = raceData["Dwarf"] or 0
+            DebugPrint("Dwarf kills: " .. (raceData["Dwarf"] or 0))
+        elseif achievement.id == "race_dwarf_2" then
+            targetValue = 500
+            currentProgress = raceData["Dwarf"] or 0
+        elseif achievement.id == "race_dwarf_3" then
+            targetValue = 750
+            currentProgress = raceData["Dwarf"] or 0
+        -- Gnome achievements
+        elseif achievement.id == "race_gnome_1" then
+            targetValue = 250
+            currentProgress = raceData["Gnome"] or 0
+            DebugPrint("Gnome kills: " .. currentProgress)
+        elseif achievement.id == "race_gnome_2" then
+            targetValue = 500
+            currentProgress = raceData["Gnome"] or 0
+        elseif achievement.id == "race_gnome_3" then
+            targetValue = 750
+            currentProgress = raceData["Gnome"] or 0
+        -- HORDE RACES
+        -- Orc achievements
+        elseif achievement.id == "race_orc_1" then
+            targetValue = 250
+            currentProgress = raceData["Orc"] or 0
+            DebugPrint("Orc kills: " .. (raceData["Orc"] or 0))
+        elseif achievement.id == "race_orc_2" then
+            targetValue = 500
+            currentProgress = raceData["Orc"] or 0
+        elseif achievement.id == "race_orc_3" then
+            targetValue = 750
+            currentProgress = raceData["Orc"] or 0
+        -- Troll achievements
+        elseif achievement.id == "race_troll_1" then
+            targetValue = 250
+            currentProgress = raceData["Troll"] or 0
+            DebugPrint("Troll kills: " .. (raceData["Troll"] or 0))
+        elseif achievement.id == "race_troll_2" then
+            targetValue = 500
+            currentProgress = raceData["Troll"] or 0
+        elseif achievement.id == "race_troll_3" then
+            targetValue = 750
+            currentProgress = raceData["Troll"] or 0
+        -- Undead achievements
+        elseif achievement.id == "race_undead_1" then
+            targetValue = 250
+            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
+            DebugPrint("Undead kills: " .. (raceData["Undead"] or raceData["Scourge"] or 0))
+        elseif achievement.id == "race_undead_2" then
+            targetValue = 500
+            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
+        elseif achievement.id == "race_undead_3" then
+            targetValue = 750
+            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
+        -- Tauren achievements
+        elseif achievement.id == "race_tauren_1" then
+            targetValue = 250
+            currentProgress = raceData["Tauren"] or 0
+            DebugPrint("Tauren kills: " .. (raceData["Tauren"] or 0))
+        elseif achievement.id == "race_tauren_2" then
+            targetValue = 500
+            currentProgress = raceData["Tauren"] or 0
+        elseif achievement.id == "race_tauren_3" then
+            targetValue = 750
+            currentProgress = raceData["Tauren"] or 0
+        -- Other achievements
+        elseif achievement.id == "guild_kills" then
+            targetValue = 500
+            currentProgress = guildStatusData["In Guild"] or 0
             DebugPrint("Guild prey kills: " .. currentProgress)
-        elseif achievement.id == "guild_prey_kills_2" then
+        elseif achievement.id == "guildless_kills" then
             targetValue = 500
-            currentProgress = guildStatusData["In Guild"] or playerStats.guildedKills or 0
-        elseif achievement.id == "guild_prey_kills_3" then
-            targetValue = 700
-            currentProgress = guildStatusData["In Guild"] or playerStats.guildedKills or 0
-        elseif achievement.id == "lone_prey_kills_1" then
-            targetValue = 250
-            currentProgress = guildStatusData["No Guild"] or playerStats.loneWolfKills or 0
+            currentProgress = guildStatusData["No Guild"] or 0
             DebugPrint("Lone wolf kills: " .. currentProgress)
-        elseif achievement.id == "lone_prey_kills_2" then
-            targetValue = 500
-            currentProgress = guildStatusData["No Guild"] or playerStats.loneWolfKills or 0
-        elseif achievement.id == "lone_prey_kills_3" then
-            targetValue = 700
-            currentProgress = guildStatusData["No Guild"] or playerStats.loneWolfKills or 0
+        elseif achievement.id == "grey_level_kills" then
+            targetValue = 100
+            currentProgress = PSC_CalculateGreyKills()
+            DebugPrint("Grey level kills: " .. currentProgress)
         elseif achievement.id == "killing_spree_1" then
             targetValue = 25
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0

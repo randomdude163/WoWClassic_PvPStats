@@ -230,7 +230,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "These 500 mages learned that Pyroblast's cast time is longer than their life expectancy! Their last words were 'Just one more second..."
+    subText = "These 500 mages learned that Pyroblast's cast time is longer than their life expectancy! Their last words were 'Just one more second...'"
 }, {
     id = "mage_3",
     title = "Arcane Accident",
@@ -360,7 +360,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "gender_male_2",
     title = "Widowmaker EPIC",
     description = "Defeat 100 male characters",
-    iconID = 236448,
+    iconID = 132352,
     condition = function(playerStats)
         return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 100
     end,
@@ -480,6 +480,354 @@ AchievementSystem.achievements = { -- Paladin Achievements
     unlocked = false,
     completedDate = nil,
     subText = "2400 unique souls claimed! At this point, it's easier to list who you HAVEN'T killed. How’s that kill addiction treating you? "
+}, -- Alliance Races
+-- Human Achievements
+{
+    id = "race_human_1",
+    title = "Human Resources",
+    description = "Eliminate 250 Humans",
+    iconID = 236447,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Human"] or 0) >= 250
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "The Stormwind job market is in shambles after losing 250 employees! Local guards are now accepting Murlocs into their ranks."
+}, {
+    id = "race_human_2",
+    title = "Stormwind Unemployment Office",
+    description = "Eliminate 500 Humans",
+    iconID = 236448,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Human"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "Real estate prices in Stormwind dropped by 90% after 500 residents checked out permanently! Even the kobolds are turning down property viewings."
+}, {
+    id = "race_human_3",
+    title = "Every Human for Themselves",
+    description = "Eliminate 750 Humans",
+    iconID = 133730,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Human"] or 0) >= 750
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "750 humans learned their racial isn't so great after all! Varian is considering rebranding Stormwind as 'Ghost Town - Now with 100% more spirit healers!'"
+},
+
+-- Night Elf Achievements
+{
+    id = "race_nightelf_1",
+    title = "Tree Hugger Terminator",
+    description = "Eliminate 250 Night Elves",
+    iconID = 236449,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Night Elf"] or 0) >= 250
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "After 250 Night Elves discovered Shadowmeld doesn't work against you, Darnassus tourism dropped faster than their corpses!"
+}, {
+    id = "race_nightelf_2",
+    title = "Immortality Canceled",
+    description = "Eliminate 500 Night Elves",
+    iconID = 236450,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Night Elf"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "The Emerald Dream is getting crowded with 500 new permanent residents! Turns out, flips don't dodge arrows."
+}, {
+    id = "race_nightelf_3",
+    title = "Hippy Recycling Program",
+    description = "Eliminate 750 Night Elves",
+    iconID = 134161,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Night Elf"] or 0) >= 750
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "750 Night Elves are now literally one with nature! Teldrassil real estate now advertised as 'Pre-burned condition'."
+},
+
+-- Dwarf Achievements
+{
+    id = "race_dwarf_1",
+    title = "Short Term Solution",
+    description = "Eliminate 250 Dwarves",
+    iconID = 236443,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Dwarf"] or 0) >= 250
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "The Ironforge beer consumption dropped by 250 mugs! Stone form turned out to be just fancy rigor mortis."
+}, {
+    id = "race_dwarf_2",
+    title = "Beard Trimmer",
+    description = "Eliminate 500 Dwarves",
+    iconID = 236444,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Dwarf"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "500 dwarves discovered that being Made of Stone doesn't help against being Made Deceased! Local barbers filing for bankruptcy."
+}, {
+    id = "race_dwarf_3",
+    title = "Height Disadvantage",
+    description = "Eliminate 750 Dwarves",
+    iconID = 134159,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Dwarf"] or 0) >= 750
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "Ironforge engineers are designing smaller coffins after 750 'height-challenged' casualties! Their spirits are now discovering that the Great Forge isn't so great."
+},
+
+-- Gnome Achievements
+{
+    id = "race_gnome_1",
+    title = "Pest Control",
+    description = "Eliminate 250 Gnomes",
+    iconID = 236445,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Gnome"] or 0) >= 250
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "250 Gnomes learned that Engineering doesn't have a 'Resurrect' schematic! Their death animations are still playing at 0.5x speed."
+}, {
+    id = "race_gnome_2",
+    title = "Garden Gnome Collection",
+    description = "Eliminate 500 Gnomes",
+    iconID = 236446,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Gnome"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "500 Gnomes discovered that Escape Artist doesn't work on death! Now they're permanent lawn ornaments."
+}, {
+    id = "race_gnome_3",
+    title = "Small Problems Solved",
+    description = "Eliminate 750 Gnomes",
+    iconID = 134164,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Gnome"] or 0) >= 750
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "The graveyard is using 750 gnome corpses as speed bumps! Their families are demanding refunds on those expensive Engineering degrees."
+},
+
+-- Horde Races
+-- Orc Achievements
+{
+    id = "race_orc_1",
+    title = "Green Peace",
+    description = "Eliminate 250 Orcs",
+    iconID = 236451,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Orc"] or 0) >= 250
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "250 Orcs learned that Blood Fury is just a fancy name for a nosebleed! Thrall is considering a 'No Dying' policy in Orgrimmar."
+}, {
+    id = "race_orc_2",
+    title = "Anger Management Expert",
+    description = "Eliminate 500 Orcs",
+    iconID = 236452,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Orc"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "500 Orcs discovered that Hardiness doesn't reduce death duration! The Warchief is now accepting applications from Murlocs."
+}, {
+    id = "race_orc_3",
+    title = "Green Peace Treaty",
+    description = "Eliminate 750 Orcs",
+    iconID = 134170,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Orc"] or 0) >= 750
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "Durotar's population decreased by 750! Now the spikes are just load-bearing decorations for empty buildings."
+},
+
+-- Undead Achievements
+{
+    id = "race_undead_1",
+    title = "Double Dead",
+    description = "Eliminate 250 Undead",
+    iconID = 236457,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Undead"] or 0) >= 250
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "250 Forsaken discovered you can die twice! Will of the Forsaken now comes with a stern warning label."
+}, {
+    id = "race_undead_2",
+    title = "Zombies't",
+    description = "Eliminate 500 Undead",
+    iconID = 236458,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Undead"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "500 Undead are now Twice-Dead! Sylvanas is running out of resurrection juice, and the Apothecary is offering two-for-one deals."
+}, {
+    id = "race_undead_3",
+    title = "Permanent Death Status",
+    description = "Eliminate 750 Undead",
+    iconID = 136187,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Undead"] or 0) >= 750
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "750 Undead finally achieved true death! The Dark Lady's 'Death to the Living' slogan needs revision after meeting you."
+},
+
+-- Troll Achievements
+{
+    id = "race_troll_1",
+    title = "Voodoo Venue Closed",
+    description = "Eliminate 250 Trolls",
+    iconID = 236455,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Troll"] or 0) >= 250
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "250 Trolls discovered that regeneration has a fatal flaw! Their final words were 'Ya got me, mon...'"
+}, {
+    id = "race_troll_2",
+    title = "Berserking Backfire",
+    description = "Eliminate 500 Trolls",
+    iconID = 236456,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Troll"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "500 Trolls won't be regenerating from this! Da voodoo shuffle couldn't dodge your killing blows, mon."
+}, {
+    id = "race_troll_3",
+    title = "Rastafarian Retirement",
+    description = "Eliminate 750 Trolls",
+    iconID = 134177,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Troll"] or 0) >= 750
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "750 Trolls be taking the eternal voodoo nap, mon! Sen'jin Village is now offering discount mojo - previous owners won't be needing it."
+},
+
+-- Tauren Achievements
+{
+    id = "race_tauren_1",
+    title = "Sacred Cow Tipper",
+    description = "Eliminate 250 Tauren",
+    iconID = 236453,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Tauren"] or 0) >= 250
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "Thunder Bluff elevator claims fewer lives than you after 250 Tauren took their last step! War Stomp doesn't work in ghost form."
+}, {
+    id = "race_tauren_2",
+    title = "No More Bull",
+    description = "Eliminate 500 Tauren",
+    iconID = 236454,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Tauren"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "500 Tauren discovered that Nature Resistance doesn't protect against you! Mulgore is now accepting applications for lawn maintenance."
+}, {
+    id = "race_tauren_3",
+    title = "Cattle Depopulation",
+    description = "Eliminate 750 Tauren",
+    iconID = 134174,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Tauren"] or 0) >= 750
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "After 750 Tauren deaths, Thunder Bluff is renaming itself to 'Empty Pasture'! The Grimtotem are taking notes on your technique."
+}, -- Guild Achievements
+{
+    id = "guild_kills",
+    title = "Guild Drama Generator",
+    description = "Eliminate 500 guild members",
+    iconID = 134473,
+    condition = function(playerStats)
+        local _, _, _, _, _, _, guildStatusData = PSC_CalculateBarChartStatistics()
+        return (guildStatusData["In Guild"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "500 guild players deleted! Their guild banks are full of soulbound gear, and their Discord is just /gquit screenshots. Even Ragnaros is less toxic than their officer chat right now."
+}, {
+    id = "guildless_kills",
+    title = "Lone Wolf Hunter",
+    description = "Eliminate 500 guildless players",
+    iconID = 132203,
+    condition = function(playerStats)
+        local _, _, _, _, _, _, guildStatusData = PSC_CalculateBarChartStatistics()
+        return (guildStatusData["No Guild"] or 0) >= 500
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "Sent 500 'social anxiety' players back to retail! Their 'I don't need a guild to play' attitude didn't help against your killing spree. At least they didn't have to explain their deaths in guild chat."
+}, {
+    id = "grey_level_kills",
+    title = "Teach them young",
+    description = "Eliminate 100 grey-level players",
+    iconID = 134435,
+    condition = function(playerStats)
+        return PSC_CalculateGreyKills() >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "It ain't much but it's honest work!"
 }}
 
 -- Function to get player name for achievement text
