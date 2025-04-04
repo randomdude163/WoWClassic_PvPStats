@@ -1,49 +1,28 @@
 local addonName, PVPSC = ...
 
--- Create Achievement Overview Frame
-local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-AchievementFrame:SetSize(800, 500)  -- Width and height
+-- Create Achievement Frame with the same design as Config UI
+local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, "BasicFrameTemplateWithInset")
+AchievementFrame:SetSize(800, 520)
 AchievementFrame:SetPoint("CENTER")
-AchievementFrame:SetFrameStrata("HIGH")
 AchievementFrame:SetMovable(true)
 AchievementFrame:EnableMouse(true)
 AchievementFrame:RegisterForDrag("LeftButton")
-AchievementFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-AchievementFrame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
-AchievementFrame:SetClampedToScreen(true)
+AchievementFrame:SetScript("OnDragStart", AchievementFrame.StartMoving)
+AchievementFrame:SetScript("OnDragStop", AchievementFrame.StopMovingOrSizing)
 AchievementFrame:Hide()
 
 -- Add to special frames so it closes with Escape key
 tinsert(UISpecialFrames, "PVPSCAchievementFrame")
 
--- Style the frame with a completely solid dark background
-AchievementFrame:SetBackdrop({
-    bgFile = "Interface\\BUTTONS\\WHITE8X8",
-    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
-    tile = true,
-    tileSize = 32,
-    edgeSize = 32,
-    insets = { left = 11, right = 11, top = 12, bottom = 11 }
-})
+-- Set the title to match Config UI
+AchievementFrame.TitleText = AchievementFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+AchievementFrame.TitleText:SetPoint("TOP", AchievementFrame, "TOP", 0, -5) -- Adjusted to align properly
+AchievementFrame.TitleText:SetText("PvP Achievements")
 
--- Set the background color to pure black with no transparency
-AchievementFrame:SetBackdropColor(0, 0, 0, 1) -- Fully opaque black
-
--- Add title
-local titleText = AchievementFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-titleText:SetPoint("TOP", 0, -20)
-titleText:SetText("PvP Achievements")
-titleText:SetTextColor(1, 0.82, 0)
-
--- Add close button
-local closeButton = CreateFrame("Button", nil, AchievementFrame, "UIPanelCloseButton")
-closeButton:SetPoint("TOPRIGHT", -5, -5)
-closeButton:SetScript("OnClick", function() AchievementFrame:Hide() end)
-
--- Create content area
+-- Create content area for achievements
 local contentFrame = CreateFrame("Frame", nil, AchievementFrame)
-contentFrame:SetPoint("TOPLEFT", AchievementFrame, "TOPLEFT", 20, -50)
-contentFrame:SetPoint("BOTTOMRIGHT", AchievementFrame, "BOTTOMRIGHT", -20, 20)
+contentFrame:SetPoint("TOPLEFT", AchievementFrame, "TOPLEFT", 10, -30)
+contentFrame:SetPoint("BOTTOMRIGHT", AchievementFrame, "BOTTOMRIGHT", -10, 15)
 
 -- Create scroll frame for achievements
 local scrollFrame = CreateFrame("ScrollFrame", "PVPSCAchievementScrollFrame", contentFrame, "UIPanelScrollFrameTemplate")
@@ -218,6 +197,45 @@ local function GetStatistics()
     return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats, playerStats
 end
 
+-- New global variable for filtering achievement categories
+local currentCategory = "Class"  -- default category
+
+-- Update the FilterAchievements function to include gender kills in the "General" tab
+local function FilterAchievements(achievements, category)
+    local filtered = {}
+    for _, achievement in ipairs(achievements) do
+        if category == "Class" then
+            if string.find(achievement.id, "paladin") or string.find(achievement.id, "priest") or
+               string.find(achievement.id, "warrior") or string.find(achievement.id, "mage") or
+               string.find(achievement.id, "rogue") or string.find(achievement.id, "warlock") or
+               string.find(achievement.id, "druid") or string.find(achievement.id, "shaman") or
+               string.find(achievement.id, "hunter") then
+                table.insert(filtered, achievement)
+            end
+        elseif category == "Race" then
+            if string.find(achievement.id, "race_") then
+                table.insert(filtered, achievement)
+            end
+        elseif category == "Kills" then
+            if achievement.id == "guild_kills" or achievement.id == "guildless_kills" or
+               achievement.id == "grey_level_kills" or
+               string.find(achievement.id, "kill_streak") or
+               string.find(achievement.id, "total_kills") or
+               string.find(achievement.id, "unique_kills") or
+               string.find(achievement.id, "multi_kill") then
+                table.insert(filtered, achievement)
+            end
+        elseif category == "General" then
+            -- Include gender kills and other general achievements
+            if achievement.id == "favorite_target" or string.find(achievement.id, "zone_") or
+               string.find(achievement.id, "gender_") then
+                table.insert(filtered, achievement)
+            end
+        end
+    end
+    return filtered
+end
+
 -- Function to update achievement layout
 local function UpdateAchievementLayout()
     -- Clear existing achievement frames first
@@ -226,9 +244,11 @@ local function UpdateAchievementLayout()
         child:SetParent(nil)
     end
 
-    local achievements = PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements or {}
+    local allAchievements = PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements or {}
+    local achievements = FilterAchievements(allAchievements, currentCategory)
+
     if #achievements == 0 then
-        DebugPrint("No achievements found")
+        DebugPrint("No achievements found for category: " .. currentCategory)
         return
     end
 
@@ -722,6 +742,45 @@ local function UpdateAchievementLayout()
     local totalHeight = rowCount * (ACHIEVEMENT_HEIGHT + 5 + ACHIEVEMENT_SPACING_V)
     scrollContent:SetSize(scrollContent:GetWidth(), math.max(totalHeight, 1))
 end
+
+-- Create the achievement tab system (similar to ConfigUI)
+local function CreateAchievementTabSystem(parent)
+    local tabNames = {"Class", "Race", "Kills", "General"}
+    local tabs = {}
+    local tabContainer = CreateFrame("Frame", nil, parent)
+    tabContainer:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 10, 0) -- Position tabs directly below the frame
+    tabContainer:SetPoint("TOPRIGHT", parent, "BOTTOMRIGHT", -10, 0)
+
+    local tabWidth, tabHeight = 85, 32
+    for i, name in ipairs(tabNames) do
+        local tab = CreateFrame("Button", parent:GetName().."AchTab"..i, parent, "CharacterFrameTabButtonTemplate")
+        tab:SetText(name)
+        tab:SetID(i)
+        if i == 1 then
+            tab:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, -30)
+        else
+            tab:SetPoint("LEFT", tabs[i-1], "RIGHT", -8, 0)
+        end
+
+        tab:SetScript("OnClick", function()
+            currentCategory = name
+            UpdateAchievementLayout()
+            PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+            for j, t in ipairs(tabs) do
+                if j == i then
+                    t:SetEnabled(false)
+                else
+                    t:SetEnabled(true)
+                end
+            end
+        end)
+        table.insert(tabs, tab)
+    end
+    tabs[1]:SetEnabled(false)
+end
+
+-- Call CreateAchievementTabSystem after the achievement frame is built:
+CreateAchievementTabSystem(AchievementFrame)
 
 -- Function to check if achievements are already completed from PSC_DB
 local function LoadAchievementCompletionStatus()
