@@ -743,40 +743,89 @@ local function UpdateAchievementLayout()
     scrollContent:SetSize(scrollContent:GetWidth(), math.max(totalHeight, 1))
 end
 
--- Create the achievement tab system (similar to ConfigUI)
+-- Update the CreateAchievementTabSystem function with fixed tab handling
 local function CreateAchievementTabSystem(parent)
     local tabNames = {"Class", "Race", "Kills", "General"}
     local tabs = {}
-    local tabContainer = CreateFrame("Frame", nil, parent)
-    tabContainer:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 10, 0) -- Position tabs directly below the frame
-    tabContainer:SetPoint("TOPRIGHT", parent, "BOTTOMRIGHT", -10, 0)
-
     local tabWidth, tabHeight = 85, 32
+
+    -- Create tab container
+    local tabContainer = CreateFrame("Frame", nil, parent)
+    tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
+    tabContainer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -7, 7)
+
+    -- Create tabs using the same approach as in ConfigUI
     for i, name in ipairs(tabNames) do
-        local tab = CreateFrame("Button", parent:GetName().."AchTab"..i, parent, "CharacterFrameTabButtonTemplate")
+        local tab = CreateFrame("Button", parent:GetName() .. "Tab" .. i, parent, "CharacterFrameTabButtonTemplate")
         tab:SetText(name)
         tab:SetID(i)
+        tab:SetSize(tabWidth, tabHeight)
+
+        -- Fix tab textures and sizing
+        local tabMiddle = _G[tab:GetName() .. "Middle"]
+        local tabLeft = _G[tab:GetName() .. "Left"]
+        local tabRight = _G[tab:GetName() .. "Right"]
+        local tabSelectedMiddle = _G[tab:GetName() .. "SelectedMiddle"]
+        local tabSelectedLeft = _G[tab:GetName() .. "SelectedLeft"]
+        local tabSelectedRight = _G[tab:GetName() .. "SelectedRight"]
+        local tabText = _G[tab:GetName() .. "Text"]
+
+        if tabMiddle then
+            tabMiddle:ClearAllPoints()
+            tabMiddle:SetPoint("LEFT", tabLeft, "RIGHT", 0, 0)
+            tabMiddle:SetWidth(tabWidth - 31)
+        end
+        if tabSelectedMiddle then
+            tabSelectedMiddle:ClearAllPoints()
+            tabSelectedMiddle:SetPoint("LEFT", tabSelectedLeft, "RIGHT", 0, 0)
+            tabSelectedMiddle:SetWidth(tabWidth - 31)
+        end
+
         if i == 1 then
-            tab:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, -30)
+            tab:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 5, 0)
         else
             tab:SetPoint("LEFT", tabs[i-1], "RIGHT", -8, 0)
         end
 
+        if tabText then
+            tabText:ClearAllPoints()
+            tabText:SetPoint("CENTER", tab, "CENTER", 0, 2)
+            tabText:SetJustifyH("CENTER")
+            tabText:SetWidth(tabWidth - 40)
+        end
+
+        -- Add click handler directly when creating the tab
         tab:SetScript("OnClick", function()
             currentCategory = name
             UpdateAchievementLayout()
             PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
-            for j, t in ipairs(tabs) do
-                if j == i then
-                    t:SetEnabled(false)
-                else
-                    t:SetEnabled(true)
-                end
+            PanelTemplates_SetTab(parent, i)
+
+            -- Apply tab resizing after selection
+            for j = 1, #tabs do
+                PanelTemplates_TabResize(tabs[j], 0)
             end
         end)
-        table.insert(tabs, tab)
+
+        tabs[i] = tab
     end
-    tabs[1]:SetEnabled(false)
+
+    -- Explicitly assign tabs and numTabs to parent frame
+    parent.tabs = tabs
+    parent.numTabs = #tabs
+
+    -- Initialize tab system in correct order
+    PanelTemplates_SetNumTabs(parent, #tabs)
+
+    -- Apply tab resizing before selection
+    for i = 1, #tabs do
+        PanelTemplates_TabResize(tabs[i], 0)
+    end
+
+    -- Select first tab
+    PanelTemplates_SetTab(parent, 1)
+
+    return tabs
 end
 
 -- Call CreateAchievementTabSystem after the achievement frame is built:
