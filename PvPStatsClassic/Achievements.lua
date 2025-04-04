@@ -662,7 +662,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Orcs have rage-quit after meeting you! These keyboard smashers with names like 'Gr1msk0ll' and 'Axemastr' spent more time perfecting their /flex macro than learning to dodge. Greenpeace has formally requested you stop this endangered species extinction event. Their Blood Fury racial activated IRL as they typed angry whispers to you from the graveyard."
+    subText = "500 Orcs have rage-quit after meeting you! These keyboard smashers with names like 'Gorégut' and 'Axemastr' spent more time perfecting their /flex macro than learning to dodge. Greenpeace has formally requested you stop this endangered species extinction event. Their Blood Fury racial activated IRL as they typed angry whispers to you from the graveyard."
 }, {
     id = "race_orc_3",
     title = "Green Graveyard",
@@ -828,6 +828,102 @@ AchievementSystem.achievements = { -- Paladin Achievements
     unlocked = false,
     completedDate = nil,
     subText = "It ain't much but it's honest work!"
+}, -- Kill Streak Achievements
+{
+    id = "kill_streak_25",
+    title = "Serial Killer",
+    description = "Achieve a 25-player kill streak",
+    iconID = 236293,
+    condition = function(playerStats)
+        return (playerStats.highestKillStreak or 0) >= 25
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "25 players deleted in a row! The graveyard is installing a '[YOUR NAME] Express Lane' with a self-checkout option."
+},
+{
+    id = "kill_streak_50",
+    title = "Crime Scene",
+    description = "Achieve a 50-player kill streak",
+    iconID = 133730,
+    condition = function(playerStats)
+        return (playerStats.highestKillStreak or 0) >= 50
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "50 consecutive kills! Azeroth's investigators are gathering evidence, but all the witnesses keep mysteriously disappearing."
+},
+{
+    id = "kill_streak_75",
+    title = "Mass Extinction",
+    description = "Achieve a 75-player kill streak",
+    iconID = 133731,
+    condition = function(playerStats)
+        return (playerStats.highestKillStreak or 0) >= 75
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "75 kills without dying? Players are filing tickets claiming you're hacking. Blizzard responded: 'No, they're just that good.'"
+},
+{
+    id = "kill_streak_100",
+    title = "Terminator",
+    description = "Achieve a 100-player kill streak",
+    iconID = 132734,
+    condition = function(playerStats)
+        return (playerStats.highestKillStreak or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "Triple digits! You've gone from 'player' to 'natural disaster.' Enemy faction now marks your location on their maps as a red skull."
+},
+{
+    id = "kill_streak_125",
+    title = "Death Incarnate",
+    description = "Achieve a 125-player kill streak",
+    iconID = 132886,
+    condition = function(playerStats)
+        return (playerStats.highestKillStreak or 0) >= 125
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "125 straight kills! Death himself is sending you a résumé. Your enemies have organized support groups to cope with '[YOUR NAME] Trauma.'"
+},
+{
+    id = "kill_streak_150",
+    title = "Killimanjaro",
+    description = "Achieve a 150-player kill streak",
+    iconID = 135818,
+    condition = function(playerStats)
+        return (playerStats.highestKillStreak or 0) >= 150
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "150 uninterrupted kills! You're not just killing players—you're killing server populations. Like a fine wine, your murder spree only improves with time."
+},
+{
+    id = "kill_streak_175",
+    title = "Unstoppable Force",
+    description = "Achieve a 175-player kill streak",
+    iconID = 632354,
+    condition = function(playerStats)
+        return (playerStats.highestKillStreak or 0) >= 175
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "175 bodies and counting! Scientists have classified you as a weather phenomenon. Forum threads about you span 17 pages of pure salt."
+},
+{
+    id = "kill_streak_200",
+    title = "Human Resources Nightmare",
+    description = "Achieve a 200-player kill streak",
+    iconID = 133768,
+    condition = function(playerStats)
+        return (playerStats.highestKillStreak or 0) >= 200
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "200 unbroken kills! The Spirit Healer is filing for workload compensation. When players see you, they just release and reroll on another server."
 }}
 
 -- Function to get player name for achievement text

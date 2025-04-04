@@ -491,22 +491,38 @@ local function UpdateAchievementLayout()
             targetValue = 100
             currentProgress = PSC_CalculateGreyKills()
             DebugPrint("Grey level kills: " .. currentProgress)
-        elseif achievement.id == "killing_spree_1" then
+        elseif achievement.id == "kill_streak_25" then
             targetValue = 25
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement killing_spree_1: " .. currentProgress)
-        elseif achievement.id == "killing_spree_2" then
+            DebugPrint("Kill Streak for achievement kill_streak_25: " .. currentProgress)
+        elseif achievement.id == "kill_streak_50" then
             targetValue = 50
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement killing_spree_2: " .. currentProgress)
-        elseif achievement.id == "killing_spree_3" then
+            DebugPrint("Kill Streak for achievement kill_streak_50: " .. currentProgress)
+        elseif achievement.id == "kill_streak_75" then
             targetValue = 75
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement killing_spree_3: " .. currentProgress)
-        elseif achievement.id == "killing_spree_4" then
+            DebugPrint("Kill Streak for achievement kill_streak_75: " .. currentProgress)
+        elseif achievement.id == "kill_streak_100" then
             targetValue = 100
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement killing_spree_4: " .. currentProgress)
+            DebugPrint("Kill Streak for achievement kill_streak_100: " .. currentProgress)
+        elseif achievement.id == "kill_streak_125" then
+            targetValue = 125
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            DebugPrint("Kill Streak for achievement kill_streak_125: " .. currentProgress)
+        elseif achievement.id == "kill_streak_150" then
+            targetValue = 150
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            DebugPrint("Kill Streak for achievement kill_streak_150: " .. currentProgress)
+        elseif achievement.id == "kill_streak_175" then
+            targetValue = 175
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            DebugPrint("Kill Streak for achievement kill_streak_175: " .. currentProgress)
+        elseif achievement.id == "kill_streak_200" then
+            targetValue = 200
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            DebugPrint("Kill Streak for achievement kill_streak_200: " .. currentProgress)
         elseif achievement.id == "zone_redridge" then
             targetValue = 500
             currentProgress = zoneData["Redridge Mountains"] or 0
@@ -711,4 +727,50 @@ PVPSC.UpdateAchievementLayout = UpdateAchievementLayout
 SLASH_PVPSCACHIEVEMENTS1 = "/pvpachievements"
 SlashCmdList["PVPSCACHIEVEMENTS"] = function()
     ToggleAchievementFrame()
+end
+
+local function GetCorrectKillStreakValue()
+    local characterKey = PSC_GetCharacterKey()
+    local highestStreak = 0
+
+    -- Debug data sources if enabled
+    if PSC_Debug then
+        if playerStats and playerStats.highestKillStreak then
+            print("playerStats.highestKillStreak: " .. playerStats.highestKillStreak)
+        else
+            print("playerStats.highestKillStreak is nil")
+        end
+
+        if summaryStats and summaryStats.highestKillStreak then
+            print("summaryStats.highestKillStreak: " .. summaryStats.highestKillStreak)
+        else
+            print("summaryStats.highestKillStreak is nil")
+        end
+
+        if PSC_DB and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and
+           PSC_DB.PlayerKillCounts.Characters[characterKey] and PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak then
+            print("DB direct value: " .. PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak)
+        else
+            print("DB direct value is not available")
+        end
+    end
+
+    -- Get value from summaryStats if available
+    if summaryStats and summaryStats.highestKillStreak then
+        highestStreak = summaryStats.highestKillStreak
+    end
+
+    -- Try playerStats if higher
+    if playerStats and playerStats.highestKillStreak and playerStats.highestKillStreak > highestStreak then
+        highestStreak = playerStats.highestKillStreak
+    end
+
+    -- Check direct DB as fallback if higher
+    if PSC_DB and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and
+       PSC_DB.PlayerKillCounts.Characters[characterKey] and PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak and
+       PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak > highestStreak then
+        highestStreak = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak
+    end
+
+    return highestStreak
 end
