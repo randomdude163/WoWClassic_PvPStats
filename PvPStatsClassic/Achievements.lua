@@ -3,7 +3,6 @@ local addonName, PVPSC = ...
 PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
--- Define all achievements here
 AchievementSystem.achievements = { -- Paladin Achievements
 {
     id = "paladin_1",
@@ -37,7 +36,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 Paladins cashed in their pension early! The Light's insurance premiums have skyrocketed since you started playing."
+    subText = "750 Paladins judged and executed. Every one of them still lives in their childhood bedroom, gives unsolicited advice about honor, and thinks ‘simp’ is the ultimate insult. Their Tinder bios all include 'protector of women.'"
 }, -- Priest Achievements
 {
     id = "priest_1",
@@ -117,7 +116,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "250 Shamans discovered the elements don't answer when they're dead. You've kicked more totems than a clumsy tauren!"
+    subText = "250 Shamans flattened — mostly Enhancement mains who picked the spec because someone told them Windfury makes big numbers. They’re now back in retail, crying about how Classic 'isn't fair'."
 }, {
     id = "shaman_2",
     title = "Spirit Walking Dead",
@@ -143,7 +142,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
 }, -- Hunter Achievements
 {
     id = "hunter_1",
-    title = "Need on Everything",
+    title = "I'm so special",
     description = "Take down 250 Hunters",
     iconID = 626000,
     condition = function(playerStats)
@@ -151,7 +150,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "250 Hunters down, yet they still rolled Need on their own funeral. Some habits never die."
+    subText = "250 Hunters down. All of them thought naming their pet 'Arthas' made them deep, and that spelling 'Légolâs' with special characters made them original. Congratulations — you just wiped out the world's largest unpaid cosplay convention."
 }, {
     id = "hunter_2",
     title = "No More AFK Farmers and Backpedalers",
@@ -173,7 +172,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 Hunters just learned the hard way that rifles need bullets. The only thing their gun is firing now is disappointment."
+    subText = "You’ve ended the WoW careers of 750 Hunters — that’s 750 dudes who think  they’re ‘PvP Gods’ because they once kited Bellygrub 40 yards to the Guards. Their last words? 'I swear I had ammo!'"
 }, -- Warrior Achievements
 {
     id = "warrior_1",
@@ -301,7 +300,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "500 Warlocks perished, and not a single Soulstone in sight. Their last words? 'Bro, I thought you had one on me.'"
 }, {
     id = "warlock_3",
-    title = "Hellfire and Brimston't",
+    title = "Curse you!",
     description = "Banish 750 Warlocks",
     iconID = 135818,
     condition = function(playerStats)
@@ -309,7 +308,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "750 Warlocks cursed their last curse! Turns out their soul stones were just fancy paperweights. Even their demons are filing for workplace compensation."
+    subText = "750 Warlocks cursed you with everything they had—bad posture, social anxiety, and a Steam library full of games they’ll never finish. Joke’s on them: you were already cursed with exposure to their forum posts."
 }, -- Female Gender Achievement
 {
     id = "gender_female_1",
@@ -451,7 +450,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "unique_kills_1",
     title = "Variety Slayer",
     description = "Defeat 400 unique players",
-    iconID = 236539,
+    iconID = 133789,
     condition = function(playerStats)
         return (playerStats.uniqueKills or 0) >= 400
     end,
@@ -462,7 +461,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "unique_kills_2",
     title = "Equal Opportunity Executioner",
     description = "Defeat 800 unique players",
-    iconID = 236535,
+    iconID = 133787,
     condition = function(playerStats)
         return (playerStats.uniqueKills or 0) >= 800
     end,
@@ -473,7 +472,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "unique_kills_3",
     title = "Celebrity Stalker",
     description = "Defeat 2400 unique players",
-    iconID = 236541,
+    iconID = 133785,
     condition = function(playerStats)
         return (playerStats.uniqueKills or 0) >= 2400
     end,
@@ -544,7 +543,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 Night Elves have discovered that Shadowmeld doesn't work against players who can smell fear. Their wisps are forming support groups now. These immortal beings never expected to die so many times in the same week. Darnassus real estate prices are crashing faster than Night Elves jumping off Teldrassil to avoid you."
+    subText = "Half a thousand Night Elves sent to wisp chat. — congrats, you’ve outpaced deforestation. Teldrassil is applying for a UNESCO war crime investigation. "
 }, {
     id = "race_nightelf_3",
     title = "Eternal No More",
@@ -622,7 +621,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "500 gnomes eliminated! OSHA has cited you for workplace hazards after these tiny players couldn't reach the 'Exit Game' button fast enough. Most died typing highly technical insults nobody understood. According to Guinness World Records, you've now punted more gnomes than anyone in recorded history. Their elaborate escape plans failed faster than their Escape Artist racial."
+    subText = "500 Gnomes deleted. You’ve wiped more STEM majors than a Silicon Valley hiring freeze. Their gadgets couldn’t save them, and their last words were all keyboard macros no one understood"
 }, {
     id = "race_gnome_3",
     title = "Small Problems Solved",
@@ -833,7 +832,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "kill_streak_25",
     title = "Serial Killer",
     description = "Achieve a 25-player kill streak",
-    iconID = 236293,
+    iconID = 133728,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 25
     end,
@@ -867,7 +866,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
 },
 {
     id = "kill_streak_100",
-    title = "Terminator",
+    title = "TRIPLE D!!!",
     description = "Achieve a 100-player kill streak",
     iconID = 132734,
     condition = function(playerStats)
@@ -875,25 +874,25 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Triple digits! You've gone from 'player' to 'natural disaster.' Enemy faction now marks your location on their maps as a red skull."
+    subText = "You've killed more players than some indie games have sales. Enemy raid leaders reference you like you're Voldemort — 'He-Who-Wipes-Raid-Groups.'' Even your local WiFi provider flagged you as a DDoS threat."
 },
 {
     id = "kill_streak_125",
-    title = "Death Incarnate",
+    title = "PvP Plague",
     description = "Achieve a 125-player kill streak",
-    iconID = 132886,
+    iconID = 136123,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 125
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "125 straight kills! Death himself is sending you a résumé. Your enemies have organized support groups to cope with '[YOUR NAME] Trauma.'"
+    subText = "You're not a player anymore—you're a server-wide debuff. Whole zones avoid you like it's patch day. 125 kills and not a single scratch? That’s not PvP. That’s population control."
 },
 {
     id = "kill_streak_150",
-    title = "Killimanjaro",
+    title = "Fine Wine",
     description = "Achieve a 150-player kill streak",
-    iconID = 135818,
+    iconID = 132789,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 150
     end,
@@ -905,36 +904,102 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "kill_streak_175",
     title = "Unstoppable Force",
     description = "Achieve a 175-player kill streak",
-    iconID = 632354,
+    iconID = 133050,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 175
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "175 bodies and counting! Scientists have classified you as a weather phenomenon. Forum threads about you span 17 pages of pure salt."
+    subText = "175 bodies and counting! Like the legendary Alterac Valley weapon, you've become a force of nature—slow, powerful, and absolutely devastating. The Immovable Object has finally met its match, and it's your kill streak. Players have started putting 'killed by [YOUR NAME]' in their forum signatures as a badge of honor."
 },
 {
     id = "kill_streak_200",
     title = "Human Resources Nightmare",
     description = "Achieve a 200-player kill streak",
-    iconID = 133768,
+    iconID = 236370,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 200
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "200 unbroken kills! The Spirit Healer is filing for workload compensation. When players see you, they just release and reroll on another server."
-}}
+    subText = "200 unbroken kills! Your /flex emote now causes a 10-yard fear. Even raid bosses check their aggro tables when you log in. Blizzard added a new GM macro: /who [YOUR NAME] – for threat assessment."
+},
+{
+    id = "multi_kill_3",
+    title = "Triple Kill!",
+    description = "Get 3 kills in a single combat",
+    iconID = 236330,
+    condition = function(playerStats)
+        return (playerStats.highestMultiKill or 0) >= 3
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "ACE! Three champions... er, players... fell to your blade in quick succession. The enemy team is crying 'nerf [YOUR NAME]' in all chat. Your Summoner Score is rising!"
+},
+{
+    id = "multi_kill_4",
+    title = "QUADRA KILL!",
+    description = "Get 4 kills in a single combat",
+    iconID = 236341,
+    condition = function(playerStats)
+        return (playerStats.highestMultiKill or 0) >= 4
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "The crowd goes wild as you secure your fourth elimination! 'GG [YOUR NAME] diff' echoes across Azeroth. The enemy team is calling for a surrender vote while spamming 'Report jungler no ganks' in chat."
+},
+{
+    id = "multi_kill_5",
+    title = "PENTAKILL!!",
+    description = "Get 5 kills in a single combat",
+    iconID = 236383,
+    condition = function(playerStats)
+        return (playerStats.highestMultiKill or 0) >= 5
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "LEGENDARY! You just went full Faker on these noobs! 'GG EZ' has never been more appropriate. The enemy team pressed Alt + F4 simultaneously and uninstalled the game. Your MVP status is unrivaled, and Riot Games is sending you a cease and desist letter for being too OP."
+},
 
--- Function to get player name for achievement text
+-- Most Killed Player Achievement
+{
+    id = "favorite_target",
+    title = "Personal Vendetta",
+    description = "Kill the same player 10 times",
+    iconID = 136168,  -- Red target icon
+    condition = function(playerStats)
+        local stats = PSC_CalculateSummaryStatistics()
+        return stats.mostKilledCount >= 10
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = function()
+        local stats = PSC_CalculateSummaryStatistics()
+        local playerName = stats.mostKilledPlayer or "Unknown"
+        local killCount = stats.mostKilledCount or 0
+
+        if playerName == "None" or killCount < 10 then
+            return "You have developed an unhealthy obsession with " .. playerName
+        end
+        return playerName .. " has died to you " .. killCount .. " times! They've added your name to their '/who' macro and log off the moment you appear online. Their guild required them to change their hearthstone to a new continent just to avoid you. Every night, they check under their bed for [YOUR NAME] before going to sleep."
+    end
+},
+}
+
 local function GetPlayerName()
     local playerName = UnitName("player")
     return playerName or "You"
 end
 
--- Function to replace placeholders in text with player name
+-- Update PersonalizeText function to handle function-based subText
 local function PersonalizeText(text)
     if not text then return "" end
+
+    -- If text is a function, call it to get the actual text
+    if type(text) == "function" then
+        text = text()
+    end
+
     local playerName = GetPlayerName()
     return text:gsub("%[YOUR NAME%]", playerName)
 end

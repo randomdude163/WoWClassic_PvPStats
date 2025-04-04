@@ -98,6 +98,13 @@ end
 -- Function to replace placeholders in text with player name
 local function PersonalizeText(text)
     if not text then return "" end
+
+    -- Check if text is a function, and if so, call it to get the actual text
+    if type(text) == "function" then
+        text = text()
+    end
+
+    -- Now that we have a string, we can use gsub
     local playerName = GetPlayerName()
     return text:gsub("%[YOUR NAME%]", playerName)
 end
@@ -559,6 +566,33 @@ local function UpdateAchievementLayout()
             targetValue = 2400
             currentProgress = summaryStats.uniqueKills or 0
             DebugPrint("Unique kills progress for achievement unique_kills_3: " .. (currentProgress or 0))
+        elseif achievement.id == "multi_kill_3" then
+            targetValue = 3
+            currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
+            DebugPrint("Multi Kill for achievement multi_kill_3: " .. currentProgress)
+        elseif achievement.id == "multi_kill_4" then
+            targetValue = 4
+            currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
+            DebugPrint("Multi Kill for achievement multi_kill_4: " .. currentProgress)
+        elseif achievement.id == "multi_kill_5" then
+            targetValue = 5
+            currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
+            DebugPrint("Multi Kill for achievement multi_kill_5: " .. currentProgress)
+        elseif achievement.id == "favorite_target" then
+            targetValue = 10
+
+            -- Calculate most killed player count
+            local stats = PSC_CalculateSummaryStatistics()
+            local mostKilledPlayer = stats.mostKilledPlayer or "None"
+            local mostKilledCount = stats.mostKilledCount or 0
+
+            currentProgress = mostKilledCount
+            -- Handle dynamic subText for this achievement
+            if achievement.subText and type(achievement.subText) == "function" then
+                -- Replace the function with its actual result for display
+                local dynamicText = achievement.subText()
+                achievement.displayText = dynamicText
+            end
         end
 
         -- Add achievement title first (before we try to reference it)
