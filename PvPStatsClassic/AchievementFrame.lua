@@ -721,7 +721,11 @@ local function UpdateAchievementLayout()
         -- Add mouse interaction to show tooltips with subText
         tile:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(achievement.title, 1, 0.82, 0)
+
+            -- Add achievement points in light blue next to the title
+            local pointsText = achievement.achievementPoints or 10
+            GameTooltip:SetText(achievement.title .. " |cFF66CCFF(" .. pointsText .. ")|r", 1, 0.82, 0)
+
             GameTooltip:AddLine(achievement.description, 1, 1, 1, true)
             if achievement.subText then
                 GameTooltip:AddLine(" ")
