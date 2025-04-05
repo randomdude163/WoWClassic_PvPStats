@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local configFrame = nil
 
 local PSC_CONFIG_HEADER_R = 1.0
@@ -613,6 +615,29 @@ local function CreateActionButtons(parent)
     }
 end
 
+local currentTestAchievement = 1
+
+local function CreateTestAchievementButton(parent)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(200, 22)
+    button:SetText("Test Achievement Popup")
+    button:SetPoint("TOPLEFT", 20, -240)
+
+    button:SetScript("OnClick", function()
+        -- Cycle through achievements
+        local achievementID = "id_" .. currentTestAchievement
+        PVPSC.AchievementSystem:TestAchievementPopup(achievementID)
+
+        -- Increment counter, reset to 1 if we've shown all achievements
+        currentTestAchievement = currentTestAchievement + 1
+        if currentTestAchievement > 8 then  -- Changed from 6 to 8 to include all achievements
+            currentTestAchievement = 1
+        end
+    end)
+
+    return button
+end
+
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(600, 660)
@@ -912,6 +937,8 @@ function PSC_CreateConfigFrame()
 
     local resetButtons = CreateActionButtons(tabFrames[3])
     configFrame.resetButtons = resetButtons
+
+    local testAchievementButton = CreateTestAchievementButton(tabFrames[3])
 
     CreateAboutTab(tabFrames[4])
 

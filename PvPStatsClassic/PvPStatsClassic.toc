@@ -22,3 +22,6 @@ StatisticsFrame.lua
 Utils.lua
 TestData.lua
 PvPStatsClassic.lua
+AchievementFrame.lua
+AchievementPopup.lua
+Achievements.lua
