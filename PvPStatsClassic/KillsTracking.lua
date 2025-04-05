@@ -2,7 +2,7 @@ PSC_RecentPlayerDamage = {}
 PSC_ASSIST_DAMAGE_WINDOW = 60.0  -- 45 second window for kill assist credit
 
 PSC_RecentlyCountedKills = {}
-local KILL_TRACKING_WINDOW = 1.0
+PSC_KILL_TRACKING_WINDOW = 1.0
 
 PSC_MultiKillCount = 0
 
@@ -191,7 +191,7 @@ end
 
 function PSC_CleanupRecentlyCountedKillsDict()
     local now = GetTime()
-    local cutoff = now - KILL_TRACKING_WINDOW
+    local cutoff = now - PSC_KILL_TRACKING_WINDOW
     for guid, timestamp in pairs(PSC_RecentlyCountedKills) do
         if timestamp < cutoff then
             PSC_RecentlyCountedKills[guid] = nil
