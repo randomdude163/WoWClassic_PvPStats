@@ -15,7 +15,7 @@ local colWidths = {
     deaths = 33,
     assists = 33, -- New column for assists
     rank = 60,
-    guild = 150,
+    guild = 165,
     zone = 140,
     lastKill = 190
 }
