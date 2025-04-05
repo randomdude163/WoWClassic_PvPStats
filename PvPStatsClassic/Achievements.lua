@@ -379,7 +379,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Widowmaker",
     description = "Defeat 50 male characters",
     iconID = 236557,
-    achievementPoints = 10,
+    achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 50
     end,
@@ -391,7 +391,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Widowmaker EPIC",
     description = "Defeat 100 male characters",
     iconID = 132352,
-    achievementPoints = 10,
+    achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 100
     end,
@@ -403,7 +403,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Widowmaker LEGENDARY",
     description = "Defeat 200 male characters",
     iconID = 134166,
-    achievementPoints = 10,
+    achievementPoints = 75,
     condition = function(playerStats)
         return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 200
     end,
@@ -1023,7 +1023,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end
 },
 {
-    id = "big_game_hunter",
+    id = "big_game_huntard",
     title = "Big Game Hunter",
     description = "Eliminate 30 level ?? players",
     iconID = 135614,
@@ -1075,5 +1075,28 @@ function AchievementSystem:CheckAchievements()
                 description = personalizedDescription
             })
         end
+    end
+end
+
+-- Function to determine rarity based on achievement points
+local function GetRarityFromPoints(points)
+    if points >= 250 then
+        return "legendary"
+    elseif points >= 75 then
+        return "epic"
+    elseif points >= 50 then
+        return "rare"
+    elseif points >= 25 then
+        return "uncommon"
+    else
+        return "common"
+    end
+end
+
+-- Set rarity for all achievements based on points
+for _, achievement in ipairs(AchievementSystem.achievements) do
+    -- If rarity is not manually set, determine it from points
+    if not achievement.rarity then
+        achievement.rarity = GetRarityFromPoints(achievement.achievementPoints or 10)
     end
 end

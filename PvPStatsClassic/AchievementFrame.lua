@@ -140,7 +140,7 @@ local function FilterAchievements(achievements, category)
             end
         elseif category == "Kills" then
             if achievement.id == "guild_kills" or achievement.id == "guildless_kills" or
-               achievement.id == "grey_level_kills" or achievement.id == "big_game_hunter" or
+               achievement.id == "grey_level_kills" or achievement.id == "big_game_huntard" or
                string.find(achievement.id, "kill_streak") or
                string.find(achievement.id, "total_kills") or
                string.find(achievement.id, "unique_kills") or
@@ -156,6 +156,48 @@ local function FilterAchievements(achievements, category)
         end
     end
     return filtered
+end
+
+-- Find the function that creates achievement tiles
+local function CreateAchievementTile(parent, achievement, index)
+    local tile = CreateFrame("Button", nil, parent)
+    tile:SetSize(parent:GetWidth() - 30, 60)
+    tile:SetPoint("TOPLEFT", parent, "TOPLEFT", 15, -((index - 1) * 65) - 70)
+
+    -- Create icon container to hold both icon and border
+    local iconContainer = CreateFrame("Frame", nil, tile)
+    iconContainer:SetSize(40, 40)
+    iconContainer:SetPoint("LEFT", 10, 0)
+
+    -- Add a background for the icon first (lowest layer)
+    local background = iconContainer:CreateTexture(nil, "BACKGROUND")
+    background:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
+    background:SetSize(38, 38)
+    background:SetTexture("Interface\\Buttons\\UI-EmptySlot")
+    background:SetVertexColor(0.3, 0.3, 0.3, 0.8)
+
+    -- Create icon on top of background
+    local icon = iconContainer:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(36, 36)
+    icon:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
+
+    -- Get the achievement icon
+    local iconID = achievement.iconID
+    if type(iconID) == "number" then
+        icon:SetTexture(iconID)
+    else
+        icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+    end
+
+    -- Get the achievement rarity
+    local rarity = achievement.rarity or "common"
+
+    -- Rest of your tile code...
+    local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOPLEFT", iconContainer, "TOPRIGHT", 10, -2)
+    title:SetText(achievement.title)
+
+    return tile
 end
 
 -- Function to update achievement layout
@@ -195,10 +237,24 @@ local function UpdateAchievementLayout()
             bgFile = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
             edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
             tile = false,
-            tileSize = 16,
-            edgeSize = 16,
+            tileSize = 22,
+            edgeSize = 22,
             insets = { left = 4, right = 4, top = 4, bottom = 4 }
         })
+
+        -- Apply rarity color to the frame's border
+        local rarity = achievement.rarity or "common"
+        if rarity == "uncommon" then
+            tile:SetBackdropBorderColor(0.1, 1.0, 0.1) -- Green
+        elseif rarity == "rare" then
+            tile:SetBackdropBorderColor(0.0, 0.4, 1.0) -- Blue
+        elseif rarity == "epic" then
+            tile:SetBackdropBorderColor(0.8, 0.3, 0.9) -- Purple
+        elseif rarity == "legendary" then
+            tile:SetBackdropBorderColor(1.0, 0.5, 0.0) -- Orange
+        else
+            tile:SetBackdropBorderColor(0.7, 0.7, 0.7) -- Light gray for common
+        end
 
         if not achievement.unlocked then
             -- Gray out locked achievements
@@ -207,14 +263,30 @@ local function UpdateAchievementLayout()
             overlay:SetColorTexture(0, 0, 0, 0.5)
         end
 
-        -- Add achievement icon
-        local icon = tile:CreateTexture(nil, "ARTWORK")
-        icon:SetSize(40, 40)
-        icon:SetPoint("TOPLEFT", 10, -10)
-        icon:SetTexture(achievement.iconID)
+        -- Add achievement icon with container
+        local iconContainer = CreateFrame("Frame", nil, tile)
+        iconContainer:SetSize(40, 40)
+        iconContainer:SetPoint("TOPLEFT", tile, "TOPLEFT", 10, -10)
+
+        -- Add a background for the icon
+        local background = iconContainer:CreateTexture(nil, "BACKGROUND")
+        background:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
+        background:SetSize(38, 38)
+        background:SetTexture("Interface\\Buttons\\UI-EmptySlot")
+        background:SetVertexColor(0.3, 0.3, 0.3, 0.8)
+
+        -- Create the icon
+        local icon = iconContainer:CreateTexture(nil, "ARTWORK")
+        icon:SetSize(36, 36)
+        icon:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
+        icon:SetTexture(achievement.iconID or "Interface\\Icons\\INV_Misc_QuestionMark")
         if not achievement.unlocked then
             icon:SetDesaturated(true)
         end
+
+        -- Get the achievement rarity and create border
+        local rarity = achievement.rarity or "common"
+
 
         -- Add status bar for progress under the icon
         local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
@@ -479,7 +551,7 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "multi_kill_5" then
             targetValue = 5
             currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
-        elseif achievement.id == "big_game_hunter" then
+        elseif achievement.id == "big_game_huntard" then
             targetValue = 30
             local _, _, _, _, _, levelData = PSC_CalculateBarChartStatistics()
             currentProgress = levelData["??"] or 0
@@ -605,13 +677,29 @@ local function UpdateAchievementLayout()
         tile:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 
+            -- Get achievement rarity color
+            local rarity = achievement.rarity or "common"
+            local r, g, b = 1, 0.82, 0 -- Default gold color
+
+            if rarity == "uncommon" then
+                r, g, b = 0.1, 1.0, 0.1 -- Green
+            elseif rarity == "rare" then
+                r, g, b = 0.0, 0.4, 1.0 -- Blue
+            elseif rarity == "epic" then
+                r, g, b = 0.8, 0.3, 0.9 -- Purple
+            elseif rarity == "legendary" then
+                r, g, b = 1.0, 0.5, 0.0 -- Orange
+            elseif rarity == "common" then
+                r, g, b = 0.9, 0.9, 0.9 -- Light gray for common
+            end
+
+            -- Add achievement points in light blue next to the title
             local pointsText = achievement.achievementPoints or 10
-            GameTooltip:SetText(achievement.title .. " |cFF66CCFF(" .. pointsText .. ")|r", 1, 0.82, 0)
+            GameTooltip:SetText(achievement.title .. " |cFF66CCFF(" .. pointsText .. ")|r", r, g, b)
 
             GameTooltip:AddLine(achievement.description, 1, 1, 1, true)
             if achievement.subText then
                 GameTooltip:AddLine(" ")
-                -- Personalize the subtext by replacing [YOUR NAME] with actual player name
                 local personalizedSubText = PersonalizeText(achievement.subText)
                 GameTooltip:AddLine(personalizedSubText, 0.7, 0.7, 1, true)
             end
@@ -778,3 +866,11 @@ local function GetCorrectKillStreakValue()
 
     return highestStreak
 end
+
+local itemQualityColors = {
+    common = { r = 0.65, g = 0.65, b = 0.65 }, -- Gray
+    uncommon = { r = 0.1, g = 1.0, b = 0.1 }, -- Green
+    rare = { r = 0.0, g = 0.4, b = 1.0 }, -- Blue
+    epic = { r = 0.8, g = 0.3, b = 0.9 }, -- Purple
+    legendary = { r = 1.0, g = 0.5, b = 0.0 }, -- Orange
+}
