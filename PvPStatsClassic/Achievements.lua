@@ -5,7 +5,7 @@ local AchievementSystem = PVPSC.AchievementSystem
 
 AchievementSystem.achievements = { -- Paladin Achievements
 {
-    id = "paladin_1",
+    id = "class_paladin_1",
     title = "Bubble Popper",
     description = "Slay 250 Paladins",
     iconID = 626003,
@@ -17,7 +17,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "250 Divine Shield bubbles popped! Turns out, the Light doesn't save them when [YOUR NAME] is around."
 }, {
-    id = "paladin_2",
+    id = "class_paladin_2",
     title = "Bubble Heartbreaker",
     description = "Slay 500 Paladins",
     iconID = 135896,
@@ -29,7 +29,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 Paladins discovered their Hearthstone was on cooldown. The Light abandoned them faster than their guild after a wipe."
 }, {
-    id = "paladin_3",
+    id = "class_paladin_3",
     title = "Divine Retirement Plan",
     description = "Slay 750 Paladins",
     iconID = 133176,
@@ -42,7 +42,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 Paladins judged and executed. Every one of them still lives in their childhood bedroom, gives unsolicited advice about honor, and thinks 'simp' is the ultimate insult. Their Tinder bios all include 'protector of women.'"
 }, -- Priest Achievements
 {
-    id = "priest_1",
+    id = "class_priest_1",
     title = "Holy Word: Death",
     description = "Defeat 250 Priests",
     iconID = 626004,
@@ -54,7 +54,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "250 Priests discovered that healing can't fix death! Their last confession? 'I should have rolled a Warlock.'"
 }, {
-    id = "priest_2",
+    id = "class_priest_2",
     title = "Scripture Shreader",
     description = "Defeat 500 Priests",
     iconID = 135898,
@@ -66,7 +66,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 Priests found out prayer cooldowns are longer than death timers! The Light's HR department is swamped with resignation letters."
 }, {
-    id = "priest_3",
+    id = "class_priest_3",
     title = "Religious Persecution",
     description = "Defeat 750 Priests",
     iconID = 135922,
@@ -79,7 +79,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 Priests discovered their Power Word: Shield was just plot armor! Churches now offer combat training instead of Sunday service."
 }, -- Druid Achievements
 {
-    id = "druid_1",
+    id = "class_druid_1",
     title = "Roadkill Royale",
     description = "Take down 250 Druids",
     iconID = 625999,
@@ -91,7 +91,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "Feral Druids brag about their movement speed—until they realize they’ve sprinted straight into 250 unavoidable deaths. Some say Travel Form is fast. You know what’s faster? A corpse run."
 }, {
-    id = "druid_2",
+    id = "class_druid_2",
     title = "Animal Control",
     description = "Take down 500 Druids",
     iconID = 236167,
@@ -103,7 +103,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 Druids exterminated! Cat form, bear form, dead form – you've seen them all. PETA has issued a statement."
 }, {
-    id = "druid_3",
+    id = "class_druid_3",
     title = "Master of None",
     description = "Take down 750 Druids",
     iconID = 132138,
@@ -116,7 +116,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "Druids claim they can do it all—tank, heal, DPS. 750 of them just proved they can also die in every imaginable way. At this point, even their Innervate couldn't restore their dignity."
 }, -- Shaman Achievements
 {
-    id = "shaman_1",
+    id = "class_shaman_1",
     title = "Totem Kicker",
     description = "Defeat 250 Shamans",
     iconID = 626006,
@@ -128,7 +128,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "250 Shamans flattened — mostly Enhancement mains who picked the spec because someone told them Windfury makes big numbers. They’re now back in retail, crying about how Classic 'isn't fair'."
 }, {
-    id = "shaman_2",
+    id = "class_shaman_2",
     title = "Spirit Walking Dead",
     description = "Defeat 500 Shamans",
     iconID = 237589,
@@ -140,7 +140,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 Shamans deleted their characters after realizing casting Lightning Bolt in melee range isn’t actually a good strategy. Their ancestors are embarrassed."
 }, {
-    id = "shaman_3",
+    id = "class_shaman_3",
     title = "Windfury Wipeout",
     description = "Defeat 750 Shamans",
     iconID = 136088,
@@ -153,7 +153,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "The world is down 750 Shamans, and yet not a single one landed that mythical 3x Windfury crit. Meanwhile, Warriors are still laughing."
 }, -- Hunter Achievements
 {
-    id = "hunter_1",
+    id = "class_hunter_1",
     title = "I'm so special",
     description = "Take down 250 Hunters",
     iconID = 626000,
@@ -165,7 +165,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "250 Hunters down. All of them thought naming their pet 'Arthas' made them deep, and that spelling 'Légolâs' with special characters made them original. Congratulations — you just wiped out the world's largest unpaid cosplay convention."
 }, {
-    id = "hunter_2",
+    id = "class_hunter_2",
     title = "No More AFK Farmers and Backpedalers",
     description = "Take down 500 Hunters",
     iconID = 132208,
@@ -177,7 +177,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 Hunters eliminated—most didn’t even notice. Their corpses still have Auto Shot toggled on. And the other half are still backpedaling to the graveyard."
 }, {
-    id = "hunter_3",
+    id = "class_hunter_3",
     title = "Click… No Ammo",
     description = "Take down 750 Hunters",
     iconID = 135618,
@@ -190,7 +190,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "You’ve ended the WoW careers of 750 Hunters — that’s 750 dudes who think  they’re ‘PvP Gods’ because they once kited Bellygrub 40 yards to the Guards. Their last words? 'I swear I had ammo!'"
 }, -- Warrior Achievements
 {
-    id = "warrior_1",
+    id = "class_warrior_1",
     title = "Rage Against The Machine",
     description = "Eliminate 250 Warriors",
     iconID = 626008,
@@ -202,7 +202,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "The anger management clinic closed after losing their best customers - all 250 warriors found peace. Permanently."
 }, {
-    id = "warrior_2",
+    id = "class_warrior_2",
     title = "Execute.exe Has Failed",
     description = "Eliminate 500 Warriors",
     iconID = 132355,
@@ -214,7 +214,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 Warriors deleted! These mouth-breathing keyboard smashers think strategy means hitting whatever isn't on cooldown. Their collective IQ is lower than their average item level, and that's saying something after you've repeatedly ganked them naked. The warrior's guild is hiring anyone with a pulse now—previous candidates eliminated by natural selection and your weapon."
 }, {
-    id = "warrior_3",
+    id = "class_warrior_3",
     title = "Big Numbers, Small Brain",
     description = "Eliminate 750 Warriors",
     iconID = 132346,
@@ -227,7 +227,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 Warriors down! Turns out, rolling the most played class doesn’t guarantee you rolled the smartest players."
 }, -- Mage Achievements
 {
-    id = "mage_1",
+    id = "class_mage_1",
     title = "Frost Nova'd Forever",
     description = "Defeat 250 Mages",
     iconID = 626001,
@@ -239,7 +239,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "Local inn reports 250 frozen mage corpses! Their Ice Block and your Frostnova melted faster than their hopes of survival. At least they're well preserved."
 }, {
-    id = "mage_2",
+    id = "class_mage_2",
     title = "Cast Time Cancelled",
     description = "Defeat 500 Mages",
     iconID = 135808,
@@ -251,7 +251,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "These 500 mages learned that Pyroblast's cast time is longer than their life expectancy! Their last words were 'Just one more second...'"
 }, {
-    id = "mage_3",
+    id = "class_mage_3",
     title = "Arcane Accident",
     description = "Defeat 750 Mages",
     iconID = 135736,
@@ -264,7 +264,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "After 750 failed Blink escapes, local mages are petitioning to make Blink work properly. So far, no response from their corpses."
 }, -- Rogue Achievements
 {
-    id = "rogue_1",
+    id = "class_rogue_1",
     title = "Cheap Shot Champion",
     description = "Uncover and defeat 250 Rogues",
     iconID = 626005,
@@ -276,7 +276,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "Found 250 rogues the hard way! Their stealth wasn't as good as they thought - maybe they should've spent more time practicing and less time ganking lowbies?"
 }, {
-    id = "rogue_2",
+    id = "class_rogue_2",
     title = "Swept Off Their Feet",
     description = "Uncover and defeat 500 Rogues",
     iconID = 132292,
@@ -288,7 +288,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 Rogues got outplayed so hard, even Vanish couldn’t save them. The poison vendor is now offering a ‘No Refunds’ policy."
 }, {
-    id = "rogue_3",
+    id = "class_rogue_3",
     title = "xXShadowLegendXx Slayer",
     description = "Uncover and defeat 750 Rogues",
     iconID = 132299,
@@ -301,7 +301,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 rogues with names like 'Stábbyou' and 'Shadowkilla' won't be making any more YouTube 'EPIC 1V5 WORLD PVP' videos! Their Discord status is now permanently set to 'offline'."
 }, -- Warlock Achievements
 {
-    id = "warlock_1",
+    id = "class_warlock_1",
     title = "Demon't",
     description = "Banish 250 Warlocks",
     iconID = 626007,
@@ -313,7 +313,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "250 Warlocks sent their demons back to HR! Soul Shards now come with a money-back guarantee."
 }, {
-    id = "warlock_2",
+    id = "class_warlock_2",
     title = "Forgot the Stone, Didn’t You?",
     description = "Banish 500 Warlocks",
     iconID = 134336,
@@ -325,7 +325,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 Warlocks perished, and not a single Soulstone in sight. Their last words? 'Bro, I thought you had one on me.'"
 }, {
-    id = "warlock_3",
+    id = "class_warlock_3",
     title = "Curse you!",
     description = "Banish 750 Warlocks",
     iconID = 135818,
@@ -338,7 +338,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 Warlocks cursed you with everything they had—bad posture, social anxiety, and a Steam library full of games they’ll never finish. Joke’s on them: you were already cursed with exposure to their forum posts."
 }, -- Female Gender Achievement
 {
-    id = "gender_female_1",
+    id = "general_gender_female_1",
     title = "Wife Beater",
     description = "Defeat 50 female characters",
     iconID = 134167,
@@ -350,7 +350,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "Equal opportunity combat at its finest. You've sent 50 ladies to respawn and didn't even hold the graveyard gate open for them."
 }, {
-    id = "gender_female_2",
+    id = "general_gender_female_2",
     title = "Wife Beater EPIC",
     description = "Defeat 100 female characters",
     iconID = 132356,
@@ -362,7 +362,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "100 female characters deleted with extreme prejudice. The Ironforge 'Women's Protection Society' has placed a bounty on your head. Prepare the shitstorm."
 }, {
-    id = "gender_female_3",
+    id = "general_gender_female_3",
     title = "Wife Beater LEGENDARY",
     description = "Defeat 200 female characters",
     iconID = 135906,
@@ -375,7 +375,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "200 female characters obliterated! Your battle cry 'Equal rights means equal fights!' echoes across Azeroth. You've been banned from every tavern in Stormwind."
 }, -- Male Gender Achievement
 {
-    id = "gender_male_1",
+    id = "general_gender_male_1",
     title = "Widowmaker",
     description = "Defeat 50 male characters",
     iconID = 236557,
@@ -387,7 +387,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "50 husbands never made it home for dinner! Their wives are spending the Goblin Life Insurance payouts at the Auction House."
 }, {
-    id = "gender_male_2",
+    id = "general_gender_male_2",
     title = "Widowmaker EPIC",
     description = "Defeat 100 male characters",
     iconID = 132352,
@@ -399,7 +399,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "100 male characters destroyed! You're single-handedly responsible for a dating app boom in Azeroth. Lonely hearts everywhere."
 }, {
-    id = "gender_male_3",
+    id = "general_gender_male_3",
     title = "Widowmaker LEGENDARY",
     description = "Defeat 200 male characters",
     iconID = 134166,
@@ -412,7 +412,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "200 males sent to their maker! The orphanages are overflowing and the wedding ring market has crashed. Economics, baby!"
 }, -- Zone-specific Achievements
 {
-    id = "zone_redridge",
+    id = "general_zone_redridge",
     title = "Redridge Renovation",
     description = "Eliminate 500 players in Redridge Mountains",
     iconID = 135759,
@@ -424,7 +424,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 kills in Redridge! At this point, the Horde is considering annexing the territory and renaming it 'Corpseridge.' Real estate agents are advertising it as 'Lordaeron South - Now with 100% more corpses!' The Forsaken already filing paperwork to make it their summer vacation resort."
 }, {
-    id = "zone_elwynn",
+    id = "general_zone_elwynn",
     title = "Elwynn Exterminator",
     description = "Eliminate 100 players in Elwynn Forest",
     iconID = 135763,
@@ -436,7 +436,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "After 100 deaths in Elwynn, local humans are painting themselves green and practicing their 'zug zug'! Goldshire Inn's new special: 'Reroll Horde, Get Free Hearthstone to Durotar.' Even Marshal Dughan is considering a career in Orgrimmar."
 }, {
-    id = "zone_duskwood",
+    id = "general_zone_duskwood",
     title = "Darkshire Destroyer",
     description = "Eliminate 100 players in Duskwood",
     iconID = 136223,
@@ -448,7 +448,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "The Night Watch counted 100 fresh corpses and decided to rename Darkshire to 'Deadshire'! Mor'Ladim is feeling professionally threatened, and Stiches filed for unemployment."
 }, -- Total Kills Achievements
 {
-    id = "total_kills_1",
+    id = "kills_total_1",
     title = "Body Count Rising",
     description = "Slay 500 players in total",
     iconID = 236399, -- spell_shadow_shadowfury
@@ -459,7 +459,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 bodies dropped! Barrens chat has already moved on to debating whether you’re a bot, a multiboxer, or just deeply unhinged."
 }, {
-    id = "total_kills_2",
+    id = "kills_total_2",
     title = "Graveyard Entrepreneur",
     description = "Slay 1000 players in total",
     iconID = 237542,
@@ -470,7 +470,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "1000 kills! Spirit Healers are now offering you a commission for each body you send their way. The local gravediggers have named their shovels after you."
 }, {
-    id = "total_kills_3",
+    id = "kills_total_3",
     title = "Death Incorporated",
     description = "Slay 3000 players in total",
     iconID = 132205,
@@ -482,7 +482,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "3,000 confirmed kills! Even Mankrik’s wife had better odds of survival."
 }, -- Unique Player Kills Achievements
 {
-    id = "unique_kills_1",
+    id = "kills_unique_1",
     title = "Variety Slayer",
     description = "Defeat 400 unique players",
     iconID = 133789,
@@ -493,7 +493,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "400 different players have fallen to you. At this point, you’re less of a PvPer and more of an extinction event. Azeroth is running out of fresh faces, and you’re the reason why."
 }, {
-    id = "unique_kills_2",
+    id = "kills_unique_2",
     title = "Equal Opportunity Executioner",
     description = "Defeat 800 unique players",
     iconID = 133787,
@@ -504,7 +504,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "800 unique victims and counting! Players are now selling 'I Survived [YOUR NAME]' t-shirts - except none of them actually survived."
 }, {
-    id = "unique_kills_3",
+    id = "kills_unique_3",
     title = "Celebrity Stalker",
     description = "Defeat 2400 unique players",
     iconID = 133785,
@@ -831,7 +831,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "You've slaughtered 750 Tauren! Thunder Bluff elevator accidents are now the SECOND leading cause of Tauren death. These gentle giants had 5% more health than other races, which gave them exactly 3 extra seconds to contemplate their life choices before you ended them. Mulgore's milk industry has collapsed, and the Grimtotem are sending you fan mail. The Earth Mother has filed a restraining order against you."
 }, -- Guild Achievements
 {
-    id = "guild_kills",
+    id = "kills_guild",
     title = "Guild Drama Generator",
     description = "Eliminate 500 guild members",
     iconID = 134473,
@@ -843,7 +843,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "500 so-called 'guildmates' slaughtered! Turns out, that guild tag above their heads didn’t make them any less squishy. Maybe they should try a PvE guild—less world PvP, more coping in raid chat."
 }, {
-    id = "guildless_kills",
+    id = "kills_guildless",
     title = "Lone Wolf Hunter",
     description = "Eliminate 500 guildless players",
     iconID = 132203,
@@ -855,7 +855,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     completedDate = nil,
     subText = "Sent 500 'social anxiety' players back to retail! Their 'I don't need a guild to play' attitude didn't help against your killing spree. At least they didn't have to explain their deaths in guild chat."
 }, {
-    id = "grey_level_kills",
+    id = "kills_grey_level",
     title = "Teach them young",
     description = "Eliminate 100 grey-level players",
     iconID = 134435,
@@ -867,7 +867,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "It ain't much but it's honest work!"
 }, -- Kill Streak Achievements
 {
-    id = "kill_streak_25",
+    id = "kills_streak_25",
     title = "Serial Killer",
     description = "Achieve a 25-player kill streak",
     iconID = 133728,
@@ -879,7 +879,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "25 players deleted in a row! The graveyard is installing a '[YOUR NAME] Express Lane' with a self-checkout option."
 },
 {
-    id = "kill_streak_50",
+    id = "kills_streak_50",
     title = "Crime Scene",
     description = "Achieve a 50-player kill streak",
     iconID = 133730,
@@ -891,7 +891,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "50 consecutive kills! Azeroth's investigators are gathering evidence, but all the witnesses keep mysteriously disappearing."
 },
 {
-    id = "kill_streak_75",
+    id = "kills_streak_75",
     title = "Mass Extinction",
     description = "Achieve a 75-player kill streak",
     iconID = 133731,
@@ -903,7 +903,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "75 kills without dying? Players are filing tickets claiming you're hacking. Blizzard responded: 'No, they're just that good.'"
 },
 {
-    id = "kill_streak_100",
+    id = "kills_streak_100",
     title = "TRIPLE D!!!",
     description = "Achieve a 100-player kill streak",
     iconID = 132734,
@@ -915,7 +915,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "You've killed more players than some indie games have sales. Enemy raid leaders reference you like you're Voldemort — 'He-Who-Wipes-Raid-Groups.'' Even your local WiFi provider flagged you as a DDoS threat."
 },
 {
-    id = "kill_streak_125",
+    id = "kills_streak_125",
     title = "PvP Plague",
     description = "Achieve a 125-player kill streak",
     iconID = 136123,
@@ -927,7 +927,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "You're not a player anymore—you're a server-wide debuff. Whole zones avoid you like it's patch day. 125 kills and not a single scratch? That’s not PvP. That’s population control."
 },
 {
-    id = "kill_streak_150",
+    id = "kills_streak_150",
     title = "Fine Wine",
     description = "Achieve a 150-player kill streak",
     iconID = 132789,
@@ -939,7 +939,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "150 uninterrupted kills! You're not just killing players—you're killing server populations. Like a fine wine, your murder spree only improves with time."
 },
 {
-    id = "kill_streak_175",
+    id = "kills_streak_175",
     title = "Unstoppable Force",
     description = "Achieve a 175-player kill streak",
     iconID = 133050,
@@ -951,7 +951,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "175 bodies and counting! Like the legendary Alterac Valley weapon, you've become a force of nature—slow, powerful, and absolutely devastating. The Immovable Object has finally met its match, and it's your kill streak. Players have started putting 'killed by [YOUR NAME]' in their forum signatures as a badge of honor."
 },
 {
-    id = "kill_streak_200",
+    id = "kills_streak_200",
     title = "/flex",
     description = "Achieve a 200-player kill streak",
     iconID = 236370,
@@ -963,7 +963,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "200 unbroken kills! Your /flex emote now causes a 10-yard fear. Even raid bosses check their aggro tables when you log in. Blizzard added a new GM macro: /who [YOUR NAME] – for threat assessment."
 },
 {
-    id = "multi_kill_3",
+    id = "kills_multi_3",
     title = "Triple Kill!",
     description = "Get 3 kills in a single combat",
     iconID = 236330,
@@ -975,7 +975,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "ACE! Three champions... er, players... fell to your blade in quick succession. The enemy team is crying 'nerf [YOUR NAME]' in all chat. Your Summoner Score is rising!"
 },
 {
-    id = "multi_kill_4",
+    id = "kills_multi_4",
     title = "QUADRA KILL!",
     description = "Get 4 kills in a single combat",
     iconID = 236341,
@@ -987,7 +987,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "The crowd goes wild as you secure your fourth elimination! 'GG [YOUR NAME] diff' echoes across Azeroth. The enemy team is calling for a surrender vote while spamming 'Report jungler no ganks' in chat."
 },
 {
-    id = "multi_kill_5",
+    id = "kills_multi_5",
     title = "PENTAKILL!!",
     description = "Get 5 kills in a single combat",
     iconID = 236383,
@@ -1001,7 +1001,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
 
 -- Most Killed Player Achievement
 {
-    id = "favorite_target",
+    id = "kills_favorite_target",
     title = "Personal Vendetta",
     description = "Kill the same player 10 times",
     iconID = 136168,  -- Red target icon
@@ -1023,7 +1023,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     end
 },
 {
-    id = "big_game_huntard",
+    id = "kills_big_game",
     title = "Big Game Hunter",
     description = "Eliminate 30 level ?? players",
     iconID = 135614,
@@ -1043,11 +1043,9 @@ local function GetPlayerName()
     return playerName or "You"
 end
 
--- Update PersonalizeText function to handle function-based subText
 local function PersonalizeText(text)
     if not text then return "" end
 
-    -- If text is a function, call it to get the actual text
     if type(text) == "function" then
         text = text()
     end
@@ -1056,7 +1054,6 @@ local function PersonalizeText(text)
     return text:gsub("%[YOUR NAME%]", playerName)
 end
 
--- Function to check achievements and show popup if newly unlocked
 function AchievementSystem:CheckAchievements()
     local playerStats = PVPSC.playerStats or {}
     local playerName = GetPlayerName()
@@ -1066,7 +1063,6 @@ function AchievementSystem:CheckAchievements()
             achievement.unlocked = true
             achievement.completedDate = date("%d/%m/%Y %H:%M") -- Set completion date
 
-            -- Personalize achievement text before showing popup
             local personalizedDescription = PersonalizeText(achievement.description)
 
             PVPSC.AchievementPopup:ShowPopup({
@@ -1078,7 +1074,6 @@ function AchievementSystem:CheckAchievements()
     end
 end
 
--- Function to determine rarity based on achievement points
 local function GetRarityFromPoints(points)
     if points >= 250 then
         return "legendary"
@@ -1093,9 +1088,7 @@ local function GetRarityFromPoints(points)
     end
 end
 
--- Set rarity for all achievements based on points
 for _, achievement in ipairs(AchievementSystem.achievements) do
-    -- If rarity is not manually set, determine it from points
     if not achievement.rarity then
         achievement.rarity = GetRarityFromPoints(achievement.achievementPoints or 10)
     end
