@@ -5,6 +5,8 @@ PSC_SortKillsListAscending = false
 local KILLS_FRAME_WIDTH = 1055
 local KILLS_FRAME_HEIGHT = 550
 
+PSC_KillsListFrameInitialSetup = true
+
 local colWidths = {
     name = 95,
     class = 68,
@@ -562,9 +564,14 @@ local function CreateMainFrame()
 end
 
 function RefreshKillsListFrame()
+    if PSC_KillsListFrameInitialSetup then
+        return
+    end
+
     if PSC_KillsListFrame == nil then
         return
     end
+
     local content = PSC_KillsListFrame.content
     if not content then
         return
@@ -606,5 +613,8 @@ function PSC_CreateKillsListFrame()
         end
     end
 
-    RefreshKillsListFrame()
+    C_Timer.After(0.01, function()
+        PSC_KillsListFrameInitialSetup = false
+        RefreshKillsListFrame()
+    end)
 end
