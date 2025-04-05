@@ -1,6 +1,5 @@
 local addonName, PVPSC = ...
 
--- Create Achievement Frame with the same design as Config UI
 local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, "BasicFrameTemplateWithInset")
 AchievementFrame:SetSize(800, 520)
 AchievementFrame:SetPoint("CENTER")
@@ -11,12 +10,10 @@ AchievementFrame:SetScript("OnDragStart", AchievementFrame.StartMoving)
 AchievementFrame:SetScript("OnDragStop", AchievementFrame.StopMovingOrSizing)
 AchievementFrame:Hide()
 
--- Add to special frames so it closes with Escape key
 tinsert(UISpecialFrames, "PVPSCAchievementFrame")
 
--- Set the title to match Config UI
 AchievementFrame.TitleText = AchievementFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-AchievementFrame.TitleText:SetPoint("TOP", AchievementFrame, "TOP", 0, -5) -- Adjusted to align properly
+AchievementFrame.TitleText:SetPoint("TOP", AchievementFrame, "TOP", 0, -5)
 AchievementFrame.TitleText:SetText("PvP Achievements")
 
 -- Create content area for achievements
@@ -34,40 +31,6 @@ local scrollContent = CreateFrame("Frame", "PVPSCAchievementContent", scrollFram
 scrollContent:SetSize(scrollFrame:GetWidth(), 1) -- Height will be adjusted dynamically
 scrollFrame:SetScrollChild(scrollContent)
 
--- Debug function to help identify issues with data
-local function DebugPrint(message)
-    if PSC_Debug then
-        print("[PvPStats Debug]: " .. message)
-    end
-end
-
--- Function to dump table contents for debugging
-local function DumpTable(tbl, indent)
-    if not tbl then return "nil" end
-    if not indent then indent = 0 end
-    local toprint = string.rep(" ", indent) .. "{\n"
-    indent = indent + 2
-    for k, v in pairs(tbl) do
-        toprint = toprint .. string.rep(" ", indent)
-        if (type(k) == "number") then
-            toprint = toprint .. "[" .. k .. "] = "
-        elseif (type(k) == "string") then
-            toprint = toprint  .. k ..  " = "
-        end
-        if (type(v) == "number") then
-            toprint = toprint .. v .. ",\n"
-        elseif (type(v) == "string") then
-            toprint = toprint .. "\"" .. v .. "\",\n"
-        elseif (type(v) == "table") then
-            toprint = toprint .. DumpTable(v, indent + 2) .. ",\n"
-        else
-            toprint = toprint .. "\"" .. tostring(v) .. "\",\n"
-        end
-    end
-    toprint = toprint .. string.rep(" ", indent-2) .. "}"
-    return toprint
-end
-
 -- Function to get player name for achievement text
 local function GetPlayerName()
     local playerName = UnitName("player")
@@ -78,12 +41,9 @@ end
 local function PersonalizeText(text)
     if not text then return "" end
 
-    -- Check if text is a function, and if so, call it to get the actual text
     if type(text) == "function" then
         text = text()
     end
-
-    -- Now that we have a string, we can use gsub
     local playerName = GetPlayerName()
     return text:gsub("%[YOUR NAME%]", playerName)
 end
@@ -95,7 +55,7 @@ local ACHIEVEMENT_SPACING_H = 20
 local ACHIEVEMENT_SPACING_V = 15
 local ACHIEVEMENTS_PER_ROW = 3
 
--- Helper function to get player stats from PSC_DB
+
 local function GetPlayerStats()
     local characterKey = PSC_GetCharacterKey()
     local playerStats = {}
@@ -126,22 +86,8 @@ local function GetStatistics()
     if PSC_CalculateBarChartStatistics then
         classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
             PSC_CalculateBarChartStatistics()
-
-        -- Debug data
-        if PSC_Debug then
-            DebugPrint("Class data from PSC_CalculateBarChartStatistics:")
-            for k, v in pairs(classData) do
-                DebugPrint("  " .. k .. ": " .. v)
-            end
-
-            DebugPrint("Zone data from PSC_CalculateBarChartStatistics:")
-            for k, v in pairs(zoneData) do
-                DebugPrint("  " .. k .. ": " .. v)
-            end
-        end
     end
 
-    -- Get summary statistics which include kill streak data
     local summaryStats = {}
     if PSC_CalculateSummaryStatistics then
         summaryStats = PSC_CalculateSummaryStatistics()
@@ -170,37 +116,13 @@ local function GetStatistics()
         playerStats.loneWolfKills = guildStatusData["No Guild"]
     end
 
-    -- Log for debugging
-    if PSC_Debug then
-        DebugPrint("Statistics Summary:")
-        if playerStats.highestKillStreak then
-            DebugPrint("Highest Kill Streak: " .. playerStats.highestKillStreak)
-        end
-
-        if playerStats.totalKills then
-            DebugPrint("Total Kills: " .. playerStats.totalKills)
-        end
-
-        if playerStats.uniqueKills then
-            DebugPrint("Unique Kills: " .. playerStats.uniqueKills)
-        end
-
-        if guildStatusData and guildStatusData["In Guild"] then
-            DebugPrint("Guild Kills: " .. guildStatusData["In Guild"])
-        end
-
-        if guildStatusData and guildStatusData["No Guild"] then
-            DebugPrint("Lone Wolf Kills: " .. guildStatusData["No Guild"])
-        end
-    end
-
     return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats, playerStats
 end
 
--- New global variable for filtering achievement categories
+
 local currentCategory = "Class"  -- default category
 
--- Update the FilterAchievements function to include gender kills in the "General" tab
+-- Achievement Tabs!
 local function FilterAchievements(achievements, category)
     local filtered = {}
     for _, achievement in ipairs(achievements) do
@@ -218,7 +140,7 @@ local function FilterAchievements(achievements, category)
             end
         elseif category == "Kills" then
             if achievement.id == "guild_kills" or achievement.id == "guildless_kills" or
-               achievement.id == "grey_level_kills" or
+               achievement.id == "grey_level_kills" or achievement.id == "big_game_hunter" or
                string.find(achievement.id, "kill_streak") or
                string.find(achievement.id, "total_kills") or
                string.find(achievement.id, "unique_kills") or
@@ -248,7 +170,6 @@ local function UpdateAchievementLayout()
     local achievements = FilterAchievements(allAchievements, currentCategory)
 
     if #achievements == 0 then
-        DebugPrint("No achievements found for category: " .. currentCategory)
         return
     end
 
@@ -256,12 +177,6 @@ local function UpdateAchievementLayout()
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats, playerStats =
         GetStatistics()
 
-    -- Log for debugging
-    DebugPrint("Highest Kill Streak: " .. (playerStats.highestKillStreak or 0))
-    DebugPrint("Guild Kills: " .. (playerStats.guildedKills or 0))
-    DebugPrint("Lone Wolf Kills: " .. (playerStats.loneWolfKills or 0))
-
-    -- Update the layout for each achievement
     for i, achievement in ipairs(achievements) do
         -- Calculate column and row positions
         local column = (i - 1) % ACHIEVEMENTS_PER_ROW
@@ -272,7 +187,7 @@ local function UpdateAchievementLayout()
 
         -- Create achievement tile
         local tile = CreateFrame("Button", nil, scrollContent, BackdropTemplateMixin and "BackdropTemplate")
-        tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT + 5) -- Increased height by 5 pixels
+        tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT + 5)
         tile:SetPoint("TOPLEFT", xPos, yPos)
 
         -- Style the tile
@@ -316,7 +231,6 @@ local function UpdateAchievementLayout()
         if achievement.id == "paladin_1" then
             targetValue = 250
             currentProgress = classData["Paladin"] or 0
-            DebugPrint("Paladin kills: " .. currentProgress)
         elseif achievement.id == "paladin_2" then
             targetValue = 500
             currentProgress = classData["Paladin"] or 0
@@ -326,7 +240,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "priest_1" then
             targetValue = 250
             currentProgress = classData["Priest"] or 0
-            DebugPrint("Priest kills: " .. currentProgress)
         elseif achievement.id == "priest_2" then
             targetValue = 500
             currentProgress = classData["Priest"] or 0
@@ -336,7 +249,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "warrior_1" then
             targetValue = 250
             currentProgress = classData["Warrior"] or 0
-            DebugPrint("Warrior kills: " .. currentProgress)
         elseif achievement.id == "warrior_2" then
             targetValue = 500
             currentProgress = classData["Warrior"] or 0
@@ -420,7 +332,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "race_human_1" then
             targetValue = 250
             currentProgress = raceData["Human"] or 0
-            DebugPrint("Human kills: " .. currentProgress)
         elseif achievement.id == "race_human_2" then
             targetValue = 500
             currentProgress = raceData["Human"] or 0
@@ -431,7 +342,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "race_nightelf_1" then
             targetValue = 250
             currentProgress = raceData["Night Elf"] or 0
-            DebugPrint("Night Elf kills: " .. currentProgress)
         elseif achievement.id == "race_nightelf_2" then
             targetValue = 500
             currentProgress = raceData["Night Elf"] or 0
@@ -442,7 +352,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "race_dwarf_1" then
             targetValue = 250
             currentProgress = raceData["Dwarf"] or 0
-            DebugPrint("Dwarf kills: " .. (raceData["Dwarf"] or 0))
         elseif achievement.id == "race_dwarf_2" then
             targetValue = 500
             currentProgress = raceData["Dwarf"] or 0
@@ -453,7 +362,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "race_gnome_1" then
             targetValue = 250
             currentProgress = raceData["Gnome"] or 0
-            DebugPrint("Gnome kills: " .. currentProgress)
         elseif achievement.id == "race_gnome_2" then
             targetValue = 500
             currentProgress = raceData["Gnome"] or 0
@@ -465,7 +373,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "race_orc_1" then
             targetValue = 250
             currentProgress = raceData["Orc"] or 0
-            DebugPrint("Orc kills: " .. (raceData["Orc"] or 0))
         elseif achievement.id == "race_orc_2" then
             targetValue = 500
             currentProgress = raceData["Orc"] or 0
@@ -476,7 +383,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "race_troll_1" then
             targetValue = 250
             currentProgress = raceData["Troll"] or 0
-            DebugPrint("Troll kills: " .. (raceData["Troll"] or 0))
         elseif achievement.id == "race_troll_2" then
             targetValue = 500
             currentProgress = raceData["Troll"] or 0
@@ -487,7 +393,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "race_undead_1" then
             targetValue = 250
             currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
-            DebugPrint("Undead kills: " .. (raceData["Undead"] or raceData["Scourge"] or 0))
         elseif achievement.id == "race_undead_2" then
             targetValue = 500
             currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
@@ -498,7 +403,6 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "race_tauren_1" then
             targetValue = 250
             currentProgress = raceData["Tauren"] or 0
-            DebugPrint("Tauren kills: " .. (raceData["Tauren"] or 0))
         elseif achievement.id == "race_tauren_2" then
             targetValue = 500
             currentProgress = raceData["Tauren"] or 0
@@ -509,95 +413,76 @@ local function UpdateAchievementLayout()
         elseif achievement.id == "guild_kills" then
             targetValue = 500
             currentProgress = guildStatusData["In Guild"] or 0
-            DebugPrint("Guild prey kills: " .. currentProgress)
         elseif achievement.id == "guildless_kills" then
             targetValue = 500
             currentProgress = guildStatusData["No Guild"] or 0
-            DebugPrint("Lone wolf kills: " .. currentProgress)
         elseif achievement.id == "grey_level_kills" then
             targetValue = 100
             currentProgress = PSC_CalculateGreyKills()
-            DebugPrint("Grey level kills: " .. currentProgress)
         elseif achievement.id == "kill_streak_25" then
             targetValue = 25
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement kill_streak_25: " .. currentProgress)
         elseif achievement.id == "kill_streak_50" then
             targetValue = 50
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement kill_streak_50: " .. currentProgress)
         elseif achievement.id == "kill_streak_75" then
             targetValue = 75
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement kill_streak_75: " .. currentProgress)
         elseif achievement.id == "kill_streak_100" then
             targetValue = 100
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement kill_streak_100: " .. currentProgress)
         elseif achievement.id == "kill_streak_125" then
             targetValue = 125
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement kill_streak_125: " .. currentProgress)
         elseif achievement.id == "kill_streak_150" then
             targetValue = 150
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement kill_streak_150: " .. currentProgress)
         elseif achievement.id == "kill_streak_175" then
             targetValue = 175
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement kill_streak_175: " .. currentProgress)
         elseif achievement.id == "kill_streak_200" then
             targetValue = 200
             currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            DebugPrint("Kill Streak for achievement kill_streak_200: " .. currentProgress)
         elseif achievement.id == "zone_redridge" then
             targetValue = 500
             currentProgress = zoneData["Redridge Mountains"] or 0
-            DebugPrint("Redridge Mountains kills: " .. (currentProgress or 0))
         elseif achievement.id == "zone_elwynn" then
             targetValue = 100
             currentProgress = zoneData["Elwynn Forest"] or 0
-            DebugPrint("Elwynn Forest kills: " .. (currentProgress or 0))
         elseif achievement.id == "zone_duskwood" then
             targetValue = 100
             currentProgress = zoneData["Duskwood"] or 0
-            DebugPrint("Duskwood kills: " .. (currentProgress or 0))
         elseif achievement.id == "total_kills_1" then
             targetValue = 500
             currentProgress = summaryStats.totalKills or 0
-            DebugPrint("Total kills progress for achievement total_kills_1: " .. (currentProgress or 0))
         elseif achievement.id == "total_kills_2" then
             targetValue = 1000
             currentProgress = summaryStats.totalKills or 0
-            DebugPrint("Total kills progress for achievement total_kills_2: " .. (currentProgress or 0))
         elseif achievement.id == "total_kills_3" then
             targetValue = 3000
             currentProgress = summaryStats.totalKills or 0
-            DebugPrint("Total kills progress for achievement total_kills_3: " .. (currentProgress or 0))
         elseif achievement.id == "unique_kills_1" then
             targetValue = 400
             currentProgress = summaryStats.uniqueKills or 0
-            DebugPrint("Unique kills progress for achievement unique_kills_1: " .. (currentProgress or 0))
         elseif achievement.id == "unique_kills_2" then
             targetValue = 800
             currentProgress = summaryStats.uniqueKills or 0
-            DebugPrint("Unique kills progress for achievement unique_kills_2: " .. (currentProgress or 0))
         elseif achievement.id == "unique_kills_3" then
             targetValue = 2400
             currentProgress = summaryStats.uniqueKills or 0
-            DebugPrint("Unique kills progress for achievement unique_kills_3: " .. (currentProgress or 0))
         elseif achievement.id == "multi_kill_3" then
             targetValue = 3
             currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
-            DebugPrint("Multi Kill for achievement multi_kill_3: " .. currentProgress)
         elseif achievement.id == "multi_kill_4" then
             targetValue = 4
             currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
-            DebugPrint("Multi Kill for achievement multi_kill_4: " .. currentProgress)
         elseif achievement.id == "multi_kill_5" then
             targetValue = 5
             currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
-            DebugPrint("Multi Kill for achievement multi_kill_5: " .. currentProgress)
+        elseif achievement.id == "big_game_hunter" then
+            targetValue = 30
+            local _, _, _, _, _, levelData = PSC_CalculateBarChartStatistics()
+            currentProgress = levelData["??"] or 0
         elseif achievement.id == "favorite_target" then
             targetValue = 10
 
@@ -615,7 +500,6 @@ local function UpdateAchievementLayout()
             end
         end
 
-        -- Add achievement title first (before we try to reference it)
         local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
         title:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
@@ -703,7 +587,6 @@ local function UpdateAchievementLayout()
                     completedDate = achievement.completedDate
                 }
             else
-                -- Still working on this achievement
                 progressBar:SetMinMaxValues(0, targetValue)
                 progressBar:SetValue(currentProgress)
                 progressText:SetText(currentProgress.."/"..targetValue)
@@ -722,7 +605,6 @@ local function UpdateAchievementLayout()
         tile:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 
-            -- Add achievement points in light blue next to the title
             local pointsText = achievement.achievementPoints or 10
             GameTooltip:SetText(achievement.title .. " |cFF66CCFF(" .. pointsText .. ")|r", 1, 0.82, 0)
 
@@ -758,14 +640,12 @@ local function CreateAchievementTabSystem(parent)
     tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
     tabContainer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -7, 7)
 
-    -- Create tabs using the same approach as in ConfigUI
     for i, name in ipairs(tabNames) do
         local tab = CreateFrame("Button", parent:GetName() .. "Tab" .. i, parent, "CharacterFrameTabButtonTemplate")
         tab:SetText(name)
         tab:SetID(i)
         tab:SetSize(tabWidth, tabHeight)
 
-        -- Fix tab textures and sizing
         local tabMiddle = _G[tab:GetName() .. "Middle"]
         local tabLeft = _G[tab:GetName() .. "Left"]
         local tabRight = _G[tab:GetName() .. "Right"]
@@ -878,28 +758,6 @@ end
 local function GetCorrectKillStreakValue()
     local characterKey = PSC_GetCharacterKey()
     local highestStreak = 0
-
-    -- Debug data sources if enabled
-    if PSC_Debug then
-        if playerStats and playerStats.highestKillStreak then
-            print("playerStats.highestKillStreak: " .. playerStats.highestKillStreak)
-        else
-            print("playerStats.highestKillStreak is nil")
-        end
-
-        if summaryStats and summaryStats.highestKillStreak then
-            print("summaryStats.highestKillStreak: " .. summaryStats.highestKillStreak)
-        else
-            print("summaryStats.highestKillStreak is nil")
-        end
-
-        if PSC_DB and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and
-           PSC_DB.PlayerKillCounts.Characters[characterKey] and PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak then
-            print("DB direct value: " .. PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak)
-        else
-            print("DB direct value is not available")
-        end
-    end
 
     -- Get value from summaryStats if available
     if summaryStats and summaryStats.highestKillStreak then

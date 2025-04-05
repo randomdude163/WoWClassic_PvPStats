@@ -1022,6 +1022,20 @@ AchievementSystem.achievements = { -- Paladin Achievements
         return playerName .. " has died to you " .. killCount .. " times! They've added your name to their '/who' macro and log off the moment you appear online. Their guild required them to change their hearthstone to a new continent just to avoid you. Every night, they check under their bed for [YOUR NAME] before going to sleep."
     end
 },
+{
+    id = "big_game_hunter",
+    title = "Big Game Hunter",
+    description = "Eliminate 30 level ?? players",
+    iconID = 135614,
+    achievementPoints = 250,
+    condition = function(playerStats)
+        local _, _, _, _, _, levelData = PSC_CalculateBarChartStatistics()
+        return (levelData["??"] or 0) >= 30
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "30 level ?? enemies deleted! While lesser mortals flee at the sight of a ?? mark, you hunt them for sport. These walking raid bosses thought their level advantage made them untouchable and overconfident — until they met [YOUR NAME]."
+},
 }
 
 local function GetPlayerName()
