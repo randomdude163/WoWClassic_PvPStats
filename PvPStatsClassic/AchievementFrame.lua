@@ -305,7 +305,66 @@ local function UpdateAchievementLayout()
         local targetValue = 0
         local currentProgress = 0
 
-        if achievement.id == "class_paladin_1" then
+        -- Add these condition checks to handle the new entry-level achievements
+        -- Insert right before the existing class achievement checks
+
+        -- Entry level class achievements (100 kills)
+        if achievement.id == "class_paladin_0" then
+            targetValue = 100
+            currentProgress = classData["Paladin"] or 0
+        elseif achievement.id == "class_priest_0" then
+            targetValue = 100
+            currentProgress = classData["Priest"] or 0
+        elseif achievement.id == "class_warrior_0" then
+            targetValue = 100
+            currentProgress = classData["Warrior"] or 0
+        elseif achievement.id == "class_mage_0" then
+            targetValue = 100
+            currentProgress = classData["Mage"] or 0
+        elseif achievement.id == "class_rogue_0" then
+            targetValue = 100
+            currentProgress = classData["Rogue"] or 0
+        elseif achievement.id == "class_warlock_0" then
+            targetValue = 100
+            currentProgress = classData["Warlock"] or 0
+        elseif achievement.id == "class_druid_0" then
+            targetValue = 100
+            currentProgress = classData["Druid"] or 0
+        elseif achievement.id == "class_shaman_0" then
+            targetValue = 100
+            currentProgress = classData["Shaman"] or 0
+        elseif achievement.id == "class_hunter_0" then
+            targetValue = 100
+            currentProgress = classData["Hunter"] or 0
+
+        -- Entry level race achievements (100 kills)
+        elseif achievement.id == "race_human_0" then
+            targetValue = 100
+            currentProgress = raceData["Human"] or 0
+        elseif achievement.id == "race_nightelf_0" then
+            targetValue = 100
+            currentProgress = raceData["Night Elf"] or 0
+        elseif achievement.id == "race_dwarf_0" then
+            targetValue = 100
+            currentProgress = raceData["Dwarf"] or 0
+        elseif achievement.id == "race_gnome_0" then
+            targetValue = 100
+            currentProgress = raceData["Gnome"] or 0
+        elseif achievement.id == "race_orc_0" then
+            targetValue = 100
+            currentProgress = raceData["Orc"] or 0
+        elseif achievement.id == "race_undead_0" then
+            targetValue = 100
+            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
+        elseif achievement.id == "race_troll_0" then
+            targetValue = 100
+            currentProgress = raceData["Troll"] or 0
+        elseif achievement.id == "race_tauren_0" then
+            targetValue = 100
+            currentProgress = raceData["Tauren"] or 0
+
+        -- Existing class achievement checks
+        elseif achievement.id == "class_paladin_1" then
             targetValue = 250
             currentProgress = classData["Paladin"] or 0
         elseif achievement.id == "class_paladin_2" then

@@ -5,10 +5,22 @@ local AchievementSystem = PVPSC.AchievementSystem
 
 AchievementSystem.achievements = { -- Paladin Achievements
 {
+    id = "class_paladin_0",
+    title = "White Knight Down",
+    description = "Slay 100 Paladins",
+    iconID = 626003,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["PALADIN"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "They say 'I just want everyone to get along' while reporting half the BG for language. You’ve defeated 100 Paladins who unironically post minion memes and call every woman “m’lady” in raid chat."
+}, {
     id = "class_paladin_1",
     title = "Bubble Popper",
     description = "Slay 250 Paladins",
-    iconID = 626003,
+    iconID = 135896 ,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PALADIN"] or 0) >= 250
@@ -18,9 +30,9 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "250 Divine Shield bubbles popped! Turns out, the Light doesn't save them when [YOUR NAME] is around."
 }, {
     id = "class_paladin_2",
-    title = "Bubble Heartbreaker",
+    title = "It's on cooldown...",
     description = "Slay 500 Paladins",
-    iconID = 135896,
+    iconID = 134414,
     achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PALADIN"] or 0) >= 500
@@ -42,10 +54,22 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 Paladins judged and executed. Every one of them still lives in their childhood bedroom, gives unsolicited advice about honor, and thinks 'simp' is the ultimate insult. Their Tinder bios all include 'protector of women.'"
 }, -- Priest Achievements
 {
+    id = "class_priest_0",
+    title = "Therapy Session Over",
+    description = "Defeat 100 Priests",
+    iconID = 626004,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["PRIEST"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Priests exorcised—and not just from the battlefield. These armchair therapists are one failed psych degree away from charging guildmates hourly. Every time you crit them, they ask if you're projecting."
+}, {
     id = "class_priest_1",
     title = "Holy Word: Death",
     description = "Defeat 250 Priests",
-    iconID = 626004,
+    iconID = 135944,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["PRIEST"] or 0) >= 250
@@ -79,10 +103,22 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 Priests discovered their Power Word: Shield was just plot armor! Churches now offer combat training instead of Sunday service."
 }, -- Druid Achievements
 {
+    id = "class_druid_0",
+    title = "I'm VEGAN, bro!",
+    description = "Take down 100 Druids",
+    iconID = 625999,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["DRUID"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Druids sent back to their crystal shops! They're 'jack of all trades, master of none' incarnate but will still lecture you about your rotation. Their /yell macro includes the words 'spirit animal,' 'vibes,' and 'energy alignment,' and they've definitely tried to sell essential oils to their guildmates. Each one has explained they're vegan within 30 seconds of joining your party."
+}, {
     id = "class_druid_1",
     title = "Roadkill Royale",
     description = "Take down 250 Druids",
-    iconID = 625999,
+    iconID = 132117,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["DRUID"] or 0) >= 250
@@ -116,10 +152,22 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "Druids claim they can do it all—tank, heal, DPS. 750 of them just proved they can also die in every imaginable way. At this point, even their Innervate couldn't restore their dignity."
 }, -- Shaman Achievements
 {
+    id = "class_shaman_0",
+    title = "Avatar State Deactivated",
+    description = "Defeat 100 Shamans",
+    iconID = 626006,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["SHAMAN"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Shamans eliminated! These wannabe Avatars binge-watched too many cartoons and thought they'd be bending all four elements in-game. Reality hit harder than your weapon when they discovered their totems don't actually shoot fire or create tsunamis. They spend most raids frantically alt-tabbing to YouTube tutorials trying to figure out what their class actually does. When asked about their role, they reply 'Yes' and then fail at all of them."
+}, {
     id = "class_shaman_1",
     title = "Totem Kicker",
     description = "Defeat 250 Shamans",
-    iconID = 626006,
+    iconID = 136052,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["SHAMAN"] or 0) >= 250
@@ -153,10 +201,22 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "The world is down 750 Shamans, and yet not a single one landed that mythical 3x Windfury crit. Meanwhile, Warriors are still laughing."
 }, -- Hunter Achievements
 {
+    id = "class_hunter_0",
+    title = "Bear Grylls Roleplayers",
+    description = "Take down 100 Hunters",
+    iconID = 626000,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["HUNTER"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "You’ve taken out 100 Hunters who say “trust your instincts” but can’t trust themselves to park straight. They bring up Bear Grylls in Discord like it's a personality trait and probably drink their own piss “ironically.”"
+}, {
     id = "class_hunter_1",
     title = "I'm so special",
     description = "Take down 250 Hunters",
-    iconID = 626000,
+    iconID = 132212,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["HUNTER"] or 0) >= 250
@@ -190,17 +250,29 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "You’ve ended the WoW careers of 750 Hunters — that’s 750 dudes who think  they’re ‘PvP Gods’ because they once kited Bellygrub 40 yards to the Guards. Their last words? 'I swear I had ammo!'"
 }, -- Warrior Achievements
 {
+    id = "class_warrior_0",
+    title = "Protein Power Shortage",
+    description = "Eliminate 100 Warriors",
+    iconID = 626008,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["WARRIOR"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Warriors down! These gym bros spent more time flexing in Ironforge than learning their rotation. Their emotional range is limited to 'mad,' 'hangry,' and 'where heals?' They consider counting to 10 as advanced mathematics and think reading quest text is for roleplayers. They also believe that 'PvP' stands for 'Protein vs. Pre-workout.'"
+}, {
     id = "class_warrior_1",
     title = "Rage Against The Machine",
     description = "Eliminate 250 Warriors",
-    iconID = 626008,
+    iconID = 132333,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["WARRIOR"] or 0) >= 250
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The anger management clinic closed after losing their best customers - all 250 warriors found peace. Permanently."
+    subText = "250 Warriors deleted! These walking protein shakers with keyboards think smashing random buttons is a 'rotation.' Their Discord profile pics are all gym selfies, and their vocabulary consists exclusively of 'bro,' 'gains,' and 'where heals?' The anger management clinic just closed after losing all 250 of their best customers to your weapon. The only thing they rage-quit faster than the battlefield is their cutting diet."
 }, {
     id = "class_warrior_2",
     title = "Execute.exe Has Failed",
@@ -227,10 +299,22 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 Warriors down! Turns out, rolling the most played class doesn’t guarantee you rolled the smartest players."
 }, -- Mage Achievements
 {
+    id = "class_mage_0",
+    title = "Actually, ...",
+    description = "Defeat 100 Mages",
+    iconID = 626001,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["MAGE"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Mages deleted! Each one was three credits short of a philosophy degree but will lecture you about existentialism anyway. These self-proclaimed intellectuals memorized all their 'actually' rebuttals from Reddit posts and believe their IQ is 'too high to measure.'"
+}, {
     id = "class_mage_1",
     title = "Frost Nova'd Forever",
     description = "Defeat 250 Mages",
-    iconID = 626001,
+    iconID = 135848,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["MAGE"] or 0) >= 250
@@ -264,10 +348,22 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "After 750 failed Blink escapes, local mages are petitioning to make Blink work properly. So far, no response from their corpses."
 }, -- Rogue Achievements
 {
+    id = "class_rogue_0",
+    title = "Energy Drink Depleted",
+    description = "Uncover and defeat 100 Rogues",
+    iconID = 626005,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["ROGUE"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Rogues eliminated! You can smell the Monster Energy and Doritos from here. These walking red flags all type 'ez' after winning 5v1s against level 20s. They've got fingerless gloves IRL, a 'Damaged' tattoo somewhere visible, and spend their free time making TikToks about their 'sigma male grindset.' Every one of them has a mechanical keyboard with blue switches specifically to annoy their roommates."
+}, {
     id = "class_rogue_1",
     title = "Cheap Shot Champion",
     description = "Uncover and defeat 250 Rogues",
-    iconID = 626005,
+    iconID = 132092,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["ROGUE"] or 0) >= 250
@@ -301,10 +397,22 @@ AchievementSystem.achievements = { -- Paladin Achievements
     subText = "750 rogues with names like 'Stábbyou' and 'Shadowkilla' won't be making any more YouTube 'EPIC 1V5 WORLD PVP' videos! Their Discord status is now permanently set to 'offline'."
 }, -- Warlock Achievements
 {
+    id = "class_warlock_0",
+    title = "Wand Wielding Weirdo Wipeout",
+    description = "Banish 100 Warlocks",
+    iconID = 626007,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        return (playerStats.classKills and playerStats.classKills["WARLOCK"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 goths nuked! These misunderstood 'dark intellectuals' have black nail polish, a concerning collection of skeleton merchandise, and definitely own a katana. They've misquoted Nietzsche so many times that even their demons are rolling their eyes. Every guild message begins with 'I'm not trying to be negative, but...' before they proceed to be exactly that. "
+}, {
     id = "class_warlock_1",
     title = "Demon't",
     description = "Banish 250 Warlocks",
-    iconID = 626007,
+    iconID = 136218,
     achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.classKills and playerStats.classKills["WARLOCK"] or 0) >= 250
@@ -415,7 +523,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "general_zone_redridge",
     title = "Redridge Renovation",
     description = "Eliminate 500 players in Redridge Mountains",
-    iconID = 135759,
+    iconID = 236814,
     achievementPoints = 10,
     condition = function(playerStats)
         return (playerStats.zoneKills and playerStats.zoneKills["Redridge Mountains"] or 0) >= 500
@@ -427,7 +535,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "general_zone_elwynn",
     title = "Elwynn Exterminator",
     description = "Eliminate 100 players in Elwynn Forest",
-    iconID = 135763,
+    iconID = 236761,
     achievementPoints = 10,
     condition = function(playerStats)
         return (playerStats.zoneKills and playerStats.zoneKills["Elwynn Forest"] or 0) >= 100
@@ -439,7 +547,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "general_zone_duskwood",
     title = "Darkshire Destroyer",
     description = "Eliminate 100 players in Duskwood",
-    iconID = 136223,
+    iconID = 236757,
     condition = function(playerStats)
         return (playerStats.zoneKills and playerStats.zoneKills["Duskwood"] or 0) >= 100
     end,
@@ -517,10 +625,23 @@ AchievementSystem.achievements = { -- Paladin Achievements
 }, -- Alliance Races
 -- Human Achievements
 {
+    id = "race_human_0",
+    title = "Human Error",
+    description = "Eliminate 100 Humans",
+    iconID = 236447,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Human"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Humans dispatched! Their racial ability 'Every Man for Himself' should really be called 'Every Man for the Graveyard.' So much for human ingenuity."
+}, {
     id = "race_human_1",
     title = "Human Resources",
     description = "Eliminate 250 Humans",
-    iconID = 236447,
+    iconID = 134167,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Human"] or 0) >= 250
@@ -557,10 +678,23 @@ AchievementSystem.achievements = { -- Paladin Achievements
 
 -- Night Elf Achievements
 {
+    id = "race_nightelf_0",
+    title = "Moonlight Massacre",
+    description = "Eliminate 100 Night Elves",
+    iconID = 236449,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Night Elf"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Night Elves slain! Half were dudes with 'Illidan' in their names trying to dual-wield everything, the other half were female characters made by players who just discovered hormones. Their deaths were as dramatic as their /dance animations. Time to let go of that purple dream, boys—Tyrande's not checking your DMs."
+}, {
     id = "race_nightelf_1",
     title = "Shadowmeld Won't Save You",
     description = "Eliminate 250 Night Elves",
-    iconID = 236449,
+    iconID = 134162,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Night Elf"] or 0) >= 250
@@ -596,10 +730,23 @@ AchievementSystem.achievements = { -- Paladin Achievements
 
 -- Dwarf Achievements
 {
+    id = "race_dwarf_0",
+    title = "Mumble rap",
+    description = "Eliminate 100 Dwarves",
+    iconID = 236443,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Dwarf"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Dwarves hammered down! These walking Scottish stereotypes died mumbling something that might have been a battle cry or just ordering another ale—nobody could understand a word through that accent. Next time they'll think twice before typing 'AYE LADDIE!' in every chat channel."
+}, {
     id = "race_dwarf_1",
     title = "Short Term Solution",
     description = "Eliminate 250 Dwarves",
-    iconID = 236443,
+    iconID = 134160,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Dwarf"] or 0) >= 250
@@ -636,10 +783,23 @@ AchievementSystem.achievements = { -- Paladin Achievements
 
 -- Gnome Achievements
 {
+    id = "race_gnome_0",
+    title = "Lawn Ornament Collector",
+    description = "Eliminate 100 Gnomes",
+    iconID = 236445,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Gnome"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Gnomes stepped on! All their engineering gadgets failed when they needed them most. At least they make cute decorations for your kill count."
+}, {
     id = "race_gnome_1",
     title = "Pest Control",
     description = "Eliminate 250 Gnomes",
-    iconID = 236445,
+    iconID = 134165,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Gnome"] or 0) >= 250
@@ -676,6 +836,19 @@ AchievementSystem.achievements = { -- Paladin Achievements
 -- Horde Races
 -- Orc Achievements
 {
+    id = "race_orc_0",
+    title = "Orc Slayer",
+    description = "Eliminate 100 Orcs",
+    iconID = 132154,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Orc"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Orcs sent to meet their ancestors! Their blood fury only made your attacks hurt more. So much for orcish resilience when faced with your wrath."
+}, {
     id = "race_orc_1",
     title = "Green Peace",
     description = "Eliminate 250 Orcs",
@@ -715,6 +888,19 @@ AchievementSystem.achievements = { -- Paladin Achievements
 
 -- Undead Achievements
 {
+    id = "race_undead_0",
+    title = "Re-dead",
+    description = "Eliminate 100 Undead",
+    iconID = 136119,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Undead"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Undead returned to their graves! Turns out being already dead doesn't make you immune to a second death. Will of the Forsaken? More like Will to Respawn."
+}, {
     id = "race_undead_1",
     title = "Double Dead",
     description = "Eliminate 250 Undead",
@@ -754,6 +940,19 @@ AchievementSystem.achievements = { -- Paladin Achievements
 
 -- Troll Achievements
 {
+    id = "race_troll_0",
+    title = "Troll Hunter",
+    description = "Eliminate 100 Trolls",
+    iconID = 135968,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Troll"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Trolls made to stay dead! Their regeneration couldn't keep up with your damage output. The Darkspear tribe is sending angry letters about their population decline."
+}, {
     id = "race_troll_1",
     title = "Voodoo Venue Closed",
     description = "Eliminate 250 Trolls",
@@ -794,6 +993,19 @@ AchievementSystem.achievements = { -- Paladin Achievements
 
 -- Tauren Achievements
 {
+    id = "race_tauren_0",
+    title = "Sacred Cow",
+    description = "Eliminate 100 Tauren",
+    iconID = 132277,
+    achievementPoints = 10,
+    condition = function(playerStats)
+        local _, raceData = PSC_CalculateBarChartStatistics()
+        return (raceData["Tauren"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "100 Tauren sent to the great plains in the sky! Those war stomps were no match for your superior combat skills. The Earth Mother has filed a complaint about your treatment of her children."
+}, {
     id = "race_tauren_1",
     title = "Biggest Hitbox, Biggest Target",
     description = "Eliminate 250 Tauren",
