@@ -347,10 +347,10 @@ end
 
 local function PSC_CreateGenderSearchBox(parent, anchorTo)
     local genderSearchBox = CreateFrame("EditBox", nil, parent)
-    genderSearchBox:SetSize(60, 20)
+    genderSearchBox:SetSize(20, 20)
     genderSearchBox:SetPoint("LEFT", anchorTo, "RIGHT", 10, 0)
     genderSearchBox:SetAutoFocus(false)
-    genderSearchBox:SetMaxLetters(6)
+    genderSearchBox:SetMaxLetters(1)  -- Limit to a single character
     genderSearchBox:SetFontObject("ChatFontNormal")
 
     local searchBoxBg = genderSearchBox:CreateTexture(nil, "BACKGROUND")
@@ -366,12 +366,24 @@ end
 
 local function PSC_SetupGenderSearchBoxScripts(genderSearchBox)
     genderSearchBox:SetScript("OnTextChanged", function(self)
-        local text = self:GetText()
-        genderSearchText = text
+        local text = self:GetText():lower()
 
-        local normalizedText = text:lower():gsub("^%s*(.-)%s*$", "%1")
-        if normalizedText == "m" then
-        elseif normalizedText == "f" then
+        -- Only accept "m" or "f" as input
+        if text ~= "" and text ~= "m" and text ~= "f" then
+            self:SetText("")
+            self:SetTextColor(1, 0.3, 0.3)  -- Red text to indicate invalid input
+            return
+        else
+            self:SetTextColor(1, 1, 1)  -- Reset to white text for valid input
+        end
+
+        -- Set the search text based on input
+        if text == "m" then
+            genderSearchText = "male"
+        elseif text == "f" then
+            genderSearchText = "female"
+        else
+            genderSearchText = ""
         end
 
         RefreshKillsListFrame()
@@ -384,41 +396,12 @@ local function PSC_SetupGenderSearchBoxScripts(genderSearchBox)
     genderSearchBox:SetScript("OnEditFocusLost", function(self)
         self:HighlightText(0, 0)
 
-        local text = self:GetText():lower():gsub("^%s*(.-)%s*$", "%1")
-        if text == "m" or text == "male" then
-            self:SetText("Male")
-            genderSearchText = "Male"
-            RefreshKillsListFrame()
-        elseif text == "f" or text == "female" then
-            self:SetText("Female")
-            genderSearchText = "Female"
-            RefreshKillsListFrame()
-        elseif text == "u" or text == "unknown" or text == "?" or text == "??" then
-            self:SetText("Unknown")
-            genderSearchText = "Unknown"
-            RefreshKillsListFrame()
-        elseif text == "" then
-            genderSearchText = ""
-            RefreshKillsListFrame()
-        else
-            local lowerText = text:lower()
-            if lowerText:find("^ma") or lowerText:find("^me") then
-                self:SetText("Male")
-                genderSearchText = "Male"
-                RefreshKillsListFrame()
-            elseif lowerText:find("^fe") or lowerText:find("^wo") then
-                self:SetText("Female")
-                genderSearchText = "Female"
-                RefreshKillsListFrame()
-            elseif lowerText:find("^un") then
-                self:SetText("Unknown")
-                genderSearchText = "Unknown"
-                RefreshKillsListFrame()
-            else
-                self:SetText("")
-                genderSearchText = ""
-                RefreshKillsListFrame()
-            end
+        -- Format display for better user feedback
+        local text = self:GetText():lower()
+        if text == "m" then
+            self:SetText("M")
+        elseif text == "f" then
+            self:SetText("F")
         end
     end)
 
@@ -436,7 +419,9 @@ local function PSC_SetupGenderSearchBoxScripts(genderSearchBox)
     genderSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Gender filter")
-        GameTooltip:AddLine("Type to filter by gender", 1, 1, 1, true)
+        GameTooltip:AddLine("Enter 'm' for male characters", 1, 1, 1, true)
+        GameTooltip:AddLine("Enter 'f' for female characters", 1, 1, 1, true)
+        GameTooltip:AddLine("Leave empty to show all genders", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
@@ -717,11 +702,9 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                 local playerGuild = playerInfo.guild or ""
                 local playerRank = playerInfo.rank or 0
 
-                -- Only add if matches search criteria
+                -- Only add if matches search criteria - only search name and guild for the player/guild filter
                 if searchText == "" or
                    name:lower():find(searchText, 1, true) or
-                   playerClass:lower():find(searchText, 1, true) or
-                   playerRace:lower():find(searchText, 1, true) or
                    playerGuild:lower():find(searchText, 1, true) then
 
                     -- Convert lastKill to number to ensure it's properly handled
@@ -800,11 +783,9 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
                 lastKill = deathData.deathLocations[1].timestamp or lastKill
             end
 
-            -- Only add if matches search criteria
+            -- Only add if matches search criteria - only search name and guild
             if searchText == "" or
                killerName:lower():find(searchText, 1, true) or
-               playerClass:lower():find(searchText, 1, true) or
-               playerRace:lower():find(searchText, 1, true) or
                playerGuild:lower():find(searchText, 1, true) then
 
                 local entry = {
@@ -900,11 +881,9 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deat
             local playerLevel = tonumber(playerInfo.level) or -1
             local playerRank = playerInfo.rank or 0
 
-            -- Only add if matches search criteria
+            -- Only add if matches search criteria - only search name and guild
             if searchText == "" or
                assisterName:lower():find(searchText, 1, true) or
-               playerClass:lower():find(searchText, 1, true) or
-               playerRace:lower():find(searchText, 1, true) or
                playerGuild:lower():find(searchText, 1, true) then
 
                 local entry = {
@@ -1030,7 +1009,20 @@ function PSC_FilterAndSortEntries()
 
         -- Gender filter
         if match and genderSearchText ~= "" then
-            match = (entry.gender:lower():find(genderSearchText:lower(), 1, true) ~= nil)
+            local normalizedGender = entry.gender:lower()
+            local normalizedSearch = genderSearchText:lower()
+
+            -- Exact matching for gender - handle common abbreviations
+            if normalizedSearch == "m" or normalizedSearch == "male" then
+                match = (normalizedGender == "male")
+            elseif normalizedSearch == "f" or normalizedSearch == "female" then
+                match = (normalizedGender == "female")
+            elseif normalizedSearch == "u" or normalizedSearch == "unknown" or normalizedSearch == "?" then
+                match = (normalizedGender == "unknown")
+            else
+                -- For anything else, require exact match
+                match = (normalizedGender == normalizedSearch)
+            end
         end
 
         -- Zone filter
@@ -1107,7 +1099,7 @@ function PSC_CreateSearchBar(frame)
     genderLabel:SetTextColor(1, 0.82, 0)
 
     local genderSearchBox = PSC_CreateGenderSearchBox(searchBg, genderLabel)
-    genderSearchBox:SetSize(55, 20)
+    genderSearchBox:SetSize(25, 20)
     genderSearchBox:SetPoint("LEFT", genderLabel, "RIGHT", 5, 0)
     PSC_SetupGenderSearchBoxScripts(genderSearchBox)
     genderSearchBox:SetText("")

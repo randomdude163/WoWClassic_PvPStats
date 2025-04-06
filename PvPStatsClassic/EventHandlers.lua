@@ -245,7 +245,9 @@ end
 
 local function HandleUnitDiedEvent(destGUID, destName)
     if PSC_RecentlyCountedKills[destGUID] then
-        return
+        if (GetTime() - PSC_RecentlyCountedKills[destGUID]) < PSC_KILL_TRACKING_WINDOW then
+            return
+        end
     end
 
     if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
