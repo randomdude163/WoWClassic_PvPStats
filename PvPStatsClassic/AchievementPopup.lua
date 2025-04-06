@@ -4,9 +4,15 @@ PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
 PVPSC.AchievementPopup = {}
+local AchievementPopup = PVPSC.AchievementPopup
 
+-- Settings
 local POPUP_DISPLAY_TIME = 5 -- Display for 5 seconds
 local POPUP_FADE_TIME = 1 -- Fade out over 1 second
+
+-- Queue system for sequential achievement display
+AchievementPopup.queue = {}
+AchievementPopup.isDisplaying = false
 
 -- Create the popup frame
 local function CreateAchievementPopupFrame()
@@ -68,51 +74,154 @@ end
 
 local popupFrame = CreateAchievementPopupFrame()
 
--- Show the popup
-function PVPSC.AchievementPopup:ShowPopup(achievementData)
+-- Function to add an achievement to the queue
+function AchievementPopup:QueuePopup(achievementData)
     if not achievementData then return end
 
+    table.insert(self.queue, achievementData)
+
+    -- Start processing the queue if not already displaying
+    if not self.isDisplaying then
+        self:ProcessQueue()
+    end
+end
+
+-- Function to process the achievement queue
+function AchievementPopup:ProcessQueue()
+    if #self.queue == 0 then
+        self.isDisplaying = false
+        return
+    end
+
+    self.isDisplaying = true
+    local nextAchievement = table.remove(self.queue, 1)
+    self:DisplayPopup(nextAchievement)
+end
+
+-- Function to display a single achievement popup
+function AchievementPopup:DisplayPopup(achievementData)
+    -- Set up icon and text
     popupFrame.icon:SetTexture(achievementData.icon)
     popupFrame.achievementName:SetText(achievementData.title)
     popupFrame.description:SetText(achievementData.description)
 
+    -- Apply rarity-based coloring to the border
+    local rarity = achievementData.rarity or "common"
+    if rarity == "uncommon" then
+        popupFrame:SetBackdropBorderColor(0.1, 1.0, 0.1) -- Green
+    elseif rarity == "rare" then
+        popupFrame:SetBackdropBorderColor(0.0, 0.4, 1.0) -- Blue
+    elseif rarity == "epic" then
+        popupFrame:SetBackdropBorderColor(0.8, 0.3, 0.9) -- Purple
+    elseif rarity == "legendary" then
+        popupFrame:SetBackdropBorderColor(1.0, 0.5, 0.0) -- Orange
+    else
+        popupFrame:SetBackdropBorderColor(0.7, 0.7, 0.7) -- Light gray for common
+    end
+
+    -- Set title color based on rarity
+    if rarity == "legendary" then
+        popupFrame.achievementName:SetTextColor(1.0, 0.5, 0.0) -- Orange for legendary
+    elseif rarity == "epic" then
+        popupFrame.achievementName:SetTextColor(0.8, 0.3, 0.9) -- Purple for epic
+    elseif rarity == "rare" then
+        popupFrame.achievementName:SetTextColor(0.0, 0.4, 1.0) -- Blue for rare
+    elseif rarity == "uncommon" then
+        popupFrame.achievementName:SetTextColor(0.1, 1.0, 0.1) -- Green for uncommon
+    else
+        popupFrame.achievementName:SetTextColor(1.0, 0.82, 0) -- Default gold color
+    end
+
     popupFrame:Show()
     popupFrame:SetAlpha(1)
 
-    PlaySound(8173)
+    -- Play sound based on rarity
+    local soundID = 8173  -- Default achievement sound
+    PlaySound(soundID)
 
-    -- Fade out after 5 seconds
+    -- Fade out after display time and process next item in queue
     C_Timer.After(POPUP_DISPLAY_TIME, function()
         local fadeInfo = {
             mode = "OUT",
             timeToFade = POPUP_FADE_TIME,
-            finishedFunc = function() popupFrame:Hide() end,
+            finishedFunc = function()
+                popupFrame:Hide()
+                -- Process next achievement after this one has fully faded out
+                C_Timer.After(0.1, function()
+                    self:ProcessQueue()
+                end)
+            end,
         }
         UIFrameFade(popupFrame, fadeInfo)
     end)
 end
 
+-- Replace the old ShowPopup function to use our queue system
+function PVPSC.AchievementPopup:ShowPopup(achievementData)
+    self:QueuePopup(achievementData)
+end
 
 -- Function to check achievements and show popup if newly unlocked
 function AchievementSystem:CheckAchievements()
     local playerStats = PVPSC.playerStats or {}
+    local achievementsUnlocked = 0
 
     for _, achievement in ipairs(self.achievements) do
         if not achievement.unlocked and achievement.condition(playerStats) then
             achievement.unlocked = true
             achievement.completedDate = date("%d/%m/%Y %H:%M") -- Set completion date
-            PVPSC.AchievementPopup:ShowPopup({
+
+            -- Queue the achievement popup
+            PVPSC.AchievementPopup:QueuePopup({
                 icon = achievement.iconID,
                 title = achievement.title,
-                description = achievement.description
+                description = achievement.description,
+                rarity = achievement.rarity
             })
+
+            achievementsUnlocked = achievementsUnlocked + 1
         end
     end
+
+    return achievementsUnlocked
 end
 
--- Test function to show the achievement popup
 function AchievementSystem:TestAchievementPopup(achievementID)
-    -- Find the achievement
+    -- If no specific achievementID is provided, use our custom test achievement
+    if not achievementID or achievementID == "test" then
+        -- Show multiple test achievements to demonstrate the queue
+        for i = 1, 3 do
+            -- Create a special test achievement with different rarity each time
+            local rarities = {"common", "uncommon", "rare", "epic", "legendary"}
+            -- Use a different rarity for each test achievement
+            local rarityIndex = (math.floor(GetTime()) % 5) + 1
+            local currentRarity = rarities[((rarityIndex + i - 1) % 5) + 1]
+
+            -- Use a different icon for each test achievement
+            local testIcons = {
+                132127, -- Ability_Hunter_SniperShot
+                134400, -- INV_Sword_04
+                133078, -- Spell_Shadow_SoulLeech_2
+                136105, -- Spell_Holy_PowerInfusion
+                135770, -- Spell_Frost_FrostBolt02
+                236444  -- Achievement_Character_Dwarf_Male
+            }
+            local iconIndex = ((math.floor(GetTime()) + i) % #testIcons) + 1
+            local iconID = testIcons[iconIndex]
+
+            -- Queue the test achievement popup
+            PVPSC.AchievementPopup:QueuePopup({
+                icon = iconID,
+                title = "Test Achievement " .. i .. " (" .. currentRarity .. ")",
+                description = "This is test achievement #" .. i .. " with " .. currentRarity .. " rarity!",
+                rarity = currentRarity
+            })
+        end
+
+        return
+    end
+
+    -- Original functionality for showing specific achievements
     local achievement
     for _, ach in ipairs(self.achievements) do
         if ach.id == achievementID then
@@ -126,32 +235,12 @@ function AchievementSystem:TestAchievementPopup(achievementID)
         achievement.unlocked = true
         achievement.completedDate = date("%d/%m/%Y %H:%M")
 
-        -- Update progress data to show as completed
-        local characterKey = PSC_GetCharacterKey()
-        if not PSC_DB.PlayerKillCounts.Characters[characterKey].classKills then
-            PSC_DB.PlayerKillCounts.Characters[characterKey].classKills = {}
-        end
-        if not PSC_DB.PlayerKillCounts.Characters[characterKey].genderKills then
-            PSC_DB.PlayerKillCounts.Characters[characterKey].genderKills = {}
-        end
-
-        -- Set the appropriate kill count based on achievement type
-        if achievement.id:match("^id_%d$") then
-            local class = achievement.title:match("(%u%w+)")
-            if class then
-                PSC_DB.PlayerKillCounts.Characters[characterKey].classKills[class:upper()] = achievement.targetValue
-            end
-        elseif achievement.id == "id_7" then
-            PSC_DB.PlayerKillCounts.Characters[characterKey].genderKills["FEMALE"] = 100
-        elseif achievement.id == "id_8" then
-            PSC_DB.PlayerKillCounts.Characters[characterKey].genderKills["MALE"] = 100
-        end
-
-        -- Show the popup
-        PVPSC.AchievementPopup:ShowPopup({
+        -- Queue the achievement popup
+        PVPSC.AchievementPopup:QueuePopup({
             icon = achievement.iconID,
             title = achievement.title,
-            description = achievement.description
+            description = achievement.description,
+            rarity = achievement.rarity
         })
 
         -- Update achievement frame if it's visible
@@ -178,9 +267,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
 end)
 
 -- Function to make the custom event work
--- This needs to be called from your main addon file whenever a kill is recorded
 function AchievementSystem:NotifyKillAdded()
-    -- This is a workaround for custom events
     eventFrame:GetScript("OnEvent")(eventFrame, "PVPSC_KILL_ADDED")
 end
 

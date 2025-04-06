@@ -624,16 +624,15 @@ local function CreateTestAchievementButton(parent)
     button:SetPoint("TOPLEFT", 20, -240)
 
     button:SetScript("OnClick", function()
-        -- Cycle through achievements
-        local achievementID = "id_" .. currentTestAchievement
-        PVPSC.AchievementSystem:TestAchievementPopup(achievementID)
-
-        -- Increment counter, reset to 1 if we've shown all achievements
-        currentTestAchievement = currentTestAchievement + 1
-        if currentTestAchievement > 8 then  -- Changed from 6 to 8 to include all achievements
-            currentTestAchievement = 1
-        end
+        -- Use our new test achievement function
+        PVPSC.AchievementSystem:TestAchievementPopup("test")
     end)
+
+    -- Create a simple explanation text
+    local helpText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    helpText:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -5)
+    helpText:SetText("Press to display a randomly styled test achievement popup")
+    helpText:SetTextColor(0.8, 0.8, 0.8)
 
     return button
 end
