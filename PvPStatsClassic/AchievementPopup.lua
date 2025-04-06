@@ -68,6 +68,20 @@ local function CreateAchievementPopupFrame()
     description:SetJustifyH("LEFT") -- Align left
     frame.description = description
 
+    -- Create Close Button in top-right corner
+    local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    closeButton:SetSize(24, 24)
+    closeButton:SetScript("OnClick", function()
+        -- Hide the current popup
+        frame:Hide()
+        -- Process the next achievement in the queue after a short delay
+        C_Timer.After(0.1, function()
+            AchievementPopup:ProcessQueue()
+        end)
+    end)
+    frame.closeButton = closeButton
+
     frame:Hide()
     return frame
 end
