@@ -1,7 +1,7 @@
 local addonName, PVPSC = ...
 
 local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, "BasicFrameTemplateWithInset")
-AchievementFrame:SetSize(800, 520)
+AchievementFrame:SetSize(1140, 520)
 AchievementFrame:SetPoint("CENTER")
 AchievementFrame:SetMovable(true)
 AchievementFrame:EnableMouse(true)
@@ -49,11 +49,11 @@ local function PersonalizeText(text)
 end
 
 -- Constants for achievement layout
-local ACHIEVEMENT_WIDTH = 230
+local ACHIEVEMENT_WIDTH = 260
 local ACHIEVEMENT_HEIGHT = 80
-local ACHIEVEMENT_SPACING_H = 20
+local ACHIEVEMENT_SPACING_H = 15
 local ACHIEVEMENT_SPACING_V = 15
-local ACHIEVEMENTS_PER_ROW = 3
+local ACHIEVEMENTS_PER_ROW = 4
 
 
 local function GetPlayerStats()
@@ -305,7 +305,66 @@ local function UpdateAchievementLayout()
         local targetValue = 0
         local currentProgress = 0
 
-        if achievement.id == "class_paladin_1" then
+        -- Add these condition checks to handle the new entry-level achievements
+        -- Insert right before the existing class achievement checks
+
+        -- Entry level class achievements (100 kills)
+        if achievement.id == "class_paladin_0" then
+            targetValue = 100
+            currentProgress = classData["Paladin"] or 0
+        elseif achievement.id == "class_priest_0" then
+            targetValue = 100
+            currentProgress = classData["Priest"] or 0
+        elseif achievement.id == "class_warrior_0" then
+            targetValue = 100
+            currentProgress = classData["Warrior"] or 0
+        elseif achievement.id == "class_mage_0" then
+            targetValue = 100
+            currentProgress = classData["Mage"] or 0
+        elseif achievement.id == "class_rogue_0" then
+            targetValue = 100
+            currentProgress = classData["Rogue"] or 0
+        elseif achievement.id == "class_warlock_0" then
+            targetValue = 100
+            currentProgress = classData["Warlock"] or 0
+        elseif achievement.id == "class_druid_0" then
+            targetValue = 100
+            currentProgress = classData["Druid"] or 0
+        elseif achievement.id == "class_shaman_0" then
+            targetValue = 100
+            currentProgress = classData["Shaman"] or 0
+        elseif achievement.id == "class_hunter_0" then
+            targetValue = 100
+            currentProgress = classData["Hunter"] or 0
+
+        -- Entry level race achievements (100 kills)
+        elseif achievement.id == "race_human_0" then
+            targetValue = 100
+            currentProgress = raceData["Human"] or 0
+        elseif achievement.id == "race_nightelf_0" then
+            targetValue = 100
+            currentProgress = raceData["Night Elf"] or 0
+        elseif achievement.id == "race_dwarf_0" then
+            targetValue = 100
+            currentProgress = raceData["Dwarf"] or 0
+        elseif achievement.id == "race_gnome_0" then
+            targetValue = 100
+            currentProgress = raceData["Gnome"] or 0
+        elseif achievement.id == "race_orc_0" then
+            targetValue = 100
+            currentProgress = raceData["Orc"] or 0
+        elseif achievement.id == "race_undead_0" then
+            targetValue = 100
+            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
+        elseif achievement.id == "race_troll_0" then
+            targetValue = 100
+            currentProgress = raceData["Troll"] or 0
+        elseif achievement.id == "race_tauren_0" then
+            targetValue = 100
+            currentProgress = raceData["Tauren"] or 0
+
+        -- Existing class achievement checks
+        elseif achievement.id == "class_paladin_1" then
             targetValue = 250
             currentProgress = classData["Paladin"] or 0
         elseif achievement.id == "class_paladin_2" then
@@ -660,6 +719,45 @@ local function UpdateAchievementLayout()
             completionDate:SetText("Completed: " .. achievement.completedDate)
             completionDate:SetTextColor(0.7, 0.7, 0.7)
         end
+
+        -- Find the appropriate points image based on achievement points
+        local function GetPointsImagePath(points)
+            -- Ensure path is correct with proper extension (.tga, .blp, etc)
+            local basePath = "Interface\\AddOns\\PvPStatsClassic\\achievement_img\\Achievement_icon"
+
+            if points == 10 then return basePath .. "10"
+            elseif points == 25 then return basePath .. "25"
+            elseif points == 50 then return basePath .. "50"
+            elseif points == 75 then return basePath .. "75"
+            elseif points == 100 then return basePath .. "100"
+            elseif points == 125 then return basePath .. "125"
+            elseif points == 250 then return basePath .. "250"
+            elseif points == 500 then return basePath .. "500"
+            else return basePath end
+        end
+
+        -- Replace the point display code with this
+        local pointsValue = achievement.achievementPoints or 10
+        local pointsImage = tile:CreateTexture(nil, "ARTWORK")
+        pointsImage:SetSize(38, 32) -- Increased size for better visibility
+        pointsImage:SetPoint("RIGHT", tile, "RIGHT", -15, 5) -- Adjusted position
+        pointsImage:SetTexture(GetPointsImagePath(pointsValue))
+
+        -- Remove the numeric display since the icon shows the value
+        -- local pointsText = tile:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        -- pointsText:SetPoint("RIGHT", pointsImage, "LEFT", -2, 0)
+        -- pointsText:SetText(pointsValue)
+
+        -- Add debug output to check if textures are loading
+        local texturePath = GetPointsImagePath(pointsValue)
+        print("Loading texture: " .. texturePath .. " for " .. achievement.title)
+
+        -- Adjust the width of description and title to make room for points
+        title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
+        title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)  -- Updated to not overlap points
+
+        desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
+        desc:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)  -- Updated to not overlap points
 
         tile:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
