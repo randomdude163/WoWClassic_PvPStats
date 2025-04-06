@@ -736,23 +736,12 @@ local function UpdateAchievementLayout()
             else return basePath end
         end
 
-        -- Replace the point display code with this
         local pointsValue = achievement.achievementPoints or 10
         local pointsImage = tile:CreateTexture(nil, "ARTWORK")
         pointsImage:SetSize(38, 32) -- Increased size for better visibility
         pointsImage:SetPoint("RIGHT", tile, "RIGHT", -15, 5) -- Adjusted position
         pointsImage:SetTexture(GetPointsImagePath(pointsValue))
 
-        -- Remove the numeric display since the icon shows the value
-        -- local pointsText = tile:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        -- pointsText:SetPoint("RIGHT", pointsImage, "LEFT", -2, 0)
-        -- pointsText:SetText(pointsValue)
-
-        -- Add debug output to check if textures are loading
-        local texturePath = GetPointsImagePath(pointsValue)
-        print("Loading texture: " .. texturePath .. " for " .. achievement.title)
-
-        -- Adjust the width of description and title to make room for points
         title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
         title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)  -- Updated to not overlap points
 

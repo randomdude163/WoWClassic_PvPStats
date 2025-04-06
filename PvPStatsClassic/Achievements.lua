@@ -1132,7 +1132,7 @@ AchievementSystem.achievements = {
     title = "Mass Extinction",
     description = "Achieve a 75-player kill streak",
     iconID = 133731,
-    achievementPoints = 75,
+    achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 75
     end,
@@ -1171,7 +1171,7 @@ AchievementSystem.achievements = {
     title = "Fine Wine",
     description = "Achieve a 150-player kill streak",
     iconID = 132789,
-    achievementPoints = 150,
+    achievementPoints = 250,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 150
     end,
@@ -1184,7 +1184,7 @@ AchievementSystem.achievements = {
     title = "Unstoppable Force",
     description = "Achieve a 175-player kill streak",
     iconID = 133050,
-    achievementPoints = 175,
+    achievementPoints = 500,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 175
     end,
@@ -1197,7 +1197,7 @@ AchievementSystem.achievements = {
     title = "/flex",
     description = "Achieve a 200-player kill streak",
     iconID = 236370,
-    achievementPoints = 200,
+    achievementPoints = 500,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 200
     end,
@@ -1250,7 +1250,7 @@ AchievementSystem.achievements = {
     id = "kills_favorite_target",
     title = "Personal Vendetta",
     description = "Kill the same player 10 times",
-    iconID = 136168,  -- Red target icon
+    iconID = 136168,
     achievementPoints = 25,
     condition = function(playerStats)
         local stats = PSC_CalculateSummaryStatistics()
@@ -1297,7 +1297,6 @@ local function PersonalizeText(text, playerName)
         text = text()
     end
 
-    -- Add this check to prevent nil playerName
     local name = playerName or GetPlayerName() or "You"
 
     return text:gsub("%[YOUR NAME%]", name)
@@ -1313,13 +1312,10 @@ function AchievementSystem:CheckAchievements()
             achievement.unlocked = true
             achievement.completedDate = date("%d/%m/%Y %H:%M") -- Set completion date
 
-            -- Save achievement data to PSC_DB using the DataStorage.lua function
             PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
 
-            -- Personalize description
             local personalizedDescription = PersonalizeText(achievement.description, playerName)
 
-            -- Also personalize the subText if it exists
             local personalizedSubText = achievement.subText
             if type(personalizedSubText) == "string" then
                 personalizedSubText = PersonalizeText(personalizedSubText, playerName)
@@ -1338,7 +1334,6 @@ function AchievementSystem:CheckAchievements()
         end
     end
 
-    -- Save the updated achievement points at the end
     self:SaveAchievementPoints()
 
     return achievementsUnlocked
@@ -1365,34 +1360,28 @@ for _, achievement in ipairs(AchievementSystem.achievements) do
 end
 
 function AchievementSystem:SaveAchievementPoints()
-    -- Calculate and store the total achievement points
     local totalPoints = 0
 
     if not PSC_DB.Achievements then
         PSC_DB.Achievements = {}
     end
 
-    -- Store achievements with their point values directly in saved variables
     for _, achievement in ipairs(self.achievements) do
         local achievementID = achievement.id
 
         if PSC_DB.Achievements[achievementID] and PSC_DB.Achievements[achievementID].unlocked then
-            -- If this achievement is unlocked, add its points
             totalPoints = totalPoints + (achievement.achievementPoints or 0)
 
-            -- Store the points value in the achievement data
             PSC_DB.Achievements[achievementID].points = achievement.achievementPoints or 0
         end
     end
 
-    -- Store the total for quick access
     PSC_DB.TotalAchievementPoints = totalPoints
 
     return totalPoints
 end
 
 function AchievementSystem:Initialize()
-    -- Restore unlocked state from saved variables
     if PSC_DB.Achievements then
         for achievementID, achievementData in pairs(PSC_DB.Achievements) do
             for i, achievement in ipairs(self.achievements) do
@@ -1404,11 +1393,9 @@ function AchievementSystem:Initialize()
         end
     end
 
-    -- Calculate initial achievement points
     self:SaveAchievementPoints()
 end
 
--- Add this to your addon's initialization
 C_Timer.After(1, function()
     if PVPSC and PVPSC.AchievementSystem then
         PVPSC.AchievementSystem:Initialize()
