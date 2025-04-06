@@ -3,7 +3,8 @@ local addonName, PVPSC = ...
 PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
-AchievementSystem.achievements = { -- Paladin Achievements
+AchievementSystem.achievements = {
+    -- Paladin Achievements
 {
     id = "class_paladin_0",
     title = "White Knight Down",
@@ -450,7 +451,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Wife Beater",
     description = "Defeat 50 female characters",
     iconID = 134167,
-    achievementPoints = 10,
+    achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 50
     end,
@@ -462,7 +463,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Wife Beater EPIC",
     description = "Defeat 100 female characters",
     iconID = 132356,
-    achievementPoints = 10,
+    achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 100
     end,
@@ -474,7 +475,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Wife Beater LEGENDARY",
     description = "Defeat 200 female characters",
     iconID = 135906,
-    achievementPoints = 10,
+    achievementPoints = 75,
     condition = function(playerStats)
         return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 200
     end,
@@ -524,7 +525,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Redridge Renovation",
     description = "Eliminate 500 players in Redridge Mountains",
     iconID = 236814,
-    achievementPoints = 10,
+    achievementPoints = 500,
     condition = function(playerStats)
         return (playerStats.zoneKills and playerStats.zoneKills["Redridge Mountains"] or 0) >= 500
     end,
@@ -536,7 +537,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Elwynn Exterminator",
     description = "Eliminate 100 players in Elwynn Forest",
     iconID = 236761,
-    achievementPoints = 10,
+    achievementPoints = 500,
     condition = function(playerStats)
         return (playerStats.zoneKills and playerStats.zoneKills["Elwynn Forest"] or 0) >= 100
     end,
@@ -548,6 +549,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Darkshire Destroyer",
     description = "Eliminate 100 players in Duskwood",
     iconID = 236757,
+    achievementPoints = 500,
     condition = function(playerStats)
         return (playerStats.zoneKills and playerStats.zoneKills["Duskwood"] or 0) >= 100
     end,
@@ -560,6 +562,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Body Count Rising",
     description = "Slay 500 players in total",
     iconID = 236399, -- spell_shadow_shadowfury
+    achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.totalKills or 0) >= 500
     end,
@@ -571,6 +574,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Graveyard Entrepreneur",
     description = "Slay 1000 players in total",
     iconID = 237542,
+    achievementPoints = 100,
     condition = function(playerStats)
         return (playerStats.totalKills or 0) >= 1000
     end,
@@ -582,6 +586,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Death Incorporated",
     description = "Slay 3000 players in total",
     iconID = 132205,
+    achievementPoints = 250,
     condition = function(playerStats)
         return (playerStats.totalKills or 0) >= 3000
     end,
@@ -594,6 +599,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Variety Slayer",
     description = "Defeat 400 unique players",
     iconID = 133789,
+    achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.uniqueKills or 0) >= 400
     end,
@@ -605,6 +611,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Equal Opportunity Executioner",
     description = "Defeat 800 unique players",
     iconID = 133787,
+    achievementPoints = 100,
     condition = function(playerStats)
         return (playerStats.uniqueKills or 0) >= 800
     end,
@@ -642,6 +649,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Human Resources",
     description = "Eliminate 250 Humans",
     iconID = 134167,
+    achievementPoints = 25,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Human"] or 0) >= 250
@@ -654,6 +662,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Peak Meta, Peak Failure",
     description = "Eliminate 500 Humans",
     iconID = 236448,
+    achievementPoints = 50,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Human"] or 0) >= 500
@@ -695,6 +704,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Shadowmeld Won't Save You",
     description = "Eliminate 250 Night Elves",
     iconID = 134162,
+    achievementPoints = 25,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Night Elf"] or 0) >= 250
@@ -707,6 +717,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "One with Nature, Now One with the Dirt",
     description = "Eliminate 500 Night Elves",
     iconID = 236450,
+    achievementPoints = 50,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Night Elf"] or 0) >= 500
@@ -747,6 +758,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Short Term Solution",
     description = "Eliminate 250 Dwarves",
     iconID = 134160,
+    achievementPoints = 25,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Dwarf"] or 0) >= 250
@@ -800,6 +812,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Pest Control",
     description = "Eliminate 250 Gnomes",
     iconID = 134165,
+    achievementPoints = 25,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Gnome"] or 0) >= 250
@@ -839,7 +852,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "race_orc_0",
     title = "Orc Slayer",
     description = "Eliminate 100 Orcs",
-    iconID = 132154,
+    iconID = 236451,
     achievementPoints = 10,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
@@ -852,7 +865,8 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "race_orc_1",
     title = "Green Peace",
     description = "Eliminate 250 Orcs",
-    iconID = 236451,
+    iconID = 134171,
+    achievementPoints = 25,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Orc"] or 0) >= 250
@@ -865,6 +879,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Anger Management Expert",
     description = "Eliminate 500 Orcs",
     iconID = 236452,
+    achievementPoints = 50,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Orc"] or 0) >= 500
@@ -891,7 +906,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "race_undead_0",
     title = "Re-dead",
     description = "Eliminate 100 Undead",
-    iconID = 136119,
+    iconID = 236457,
     achievementPoints = 10,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
@@ -904,7 +919,8 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "race_undead_1",
     title = "Double Dead",
     description = "Eliminate 250 Undead",
-    iconID = 236457,
+    iconID = 134180,
+    achievementPoints = 25,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Undead"] or 0) >= 250
@@ -917,6 +933,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Zombies't",
     description = "Eliminate 500 Undead",
     iconID = 236458,
+    achievementPoints = 50,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Undead"] or 0) >= 500
@@ -943,7 +960,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "race_troll_0",
     title = "Troll Hunter",
     description = "Eliminate 100 Trolls",
-    iconID = 135968,
+    iconID = 236455,
     achievementPoints = 10,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
@@ -956,7 +973,8 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "race_troll_1",
     title = "Voodoo Venue Closed",
     description = "Eliminate 250 Trolls",
-    iconID = 236455,
+    iconID = 134178,
+    achievementPoints = 25,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Troll"] or 0) >= 250
@@ -996,7 +1014,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "race_tauren_0",
     title = "Sacred Cow",
     description = "Eliminate 100 Tauren",
-    iconID = 132277,
+    iconID = 236453,
     achievementPoints = 10,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
@@ -1009,7 +1027,8 @@ AchievementSystem.achievements = { -- Paladin Achievements
     id = "race_tauren_1",
     title = "Biggest Hitbox, Biggest Target",
     description = "Eliminate 250 Tauren",
-    iconID = 236453,
+    iconID = 134175,
+    achievementPoints = 25,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Tauren"] or 0) >= 250
@@ -1022,6 +1041,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "No More Bull",
     description = "Eliminate 500 Tauren",
     iconID = 236454,
+    achievementPoints = 50,
     condition = function(playerStats)
         local _, raceData = PSC_CalculateBarChartStatistics()
         return (raceData["Tauren"] or 0) >= 500
@@ -1047,6 +1067,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Guild Drama Generator",
     description = "Eliminate 500 guild members",
     iconID = 134473,
+    achievementPoints = 50,
     condition = function(playerStats)
         local _, _, _, _, _, _, guildStatusData = PSC_CalculateBarChartStatistics()
         return (guildStatusData["In Guild"] or 0) >= 500
@@ -1059,6 +1080,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Lone Wolf Hunter",
     description = "Eliminate 500 guildless players",
     iconID = 132203,
+    achievementPoints = 50,
     condition = function(playerStats)
         local _, _, _, _, _, _, guildStatusData = PSC_CalculateBarChartStatistics()
         return (guildStatusData["No Guild"] or 0) >= 500
@@ -1071,6 +1093,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Teach them young",
     description = "Eliminate 100 grey-level players",
     iconID = 134435,
+    achievementPoints = 10,
     condition = function(playerStats)
         return PSC_CalculateGreyKills() >= 100
     end,
@@ -1083,6 +1106,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Serial Killer",
     description = "Achieve a 25-player kill streak",
     iconID = 133728,
+    achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 25
     end,
@@ -1095,6 +1119,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Crime Scene",
     description = "Achieve a 50-player kill streak",
     iconID = 133730,
+    achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 50
     end,
@@ -1107,6 +1132,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Mass Extinction",
     description = "Achieve a 75-player kill streak",
     iconID = 133731,
+    achievementPoints = 75,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 75
     end,
@@ -1119,6 +1145,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "TRIPLE D!!!",
     description = "Achieve a 100-player kill streak",
     iconID = 132734,
+    achievementPoints = 100,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 100
     end,
@@ -1131,6 +1158,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "PvP Plague",
     description = "Achieve a 125-player kill streak",
     iconID = 136123,
+    achievementPoints = 125,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 125
     end,
@@ -1143,6 +1171,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Fine Wine",
     description = "Achieve a 150-player kill streak",
     iconID = 132789,
+    achievementPoints = 150,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 150
     end,
@@ -1155,6 +1184,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Unstoppable Force",
     description = "Achieve a 175-player kill streak",
     iconID = 133050,
+    achievementPoints = 175,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 175
     end,
@@ -1167,6 +1197,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "/flex",
     description = "Achieve a 200-player kill streak",
     iconID = 236370,
+    achievementPoints = 200,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 200
     end,
@@ -1179,6 +1210,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Triple Kill!",
     description = "Get 3 kills in a single combat",
     iconID = 236330,
+    achievementPoints = 25,
     condition = function(playerStats)
         return (playerStats.highestMultiKill or 0) >= 3
     end,
@@ -1191,6 +1223,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "QUADRA KILL!",
     description = "Get 4 kills in a single combat",
     iconID = 236341,
+    achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.highestMultiKill or 0) >= 4
     end,
@@ -1203,6 +1236,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "PENTAKILL!!",
     description = "Get 5 kills in a single combat",
     iconID = 236383,
+    achievementPoints = 75,
     condition = function(playerStats)
         return (playerStats.highestMultiKill or 0) >= 5
     end,
@@ -1217,6 +1251,7 @@ AchievementSystem.achievements = { -- Paladin Achievements
     title = "Personal Vendetta",
     description = "Kill the same player 10 times",
     iconID = 136168,  -- Red target icon
+    achievementPoints = 25,
     condition = function(playerStats)
         local stats = PSC_CalculateSummaryStatistics()
         return stats.mostKilledCount >= 10
@@ -1255,35 +1290,58 @@ local function GetPlayerName()
     return playerName or "You"
 end
 
-local function PersonalizeText(text)
+local function PersonalizeText(text, playerName)
     if not text then return "" end
 
     if type(text) == "function" then
         text = text()
     end
 
-    local playerName = GetPlayerName()
-    return text:gsub("%[YOUR NAME%]", playerName)
+    -- Add this check to prevent nil playerName
+    local name = playerName or GetPlayerName() or "You"
+
+    return text:gsub("%[YOUR NAME%]", name)
 end
 
 function AchievementSystem:CheckAchievements()
     local playerStats = PVPSC.playerStats or {}
     local playerName = GetPlayerName()
+    local achievementsUnlocked = 0
 
     for _, achievement in ipairs(self.achievements) do
         if not achievement.unlocked and achievement.condition(playerStats) then
             achievement.unlocked = true
             achievement.completedDate = date("%d/%m/%Y %H:%M") -- Set completion date
 
-            local personalizedDescription = PersonalizeText(achievement.description)
+            -- Save achievement data to PSC_DB using the DataStorage.lua function
+            PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
 
+            -- Personalize description
+            local personalizedDescription = PersonalizeText(achievement.description, playerName)
+
+            -- Also personalize the subText if it exists
+            local personalizedSubText = achievement.subText
+            if type(personalizedSubText) == "string" then
+                personalizedSubText = PersonalizeText(personalizedSubText, playerName)
+            end
+
+            -- Show popup
             PVPSC.AchievementPopup:ShowPopup({
                 icon = achievement.iconID,
                 title = achievement.title,
-                description = personalizedDescription
+                description = personalizedDescription,
+                subText = personalizedSubText,
+                rarity = achievement.rarity
             })
+
+            achievementsUnlocked = achievementsUnlocked + 1
         end
     end
+
+    -- Save the updated achievement points at the end
+    self:SaveAchievementPoints()
+
+    return achievementsUnlocked
 end
 
 local function GetRarityFromPoints(points)
@@ -1305,3 +1363,54 @@ for _, achievement in ipairs(AchievementSystem.achievements) do
         achievement.rarity = GetRarityFromPoints(achievement.achievementPoints or 10)
     end
 end
+
+function AchievementSystem:SaveAchievementPoints()
+    -- Calculate and store the total achievement points
+    local totalPoints = 0
+
+    if not PSC_DB.Achievements then
+        PSC_DB.Achievements = {}
+    end
+
+    -- Store achievements with their point values directly in saved variables
+    for _, achievement in ipairs(self.achievements) do
+        local achievementID = achievement.id
+
+        if PSC_DB.Achievements[achievementID] and PSC_DB.Achievements[achievementID].unlocked then
+            -- If this achievement is unlocked, add its points
+            totalPoints = totalPoints + (achievement.achievementPoints or 0)
+
+            -- Store the points value in the achievement data
+            PSC_DB.Achievements[achievementID].points = achievement.achievementPoints or 0
+        end
+    end
+
+    -- Store the total for quick access
+    PSC_DB.TotalAchievementPoints = totalPoints
+
+    return totalPoints
+end
+
+function AchievementSystem:Initialize()
+    -- Restore unlocked state from saved variables
+    if PSC_DB.Achievements then
+        for achievementID, achievementData in pairs(PSC_DB.Achievements) do
+            for i, achievement in ipairs(self.achievements) do
+                if achievement.id == achievementID and achievementData.unlocked then
+                    self.achievements[i].unlocked = true
+                    self.achievements[i].completedDate = achievementData.completedDate
+                end
+            end
+        end
+    end
+
+    -- Calculate initial achievement points
+    self:SaveAchievementPoints()
+end
+
+-- Add this to your addon's initialization
+C_Timer.After(1, function()
+    if PVPSC and PVPSC.AchievementSystem then
+        PVPSC.AchievementSystem:Initialize()
+    end
+end)

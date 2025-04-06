@@ -235,6 +235,54 @@ function PSC_CleanupPlayerInfoCache()
     PSC_DB.PlayerInfoCache = cleanedInfoCache
 end
 
+-- Add this function to initialize achievement-related data in PSC_DB
+function PSC_InitializeAchievementData()
+    if not PSC_DB.Achievements then
+        PSC_DB.Achievements = {}
+    end
+
+    if not PSC_DB.TotalAchievementPoints then
+        PSC_DB.TotalAchievementPoints = 0
+    end
+end
+
+-- Add this function to update achievement points when an achievement is unlocked
+function PSC_SaveAchievement(achievementID, completedDate, points)
+    if not PSC_DB.Achievements then
+        PSC_InitializeAchievementData()
+    end
+
+    if not PSC_DB.Achievements[achievementID] then
+        PSC_DB.Achievements[achievementID] = {}
+    end
+
+    PSC_DB.Achievements[achievementID].unlocked = true
+    PSC_DB.Achievements[achievementID].completedDate = completedDate
+    PSC_DB.Achievements[achievementID].points = points or 0
+
+    -- Recalculate total points
+    PSC_UpdateTotalAchievementPoints()
+end
+
+-- Function to calculate total achievement points
+function PSC_UpdateTotalAchievementPoints()
+    local totalPoints = 0
+
+    if not PSC_DB.Achievements then
+        PSC_DB.TotalAchievementPoints = 0
+        return 0
+    end
+
+    for achievementID, achievementData in pairs(PSC_DB.Achievements) do
+        if achievementData.unlocked and achievementData.points then
+            totalPoints = totalPoints + achievementData.points
+        end
+    end
+
+    PSC_DB.TotalAchievementPoints = totalPoints
+    return totalPoints
+end
+
 function PSC_LoadDefaultSettings()
     PSC_DB.EnableKillAnnounceMessages = true
     PSC_DB.EnableRecordAnnounceMessages = true
@@ -278,6 +326,9 @@ function PSC_LoadDefaultSettings()
     PSC_DB.NewMultiKillRecordMessage = "New personal best: MULTIKILLTEXT!"
 
     PSC_DB.MinimapButtonPosition = 195
+
+    -- Initialize achievement data when loading defaults
+    PSC_InitializeAchievementData()
 end
 
 function PSC_InitializePlayerKillCounts()
@@ -313,9 +364,12 @@ function ResetAllStatsToDefault()
     PSC_DB.PlayerInfoCache = {}
     PSC_DB.PlayerKillCounts = {}
     PSC_DB.PvPLossCounts = {}
+    PSC_DB.Achievements = {}
+    PSC_DB.TotalAchievementPoints = 0
 
     PSC_InitializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()
+    PSC_InitializeAchievementData()
 
     print("[PvPStats]: All statistics have been reset!")
 end
