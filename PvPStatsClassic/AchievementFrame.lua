@@ -299,7 +299,7 @@ local function UpdateAchievementLayout()
 
         local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
         progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10)
-        progressBar:SetPoint("TOPLEFT", tile, "TOPLEFT", (ACHIEVEMENT_WIDTH - (ACHIEVEMENT_WIDTH - 60)) / 2, -60)
+        progressBar:SetPoint("TOPLEFT", tile, "TOPLEFT", (ACHIEVEMENT_WIDTH - (ACHIEVEMENT_WIDTH - 60)) / 2, -65)
         progressBar:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
         progressBar:SetStatusBarColor(0.0, 0.65, 0.0)
 
@@ -447,22 +447,28 @@ local function UpdateAchievementLayout()
             targetValue = 750
             currentProgress = classData["Hunter"] or 0
         elseif achievement.id == "general_gender_female_1" then
-            targetValue = 50
+            targetValue = 250
             currentProgress = genderData["Female"] or 0
         elseif achievement.id == "general_gender_female_2" then
-            targetValue = 100
+            targetValue = 500
             currentProgress = genderData["Female"] or 0
         elseif achievement.id == "general_gender_female_3" then
-            targetValue = 200
+            targetValue = 750
+            currentProgress = genderData["Female"] or 0
+        elseif achievement.id == "general_gender_female_4" then
+            targetValue = 1000
             currentProgress = genderData["Female"] or 0
         elseif achievement.id == "general_gender_male_1" then
-            targetValue = 50
+            targetValue = 250
             currentProgress = genderData["Male"] or 0
         elseif achievement.id == "general_gender_male_2" then
-            targetValue = 100
+            targetValue = 500
             currentProgress = genderData["Male"] or 0
         elseif achievement.id == "general_gender_male_3" then
-            targetValue = 200
+            targetValue = 750
+            currentProgress = genderData["Male"] or 0
+        elseif achievement.id == "general_gender_male_4" then
+            targetValue = 1000
             currentProgress = genderData["Male"] or 0
         -- ALLIANCE RACES
         -- Human achievements
@@ -639,9 +645,10 @@ local function UpdateAchievementLayout()
 
         local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
-        title:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
+        title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
         title:SetJustifyH("LEFT")
-        title:SetText(achievement.title)
+        -- Use PersonalizeText to replace [YOUR NAME] in the title
+        title:SetText(PersonalizeText(achievement.title))
         if achievement.unlocked then
             title:SetTextColor(1, 0.82, 0)  -- Gold color for unlocked
         else
@@ -759,9 +766,10 @@ local function UpdateAchievementLayout()
             end
 
             local pointsText = achievement.achievementPoints or 10
-            GameTooltip:SetText(achievement.title .. " |cFF66CCFF(" .. pointsText .. ")|r", r, g, b)
+            local personalizedTitle = PersonalizeText(achievement.title)
+            GameTooltip:SetText(personalizedTitle .. " |cFF66CCFF(" .. pointsText .. ")|r", r, g, b)
 
-            GameTooltip:AddLine(achievement.description, 1, 1, 1, true)
+            GameTooltip:AddLine(PersonalizeText(achievement.description), 1, 1, 1, true)
             if achievement.subText then
                 GameTooltip:AddLine(" ")
                 local personalizedSubText = PersonalizeText(achievement.subText)

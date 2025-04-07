@@ -445,80 +445,105 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = "750 Warlocks cursed you with everything they had—bad posture, social anxiety, and a Steam library full of games they’ll never finish. Joke’s on them: you were already cursed with exposure to their forum posts."
-}, -- Female Gender Achievement
+}, -- Female Gender Achievements
 {
     id = "general_gender_female_1",
-    title = "Wife Beater",
-    description = "Defeat 50 female characters",
+    title = "Equal Rights, Equal Fights",
+    description = "Defeat 250 female characters",
     iconID = 134167,
-    achievementPoints = 25,
+    achievementPoints = 10,
     condition = function(playerStats)
-        return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 50
+        return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 250
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "Equal opportunity combat at its finest. You've sent 50 ladies to respawn and didn't even hold the graveyard gate open for them."
+    subText = "250 female characters slain! Equal opportunity combat at its finest. You've sent these ladies to respawn and didn't even hold the graveyard gate open for them."
 }, {
     id = "general_gender_female_2",
-    title = "Wife Beater EPIC",
-    description = "Defeat 100 female characters",
+    title = "Premium Women's Rights Activist",
+    description = "Defeat 500 female characters",
     iconID = 132356,
-    achievementPoints = 50,
+    achievementPoints = 25,
     condition = function(playerStats)
-        return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 100
+        return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 500
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "100 female characters deleted with extreme prejudice. The Ironforge 'Women's Protection Society' has placed a bounty on your head. Prepare the shitstorm."
+    subText = "500 female characters deleted with extreme prejudice. The Ironforge 'Women's Protection Society' has placed a bounty on your head. Prepare for the shitstorm."
 }, {
     id = "general_gender_female_3",
-    title = "Wife Beater LEGENDARY",
-    description = "Defeat 200 female characters",
+    title = "She/Her/Dead",
+    description = "Defeat 750 female characters",
     iconID = 135906,
-    achievementPoints = 75,
+    achievementPoints = 50,
     condition = function(playerStats)
-        return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 200
+        return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 750
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "200 female characters obliterated! Your battle cry 'Equal rights means equal fights!' echoes across Azeroth. You've been banned from every tavern in Stormwind."
-}, -- Male Gender Achievement
+    subText = "750 female characters obliterated! Your battle cry 'Equal rights means equal fights!' echoes across Azeroth. You've been banned from every tavern in Stormwind."
+}, {
+    id = "general_gender_female_4",
+    title = "Wife Beater",
+    description = "Defeat 1000 female characters",
+    iconID = 135908,
+    achievementPoints = 75,
+    condition = function(playerStats)
+        return (playerStats.genderKills and playerStats.genderKills["FEMALE"] or 0) >= 1000
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "1000 female avatars deleted—and not a single real woman in the bunch. You've dismantled more online personas than a Tinder exposé thread. Next stop: catching streamers playing with voice changers."
+},
+-- Male Gender Achievement
 {
     id = "general_gender_male_1",
     title = "Widowmaker",
-    description = "Defeat 50 male characters",
+    description = "Defeat 250 male characters",
     iconID = 236557,
-    achievementPoints = 25,
+    achievementPoints = 10,
     condition = function(playerStats)
-        return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 50
+        return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 250
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "50 husbands never made it home for dinner! Their wives are spending the Goblin Life Insurance payouts at the Auction House."
+    subText = "250 husbands never made it home for dinner! Their wives are spending the Goblin Life Insurance payouts at the Auction House."
 }, {
     id = "general_gender_male_2",
-    title = "Widowmaker EPIC",
-    description = "Defeat 100 male characters",
+    title = "Husband Hunter",
+    description = "Defeat 500 male characters",
     iconID = 132352,
-    achievementPoints = 50,
+    achievementPoints = 25,
     condition = function(playerStats)
-        return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 100
+        return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 500
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "100 male characters destroyed! You're single-handedly responsible for a dating app boom in Azeroth. Lonely hearts everywhere."
+    subText = "500 male characters destroyed! You're single-handedly responsible for a dating app boom in Azeroth. Lonely hearts everywhere."
 }, {
     id = "general_gender_male_3",
-    title = "Widowmaker LEGENDARY",
-    description = "Defeat 200 male characters",
+    title = "Masculinity Challenger",
+    description = "Defeat 750 male characters",
     iconID = 134166,
-    achievementPoints = 75,
+    achievementPoints = 50,
     condition = function(playerStats)
-        return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 200
+        return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 750
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "200 males sent to their maker! The orphanages are overflowing and the wedding ring market has crashed. Economics, baby!"
+    subText = "750 males sent to their maker! The orphanages are overflowing and the wedding ring market has crashed. Economics, baby!"
+}, {
+    id = "general_gender_male_4",
+    title = "Professional Man-Slayer",
+    description = "Defeat 1000 male characters",
+    iconID = 134006,
+    achievementPoints = 75,
+    condition = function(playerStats)
+        return (playerStats.genderKills and playerStats.genderKills["MALE"] or 0) >= 1000
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "1000 male characters vanquished! The average lifespan of men in Azeroth has plummeted. Blizzard is considering a 'protective bubble' feature that activates whenever you enter the zone. Support groups have formed for your victims - they meet every Tuesday at the graveyard."
 }, -- Zone-specific Achievements
 {
     id = "general_zone_redridge",
@@ -546,7 +571,7 @@ AchievementSystem.achievements = {
     subText = "After 100 deaths in Elwynn, local humans are painting themselves green and practicing their 'zug zug'! Goldshire Inn's new special: 'Reroll Horde, Get Free Hearthstone to Durotar.' Even Marshal Dughan is considering a career in Orgrimmar."
 }, {
     id = "general_zone_westfall",
-    title = "Two Traitors vs. Westfall",
+    title = "[YOUR NAME] x Defias Traitor",
     description = "Eliminate 100 players in Westfall",
     iconID = 236852,
     achievementPoints = 250,
@@ -1134,7 +1159,7 @@ AchievementSystem.achievements = {
     id = "kills_streak_50",
     title = "Crime Scene",
     description = "Achieve a 50-player kill streak",
-    iconID = 133730,
+    iconID = 236566,
     achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 50
@@ -1147,7 +1172,7 @@ AchievementSystem.achievements = {
     id = "kills_streak_75",
     title = "Mass Extinction",
     description = "Achieve a 75-player kill streak",
-    iconID = 133731,
+    iconID = 236358,
     achievementPoints = 50,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 75
@@ -1160,7 +1185,7 @@ AchievementSystem.achievements = {
     id = "kills_streak_100",
     title = "TRIPLE D!!!",
     description = "Achieve a 100-player kill streak",
-    iconID = 132734,
+    iconID = 236682,
     achievementPoints = 100,
     condition = function(playerStats)
         return (playerStats.highestKillStreak or 0) >= 100
@@ -1331,7 +1356,7 @@ function AchievementSystem:CheckAchievements()
             PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
 
             local personalizedDescription = PersonalizeText(achievement.description, playerName)
-
+            local personalizedTitle = PersonalizeText(achievement.title, playerName)
             local personalizedSubText = achievement.subText
             if type(personalizedSubText) == "string" then
                 personalizedSubText = PersonalizeText(personalizedSubText, playerName)
@@ -1340,7 +1365,7 @@ function AchievementSystem:CheckAchievements()
             -- Show popup
             PVPSC.AchievementPopup:ShowPopup({
                 icon = achievement.iconID,
-                title = achievement.title,
+                title = personalizedTitle,
                 description = personalizedDescription,
                 subText = personalizedSubText,
                 rarity = achievement.rarity
