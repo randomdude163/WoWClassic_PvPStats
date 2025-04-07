@@ -162,7 +162,8 @@ local function FilterAchievements(achievements, category)
                     if playerFaction == "Horde" then
                         if string.find(achievement.id, "_redridge") or
                            string.find(achievement.id, "_elwynn") or
-                           string.find(achievement.id, "_duskwood") then
+                           string.find(achievement.id, "_duskwood") or
+                           string.find(achievement.id, "_westfall") then
                             table.insert(filtered, achievement)
                         end
                     elseif playerFaction == "Alliance" then
@@ -586,8 +587,11 @@ local function UpdateAchievementLayout()
             targetValue = 100
             currentProgress = zoneData["Elwynn Forest"] or 0
         elseif achievement.id == "general_zone_duskwood" then
-            targetValue = 100
+            targetValue = 250
             currentProgress = zoneData["Duskwood"] or 0
+        elseif achievement.id == "general_zone_westfall" then
+            targetValue = 100
+            currentProgress = zoneData["Westfall"] or 0
         elseif achievement.id == "kills_total_1" then
             targetValue = 500
             currentProgress = summaryStats.totalKills or 0

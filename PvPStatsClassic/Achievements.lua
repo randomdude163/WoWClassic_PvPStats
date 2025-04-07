@@ -537,7 +537,7 @@ AchievementSystem.achievements = {
     title = "Elwynn Exterminator",
     description = "Eliminate 100 players in Elwynn Forest",
     iconID = 236761,
-    achievementPoints = 500,
+    achievementPoints = 250,
     condition = function(playerStats)
         return (playerStats.zoneKills and playerStats.zoneKills["Elwynn Forest"] or 0) >= 100
     end,
@@ -545,17 +545,29 @@ AchievementSystem.achievements = {
     completedDate = nil,
     subText = "After 100 deaths in Elwynn, local humans are painting themselves green and practicing their 'zug zug'! Goldshire Inn's new special: 'Reroll Horde, Get Free Hearthstone to Durotar.' Even Marshal Dughan is considering a career in Orgrimmar."
 }, {
+    id = "general_zone_westfall",
+    title = "Two Traitors vs. Westfall",
+    description = "Eliminate 100 players in Westfall",
+    iconID = 236852,
+    achievementPoints = 250,
+    condition = function(playerStats)
+        return (playerStats.zoneKills and playerStats.zoneKills["Westfall"] or 0) >= 100
+    end,
+    unlocked = false,
+    completedDate = nil,
+    subText = "[YOUR NAME] x Defias Traitor vs. Westfall - the crossover nobody wanted, but 100 players paid the price anyway, making Westfall unplayable."
+},{
     id = "general_zone_duskwood",
     title = "Darkshire Destroyer",
-    description = "Eliminate 100 players in Duskwood",
+    description = "Eliminate 250 players in Duskwood",
     iconID = 236757,
-    achievementPoints = 500,
+    achievementPoints = 250,
     condition = function(playerStats)
         return (playerStats.zoneKills and playerStats.zoneKills["Duskwood"] or 0) >= 100
     end,
     unlocked = false,
     completedDate = nil,
-    subText = "The Night Watch counted 100 fresh corpses and decided to rename Darkshire to 'Deadshire'! Mor'Ladim is feeling professionally threatened, and Stiches filed for unemployment."
+    subText = "The Night Watch counted 250 fresh corpses and decided to rename Darkshire to 'Deadshire'! Mor'Ladim is feeling professionally threatened, and Stiches filed for unemployment."
 }, -- Total Kills Achievements
 {
     id = "kills_total_1",
