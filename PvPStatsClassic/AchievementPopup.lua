@@ -13,6 +13,7 @@ local POPUP_FADE_TIME = 1 -- Fade out over 1 second
 -- Queue system for sequential achievement display
 AchievementPopup.queue = {}
 AchievementPopup.isDisplaying = false
+AchievementPopup.currentTimer = nil -- Track the current fade timer
 
 -- Create the popup frame
 local function CreateAchievementPopupFrame()
@@ -73,8 +74,15 @@ local function CreateAchievementPopupFrame()
     closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
     closeButton:SetSize(24, 24)
     closeButton:SetScript("OnClick", function()
-        -- Hide the current popup
+        -- Cancel the fade timer if it exists
+        if AchievementPopup.currentTimer then
+            AchievementPopup.currentTimer:Cancel()
+            AchievementPopup.currentTimer = nil
+        end
+
+        -- Hide the current popup immediately
         frame:Hide()
+
         -- Process the next achievement in the queue after a short delay
         C_Timer.After(0.1, function()
             AchievementPopup:ProcessQueue()
@@ -114,6 +122,12 @@ end
 
 -- Function to display a single achievement popup
 function AchievementPopup:DisplayPopup(achievementData)
+    -- Cancel any existing timer
+    if self.currentTimer then
+        self.currentTimer:Cancel()
+        self.currentTimer = nil
+    end
+
     -- Set up icon and text
     popupFrame.icon:SetTexture(achievementData.icon)
     popupFrame.achievementName:SetText(achievementData.title)
@@ -153,13 +167,14 @@ function AchievementPopup:DisplayPopup(achievementData)
     local soundID = 8173  -- Default achievement sound
     PlaySound(soundID)
 
-    -- Fade out after display time and process next item in queue
-    C_Timer.After(POPUP_DISPLAY_TIME, function()
+    -- Set up the fade timer and store it so we can cancel if needed
+    self.currentTimer = C_Timer.NewTimer(POPUP_DISPLAY_TIME, function()
         local fadeInfo = {
             mode = "OUT",
             timeToFade = POPUP_FADE_TIME,
             finishedFunc = function()
                 popupFrame:Hide()
+                self.currentTimer = nil
                 -- Process next achievement after this one has fully faded out
                 C_Timer.After(0.1, function()
                     self:ProcessQueue()

@@ -298,7 +298,7 @@ local function UpdateAchievementLayout()
 
         local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
         progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10)
-        progressBar:SetPoint("TOPLEFT", tile, "TOPLEFT", (ACHIEVEMENT_WIDTH - (ACHIEVEMENT_WIDTH - 60)) / 2, -55)  -- Center horizontally
+        progressBar:SetPoint("TOPLEFT", tile, "TOPLEFT", (ACHIEVEMENT_WIDTH - (ACHIEVEMENT_WIDTH - 60)) / 2, -60)
         progressBar:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
         progressBar:SetStatusBarColor(0.0, 0.65, 0.0)
 
@@ -685,11 +685,6 @@ local function UpdateAchievementLayout()
 
                 desc:SetTextColor(0.9, 0.9, 0.9)
 
-                local completionDate = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                completionDate:SetPoint("TOP", progressBar, "BOTTOM", 0, -5)
-                completionDate:SetText("Completed: " .. achievement.completedDate)
-                completionDate:SetTextColor(0.7, 0.7, 0.7)
-
                 if PVPSC.AchievementPopup then
                     PVPSC.AchievementPopup:ShowPopup({
                         icon = achievement.iconID,
@@ -711,13 +706,6 @@ local function UpdateAchievementLayout()
                 progressBar:SetValue(currentProgress)
                 progressText:SetText(currentProgress.."/"..targetValue)
             end
-        end
-
-        if achievement.unlocked and achievement.completedDate then
-            local completionDate = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            completionDate:SetPoint("TOP", progressBar, "BOTTOM", 0, -5)  -- Center the completion date
-            completionDate:SetText("Completed: " .. achievement.completedDate)
-            completionDate:SetTextColor(0.7, 0.7, 0.7)
         end
 
         -- Find the appropriate points image based on achievement points
@@ -775,6 +763,12 @@ local function UpdateAchievementLayout()
                 local personalizedSubText = PersonalizeText(achievement.subText)
                 GameTooltip:AddLine(personalizedSubText, 0.7, 0.7, 1, true)
             end
+
+            if achievement.unlocked and achievement.completedDate then
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("Completed: " .. achievement.completedDate, 1, 0.82, 0, true) -- Gold color
+            end
+
             GameTooltip:Show()
         end)
 
