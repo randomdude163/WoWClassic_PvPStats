@@ -645,8 +645,11 @@ local function UpdateAchievementLayout()
 
         local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
-        title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
-        title:SetJustifyH("LEFT")
+        if pointsImage then
+            title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
+        else
+            title:SetPoint("RIGHT", tile, "RIGHT", -15, 0)
+        end
         -- Use PersonalizeText to replace [YOUR NAME] in the title
         title:SetText(PersonalizeText(achievement.title))
         if achievement.unlocked then
