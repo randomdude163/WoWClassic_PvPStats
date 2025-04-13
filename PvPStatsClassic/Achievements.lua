@@ -1331,7 +1331,7 @@ local function GetPlayerName()
     return playerName or "You"
 end
 
-local function PersonalizeText(text, playerName)
+function PSC_ReplacePlayerNamePlaceholder(text, playerName)
     if not text then return "" end
 
     if type(text) == "function" then
@@ -1355,11 +1355,11 @@ function AchievementSystem:CheckAchievements()
 
             PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
 
-            local personalizedDescription = PersonalizeText(achievement.description, playerName)
-            local personalizedTitle = PersonalizeText(achievement.title, playerName)
+            local personalizedDescription = PSC_ReplacePlayerNamePlaceholder(achievement.description, playerName)
+            local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(achievement.title, playerName)
             local personalizedSubText = achievement.subText
             if type(personalizedSubText) == "string" then
-                personalizedSubText = PersonalizeText(personalizedSubText, playerName)
+                personalizedSubText = PSC_ReplacePlayerNamePlaceholder(personalizedSubText, playerName)
             end
 
             -- Show popup

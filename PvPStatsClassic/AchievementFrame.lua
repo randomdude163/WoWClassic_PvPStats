@@ -37,17 +37,6 @@ local function GetPlayerName()
     return playerName or "You"
 end
 
--- Function to replace placeholders in text with player name
-local function PersonalizeText(text)
-    if not text then return "" end
-
-    if type(text) == "function" then
-        text = text()
-    end
-    local playerName = GetPlayerName()
-    return text:gsub("%[YOUR NAME%]", playerName)
-end
-
 -- Constants for achievement layout
 local ACHIEVEMENT_WIDTH = 260
 local ACHIEVEMENT_HEIGHT = 80
@@ -616,7 +605,7 @@ local function UpdateAchievementLayout()
             title:SetPoint("RIGHT", tile, "RIGHT", -15, 0)
         end
         -- Use PersonalizeText to replace [YOUR NAME] in the title
-        title:SetText(PersonalizeText(achievement.title))
+        title:SetText(PSC_ReplacePlayerNamePlaceholder(achievement.title))
         if achievement.unlocked then
             title:SetTextColor(1, 0.82, 0)  -- Gold color for unlocked
         else
@@ -734,13 +723,13 @@ local function UpdateAchievementLayout()
             end
 
             local pointsText = achievement.achievementPoints or 10
-            local personalizedTitle = PersonalizeText(achievement.title)
+            local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(achievement.title)
             GameTooltip:SetText(personalizedTitle .. " |cFF66CCFF(" .. pointsText .. ")|r", r, g, b)
 
-            GameTooltip:AddLine(PersonalizeText(achievement.description), 1, 1, 1, true)
+            GameTooltip:AddLine(PSC_ReplacePlayerNamePlaceholder(achievement.description), 1, 1, 1, true)
             if achievement.subText then
                 GameTooltip:AddLine(" ")
-                local personalizedSubText = PersonalizeText(achievement.subText)
+                local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(achievement.subText)
                 GameTooltip:AddLine(personalizedSubText, 0.7, 0.7, 1, true)
             end
 
