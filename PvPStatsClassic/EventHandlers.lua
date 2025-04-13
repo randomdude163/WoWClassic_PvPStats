@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
 PSC_Debug = false
@@ -477,6 +479,9 @@ function PSC_RegisterEvents()
             if PSC_Debug then
                 print("[PvPStats]: Debug mode enabled.")
             end
+            C_Timer.After(2, function()
+                PVPSC.AchievementSystem:CheckAchievements()
+            end)
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then

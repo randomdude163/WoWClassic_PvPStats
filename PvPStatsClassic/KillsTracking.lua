@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 PSC_RecentPlayerDamage = {}
 PSC_ASSIST_DAMAGE_WINDOW = 60.0  -- 45 second window for kill assist credit
 
@@ -165,6 +167,8 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     if (totalKills == 1 and PSC_DB.ShowMilestoneForFirstKill) or totalKills >= 2 then
         PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class, playerRank, totalKills)
     end
+
+    PVPSC.AchievementSystem:CheckAchievements()
 end
 
 function PSC_RecordPetDamage(petGUID, petName, targetGUID, amount)
