@@ -625,7 +625,7 @@ local function CreateTestAchievementButton(parent)
 
     button:SetScript("OnClick", function()
         -- Use our new test achievement function
-        PVPSC.AchievementSystem:TestAchievementPopup("test")
+        PVPSC.AchievementSystem:TestAchievementPopup()
     end)
 
     -- Create a simple explanation text

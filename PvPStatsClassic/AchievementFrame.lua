@@ -185,41 +185,6 @@ local function FilterAchievements(achievements, category)
     return filtered
 end
 
-local function CreateAchievementTile(parent, achievement, index)
-    local tile = CreateFrame("Button", nil, parent)
-    tile:SetSize(parent:GetWidth() - 30, 60)
-    tile:SetPoint("TOPLEFT", parent, "TOPLEFT", 15, -((index - 1) * 65) - 70)
-
-    local iconContainer = CreateFrame("Frame", nil, tile)
-    iconContainer:SetSize(40, 40)
-    iconContainer:SetPoint("LEFT", 10, 0)
-
-    local background = iconContainer:CreateTexture(nil, "BACKGROUND")
-    background:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
-    background:SetSize(38, 38)
-    background:SetTexture("Interface\\Buttons\\UI-EmptySlot")
-    background:SetVertexColor(0.3, 0.3, 0.3, 0.8)
-
-    local icon = iconContainer:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(36, 36)
-    icon:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
-
-    local iconID = achievement.iconID
-    if type(iconID) == "number" then
-        icon:SetTexture(iconID)
-    else
-        icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-    end
-
-    local rarity = achievement.rarity or "common"
-
-    local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOPLEFT", iconContainer, "TOPRIGHT", 10, -2)
-    title:SetText(achievement.title)
-
-    return tile
-end
-
 local function UpdateAchievementLayout()
     -- Clear existing achievement frames first
     for _, child in pairs({scrollContent:GetChildren()}) do
@@ -907,32 +872,3 @@ SLASH_PVPSCACHIEVEMENTS1 = "/pvpachievements"
 SlashCmdList["PVPSCACHIEVEMENTS"] = function()
     ToggleAchievementFrame()
 end
-
-local function GetCorrectKillStreakValue()
-    local characterKey = PSC_GetCharacterKey()
-    local highestStreak = 0
-
-    if summaryStats and summaryStats.highestKillStreak then
-        highestStreak = summaryStats.highestKillStreak
-    end
-
-    if playerStats and playerStats.highestKillStreak and playerStats.highestKillStreak > highestStreak then
-        highestStreak = playerStats.highestKillStreak
-    end
-
-    if PSC_DB and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and
-       PSC_DB.PlayerKillCounts.Characters[characterKey] and PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak and
-       PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak > highestStreak then
-        highestStreak = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak
-    end
-
-    return highestStreak
-end
-
-local itemQualityColors = {
-    common = { r = 0.65, g = 0.65, b = 0.65 }, -- Gray
-    uncommon = { r = 0.1, g = 1.0, b = 0.1 }, -- Green
-    rare = { r = 0.0, g = 0.4, b = 1.0 }, -- Blue
-    epic = { r = 0.8, g = 0.3, b = 0.9 }, -- Purple
-    legendary = { r = 1.0, g = 0.5, b = 0.0 }, -- Orange
-}

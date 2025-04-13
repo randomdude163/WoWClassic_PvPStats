@@ -215,90 +215,37 @@ function AchievementSystem:CheckAchievements()
     return achievementsUnlocked
 end
 
-function AchievementSystem:TestAchievementPopup(achievementID)
-    -- If no specific achievementID is provided, use our custom test achievement
-    if not achievementID or achievementID == "test" then
-        -- Show multiple test achievements to demonstrate the queue
-        for i = 1, 3 do
-            -- Create a special test achievement with different rarity each time
-            local rarities = {"common", "uncommon", "rare", "epic", "legendary"}
-            -- Use a different rarity for each test achievement
-            local rarityIndex = (math.floor(GetTime()) % 5) + 1
-            local currentRarity = rarities[((rarityIndex + i - 1) % 5) + 1]
+function AchievementSystem:TestAchievementPopup()
+    -- Show multiple test achievements to demonstrate the queue
+    for i = 1, 3 do
+        -- Create a special test achievement with different rarity each time
+        local rarities = {"common", "uncommon", "rare", "epic", "legendary"}
+        -- Use a different rarity for each test achievement
+        local rarityIndex = (math.floor(GetTime()) % 5) + 1
+        local currentRarity = rarities[((rarityIndex + i - 1) % 5) + 1]
 
-            -- Use a different icon for each test achievement
-            local testIcons = {
-                132127, -- Ability_Hunter_SniperShot
-                134400, -- INV_Sword_04
-                133078, -- Spell_Shadow_SoulLeech_2
-                136105, -- Spell_Holy_PowerInfusion
-                135770, -- Spell_Frost_FrostBolt02
-                236444  -- Achievement_Character_Dwarf_Male
-            }
-            local iconIndex = ((math.floor(GetTime()) + i) % #testIcons) + 1
-            local iconID = testIcons[iconIndex]
+        -- Use a different icon for each test achievement
+        local testIcons = {
+            132127, -- Ability_Hunter_SniperShot
+            134400, -- INV_Sword_04
+            133078, -- Spell_Shadow_SoulLeech_2
+            136105, -- Spell_Holy_PowerInfusion
+            135770, -- Spell_Frost_FrostBolt02
+            236444  -- Achievement_Character_Dwarf_Male
+        }
+        local iconIndex = ((math.floor(GetTime()) + i) % #testIcons) + 1
+        local iconID = testIcons[iconIndex]
 
-            -- Queue the test achievement popup
-            PVPSC.AchievementPopup:QueuePopup({
-                icon = iconID,
-                title = "Test Achievement " .. i .. " (" .. currentRarity .. ")",
-                description = "This is test achievement #" .. i .. " with " .. currentRarity .. " rarity!",
-                rarity = currentRarity
-            })
-        end
-
-        return
-    end
-
-    -- Original functionality for showing specific achievements
-    local achievement
-    for _, ach in ipairs(self.achievements) do
-        if ach.id == achievementID then
-            achievement = ach
-            break
-        end
-    end
-
-    if achievement then
-        -- Set the achievement as unlocked and store completion date
-        achievement.unlocked = true
-        achievement.completedDate = date("%d/%m/%Y %H:%M")
-
-        -- Queue the achievement popup
+        -- Queue the test achievement popup
         PVPSC.AchievementPopup:QueuePopup({
-            icon = achievement.iconID,
-            title = achievement.title,
-            description = achievement.description,
-            rarity = achievement.rarity
+            icon = iconID,
+            title = "Test Achievement " .. i .. " (" .. currentRarity .. ")",
+            description = "This is test achievement #" .. i .. " with " .. currentRarity .. " rarity!",
+            rarity = currentRarity
         })
-
-        -- Update achievement frame if it's visible
-        if AchievementFrame and AchievementFrame:IsShown() then
-            PVPSC.UpdateAchievementLayout()
-        end
     end
 end
 
--- Register events for checking achievements
-local eventFrame = CreateFrame("Frame")
-eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-
-eventFrame:SetScript("OnEvent", function(self, event, ...)
-    if event == "PLAYER_ENTERING_WORLD" then
-        -- Initialize achievement system
-        C_Timer.After(2, function()
-            AchievementSystem:CheckAchievements()
-        end)
-    elseif event == "PVPSC_KILL_ADDED" then
-        -- Check achievements when a new kill is recorded
-        AchievementSystem:CheckAchievements()
-    end
-end)
-
--- Function to make the custom event work
-function AchievementSystem:NotifyKillAdded()
-    eventFrame:GetScript("OnEvent")(eventFrame, "PVPSC_KILL_ADDED")
-end
 
 -- Make functions available in the addon namespace
 PVPSC.AchievementSystem = AchievementSystem
