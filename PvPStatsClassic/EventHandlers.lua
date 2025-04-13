@@ -183,6 +183,10 @@ function IsHunterAndCanFeignDeath(destName)
     local isHunter = PSC_DB.PlayerInfoCache[infoKey].class == "Hunter"
     local level = PSC_DB.PlayerInfoCache[infoKey].level
 
+    if level == -1 then
+        return true
+    end
+
     if not isHunter or level < HUNTER_FEIGN_DEATH_MIN_LEVEL then
         return false
     end
