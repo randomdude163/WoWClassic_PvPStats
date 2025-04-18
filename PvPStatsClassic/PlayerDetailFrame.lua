@@ -297,7 +297,7 @@ local function CleanupPlayerDetailFrame(content)
 end
 
 -- Helper functions for creating and manipulating the player detail frame
-local function FindPlayerEntryByName(playerName)
+function PSC_CreateKillHistoryForPlayer(playerName)
     -- Create a basic entry even if we don't have complete info
     local entry = {
         name = playerName,
@@ -906,7 +906,7 @@ function PSC_ShowPlayerDetailFrame(playerName)
     if not playerName then return end
 
     -- Find player entry
-    local playerEntry = FindPlayerEntryByName(playerName)
+    local playerEntry = PSC_CreateKillHistoryForPlayer(playerName)
     if not playerEntry then
         print("Could not find detailed information for player:", playerName)
         return

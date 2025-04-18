@@ -182,6 +182,54 @@ local function ClearAchievementTiles()
     end
 end
 
+function PSC_CalculateGreyKills()
+    local grayLevelThreshods = {
+        [1] = 0, [2] = 0, [3] = 0, [4] = 0, [5] = 0, [6] = 0,
+        [7] = 1, [8] = 2, [9] = 3, [10] = 4, [11] = 5, [12] = 6,
+        [13] = 7, [14] = 8, [15] = 9, [16] = 10, [17] = 11, [18] = 12,
+        [19] = 13, [20] = 13, [21] = 14, [22] = 15, [23] = 16, [24] = 17,
+        [25] = 18, [26] = 19, [27] = 20, [28] = 21, [29] = 22, [30] = 22,
+        [31] = 23, [32] = 24, [33] = 25, [34] = 26, [35] = 27, [36] = 28,
+        [37] = 29, [38] = 30, [39] = 31, [40] = 31, [41] = 32, [42] = 33,
+        [43] = 34, [44] = 35, [45] = 35, [46] = 36, [47] = 37, [48] = 38,
+        [49] = 39, [50] = 39, [51] = 40, [52] = 41, [53] = 42, [54] = 43,
+        [55] = 43, [56] = 44, [57] = 45, [58] = 46, [59] = 47, [60] = 47
+    }
+
+    local greyKills = 0
+
+    -- Loop all characters for account-wide, or just current for per-character
+    local charactersToProcess = {}
+    if PSC_DB.ShowAccountWideStats then
+        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    else
+        local currentCharacterKey = PSC_GetCharacterKey()
+        charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+    end
+
+    -- For each character, for each player killed, count grey kills
+    for _, charData in pairs(charactersToProcess) do
+        -- For each killed player, get their name
+        for nameWithLevel, _ in pairs(charData.Kills or {}) do
+            local playerName = string.match(nameWithLevel, "^(.-):")
+            if playerName then
+                local entry = PSC_CreateKillHistoryForPlayer(playerName)
+                for _, kill in ipairs(entry.killHistory) do
+                    local playerLevel = kill.playerLevel
+                    local enemyLevel = kill.level
+                    local grayThreshold = grayLevelThreshods[playerLevel] or 0
+                    if enemyLevel > 0 and enemyLevel <= (playerLevel - grayThreshold) then
+                        greyKills = greyKills + 1
+                    end
+                end
+            end
+        end
+    end
+
+    print("Grey kills: " .. greyKills)
+    return greyKills
+end
+
 -- Helper: Get progress and target for an achievement
 local function GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
     local id = achievement.id
