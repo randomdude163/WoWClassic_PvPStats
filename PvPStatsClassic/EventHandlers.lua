@@ -97,9 +97,13 @@ function HandlePlayerDeath()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
-    if characterData.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+    if characterData.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages then
         local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", characterData.CurrentKillStreak)
-        SendChatMessage(streakEndedMsg, "PARTY")
+        if IsInGroup() then
+            SendChatMessage(streakEndedMsg, "PARTY")
+        else
+            print("[PvPStats]: " .. streakEndedMsg)
+        end
     end
 
     characterData.CurrentKillStreak = 0
