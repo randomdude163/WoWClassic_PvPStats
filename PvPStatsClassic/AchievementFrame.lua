@@ -254,7 +254,7 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
 
     -- Kill streaks
     if id:find("^kills_streak_") then
-        currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+        currentProgress = summaryStats.highestKillStreak
         return targetValue, currentProgress
     end
 
@@ -272,21 +272,19 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
 
     -- Multi-kill
     if id:find("^kills_multi_") then
-        currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
+        currentProgress = summaryStats.highestMultiKill
         return targetValue, currentProgress
     end
 
     -- Big game
     if id == "kills_big_game" then
-        local _, _, _, _, _, levelData = PSC_CalculateBarChartStatistics()
         currentProgress = levelData["??"] or 0
         return targetValue, currentProgress
     end
 
     -- Favorite target
     if id == "kills_favorite_target" then
-        local stats = PSC_CalculateSummaryStatistics()
-        currentProgress = stats.mostKilledCount or 0
+        currentProgress = summaryStats.mostKilledCount or 0
         if achievement.subText and type(achievement.subText) == "function" then
             achievement.displayText = achievement.subText()
         end
@@ -465,11 +463,23 @@ local function UpdateAchievementLayout()
     local achievements = FilterAchievements(allAchievements, currentCategory)
     if #achievements == 0 then return end
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats, playerStats =
-        GetStatistics()
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = PSC_CalculateBarChartStatistics()
+    local summaryStats = PSC_CalculateSummaryStatistics()
+    local playerStats = GetPlayerStats()
 
     for i, achievement in ipairs(achievements) do
-        CreateAchievementTile(i, achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
+        CreateAchievementTile(
+            i,
+            achievement,
+            classData,
+            raceData,
+            genderData,
+            zoneData,
+            levelData,
+            guildStatusData,
+            summaryStats,
+            playerStats
+        )
     end
 
     -- Optionally update scrollContent size here if needed
