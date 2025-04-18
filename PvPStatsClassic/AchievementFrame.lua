@@ -384,14 +384,43 @@ end
 local function CreatePointsImage(tile, pointsValue)
     local function GetPointsImagePath(points)
         local basePath = "Interface\\AddOns\\PvPStatsClassic\\achievement_img\\Achievement_icon"
-        if points == 10 then return basePath .. "10"
-        else return basePath end
+        if points == 10 then
+            return basePath .. "10"
+        elseif points == 25 then
+            return basePath .. "25"
+        elseif points == 50 then
+            return basePath .. "50"
+        elseif points == 75 then
+            return basePath .. "75"
+        elseif points == 100 then
+            return basePath .. "100"
+        elseif points == 125 then
+            return basePath .. "125"
+        elseif points == 250 then
+            return basePath .. "250"
+        elseif points == 500 then
+            return basePath .. "500"
+        else
+            return basePath
+        end
     end
 
     local pointsImage = tile:CreateTexture(nil, "ARTWORK")
     pointsImage:SetSize(38, 32)
     pointsImage:SetPoint("RIGHT", tile, "RIGHT", -15, 5)
-    pointsImage:SetTexture(GetPointsImagePath(pointsValue))
+    local imagePath = GetPointsImagePath(pointsValue)
+
+    if imagePath then
+        pointsImage:SetTexture(imagePath)
+        -- Optional: Check if the texture actually loaded, especially for the fallback
+        -- if not pointsImage:IsLoaded() then
+        --    print("Warning: Could not load achievement points image:", imagePath)
+        --    pointsImage:Hide() -- Hide if texture failed to load
+        -- end
+    else
+        pointsImage:Hide()
+    end
+
     return pointsImage
 end
 
@@ -499,7 +528,39 @@ local function CreateAchievementTile(i, achievement, classData, raceData, gender
     CreateProgressBar(tile, targetValue, currentProgress, achievement, icon, title)
 
     tile:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:ClearLines()
+
+        local titleText = type(achievement.title) == "function" and achievement.title(achievement) or achievement.title
+        GameTooltip:AddLine(PSC_ReplacePlayerNamePlaceholder(titleText, nil, achievement), 1, 0.82, 0) -- Yellow title
+
+        local descText = type(achievement.description) == "function" and achievement.description(achievement) or achievement.description
+        GameTooltip:AddLine(descText, 1, 1, 1, true)
+
+        GameTooltip:AddLine(" ")
+
+        local subTextValue = achievement.subText
+        if type(subTextValue) == "function" then
+            subTextValue = subTextValue(achievement)
+        end
+
+        if subTextValue and type(subTextValue) == "string" then
+            local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(subTextValue, nil, achievement)
+            GameTooltip:AddLine(personalizedSubText, 0.7, 0.7, 0.7, true) -- Grey subtext, wrap text
+        else
+
+        end
+
+        if achievement.unlocked and achievement.completedDate then
+            GameTooltip:AddLine(" ") -- Spacer
+            GameTooltip:AddLine("Completed: " .. achievement.completedDate, 0.6, 0.8, 1.0) -- Light blue date
+        end
+
         GameTooltip:Show()
+    end)
+
+    tile:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
     end)
 end
 

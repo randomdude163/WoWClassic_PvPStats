@@ -646,7 +646,7 @@ AchievementSystem.achievements = {
     end,
     unlocked = false,
     completedDate = nil,
-    subText = function(a) return ("%d kills in Redridge! At this point, the Horde is considering annexing the territory and renaming it 'Corpseridge.' Real estate agents are advertising it as 'Lordaeron South - Now with 100% more corpses!' The Forsaken already filing paperwork to make it their summer vacation resort."):format(a.targetValue) end,
+    subText = function(a) return ("%d kills in Redridge! At this point, the Horde is considering annexing the territory and renaming it 'Corpseridge.' Real estate agents are advertising it as 'Lordaeron South - Now with 100%% more corpses!' The Forsaken already filing paperwork to make it their summer vacation resort."):format(a.targetValue) end,
 }, {
     id = "general_zone_elwynn",
     title = "Elwynn Exterminator",
@@ -674,7 +674,7 @@ AchievementSystem.achievements = {
     end,
     unlocked = false,
     completedDate = nil,
-    subText = function(a) return ("%s x Defias Traitor vs. Westfall - the crossover nobody wanted, but %d players paid the price anyway, making Westfall unplayable."):format(GetPlayerName(), a.targetValue) end,
+    subText = function(a) return ("[YOUR NAME] x Defias Traitor vs. Westfall - the crossover nobody wanted, but %d players paid the price anyway, making Westfall unplayable."):format(a.targetValue) end,
 },{
     id = "general_zone_duskwood",
     title = "Darkshire Destroyer",
@@ -930,7 +930,7 @@ AchievementSystem.achievements = {
     end,
     unlocked = false,
     completedDate = nil,
-    subText = function(a) return ("Snow White and the %d Dead Dwarfs! Not even Disney magic could save this tragic tale. The remaining dwarfs changed their names to 'Corpsey,' 'Deady,' 'Respawny,' 'Campy,' 'Ganky,' 'Ragey,' and 'Doc' (who rerolled a Priest). Mining productivity has dropped 70%, but beard wax sales plummeted 100%."):format(a.targetValue) end,
+    subText = function(a) return ("Snow White and the %d Dead Dwarfs! Not even Disney magic could save this tragic tale. The remaining dwarfs changed their names to 'Corpsey,' 'Deady,' 'Respawny,' 'Campy,' 'Ganky,' 'Ragey,' and 'Doc' (who rerolled a Priest). Mining productivity has dropped 70%%, but beard wax sales plummeted 100%%."):format(a.targetValue) end,
 }, {
     id = "race_dwarf_3",
     title = "Height Disadvantage",
