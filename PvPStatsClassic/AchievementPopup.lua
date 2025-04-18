@@ -190,30 +190,6 @@ function PVPSC.AchievementPopup:ShowPopup(achievementData)
     self:QueuePopup(achievementData)
 end
 
--- Function to check achievements and show popup if newly unlocked
-function AchievementSystem:CheckAchievements()
-    local playerStats = PVPSC.playerStats or {}
-    local achievementsUnlocked = 0
-
-    for _, achievement in ipairs(self.achievements) do
-        if not achievement.unlocked and achievement.condition(playerStats) then
-            achievement.unlocked = true
-            achievement.completedDate = date("%d/%m/%Y %H:%M") -- Set completion date
-
-            -- Queue the achievement popup
-            PVPSC.AchievementPopup:QueuePopup({
-                icon = achievement.iconID,
-                title = achievement.title,
-                description = achievement.description,
-                rarity = achievement.rarity
-            })
-
-            achievementsUnlocked = achievementsUnlocked + 1
-        end
-    end
-
-    return achievementsUnlocked
-end
 
 function AchievementSystem:TestAchievementPopup()
     -- Show multiple test achievements to demonstrate the queue

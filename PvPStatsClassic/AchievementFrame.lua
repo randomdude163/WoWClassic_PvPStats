@@ -185,25 +185,23 @@ end
 -- Helper: Get progress and target for an achievement
 local function GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
     local id = achievement.id
-    local targetValue, currentProgress = 0, 0
+    local targetValue = achievement.targetValue or 0
+    local currentProgress = 0
 
-    -- Entry-level and regular class achievements
-    local classTargets = { ["_0"] = 100, ["_1"] = 250, ["_2"] = 500, ["_3"] = 750 }
-    for suffix, target in pairs(classTargets) do
-        for _, class in ipairs({"Paladin","Priest","Warrior","Mage","Rogue","Warlock","Druid","Shaman","Hunter"}) do
-            if id == ("class_"..class:lower()..suffix) then
-                targetValue = target
+    -- Class achievements
+    for _, class in ipairs({"Paladin","Priest","Warrior","Mage","Rogue","Warlock","Druid","Shaman","Hunter"}) do
+        for i = 0, 3 do
+            if id == ("class_"..class:lower().."_"..i) then
                 currentProgress = classData[class] or 0
                 return targetValue, currentProgress
             end
         end
     end
 
-    -- Entry-level and regular race achievements
-    local raceTargets = { ["_0"] = 100, ["_1"] = 250, ["_2"] = 500, ["_3"] = 750 }
-    for suffix, target in pairs(raceTargets) do
-        for _, race in ipairs({"Human","Night Elf","Dwarf","Gnome","Orc","Undead","Troll","Tauren"}) do
-            if id == ("race_"..race:lower():gsub(" ", "")..suffix) then
+    -- Race achievements
+    for _, race in ipairs({"Human","Night Elf","Dwarf","Gnome","Orc","Undead","Troll","Tauren"}) do
+        for i = 0, 3 do
+            if id == ("race_"..race:lower():gsub(" ", "").."_"..i) then
                 if race == "Undead" then
                     currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
                 elseif race == "Night Elf" then
@@ -211,19 +209,16 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
                 else
                     currentProgress = raceData[race] or 0
                 end
-                targetValue = target
                 return targetValue, currentProgress
             end
         end
     end
 
     -- Gender achievements
-    local genderTargets = { ["_1"] = 250, ["_2"] = 500, ["_3"] = 750, ["_4"] = 1000 }
-    for suffix, target in pairs(genderTargets) do
-        for _, gender in ipairs({"Female","Male"}) do
-            if id == ("general_gender_"..gender:lower()..suffix) then
+    for _, gender in ipairs({"Female","Male"}) do
+        for i = 1, 4 do
+            if id == ("general_gender_"..gender:lower().."_"..i) then
                 currentProgress = genderData[gender] or 0
-                targetValue = target
                 return targetValue, currentProgress
             end
         end
@@ -231,73 +226,58 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
 
     -- Zone achievements
     local zoneMap = {
-        ["general_zone_redridge"] = {"Redridge Mountains", 500},
-        ["general_zone_elwynn"] = {"Elwynn Forest", 100},
-        ["general_zone_duskwood"] = {"Duskwood", 250},
-        ["general_zone_westfall"] = {"Westfall", 100},
+        ["general_zone_redridge"] = "Redridge Mountains",
+        ["general_zone_elwynn"] = "Elwynn Forest",
+        ["general_zone_duskwood"] = "Duskwood",
+        ["general_zone_westfall"] = "Westfall",
     }
     if zoneMap[id] then
-        local zone, target = unpack(zoneMap[id])
-        targetValue = target
+        local zone = zoneMap[id]
         currentProgress = zoneData[zone] or 0
         return targetValue, currentProgress
     end
 
     -- Guild/guildless kills
     if id == "kills_guild" then
-        targetValue = 500
         currentProgress = guildStatusData["In Guild"] or 0
         return targetValue, currentProgress
     elseif id == "kills_guildless" then
-        targetValue = 500
         currentProgress = guildStatusData["No Guild"] or 0
         return targetValue, currentProgress
     end
 
     -- Grey level kills
     if id == "kills_grey_level" then
-        targetValue = 100
         currentProgress = PSC_CalculateGreyKills()
         return targetValue, currentProgress
     end
 
     -- Kill streaks
-    local streaks = {25, 50, 75, 100, 125, 150, 175, 200}
-    for _, streak in ipairs(streaks) do
-        if id == ("kills_streak_"..streak) then
-            targetValue = streak
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-            return targetValue, currentProgress
-        end
+    if id:find("^kills_streak_") then
+        currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+        return targetValue, currentProgress
     end
 
     -- Total kills
-    local totalKillsTargets = { ["kills_total_1"] = 500, ["kills_total_2"] = 1000, ["kills_total_3"] = 3000 }
-    if totalKillsTargets[id] then
-        targetValue = totalKillsTargets[id]
+    if id:find("^kills_total_") then
         currentProgress = summaryStats.totalKills or 0
         return targetValue, currentProgress
     end
 
     -- Unique kills
-    local uniqueKillsTargets = { ["kills_unique_1"] = 400, ["kills_unique_2"] = 800, ["kills_unique_3"] = 2400 }
-    if uniqueKillsTargets[id] then
-        targetValue = uniqueKillsTargets[id]
+    if id:find("^kills_unique_") then
         currentProgress = summaryStats.uniqueKills or 0
         return targetValue, currentProgress
     end
 
     -- Multi-kill
-    local multiTargets = { ["kills_multi_3"] = 3, ["kills_multi_4"] = 4, ["kills_multi_5"] = 5 }
-    if multiTargets[id] then
-        targetValue = multiTargets[id]
+    if id:find("^kills_multi_") then
         currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
         return targetValue, currentProgress
     end
 
     -- Big game
     if id == "kills_big_game" then
-        targetValue = 30
         local _, _, _, _, _, levelData = PSC_CalculateBarChartStatistics()
         currentProgress = levelData["??"] or 0
         return targetValue, currentProgress
@@ -305,7 +285,6 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
 
     -- Favorite target
     if id == "kills_favorite_target" then
-        targetValue = 10
         local stats = PSC_CalculateSummaryStatistics()
         currentProgress = stats.mostKilledCount or 0
         if achievement.subText and type(achievement.subText) == "function" then
@@ -375,7 +354,9 @@ local function CreateTitleAndDescription(tile, icon, pointsImage, achievement)
     local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
     title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
-    title:SetText(PSC_ReplacePlayerNamePlaceholder(achievement.title))
+    -- Call the function if title is a function, otherwise use as string
+    local titleText = type(achievement.title) == "function" and achievement.title(achievement) or achievement.title
+    title:SetText(PSC_ReplacePlayerNamePlaceholder(titleText, nil, achievement))
     if achievement.unlocked then
         title:SetTextColor(1, 0.82, 0)
     else
@@ -386,7 +367,9 @@ local function CreateTitleAndDescription(tile, icon, pointsImage, achievement)
     desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
     desc:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
     desc:SetJustifyH("LEFT")
-    desc:SetText(achievement.description)
+    -- Call the function if description is a function, otherwise use as string
+    local descText = type(achievement.description) == "function" and achievement.description(achievement) or achievement.description
+    desc:SetText(descText)
     if achievement.unlocked then
         desc:SetTextColor(0.9, 0.9, 0.9)
     else
@@ -522,7 +505,7 @@ local function CreateAchievementTabSystem(parent)
         end
         if tabSelectedMiddle then
             tabSelectedMiddle:ClearAllPoints()
-            tabSelectedMiddle:SetPoint("LEFT", tabSelectedLeft, "RIGHT", 0, 0)
+            tabSelectedSelectedMiddle:SetPoint("LEFT", tabSelectedLeft, "RIGHT", 0, 0)
             tabSelectedMiddle:SetWidth(tabWidth - 31)
         end
 

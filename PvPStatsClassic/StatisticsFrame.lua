@@ -300,8 +300,10 @@ end
 
 local function calculateChartHeight(data)
     local entries = 0
-    for _ in pairs(data) do
-        entries = entries + 1
+    for _, numKills in pairs(data) do
+        if numKills > 0 then
+            entries = entries + 1
+        end
     end
     return 30 + (entries * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
 end
@@ -461,32 +463,39 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     local container = createContainerWithTitle(parent, title, x, y, width, height)
 
     local sortedData = sortByValue(data, true)
-    local maxValue = sortedData[1] and sortedData[1].value or 0
+    local filteredData = {}
+    for _, entry in ipairs(sortedData) do
+        if entry.value > 0 then
+            table.insert(filteredData, entry)
+        end
+    end
+
+    local maxValue = filteredData[1] and filteredData[1].value or 0
 
     local total = 0
-    for _, entry in ipairs(sortedData) do
+    for _, entry in ipairs(filteredData) do
         total = total + entry.value
     end
 
     if (title == "Kills by Level") then
         local sortedLevelData = {}
         local unknownLevelEntry
-        for i, entry in ipairs(sortedData) do
+        for i, entry in ipairs(filteredData) do
             if entry.key == "??" then
                 unknownLevelEntry = entry
-                table.remove(sortedData, i)
+                table.remove(filteredData, i)
                 break
             end
         end
 
-        table.sort(sortedData, function(a, b)
+        table.sort(filteredData, function(a, b)
             local aNum = tonumber(a.key) or 0
             local bNum = tonumber(b.key) or 0
             return aNum < bNum
         end)
 
         if unknownLevelEntry then
-            table.insert(sortedData, unknownLevelEntry)
+            table.insert(filteredData, unknownLevelEntry)
         end
     end
 
@@ -503,7 +512,7 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         titleType = colorTable
     end
 
-    for i, entry in ipairs(sortedData) do
+    for i, entry in ipairs(filteredData) do
         createBar(container, entry, i, maxValue, total, titleType)
     end
 
@@ -896,7 +905,7 @@ local function createSummaryStats(parent, x, y, width, height)
 
     -- Add the achievement points line:
     local achievementPoints = PSC_CalculateAchievementPoints()
-    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints, statY,
+    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints, statY - 15,
         "Total points earned from unlocked PvP achievements. Earn more by completing achievements!")
 
     return container
@@ -914,11 +923,24 @@ function PSC_CalculateBarChartStatistics()
         ["No Guild"] = 0
     }
 
+    -- Ensure all classes, races, genders are present with at least 0
+    local allClasses = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
+    local allRaces = {"Human", "Dwarf", "Night Elf", "Gnome", "Orc", "Undead", "Troll", "Tauren"}
+    local allGenders = {"MALE", "FEMALE"}
+
+    for _, class in ipairs(allClasses) do
+        classData[class] = 0
+        unknownLevelClassData[class] = 0
+    end
+    for _, race in ipairs(allRaces) do
+        raceData[race] = 0
+    end
+    for _, gender in ipairs(allGenders) do
+        genderData[gender] = 0
+    end
+
     if not PSC_DB.PlayerKillCounts.Characters then
-        return {}, {}, {}, {}, {}, {}, {
-            ["In Guild"] = 0,
-            ["No Guild"] = 0
-        }
+        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
     end
 
     local currentCharacterKey = PSC_GetCharacterKey()
@@ -943,13 +965,11 @@ function PSC_CalculateBarChartStatistics()
 
                     if PSC_DB.PlayerInfoCache[infoKey] then
                         local class = PSC_DB.PlayerInfoCache[infoKey].class
-                        -- Changed from +1 to +kills to count actual kills
                         classData[class] = (classData[class] or 0) + kills
 
                         local level = nameWithLevel:match(":(%S+)")
                         local levelNum = tonumber(level or "0") or 0
 
-                        -- Count unknown level kills
                         if levelNum == -1 then
                             unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
                             levelData["??"] = (levelData["??"] or 0) + kills
@@ -965,7 +985,6 @@ function PSC_CalculateBarChartStatistics()
                         local gender = PSC_DB.PlayerInfoCache[infoKey].gender
                         genderData[gender] = (genderData[gender] or 0) + kills
 
-                        -- Get zone from kill locations instead of top-level attribute
                         if killData.killLocations and #killData.killLocations > 0 then
                             for _, location in ipairs(killData.killLocations) do
                                 local zone = location.zone or "Unknown"
