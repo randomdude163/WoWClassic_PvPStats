@@ -174,581 +174,322 @@ local function FilterAchievements(achievements, category)
     return filtered
 end
 
-local function UpdateAchievementLayout()
-    -- Clear existing achievement frames first
+-- Helper: Remove all children from scrollContent
+local function ClearAchievementTiles()
     for _, child in pairs({scrollContent:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
+end
+
+-- Helper: Get progress and target for an achievement
+local function GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
+    local id = achievement.id
+    local targetValue, currentProgress = 0, 0
+
+    -- Entry-level and regular class achievements
+    local classTargets = { ["_0"] = 100, ["_1"] = 250, ["_2"] = 500, ["_3"] = 750 }
+    for suffix, target in pairs(classTargets) do
+        for _, class in ipairs({"Paladin","Priest","Warrior","Mage","Rogue","Warlock","Druid","Shaman","Hunter"}) do
+            if id == ("class_"..class:lower()..suffix) then
+                targetValue = target
+                currentProgress = classData[class] or 0
+                return targetValue, currentProgress
+            end
+        end
+    end
+
+    -- Entry-level and regular race achievements
+    local raceTargets = { ["_0"] = 100, ["_1"] = 250, ["_2"] = 500, ["_3"] = 750 }
+    for suffix, target in pairs(raceTargets) do
+        for _, race in ipairs({"Human","Night Elf","Dwarf","Gnome","Orc","Undead","Troll","Tauren"}) do
+            if id == ("race_"..race:lower():gsub(" ", "")..suffix) then
+                if race == "Undead" then
+                    currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
+                elseif race == "Night Elf" then
+                    currentProgress = raceData["Night Elf"] or 0
+                else
+                    currentProgress = raceData[race] or 0
+                end
+                targetValue = target
+                return targetValue, currentProgress
+            end
+        end
+    end
+
+    -- Gender achievements
+    local genderTargets = { ["_1"] = 250, ["_2"] = 500, ["_3"] = 750, ["_4"] = 1000 }
+    for suffix, target in pairs(genderTargets) do
+        for _, gender in ipairs({"Female","Male"}) do
+            if id == ("general_gender_"..gender:lower()..suffix) then
+                currentProgress = genderData[gender] or 0
+                targetValue = target
+                return targetValue, currentProgress
+            end
+        end
+    end
+
+    -- Zone achievements
+    local zoneMap = {
+        ["general_zone_redridge"] = {"Redridge Mountains", 500},
+        ["general_zone_elwynn"] = {"Elwynn Forest", 100},
+        ["general_zone_duskwood"] = {"Duskwood", 250},
+        ["general_zone_westfall"] = {"Westfall", 100},
+    }
+    if zoneMap[id] then
+        local zone, target = unpack(zoneMap[id])
+        targetValue = target
+        currentProgress = zoneData[zone] or 0
+        return targetValue, currentProgress
+    end
+
+    -- Guild/guildless kills
+    if id == "kills_guild" then
+        targetValue = 500
+        currentProgress = guildStatusData["In Guild"] or 0
+        return targetValue, currentProgress
+    elseif id == "kills_guildless" then
+        targetValue = 500
+        currentProgress = guildStatusData["No Guild"] or 0
+        return targetValue, currentProgress
+    end
+
+    -- Grey level kills
+    if id == "kills_grey_level" then
+        targetValue = 100
+        currentProgress = PSC_CalculateGreyKills()
+        return targetValue, currentProgress
+    end
+
+    -- Kill streaks
+    local streaks = {25, 50, 75, 100, 125, 150, 175, 200}
+    for _, streak in ipairs(streaks) do
+        if id == ("kills_streak_"..streak) then
+            targetValue = streak
+            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
+            return targetValue, currentProgress
+        end
+    end
+
+    -- Total kills
+    local totalKillsTargets = { ["kills_total_1"] = 500, ["kills_total_2"] = 1000, ["kills_total_3"] = 3000 }
+    if totalKillsTargets[id] then
+        targetValue = totalKillsTargets[id]
+        currentProgress = summaryStats.totalKills or 0
+        return targetValue, currentProgress
+    end
+
+    -- Unique kills
+    local uniqueKillsTargets = { ["kills_unique_1"] = 400, ["kills_unique_2"] = 800, ["kills_unique_3"] = 2400 }
+    if uniqueKillsTargets[id] then
+        targetValue = uniqueKillsTargets[id]
+        currentProgress = summaryStats.uniqueKills or 0
+        return targetValue, currentProgress
+    end
+
+    -- Multi-kill
+    local multiTargets = { ["kills_multi_3"] = 3, ["kills_multi_4"] = 4, ["kills_multi_5"] = 5 }
+    if multiTargets[id] then
+        targetValue = multiTargets[id]
+        currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
+        return targetValue, currentProgress
+    end
+
+    -- Big game
+    if id == "kills_big_game" then
+        targetValue = 30
+        local _, _, _, _, _, levelData = PSC_CalculateBarChartStatistics()
+        currentProgress = levelData["??"] or 0
+        return targetValue, currentProgress
+    end
+
+    -- Favorite target
+    if id == "kills_favorite_target" then
+        targetValue = 10
+        local stats = PSC_CalculateSummaryStatistics()
+        currentProgress = stats.mostKilledCount or 0
+        if achievement.subText and type(achievement.subText) == "function" then
+            achievement.displayText = achievement.subText()
+        end
+        return targetValue, currentProgress
+    end
+
+    return targetValue, currentProgress
+end
+
+-- Helper: Set tile border color by rarity
+local function SetTileBorderColor(tile, rarity)
+    if rarity == "uncommon" then
+        tile:SetBackdropBorderColor(0.1, 1.0, 0.1)
+    elseif rarity == "rare" then
+        tile:SetBackdropBorderColor(0.0, 0.4, 1.0)
+    elseif rarity == "epic" then
+        tile:SetBackdropBorderColor(0.8, 0.3, 0.9)
+    elseif rarity == "legendary" then
+        tile:SetBackdropBorderColor(1.0, 0.5, 0.0)
+    else
+        tile:SetBackdropBorderColor(0.7, 0.7, 0.7)
+    end
+end
+
+-- Helper: Create icon container and icon
+local function CreateAchievementIcon(tile, achievement)
+    local iconContainer = CreateFrame("Frame", nil, tile)
+    iconContainer:SetSize(40, 40)
+    iconContainer:SetPoint("TOPLEFT", tile, "TOPLEFT", 10, -10)
+
+    local background = iconContainer:CreateTexture(nil, "BACKGROUND")
+    background:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
+    background:SetSize(38, 38)
+    background:SetTexture("Interface\\Buttons\\UI-EmptySlot")
+    background:SetVertexColor(0.3, 0.3, 0.3, 0.8)
+
+    local icon = iconContainer:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(36, 36)
+    icon:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
+    icon:SetTexture(achievement.iconID or "Interface\\Icons\\INV_Misc_QuestionMark")
+    if not achievement.unlocked then
+        icon:SetDesaturated(true)
+    end
+
+    return icon
+end
+
+-- Helper: Create points image
+local function CreatePointsImage(tile, pointsValue)
+    local function GetPointsImagePath(points)
+        local basePath = "Interface\\AddOns\\PvPStatsClassic\\achievement_img\\Achievement_icon"
+        if points == 10 then return basePath .. "10"
+        else return basePath end
+    end
+
+    local pointsImage = tile:CreateTexture(nil, "ARTWORK")
+    pointsImage:SetSize(38, 32)
+    pointsImage:SetPoint("RIGHT", tile, "RIGHT", -15, 5)
+    pointsImage:SetTexture(GetPointsImagePath(pointsValue))
+    return pointsImage
+end
+
+-- Helper: Create title and description
+local function CreateTitleAndDescription(tile, icon, pointsImage, achievement)
+    local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
+    title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
+    title:SetText(PSC_ReplacePlayerNamePlaceholder(achievement.title))
+    if achievement.unlocked then
+        title:SetTextColor(1, 0.82, 0)
+    else
+        title:SetTextColor(0.5, 0.5, 0.5)
+    end
+
+    local desc = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
+    desc:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
+    desc:SetJustifyH("LEFT")
+    desc:SetText(achievement.description)
+    if achievement.unlocked then
+        desc:SetTextColor(0.9, 0.9, 0.9)
+    else
+        desc:SetTextColor(0.4, 0.4, 0.4)
+    end
+
+    return title, desc
+end
+
+-- Helper: Create progress bar and text
+local function CreateProgressBar(tile, targetValue, currentProgress, achievement, icon, title)
+    local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
+    progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10)
+    progressBar:SetPoint("TOPLEFT", tile, "TOPLEFT", (ACHIEVEMENT_WIDTH - (ACHIEVEMENT_WIDTH - 60)) / 2, -65)
+    progressBar:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
+    progressBar:SetStatusBarColor(0.0, 0.65, 0.0)
+
+    local progressText = progressBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    progressText:SetPoint("CENTER", progressBar, "CENTER", 0, 0)
+
+    if achievement.unlocked then
+        progressBar:SetMinMaxValues(0, targetValue)
+        progressBar:SetValue(targetValue)
+        progressText:SetText(targetValue.."/"..targetValue)
+    else
+        if currentProgress >= targetValue and targetValue > 0 then
+            achievement.unlocked = true
+            achievement.completedDate = date("%d/%m/%Y %H:%M")
+            progressBar:SetMinMaxValues(0, targetValue)
+            progressBar:SetValue(targetValue)
+            progressText:SetText(targetValue.."/"..targetValue)
+            icon:SetDesaturated(false)
+            title:SetTextColor(1, 0.82, 0)
+        else
+            progressBar:SetMinMaxValues(0, targetValue)
+            progressBar:SetValue(currentProgress)
+            progressText:SetText(currentProgress.."/"..targetValue)
+        end
+    end
+
+    return progressBar, progressText
+end
+
+-- Helper: Add overlay for locked achievements
+local function AddLockedOverlay(tile, achievement)
+    if not achievement.unlocked then
+        local overlay = tile:CreateTexture(nil, "OVERLAY")
+        overlay:SetAllPoints()
+        overlay:SetColorTexture(0, 0, 0, 0.5)
+    end
+end
+
+-- Helper: Create a single achievement tile
+local function CreateAchievementTile(i, achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
+    local column = (i - 1) % ACHIEVEMENTS_PER_ROW
+    local row = math.floor((i - 1) / ACHIEVEMENTS_PER_ROW)
+    local xPos = column * (ACHIEVEMENT_WIDTH + ACHIEVEMENT_SPACING_H)
+    local yPos = -row * (ACHIEVEMENT_HEIGHT + ACHIEVEMENT_SPACING_V)
+
+    local tile = CreateFrame("Button", nil, scrollContent, BackdropTemplateMixin and "BackdropTemplate")
+    tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT + 5)
+    tile:SetPoint("TOPLEFT", xPos, yPos)
+    tile:SetBackdrop({
+        bgFile = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = false,
+        tileSize = 22,
+        edgeSize = 22,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+
+    SetTileBorderColor(tile, achievement.rarity or "common")
+    AddLockedOverlay(tile, achievement)
+
+    local icon = CreateAchievementIcon(tile, achievement)
+    local pointsValue = achievement.achievementPoints or 10
+    local pointsImage = CreatePointsImage(tile, pointsValue)
+    local title, desc = CreateTitleAndDescription(tile, icon, pointsImage, achievement)
+
+    local targetValue, currentProgress = GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
+    CreateProgressBar(tile, targetValue, currentProgress, achievement, icon, title)
+
+    tile:SetScript("OnEnter", function(self)
+        GameTooltip:Show()
+    end)
+end
+
+-- Main function: Update achievement layout
+local function UpdateAchievementLayout()
+    ClearAchievementTiles()
 
     local allAchievements = PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements or {}
     local achievements = FilterAchievements(allAchievements, currentCategory)
-
-    if #achievements == 0 then
-        return
-    end
+    if #achievements == 0 then return end
 
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats, playerStats =
         GetStatistics()
 
     for i, achievement in ipairs(achievements) do
-        local column = (i - 1) % ACHIEVEMENTS_PER_ROW
-        local row = math.floor((i - 1) / ACHIEVEMENTS_PER_ROW)
-
-        local xPos = column * (ACHIEVEMENT_WIDTH + ACHIEVEMENT_SPACING_H)
-        local yPos = -row * (ACHIEVEMENT_HEIGHT + ACHIEVEMENT_SPACING_V)
-
-        local tile = CreateFrame("Button", nil, scrollContent, BackdropTemplateMixin and "BackdropTemplate")
-        tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT + 5)
-        tile:SetPoint("TOPLEFT", xPos, yPos)
-
-        tile:SetBackdrop({
-            bgFile = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            tile = false,
-            tileSize = 22,
-            edgeSize = 22,
-            insets = { left = 4, right = 4, top = 4, bottom = 4 }
-        })
-
-        local rarity = achievement.rarity or "common"
-        if rarity == "uncommon" then
-            tile:SetBackdropBorderColor(0.1, 1.0, 0.1) -- Green
-        elseif rarity == "rare" then
-            tile:SetBackdropBorderColor(0.0, 0.4, 1.0) -- Blue
-        elseif rarity == "epic" then
-            tile:SetBackdropBorderColor(0.8, 0.3, 0.9) -- Purple
-        elseif rarity == "legendary" then
-            tile:SetBackdropBorderColor(1.0, 0.5, 0.0) -- Orange
-        else
-            tile:SetBackdropBorderColor(0.7, 0.7, 0.7) -- Light gray for common
-        end
-
-        if not achievement.unlocked then
-            local overlay = tile:CreateTexture(nil, "OVERLAY")
-            overlay:SetAllPoints()
-            overlay:SetColorTexture(0, 0, 0, 0.5)
-        end
-
-        local iconContainer = CreateFrame("Frame", nil, tile)
-        iconContainer:SetSize(40, 40)
-        iconContainer:SetPoint("TOPLEFT", tile, "TOPLEFT", 10, -10)
-
-        local background = iconContainer:CreateTexture(nil, "BACKGROUND")
-        background:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
-        background:SetSize(38, 38)
-        background:SetTexture("Interface\\Buttons\\UI-EmptySlot")
-        background:SetVertexColor(0.3, 0.3, 0.3, 0.8)
-
-        local icon = iconContainer:CreateTexture(nil, "ARTWORK")
-        icon:SetSize(36, 36)
-        icon:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
-        icon:SetTexture(achievement.iconID or "Interface\\Icons\\INV_Misc_QuestionMark")
-        if not achievement.unlocked then
-            icon:SetDesaturated(true)
-        end
-
-        local rarity = achievement.rarity or "common"
-
-
-        local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
-        progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10)
-        progressBar:SetPoint("TOPLEFT", tile, "TOPLEFT", (ACHIEVEMENT_WIDTH - (ACHIEVEMENT_WIDTH - 60)) / 2, -65)
-        progressBar:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
-        progressBar:SetStatusBarColor(0.0, 0.65, 0.0)
-
-        local targetValue = 0
-        local currentProgress = 0
-
-        -- Add these condition checks to handle the new entry-level achievements
-        -- Insert right before the existing class achievement checks
-
-        -- Entry level class achievements (100 kills)
-        if achievement.id == "class_paladin_0" then
-            targetValue = 100
-            currentProgress = classData["Paladin"] or 0
-        elseif achievement.id == "class_priest_0" then
-            targetValue = 100
-            currentProgress = classData["Priest"] or 0
-        elseif achievement.id == "class_warrior_0" then
-            targetValue = 100
-            currentProgress = classData["Warrior"] or 0
-        elseif achievement.id == "class_mage_0" then
-            targetValue = 100
-            currentProgress = classData["Mage"] or 0
-        elseif achievement.id == "class_rogue_0" then
-            targetValue = 100
-            currentProgress = classData["Rogue"] or 0
-        elseif achievement.id == "class_warlock_0" then
-            targetValue = 100
-            currentProgress = classData["Warlock"] or 0
-        elseif achievement.id == "class_druid_0" then
-            targetValue = 100
-            currentProgress = classData["Druid"] or 0
-        elseif achievement.id == "class_shaman_0" then
-            targetValue = 100
-            currentProgress = classData["Shaman"] or 0
-        elseif achievement.id == "class_hunter_0" then
-            targetValue = 100
-            currentProgress = classData["Hunter"] or 0
-
-        -- Entry level race achievements (100 kills)
-        elseif achievement.id == "race_human_0" then
-            targetValue = 100
-            currentProgress = raceData["Human"] or 0
-        elseif achievement.id == "race_nightelf_0" then
-            targetValue = 100
-            currentProgress = raceData["Night Elf"] or 0
-        elseif achievement.id == "race_dwarf_0" then
-            targetValue = 100
-            currentProgress = raceData["Dwarf"] or 0
-        elseif achievement.id == "race_gnome_0" then
-            targetValue = 100
-            currentProgress = raceData["Gnome"] or 0
-        elseif achievement.id == "race_orc_0" then
-            targetValue = 100
-            currentProgress = raceData["Orc"] or 0
-        elseif achievement.id == "race_undead_0" then
-            targetValue = 100
-            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
-        elseif achievement.id == "race_troll_0" then
-            targetValue = 100
-            currentProgress = raceData["Troll"] or 0
-        elseif achievement.id == "race_tauren_0" then
-            targetValue = 100
-            currentProgress = raceData["Tauren"] or 0
-
-        -- Existing class achievement checks
-        elseif achievement.id == "class_paladin_1" then
-            targetValue = 250
-            currentProgress = classData["Paladin"] or 0
-        elseif achievement.id == "class_paladin_2" then
-            targetValue = 500
-            currentProgress = classData["Paladin"] or 0
-        elseif achievement.id == "class_paladin_3" then
-            targetValue = 750
-            currentProgress = classData["Paladin"] or 0
-        elseif achievement.id == "class_priest_1" then
-            targetValue = 250
-            currentProgress = classData["Priest"] or 0
-        elseif achievement.id == "class_priest_2" then
-            targetValue = 500
-            currentProgress = classData["Priest"] or 0
-        elseif achievement.id == "class_priest_3" then
-            targetValue = 750
-            currentProgress = classData["Priest"] or 0
-        elseif achievement.id == "class_warrior_1" then
-            targetValue = 250
-            currentProgress = classData["Warrior"] or 0
-        elseif achievement.id == "class_warrior_2" then
-            targetValue = 500
-            currentProgress = classData["Warrior"] or 0
-        elseif achievement.id == "class_warrior_3" then
-            targetValue = 750
-            currentProgress = classData["Warrior"] or 0
-        elseif achievement.id == "class_mage_1" then
-            targetValue = 250
-            currentProgress = classData["Mage"] or 0
-        elseif achievement.id == "class_mage_2" then
-            targetValue = 500
-            currentProgress = classData["Mage"] or 0
-        elseif achievement.id == "class_mage_3" then
-            targetValue = 750
-            currentProgress = classData["Mage"] or 0
-        elseif achievement.id == "class_rogue_1" then
-            targetValue = 250
-            currentProgress = classData["Rogue"] or 0
-        elseif achievement.id == "class_rogue_2" then
-            targetValue = 500
-            currentProgress = classData["Rogue"] or 0
-        elseif achievement.id == "class_rogue_3" then
-            targetValue = 750
-            currentProgress = classData["Rogue"] or 0
-        elseif achievement.id == "class_warlock_1" then
-            targetValue = 250
-            currentProgress = classData["Warlock"] or 0
-        elseif achievement.id == "class_warlock_2" then
-            targetValue = 500
-            currentProgress = classData["Warlock"] or 0
-        elseif achievement.id == "class_warlock_3" then
-            targetValue = 750
-            currentProgress = classData["Warlock"] or 0
-        elseif achievement.id == "class_druid_1" then
-            targetValue = 250
-            currentProgress = classData["Druid"] or 0
-        elseif achievement.id == "class_druid_2" then
-            targetValue = 500
-            currentProgress = classData["Druid"] or 0
-        elseif achievement.id == "class_druid_3" then
-            targetValue = 750
-            currentProgress = classData["Druid"] or 0
-        elseif achievement.id == "class_shaman_1" then
-            targetValue = 250
-            currentProgress = classData["Shaman"] or 0
-        elseif achievement.id == "class_shaman_2" then
-            targetValue = 500
-            currentProgress = classData["Shaman"] or 0
-        elseif achievement.id == "class_shaman_3" then
-            targetValue = 750
-            currentProgress = classData["Shaman"] or 0
-        elseif achievement.id == "class_hunter_1" then
-            targetValue = 250
-            currentProgress = classData["Hunter"] or 0
-        elseif achievement.id == "class_hunter_2" then
-            targetValue = 500
-            currentProgress = classData["Hunter"] or 0
-        elseif achievement.id == "class_hunter_3" then
-            targetValue = 750
-            currentProgress = classData["Hunter"] or 0
-        elseif achievement.id == "general_gender_female_1" then
-            targetValue = 250
-            currentProgress = genderData["Female"] or 0
-        elseif achievement.id == "general_gender_female_2" then
-            targetValue = 500
-            currentProgress = genderData["Female"] or 0
-        elseif achievement.id == "general_gender_female_3" then
-            targetValue = 750
-            currentProgress = genderData["Female"] or 0
-        elseif achievement.id == "general_gender_female_4" then
-            targetValue = 1000
-            currentProgress = genderData["Female"] or 0
-        elseif achievement.id == "general_gender_male_1" then
-            targetValue = 250
-            currentProgress = genderData["Male"] or 0
-        elseif achievement.id == "general_gender_male_2" then
-            targetValue = 500
-            currentProgress = genderData["Male"] or 0
-        elseif achievement.id == "general_gender_male_3" then
-            targetValue = 750
-            currentProgress = genderData["Male"] or 0
-        elseif achievement.id == "general_gender_male_4" then
-            targetValue = 1000
-            currentProgress = genderData["Male"] or 0
-        -- ALLIANCE RACES
-        -- Human achievements
-        elseif achievement.id == "race_human_1" then
-            targetValue = 250
-            currentProgress = raceData["Human"] or 0
-        elseif achievement.id == "race_human_2" then
-            targetValue = 500
-            currentProgress = raceData["Human"] or 0
-        elseif achievement.id == "race_human_3" then
-            targetValue = 750
-            currentProgress = raceData["Human"] or 0
-        -- Night Elf achievements
-        elseif achievement.id == "race_nightelf_1" then
-            targetValue = 250
-            currentProgress = raceData["Night Elf"] or 0
-        elseif achievement.id == "race_nightelf_2" then
-            targetValue = 500
-            currentProgress = raceData["Night Elf"] or 0
-        elseif achievement.id == "race_nightelf_3" then
-            targetValue = 750
-            currentProgress = raceData["Night Elf"] or 0
-        -- Dwarf achievements
-        elseif achievement.id == "race_dwarf_1" then
-            targetValue = 250
-            currentProgress = raceData["Dwarf"] or 0
-        elseif achievement.id == "race_dwarf_2" then
-            targetValue = 500
-            currentProgress = raceData["Dwarf"] or 0
-        elseif achievement.id == "race_dwarf_3" then
-            targetValue = 750
-            currentProgress = raceData["Dwarf"] or 0
-        -- Gnome achievements
-        elseif achievement.id == "race_gnome_1" then
-            targetValue = 250
-            currentProgress = raceData["Gnome"] or 0
-        elseif achievement.id == "race_gnome_2" then
-            targetValue = 500
-            currentProgress = raceData["Gnome"] or 0
-        elseif achievement.id == "race_gnome_3" then
-            targetValue = 750
-            currentProgress = raceData["Gnome"] or 0
-        -- HORDE RACES
-        -- Orc achievements
-        elseif achievement.id == "race_orc_1" then
-            targetValue = 250
-            currentProgress = raceData["Orc"] or 0
-        elseif achievement.id == "race_orc_2" then
-            targetValue = 500
-            currentProgress = raceData["Orc"] or 0
-        elseif achievement.id == "race_orc_3" then
-            targetValue = 750
-            currentProgress = raceData["Orc"] or 0
-        -- Troll achievements
-        elseif achievement.id == "race_troll_1" then
-            targetValue = 250
-            currentProgress = raceData["Troll"] or 0
-        elseif achievement.id == "race_troll_2" then
-            targetValue = 500
-            currentProgress = raceData["Troll"] or 0
-        elseif achievement.id == "race_troll_3" then
-            targetValue = 750
-            currentProgress = raceData["Troll"] or 0
-        -- Undead achievements
-        elseif achievement.id == "race_undead_1" then
-            targetValue = 250
-            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
-        elseif achievement.id == "race_undead_2" then
-            targetValue = 500
-            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
-        elseif achievement.id == "race_undead_3" then
-            targetValue = 750
-            currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
-        -- Tauren achievements
-        elseif achievement.id == "race_tauren_1" then
-            targetValue = 250
-            currentProgress = raceData["Tauren"] or 0
-        elseif achievement.id == "race_tauren_2" then
-            targetValue = 500
-            currentProgress = raceData["Tauren"] or 0
-        elseif achievement.id == "race_tauren_3" then
-            targetValue = 750
-            currentProgress = raceData["Tauren"] or 0
-        -- Other achievements
-        elseif achievement.id == "kills_guild" then
-            targetValue = 500
-            currentProgress = guildStatusData["In Guild"] or 0
-        elseif achievement.id == "kills_guildless" then
-            targetValue = 500
-            currentProgress = guildStatusData["No Guild"] or 0
-        elseif achievement.id == "kills_grey_level" then
-            targetValue = 100
-            currentProgress = PSC_CalculateGreyKills()
-        elseif achievement.id == "kills_streak_25" then
-            targetValue = 25
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-        elseif achievement.id == "kills_streak_50" then
-            targetValue = 50
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-        elseif achievement.id == "kills_streak_75" then
-            targetValue = 75
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-        elseif achievement.id == "kills_streak_100" then
-            targetValue = 100
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-        elseif achievement.id == "kills_streak_125" then
-            targetValue = 125
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-        elseif achievement.id == "kills_streak_150" then
-            targetValue = 150
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-        elseif achievement.id == "kills_streak_175" then
-            targetValue = 175
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-        elseif achievement.id == "kills_streak_200" then
-            targetValue = 200
-            currentProgress = summaryStats.highestKillStreak or playerStats.highestKillStreak or 0
-        elseif achievement.id == "general_zone_redridge" then
-            targetValue = 500
-            currentProgress = zoneData["Redridge Mountains"] or 0
-        elseif achievement.id == "general_zone_elwynn" then
-            targetValue = 100
-            currentProgress = zoneData["Elwynn Forest"] or 0
-        elseif achievement.id == "general_zone_duskwood" then
-            targetValue = 250
-            currentProgress = zoneData["Duskwood"] or 0
-        elseif achievement.id == "general_zone_westfall" then
-            targetValue = 100
-            currentProgress = zoneData["Westfall"] or 0
-        elseif achievement.id == "kills_total_1" then
-            targetValue = 500
-            currentProgress = summaryStats.totalKills or 0
-        elseif achievement.id == "kills_total_2" then
-            targetValue = 1000
-            currentProgress = summaryStats.totalKills or 0
-        elseif achievement.id == "kills_total_3" then
-            targetValue = 3000
-            currentProgress = summaryStats.totalKills or 0
-        elseif achievement.id == "kills_unique_1" then
-            targetValue = 400
-            currentProgress = summaryStats.uniqueKills or 0
-        elseif achievement.id == "kills_unique_2" then
-            targetValue = 800
-            currentProgress = summaryStats.uniqueKills or 0
-        elseif achievement.id == "kills_unique_3" then
-            targetValue = 2400
-            currentProgress = summaryStats.uniqueKills or 0
-        elseif achievement.id == "kills_multi_3" then
-            targetValue = 3
-            currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
-        elseif achievement.id == "kills_multi_4" then
-            targetValue = 4
-            currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
-        elseif achievement.id == "kills_multi_5" then
-            targetValue = 5
-            currentProgress = summaryStats.highestMultiKill or playerStats.highestMultiKill or 0
-        elseif achievement.id == "kills_big_game" then
-            targetValue = 30
-            local _, _, _, _, _, levelData = PSC_CalculateBarChartStatistics()
-            currentProgress = levelData["??"] or 0
-        elseif achievement.id == "kills_favorite_target" then
-            targetValue = 10
-
-            local stats = PSC_CalculateSummaryStatistics()
-            local mostKilledPlayer = stats.mostKilledPlayer or "None"
-            local mostKilledCount = stats.mostKilledCount or 0
-
-            currentProgress = mostKilledCount
-            if achievement.subText and type(achievement.subText) == "function" then
-                local dynamicText = achievement.subText()
-                achievement.displayText = dynamicText
-            end
-        end
-
-        local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
-        if pointsImage then
-            title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
-        else
-            title:SetPoint("RIGHT", tile, "RIGHT", -15, 0)
-        end
-        -- Use PersonalizeText to replace [YOUR NAME] in the title
-        title:SetText(PSC_ReplacePlayerNamePlaceholder(achievement.title))
-        if achievement.unlocked then
-            title:SetTextColor(1, 0.82, 0)  -- Gold color for unlocked
-        else
-            title:SetTextColor(0.5, 0.5, 0.5)  -- Gray color for locked
-        end
-
-        local desc = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
-        desc:SetPoint("RIGHT", tile, "RIGHT", -10, 0)
-        desc:SetJustifyH("LEFT")
-        desc:SetText(achievement.description)
-        if achievement.unlocked then
-            desc:SetTextColor(0.9, 0.9, 0.9)  -- Light gray for unlocked
-        else
-            desc:SetTextColor(0.4, 0.4, 0.4)  -- Dark gray for locked
-        end
-
-        local progressText = progressBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        progressText:SetPoint("CENTER", progressBar, "CENTER", 0, 0)
-
-        if achievement.unlocked then
-            progressBar:SetMinMaxValues(0, targetValue)
-            progressBar:SetValue(targetValue)
-            progressText:SetText(targetValue.."/"..targetValue)
-        else
-            if currentProgress >= targetValue then
-                achievement.unlocked = true
-                achievement.completedDate = date("%d/%m/%Y %H:%M")
-
-                progressBar:SetMinMaxValues(0, targetValue)
-                progressBar:SetValue(targetValue)
-                progressText:SetText(targetValue.."/"..targetValue)
-
-                icon:SetDesaturated(false)
-
-                for _, child in pairs({tile:GetChildren()}) do
-                    if child:IsObjectType("Texture") and child:GetObjectType() == "Texture" then
-                        if child:GetAlpha() == 0.5 then
-                            child:Hide()
-                        end
-                    end
-                end
-
-                title:SetTextColor(1, 0.82, 0)
-
-                desc:SetTextColor(0.9, 0.9, 0.9)
-
-                if PVPSC.AchievementPopup then
-                    PVPSC.AchievementPopup:ShowPopup({
-                        icon = achievement.iconID,
-                        title = achievement.title,
-                        description = achievement.description
-                    })
-                end
-
-                if not PSC_DB.Achievements then
-                    PSC_DB.Achievements = {}
-                end
-
-                PSC_DB.Achievements[achievement.id] = {
-                    unlocked = true,
-                    completedDate = achievement.completedDate
-                }
-            else
-                progressBar:SetMinMaxValues(0, targetValue)
-                progressBar:SetValue(currentProgress)
-                progressText:SetText(currentProgress.."/"..targetValue)
-            end
-        end
-
-        -- Find the appropriate points image based on achievement points
-        local function GetPointsImagePath(points)
-            -- Ensure path is correct with proper extension (.tga, .blp, etc)
-            local basePath = "Interface\\AddOns\\PvPStatsClassic\\achievement_img\\Achievement_icon"
-
-            if points == 10 then return basePath .. "10"
-            elseif points == 25 then return basePath .. "25"
-            elseif points == 50 then return basePath .. "50"
-            elseif points == 75 then return basePath .. "75"
-            elseif points == 100 then return basePath .. "100"
-            elseif points == 125 then return basePath .. "125"
-            elseif points == 250 then return basePath .. "250"
-            elseif points == 500 then return basePath .. "500"
-            else return basePath end
-        end
-
-        local pointsValue = achievement.achievementPoints or 10
-        local pointsImage = tile:CreateTexture(nil, "ARTWORK")
-        pointsImage:SetSize(38, 32) -- Increased size for better visibility
-        pointsImage:SetPoint("RIGHT", tile, "RIGHT", -15, 5) -- Adjusted position
-        pointsImage:SetTexture(GetPointsImagePath(pointsValue))
-
-        title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
-        title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)  -- Updated to not overlap points
-
-        desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
-        desc:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)  -- Updated to not overlap points
-
-        tile:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-
-            local rarity = achievement.rarity or "common"
-            local r, g, b = 1, 0.82, 0 -- Default gold color
-
-            if rarity == "uncommon" then
-                r, g, b = 0.1, 1.0, 0.1 -- Green
-            elseif rarity == "rare" then
-                r, g, b = 0.0, 0.4, 1.0 -- Blue
-            elseif rarity == "epic" then
-                r, g, b = 0.8, 0.3, 0.9 -- Purple
-            elseif rarity == "legendary" then
-                r, g, b = 1.0, 0.5, 0.0 -- Orange
-            elseif rarity == "common" then
-                r, g, b = 0.9, 0.9, 0.9 -- Light gray for common
-            end
-
-            local pointsText = achievement.achievementPoints or 10
-            local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(achievement.title)
-            GameTooltip:SetText(personalizedTitle .. " |cFF66CCFF(" .. pointsText .. ")|r", r, g, b)
-
-            GameTooltip:AddLine(PSC_ReplacePlayerNamePlaceholder(achievement.description), 1, 1, 1, true)
-            if achievement.subText then
-                GameTooltip:AddLine(" ")
-                local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(achievement.subText)
-                GameTooltip:AddLine(personalizedSubText, 0.7, 0.7, 1, true)
-            end
-
-            if achievement.unlocked and achievement.completedDate then
-                GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Completed: " .. achievement.completedDate, 1, 0.82, 0, true) -- Gold color
-            end
-
-            GameTooltip:Show()
-        end)
-
-        tile:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
+        CreateAchievementTile(i, achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
     end
 
-    local rowCount = math.ceil(#achievements / ACHIEVEMENTS_PER_ROW)
-    local totalHeight = rowCount * (ACHIEVEMENT_HEIGHT + 5 + ACHIEVEMENT_SPACING_V)
-    scrollContent:SetSize(scrollContent:GetWidth(), math.max(totalHeight, 1))
+    -- Optionally update scrollContent size here if needed
 end
 
 local function CreateAchievementTabSystem(parent)
