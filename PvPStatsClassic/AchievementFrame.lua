@@ -295,10 +295,10 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
     end
 
     -- Grey level kills
-    if id == "kills_grey_level" then
-        currentProgress = PSC_CalculateGreyKills()
-        return targetValue, currentProgress
-    end
+    -- if id == "kills_grey_level" then
+    --     currentProgress = PSC_CalculateGreyKills()
+    --     return targetValue, currentProgress
+    -- end
 
     -- Kill streaks
     if id:find("^kills_streak_") then
