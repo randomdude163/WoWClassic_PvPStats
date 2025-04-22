@@ -207,7 +207,6 @@ function PSC_CalculateGreyKills()
         charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
     end
 
-    -- For each character, for each player killed, count grey kills
     for _, charData in pairs(charactersToProcess) do
         -- For each killed player, get their name
         for nameWithLevel, _ in pairs(charData.Kills or {}) do
@@ -218,7 +217,8 @@ function PSC_CalculateGreyKills()
                     local playerLevel = kill.playerLevel
                     local enemyLevel = kill.level
                     local grayThreshold = grayLevelThreshods[playerLevel] or 0
-                    if enemyLevel > 0 and enemyLevel <= (playerLevel - grayThreshold) then
+                    if enemyLevel >= 1 and enemyLevel <= grayThreshold then
+                        print("playerName: " .. playerName .. " " .. "Player Level: " .. playerLevel .. ", Enemy Level: " .. enemyLevel .. ", Threshold: " .. grayThreshold)
                         greyKills = greyKills + 1
                     end
                 end
