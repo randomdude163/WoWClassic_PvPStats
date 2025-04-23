@@ -577,31 +577,34 @@ local function createScrollFrame(container, width, height)
     return scrollFrame
 end
 
-local function createGuildTable(parent, x, y, width, height)
-    local container = createContainerWithTitle(parent, "Guild Kills", x, y, width, height)
-
+function PSC_CalculateGuildKills()
     local guildKills = {}
 
-    if PSC_DB.PlayerKillCounts.Characters then
-        for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
-            if characterData.Kills then
-                for nameWithLevel, killData in pairs(characterData.Kills) do
-                    local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
-                    local kills = killData.kills or 0
+    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
+                local kills = killData.kills or 0
 
-                    local infoKey = PSC_GetInfoKeyFromName(playerNameWithoutLevel)
+                local infoKey = PSC_GetInfoKeyFromName(playerNameWithoutLevel)
 
-                    if PSC_DB.PlayerInfoCache[infoKey] then
-                        local guild = PSC_DB.PlayerInfoCache[infoKey].guild
-                        if guild ~= "" then
-                            guildKills[guild] = (guildKills[guild] or 0) + kills
-                        end
+                if PSC_DB.PlayerInfoCache[infoKey] then
+                    local guild = PSC_DB.PlayerInfoCache[infoKey].guild
+                    if guild ~= "" then
+                        guildKills[guild] = (guildKills[guild] or 0) + kills
                     end
                 end
             end
         end
     end
 
+    return guildKills
+end
+
+local function createGuildTable(parent, x, y, width, height)
+    local container = createContainerWithTitle(parent, "Guild Kills", x, y, width, height)
+
+    local guildKills = PSC_CalculateGuildKills()
     local sortedGuilds = sortByValue(guildKills, true)
 
     local totalContentWidth = 200 + 60 + 10
@@ -667,7 +670,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     return yPosition - 20
 end
 
-local function calculateStatistics()
+function PSC_CalculateSummaryStatistics()
     local totalKills = 0
     local uniqueKills = 0
     local totalLevels = 0  -- Target levels
@@ -820,10 +823,15 @@ local function calculateStatistics()
     }
 end
 
+-- Replace the PSC_CalculateAchievementPoints function with this simpler version
+function PSC_CalculateAchievementPoints()
+    return PSC_DB.TotalAchievementPoints or 0
+end
+
 local function createSummaryStats(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
-    local stats = calculateStatistics()
+    local stats = PSC_CalculateSummaryStatistics()
     local statY = -30
 
     statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
@@ -886,10 +894,15 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
+    -- Add the achievement points line:
+    local achievementPoints = PSC_CalculateAchievementPoints()
+    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints, statY,
+        "Total points earned from unlocked PvP achievements. Earn more by completing achievements!")
+
     return container
 end
 
-local function gatherStatistics()
+function PSC_CalculateBarChartStatistics()
     local classData = {}
     local raceData = {}
     local genderData = {}
@@ -1149,7 +1162,7 @@ function PSC_UpdateStatisticsFrame(frame)
     end
 
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
-        gatherStatistics()
+        PSC_CalculateBarChartStatistics()
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent

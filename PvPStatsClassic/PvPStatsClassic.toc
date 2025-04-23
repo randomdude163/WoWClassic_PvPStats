@@ -18,6 +18,9 @@ KillsTracking.lua
 Killstreaks.lua
 MinimapButton.lua
 SlashCommands.lua
+AchievementFrame.lua
+AchievementPopup.lua
+Achievements.lua
 StatisticsFrame.lua
 Utils.lua
 TestData.lua

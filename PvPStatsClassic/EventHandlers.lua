@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
 PSC_Debug = false
@@ -181,7 +183,15 @@ function IsHunterAndCanFeignDeath(destName)
     local isHunter = PSC_DB.PlayerInfoCache[infoKey].class == "Hunter"
     local level = PSC_DB.PlayerInfoCache[infoKey].level
 
-    if not isHunter or level < HUNTER_FEIGN_DEATH_MIN_LEVEL then
+    if not isHunter then
+        return false
+    end
+
+    if level == -1 then
+        return true
+    end
+
+    if level < HUNTER_FEIGN_DEATH_MIN_LEVEL then
         return false
     end
 
@@ -477,6 +487,9 @@ function PSC_RegisterEvents()
             if PSC_Debug then
                 print("[PvPStats]: Debug mode enabled.")
             end
+            C_Timer.After(2, function()
+                PVPSC.AchievementSystem:CheckAchievements()
+            end)
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then

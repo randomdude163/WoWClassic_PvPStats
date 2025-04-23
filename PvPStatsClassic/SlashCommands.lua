@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local function PrintSlashCommandUsage()
     -- PSC_Print("Usage: /psc settings - Open settings UI")
     -- PSC_Print("Usage: /psc stats - Show PvP history")
@@ -12,6 +14,7 @@ local function PrintSlashCommandUsage()
     -- PSC_Print("Usage: /psc simulatedeath [killers] [assists] - Simulate being killed")
     -- PSC_Print("Usage: /psc simcombatlog [killers] [assists] [damage] - Simulate combat log entries for death")
     -- PSC_Print("Usage: /psc deathstats - Show death statistics")
+    PSC_Print("Usage: /psc achievements - Show achievements window")
 end
 
 local function PrintStatus()
@@ -91,7 +94,9 @@ function PSC_SlashCommandHandler(msg)
     elseif command == "debugpet" then
         PSC_DebugPetKills()
     elseif command == "options" or command == "settings" then
-            PSC_CreateConfigUI()
+        PSC_CreateConfigUI()
+    elseif command == "achievements" then
+        PVPSC:ToggleAchievementFrame()
     elseif command == "roleplayer" then
         PSC_CreateRoleplayer()
     else
