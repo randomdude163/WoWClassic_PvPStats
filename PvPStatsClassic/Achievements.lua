@@ -1270,20 +1270,21 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("Sent %d 'social anxiety' players back to retail! Their 'I don't need a guild to play' attitude didn't help against your killing spree. At least they didn't have to explain their deaths in guild chat."):format(a.targetValue) end,
-}, {
-    id = "kills_grey_level",
-    title = "Teach them young",
-    description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
-    iconID = 134435,
-    achievementPoints = 75,
-    targetValue = 100,
-    condition = function(achievement, stats)
-        return PSC_CalculateGreyKills() >= achievement.targetValue
-    end,
-    unlocked = false,
-    completedDate = nil,
-    subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
-}, -- Kill Streak Achievements
+},
+-- {
+--     id = "kills_grey_level",
+--     title = "Teach them young",
+--     description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
+--     iconID = 134435,
+--     achievementPoints = 75,
+--     targetValue = 100,
+--     condition = function(achievement, stats)
+--         return PSC_CalculateGreyKills() >= achievement.targetValue
+--     end,
+--     unlocked = false,
+--     completedDate = nil,
+--     subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
+-- }, -- Kill Streak Achievements
 {
     id = "kills_streak_25",
     title = "Serial Killer",
