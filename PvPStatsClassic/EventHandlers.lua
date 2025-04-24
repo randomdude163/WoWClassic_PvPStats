@@ -75,9 +75,9 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     local subZoneText = GetSubZoneText()
     local playerPosition = ""
     if subZoneText ~= "" then
-        playerPosition =  subZoneText .. " (" .. playerCoords .. ")"
+        playerPosition = subZoneText .. " (" .. playerCoords .. ")"
     else
-        playerPosition =  playerCoords
+        playerPosition = playerCoords
     end
     local warningMsg = "I got killed by " .. killerName .. " (Level ?? " .. killerClass .. ") at " .. playerPosition .. "!"
     SendChatMessage(warningMsg, "PARTY")
@@ -148,7 +148,7 @@ local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destNam
     local damageAmount = param1 or param4 or 0
     if damageAmount <= 0 then return end
 
-     PSC_RecordPlayerDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
+    PSC_RecordPlayerDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
 end
 
 local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
@@ -164,11 +164,11 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
     elseif combatEvent == "RANGE_DAMAGE" then
         damageAmount = param4 or 0
     elseif combatEvent == "SPELL_DISPEL" or
-           combatEvent == "SPELL_INTERRUPT" or
-           combatEvent == "SPELL_AURA_APPLIED" or
-           combatEvent == "SPELL_AURA_APPLIED_DOSE" or
-           combatEvent == "SPELL_AURA_REFRESH" or
-           combatEvent == "SPELL_AURA_REMOVED" then
+        combatEvent == "SPELL_INTERRUPT" or
+        combatEvent == "SPELL_AURA_APPLIED" or
+        combatEvent == "SPELL_AURA_APPLIED_DOSE" or
+        combatEvent == "SPELL_AURA_REFRESH" or
+        combatEvent == "SPELL_AURA_REMOVED" then
         isUtilitySpell = true
         damageAmount = 1
     end
@@ -373,7 +373,6 @@ function PSC_ValidateHunterKill(destGUID)
 
         -- Call the existing party kill handler
         HandlePartyKillEvent(sourceGUID, sourceName, destGUID, eventData.name)
-
     elseif eventData.eventType == "UNIT_EVENT" then
         -- Call the existing unit died handler
         HandleUnitDiedEvent(destGUID, eventData.name)
@@ -454,6 +453,45 @@ function PSC_CleanupPendingHunterKills()
     end
 end
 
+local function HandlePlayerEnteringWorld()
+    PSC_PlayerGUID = UnitGUID("player")
+    PSC_CharacterName = UnitName("player")
+    PSC_RealmName = GetRealmName()
+
+    if not PSC_DB then
+        PSC_DB = {}
+        PSC_LoadDefaultSettings()
+        ResetAllStatsToDefault()
+    end
+
+    PSC_MigratePlayerInfoCache()
+
+    PSC_InitializePlayerKillCounts()
+    PSC_InitializePlayerLossCounts()
+    PSC_UpdateMinimapButtonPosition()
+    PSC_SetupMouseoverTooltip()
+    PSC_InCombat = UnitAffectingCombat("player")
+    PSC_CheckBattlegroundStatus()
+    if UnitIsDeadOrGhost("player") then
+        HandlePlayerDeath()
+    end
+    if PSC_Debug then
+        print("[PvPStats]: Debug mode enabled.")
+    end
+    C_Timer.After(2, function()
+        PVPSC.AchievementSystem:CheckAchievements()
+    end)
+end
+
+local function HandlePlayerRegenEnabled()
+    HandleCombatState(false)
+    CleanupRecentPetDamage()
+    PSC_CleanupRecentlyCountedKillsDict()
+    PSC_CleanupRecentPlayerDamage()
+    PSC_CleanupRecentDamageFromPlayers()
+    PSC_CleanupPendingHunterKills()
+end
+
 function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     pvpStatsClassicFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
@@ -467,33 +505,7 @@ function PSC_RegisterEvents()
 
     pvpStatsClassicFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_ENTERING_WORLD" then
-            PSC_PlayerGUID = UnitGUID("player")
-            PSC_CharacterName = UnitName("player")
-            PSC_RealmName = GetRealmName()
-
-            if not PSC_DB then
-                PSC_DB = {}
-                PSC_LoadDefaultSettings()
-                ResetAllStatsToDefault()
-            end
-
-            PSC_MigratePlayerInfoCache()
-
-            PSC_InitializePlayerKillCounts()
-            PSC_InitializePlayerLossCounts()
-            PSC_UpdateMinimapButtonPosition()
-            PSC_SetupMouseoverTooltip()
-            PSC_InCombat = UnitAffectingCombat("player")
-            PSC_CheckBattlegroundStatus()
-            if UnitIsDeadOrGhost("player") then
-                HandlePlayerDeath()
-            end
-            if PSC_Debug then
-                print("[PvPStats]: Debug mode enabled.")
-            end
-            C_Timer.After(2, function()
-                PVPSC.AchievementSystem:CheckAchievements()
-            end)
+            HandlePlayerEnteringWorld()
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -505,12 +517,7 @@ function PSC_RegisterEvents()
         elseif event == "PLAYER_REGEN_DISABLED" then
             HandleCombatState(true)
         elseif event == "PLAYER_REGEN_ENABLED" then
-            HandleCombatState(false)
-            CleanupRecentPetDamage()
-            PSC_CleanupRecentlyCountedKillsDict()
-            PSC_CleanupRecentPlayerDamage()
-            PSC_CleanupRecentDamageFromPlayers()
-            PSC_CleanupPendingHunterKills()
+            HandlePlayerRegenEnabled()
         elseif event == "PLAYER_LOGOUT" then
             PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
@@ -536,7 +543,7 @@ function PSC_CheckBattlegroundStatus()
         -- https://wowpedia.fandom.com/wiki/UiMapID
         1459, -- "Alterac Valley"
         1460, -- "Warsong Gulch"
-        1461 -- "Arathi Basin"
+        1461  -- "Arathi Basin"
     }
 
     for _, bgMapId in ipairs(battlegroundZoneIds) do
@@ -650,7 +657,7 @@ function PSC_SetupMouseoverTooltip()
         if not PSC_DB.ShowScoreInPlayerTooltip then return end
         if not tooltip:IsShown() then return end
 
-        local line1 = _G[tooltip:GetName().."TextLeft1"]
+        local line1 = _G[tooltip:GetName() .. "TextLeft1"]
         if not line1 then return end
 
         local text = line1:GetText()

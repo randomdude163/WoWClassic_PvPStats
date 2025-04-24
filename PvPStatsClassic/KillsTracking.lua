@@ -158,7 +158,6 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     UpdateKillCountEntry(nameWithLevel, playerLevel)
     UpdateMultiKill()
 
-    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
     local playerRank = PSC_DB.PlayerInfoCache[infoKey].rank or 0
 
     AnnounceKill(playerName, level, nameWithLevel, playerLevel)
