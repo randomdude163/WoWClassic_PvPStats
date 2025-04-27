@@ -997,7 +997,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Slay %d players in total"):format(a.targetValue) end,
         iconID = 237542,
         achievementPoints = 100,
-        targetValue = 1000,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1016,8 +1016,8 @@ AchievementSystem.achievements = {
         title = "Death Incorporated",
         description = function(a) return ("Slay %d players in total"):format(a.targetValue) end,
         iconID = 132205,
-        achievementPoints = 250,
-        targetValue = 3000,
+        achievementPoints = 500,
+        targetValue = 10000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1037,7 +1037,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Defeat %d unique players"):format(a.targetValue) end,
         iconID = 133789,
         achievementPoints = 50,
-        targetValue = 400,
+        targetValue = 500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1057,7 +1057,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Defeat %d unique players"):format(a.targetValue) end,
         iconID = 133787,
         achievementPoints = 100,
-        targetValue = 800,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1076,8 +1076,8 @@ AchievementSystem.achievements = {
         title = "Celebrity Stalker",
         description = function(a) return ("Defeat %d unique players"):format(a.targetValue) end,
         iconID = 133785,
-        achievementPoints = 250,
-        targetValue = 2400,
+        achievementPoints = 500,
+        targetValue = 10000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1791,8 +1791,8 @@ AchievementSystem.achievements = {
         title = "Teach them young",
         description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
         iconID = 134435,
-        achievementPoints = 75,
-        targetValue = 100,
+        achievementPoints = 250,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1945,9 +1945,9 @@ AchievementSystem.achievements = {
     },
     {
         id = "kills_streak_200",
-        title = "/flex",
+        title = "Flex contests",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
-        iconID = 236370,
+        iconID = 136101,
         achievementPoints = 500,
         targetValue = 200,
         condition = function(achievement, stats)
@@ -1956,7 +1956,87 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
+            return ("200 players down! If this were Hearthstone, you'd be Top 0.01%%—instead, you're out here making real card backs out of enemy corpses. Stay legendary.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_streak_225",
+        title = "/flex",
+        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
+        iconID = 236370,
+        achievementPoints = 500,
+        targetValue = 225,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
             return ("%d unbroken kills! Your /flex emote now causes a 10-yard fear. Even raid bosses check their aggro tables when you log in. Blizzard added a new GM macro: /who [YOUR NAME] – for threat assessment.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_streak_225",
+        title = "/flex",
+        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
+        iconID = 236370,
+        achievementPoints = 500,
+        targetValue = 225,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d unbroken kills! Your /flex emote now causes a 10-yard fear. Even raid bosses check their aggro tables when you log in. Blizzard added a new GM macro: /who [YOUR NAME] – for threat assessment.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_streak_225",
+        title = "/flex",
+        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
+        iconID = 236370,
+        achievementPoints = 500,
+        targetValue = 225,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d unbroken kills! Your /flex emote now causes a 10-yard fear. Even raid bosses check their aggro tables when you log in. Blizzard added a new GM macro: /who [YOUR NAME] – for threat assessment.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_streak_250",
+        title = "Certified Problem",
+        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
+        iconID = 236370,
+        achievementPoints = 500,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Half the server called for help. The other half ragequit.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2058,7 +2138,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d level ?? players"):format(a.targetValue) end,
         iconID = 135614,
         achievementPoints = 250,
-        targetValue = 30,
+        targetValue = 50,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
