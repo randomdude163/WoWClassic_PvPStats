@@ -16,28 +16,19 @@ AchievementFrame.TitleText = AchievementFrame:CreateFontString(nil, "OVERLAY", "
 AchievementFrame.TitleText:SetPoint("TOP", AchievementFrame, "TOP", 0, -5)
 AchievementFrame.TitleText:SetText("PvP Achievements")
 
--- Create content area for achievements
 local contentFrame = CreateFrame("Frame", nil, AchievementFrame)
 contentFrame:SetPoint("TOPLEFT", AchievementFrame, "TOPLEFT", 10, -30)
 contentFrame:SetPoint("BOTTOMRIGHT", AchievementFrame, "BOTTOMRIGHT", -10, 15)
 
--- Create scroll frame for achievements
 local scrollFrame = CreateFrame("ScrollFrame", "PVPSCAchievementScrollFrame", contentFrame, "UIPanelScrollFrameTemplate")
 scrollFrame:SetPoint("TOPLEFT", 0, 0)
 scrollFrame:SetPoint("BOTTOMRIGHT", -30, 0)
 
--- Create content for the scroll frame
 local scrollContent = CreateFrame("Frame", "PVPSCAchievementContent", scrollFrame)
 scrollContent:SetSize(scrollFrame:GetWidth(), 1) -- Height will be adjusted dynamically
 scrollFrame:SetScrollChild(scrollContent)
 
--- Function to get player name for achievement text
-local function GetPlayerName()
-    local playerName = UnitName("player")
-    return playerName or "You"
-end
 
--- Constants for achievement layout
 local ACHIEVEMENT_WIDTH = 260
 local ACHIEVEMENT_HEIGHT = 80
 local ACHIEVEMENT_SPACING_H = 15
@@ -62,52 +53,6 @@ local function GetPlayerStats()
 
     return playerStats
 end
-
--- Helper function to calculate statistics that displays them for debugging
-local function GetStatistics()
-    -- Get statistics from PSC_DB
-    local playerStats = GetPlayerStats()
-
-    -- First, try to get the calculated statistics from the StatisticsFrame
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = {}, {}, {}, {}, {}, {}, {}
-
-    -- Try to access the function for calculating stats directly
-    if PSC_CalculateBarChartStatistics then
-        classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
-            PSC_CalculateBarChartStatistics()
-    end
-
-    local summaryStats = {}
-    if PSC_CalculateSummaryStatistics then
-        summaryStats = PSC_CalculateSummaryStatistics()
-
-        -- Update player stats with summary data
-        if summaryStats.highestKillStreak and (not playerStats.highestKillStreak or summaryStats.highestKillStreak > playerStats.highestKillStreak) then
-            playerStats.highestKillStreak = summaryStats.highestKillStreak
-        end
-
-        -- Get total and unique kills data
-        if summaryStats.totalKills then
-            playerStats.totalKills = summaryStats.totalKills
-        end
-
-        if summaryStats.uniqueKills then
-            playerStats.uniqueKills = summaryStats.uniqueKills
-        end
-    end
-
-    -- Add guild status data to playerStats if not already present
-    if guildStatusData and guildStatusData["In Guild"] then
-        playerStats.guildedKills = guildStatusData["In Guild"]
-    end
-
-    if guildStatusData and guildStatusData["No Guild"] then
-        playerStats.loneWolfKills = guildStatusData["No Guild"]
-    end
-
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, summaryStats, playerStats
-end
-
 
 local currentCategory = "Class"  -- default category
 
@@ -685,7 +630,7 @@ local function LoadAchievementCompletionStatus()
     end
 end
 
-local function ToggleAchievementFrame()
+function PSC_ToggleAchievementFrame()
     if AchievementFrame:IsShown() then
         AchievementFrame:Hide()
     else
@@ -694,13 +639,4 @@ local function ToggleAchievementFrame()
         UpdateAchievementLayout()
         AchievementFrame:Show()
     end
-end
-
-PVPSC.AchievementFrame = AchievementFrame
-PVPSC.ToggleAchievementFrame = ToggleAchievementFrame
-PVPSC.UpdateAchievementLayout = UpdateAchievementLayout
-
-SLASH_PVPSCACHIEVEMENTS1 = "/pvpachievements"
-SlashCmdList["PVPSCACHIEVEMENTS"] = function()
-    ToggleAchievementFrame()
 end

@@ -96,7 +96,7 @@ function PSC_SlashCommandHandler(msg)
     elseif command == "options" or command == "settings" then
         PSC_CreateConfigUI()
     elseif command == "achievements" then
-        PVPSC:ToggleAchievementFrame()
+        PSC_ToggleAchievementFrame()
     elseif command == "roleplayer" then
         PSC_CreateRoleplayer()
     else

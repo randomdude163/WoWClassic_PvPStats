@@ -58,7 +58,7 @@ minimapButton:SetScript("OnClick", function(self, button)
         end
     elseif button == "RightButton" then
         if IsControlKeyDown() then
-            PVPSC:ToggleAchievementFrame()
+            PSC_ToggleAchievementFrame()
         else
             PSC_CreateKillsListFrame()
         end
