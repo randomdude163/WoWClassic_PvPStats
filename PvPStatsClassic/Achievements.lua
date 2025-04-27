@@ -13,8 +13,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Paladin"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         progress = function(achievement, stats)
             return stats.classData["Paladin"] or 0
@@ -2165,10 +2164,8 @@ function PSC_ReplacePlayerNamePlaceholder(text, playerName, achievement)
     return text
 end
 
-function AchievementSystem:CheckAchievements()
-    local playerName = UnitName("player")
-    local achievementsUnlocked = 0
 
+function PSC_GetAllStatsForAchievements()
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
         PSC_CalculateBarChartStatistics()
     local summaryStats = PSC_CalculateSummaryStatistics()
@@ -2187,6 +2184,15 @@ function AchievementSystem:CheckAchievements()
         mostKilledPlayer = summaryStats.mostKilledPlayer,
         mostKilledCount = summaryStats.mostKilledCount
     }
+
+    return stats
+end
+
+
+function AchievementSystem:CheckAchievements()
+    local playerName = UnitName("player")
+    local achievementsUnlocked = 0
+    local stats = PSC_GetAllStatsForAchievements()
 
     for _, achievement in ipairs(self.achievements) do
         if not achievement.unlocked and achievement.condition(achievement, stats) then

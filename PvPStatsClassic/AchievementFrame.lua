@@ -36,24 +36,6 @@ local ACHIEVEMENT_SPACING_V = 15
 local ACHIEVEMENTS_PER_ROW = 4
 
 
-local function GetPlayerStats()
-    local characterKey = PSC_GetCharacterKey()
-    local playerStats = {}
-
-    if PSC_DB and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey] then
-
-        playerStats.currentKillStreak = PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreak or 0
-        playerStats.highestKillStreak = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak or 0
-
-
-        if PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill then
-            playerStats.highestMultiKill = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
-        end
-    end
-
-    return playerStats
-end
-
 local currentCategory = "Class"
 
 
@@ -176,118 +158,6 @@ function PSC_CalculateGreyKills()
 end
 
 
-local function GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
-    local id = achievement.id
-    local targetValue = achievement.targetValue or 0
-    local currentProgress = 0
-
-
-    for _, class in ipairs({"Paladin","Priest","Warrior","Mage","Rogue","Warlock","Druid","Shaman","Hunter"}) do
-        for i = 0, 3 do
-            if id == ("class_"..class:lower().."_"..i) then
-                currentProgress = classData[class] or 0
-                return targetValue, currentProgress
-            end
-        end
-    end
-
-
-    for _, race in ipairs({"Human","Night Elf","Dwarf","Gnome","Orc","Undead","Troll","Tauren"}) do
-        for i = 0, 3 do
-            if id == ("race_"..race:lower():gsub(" ", "").."_"..i) then
-                if race == "Undead" then
-                    currentProgress = raceData["Undead"] or raceData["Scourge"] or 0
-                elseif race == "Night Elf" then
-                    currentProgress = raceData["Night Elf"] or 0
-                else
-                    currentProgress = raceData[race] or 0
-                end
-                return targetValue, currentProgress
-            end
-        end
-    end
-
-
-    for _, gender in ipairs({"Female","Male"}) do
-        for i = 1, 4 do
-            if id == ("general_gender_"..gender:lower().."_"..i) then
-                currentProgress = genderData[gender] or 0
-                return targetValue, currentProgress
-            end
-        end
-    end
-
-
-    local zoneMap = {
-        ["general_zone_redridge"] = "Redridge Mountains",
-        ["general_zone_elwynn"] = "Elwynn Forest",
-        ["general_zone_duskwood"] = "Duskwood",
-        ["general_zone_westfall"] = "Westfall",
-    }
-    if zoneMap[id] then
-        local zone = zoneMap[id]
-        currentProgress = zoneData[zone] or 0
-        return targetValue, currentProgress
-    end
-
-
-    if id == "kills_guild" then
-        currentProgress = guildStatusData["In Guild"] or 0
-        return targetValue, currentProgress
-    elseif id == "kills_guildless" then
-        currentProgress = guildStatusData["No Guild"] or 0
-        return targetValue, currentProgress
-    end
-
-
-    if id == "kills_grey_level" then
-        currentProgress = PSC_CalculateGreyKills()
-        return targetValue, currentProgress
-    end
-
-
-    if id:find("^kills_streak_") then
-        currentProgress = summaryStats.highestKillStreak
-        return targetValue, currentProgress
-    end
-
-
-    if id:find("^kills_total_") then
-        currentProgress = summaryStats.totalKills or 0
-        return targetValue, currentProgress
-    end
-
-
-    if id:find("^kills_unique_") then
-        currentProgress = summaryStats.uniqueKills or 0
-        return targetValue, currentProgress
-    end
-
-
-    if id:find("^kills_multi_") then
-        currentProgress = summaryStats.highestMultiKill
-        return targetValue, currentProgress
-    end
-
-
-    if id == "kills_big_game" then
-        currentProgress = levelData["??"] or 0
-        return targetValue, currentProgress
-    end
-
-
-    if id == "kills_favorite_target" then
-        currentProgress = summaryStats.mostKilledCount or 0
-        if achievement.subText and type(achievement.subText) == "function" then
-            achievement.displayText = achievement.subText()
-        end
-        return targetValue, currentProgress
-    end
-
-    return targetValue, currentProgress
-end
-
-
 local function SetTileBorderColor(tile, rarity)
     if rarity == "uncommon" then
         tile:SetBackdropBorderColor(0.1, 1.0, 0.1)
@@ -357,11 +227,6 @@ local function CreatePointsImage(tile, pointsValue)
 
     if imagePath then
         pointsImage:SetTexture(imagePath)
-
-        if not pointsImage:IsLoaded() then
-           print("Warning: Could not load achievement points image:", imagePath)
-           pointsImage:Hide() -- Hide if texture failed to load
-        end
     else
         pointsImage:Hide()
     end
@@ -443,7 +308,7 @@ local function AddLockedOverlay(tile, achievement)
 end
 
 
-local function CreateAchievementTile(i, achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
+local function CreateAchievementTile(i, achievement, stats)
     local column = (i - 1) % ACHIEVEMENTS_PER_ROW
     local row = math.floor((i - 1) / ACHIEVEMENTS_PER_ROW)
     local xPos = column * (ACHIEVEMENT_WIDTH + ACHIEVEMENT_SPACING_H)
@@ -469,7 +334,9 @@ local function CreateAchievementTile(i, achievement, classData, raceData, gender
     local pointsImage = CreatePointsImage(tile, pointsValue)
     local title, desc = CreateTitleAndDescription(tile, icon, pointsImage, achievement)
 
-    local targetValue, currentProgress = GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
+    local targetValue = achievement.targetValue
+    local currentProgress = achievement.progress(achievement, stats)
+    -- GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
     CreateProgressBar(tile, targetValue, currentProgress, achievement, icon, title)
 
     tile:SetScript("OnEnter", function(self)
@@ -517,22 +384,13 @@ local function UpdateAchievementLayout()
     local achievements = FilterAchievements(allAchievements, currentCategory)
     if #achievements == 0 then return end
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = PSC_CalculateBarChartStatistics()
-    local summaryStats = PSC_CalculateSummaryStatistics()
-    local playerStats = GetPlayerStats()
+    local stats = PSC_GetAllStatsForAchievements()
 
     for i, achievement in ipairs(achievements) do
         CreateAchievementTile(
             i,
             achievement,
-            classData,
-            raceData,
-            genderData,
-            zoneData,
-            levelData,
-            guildStatusData,
-            summaryStats,
-            playerStats
+            stats
         )
     end
 
