@@ -33,8 +33,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Paladin"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -54,8 +53,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Paladin"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -75,8 +73,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Paladin"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -96,8 +93,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Priest"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -117,8 +113,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Priest"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -138,8 +133,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Priest"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -159,8 +153,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Priest"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -180,8 +173,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Druid"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -201,8 +193,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Druid"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -222,8 +213,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Druid"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -243,8 +233,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Druid"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -264,8 +253,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Shaman"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -285,8 +273,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Shaman"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -306,8 +293,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Shaman"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -327,8 +313,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Shaman"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -348,8 +333,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Hunter"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -369,8 +353,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Hunter"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -390,8 +373,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Hunter"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -411,8 +393,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Hunter"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -432,8 +413,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Warrior"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -453,8 +433,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Warrior"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -474,8 +453,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Warrior"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -495,8 +473,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Warrior"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -516,8 +493,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Mage"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -538,8 +514,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Mage"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -559,8 +534,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Mage"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -580,8 +554,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Mage"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -601,8 +574,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Rogue"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -622,8 +594,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Rogue"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -643,8 +614,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Rogue"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -664,8 +634,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Rogue"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -685,8 +654,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Warlock"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -706,8 +674,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Warlock"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -727,8 +694,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Warlock"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -748,8 +714,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local classData = stats.classData
-            return classData["Warlock"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -769,8 +734,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 250,
         condition = function(achievement, stats)
-            local genderData = stats.genderData
-            return genderData["FEMALE"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -790,8 +754,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 500,
         condition = function(achievement, stats)
-            local genderData = stats.genderData
-            return genderData["FEMALE"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -811,8 +774,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 750,
         condition = function(achievement, stats)
-            local genderData = stats.genderData
-            return genderData["FEMALE"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -832,8 +794,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 1000,
         condition = function(achievement, stats)
-            local genderData = stats.genderData
-            return genderData["FEMALE"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -854,8 +815,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 250,
         condition = function(achievement, stats)
-            local genderData = stats.genderData
-            return genderData["MALE"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -875,8 +835,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 500,
         condition = function(achievement, stats)
-            local genderData = stats.genderData
-            return genderData["MALE"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -896,8 +855,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 750,
         condition = function(achievement, stats)
-            local genderData = stats.genderData
-            return genderData["MALE"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -917,8 +875,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 1000,
         condition = function(achievement, stats)
-            local genderData = stats.genderData
-            return genderData["MALE"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -938,8 +895,7 @@ AchievementSystem.achievements = {
         achievementPoints = 500,
         targetValue = 500,
         condition = function(achievement, stats)
-            local zoneData = stats.zoneData
-            return zoneData["Redridge Mountains"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -959,8 +915,7 @@ AchievementSystem.achievements = {
         achievementPoints = 250,
         targetValue = 100,
         condition = function(achievement, stats)
-            local zoneData = stats.zoneData
-            return zoneData["Elwynn Forest"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -980,8 +935,7 @@ AchievementSystem.achievements = {
         achievementPoints = 250,
         targetValue = 100,
         condition = function(achievement, stats)
-            local zoneData = stats.zoneData
-            return zoneData["Westfall"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -990,7 +944,11 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Westfall"] or 0
+            local westfallKills = stats.zoneData["Westfall"]
+            if westfallKills == nil then
+                return 0
+            end
+            return westfallKills
         end,
     },
     {
@@ -1001,8 +959,7 @@ AchievementSystem.achievements = {
         achievementPoints = 250,
         targetValue = 250,
         condition = function(achievement, stats)
-            local zoneData = stats.zoneData
-            return zoneData["Duskwood"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1022,7 +979,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            return stats.totalKills >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1042,7 +999,7 @@ AchievementSystem.achievements = {
         achievementPoints = 100,
         targetValue = 1000,
         condition = function(achievement, stats)
-            return stats.totalKills >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1062,7 +1019,7 @@ AchievementSystem.achievements = {
         achievementPoints = 250,
         targetValue = 3000,
         condition = function(achievement, stats)
-            return stats.totalKills >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1082,7 +1039,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 400,
         condition = function(achievement, stats)
-            return stats.uniqueKills >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1102,7 +1059,7 @@ AchievementSystem.achievements = {
         achievementPoints = 100,
         targetValue = 800,
         condition = function(achievement, stats)
-            return stats.uniqueKills >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1122,7 +1079,7 @@ AchievementSystem.achievements = {
         achievementPoints = 250,
         targetValue = 2400,
         condition = function(achievement, stats)
-            return stats.uniqueKills >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1143,8 +1100,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Human"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1164,8 +1120,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Human"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1185,8 +1140,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Human"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1206,8 +1160,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Human"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1229,8 +1182,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Night Elf"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1250,8 +1202,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Night Elf"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1271,8 +1222,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Night Elf"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1292,8 +1242,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Night Elf"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1315,8 +1264,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Dwarf"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1336,8 +1284,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Dwarf"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1357,8 +1304,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Dwarf"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1378,8 +1324,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Dwarf"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1401,8 +1346,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Gnome"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1422,8 +1366,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Gnome"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1443,8 +1386,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Gnome"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1464,8 +1406,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Gnome"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1487,8 +1428,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Orc"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1508,8 +1448,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Orc"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1529,8 +1468,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Orc"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1550,8 +1488,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Orc"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1573,8 +1510,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Undead"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1594,8 +1530,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Undead"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1615,8 +1550,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Undead"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1636,8 +1570,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Undead"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1659,8 +1592,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Troll"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1680,8 +1612,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Troll"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1701,8 +1632,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Troll"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1722,8 +1652,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Troll"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1745,8 +1674,7 @@ AchievementSystem.achievements = {
         achievementPoints = 10,
         targetValue = 100,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Tauren"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1766,8 +1694,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 250,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Tauren"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1787,8 +1714,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Tauren"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1808,8 +1734,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 750,
         condition = function(achievement, stats)
-            local raceData = stats.raceData
-            return raceData["Tauren"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1829,8 +1754,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local guildStatusData = stats.guildStatusData
-            return guildStatusData["In Guild"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1850,8 +1774,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 500,
         condition = function(achievement, stats)
-            local guildStatusData = stats.guildStatusData
-            return guildStatusData["No Guild"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1871,7 +1794,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 100,
         condition = function(achievement, stats)
-            return PSC_CalculateGreyKills() >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1888,7 +1811,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 25,
         condition = function(achievement, stats)
-            return stats.highestKillStreak >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1908,7 +1831,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 50,
         condition = function(achievement, stats)
-            return stats.highestKillStreak >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1928,7 +1851,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 75,
         condition = function(achievement, stats)
-            return stats.highestKillStreak >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1948,7 +1871,7 @@ AchievementSystem.achievements = {
         achievementPoints = 100,
         targetValue = 100,
         condition = function(achievement, stats)
-            return stats.highestKillStreak >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1968,7 +1891,7 @@ AchievementSystem.achievements = {
         achievementPoints = 125,
         targetValue = 125,
         condition = function(achievement, stats)
-            return stats.highestKillStreak >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -1988,7 +1911,7 @@ AchievementSystem.achievements = {
         achievementPoints = 250,
         targetValue = 150,
         condition = function(achievement, stats)
-            return stats.highestKillStreak >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -2008,7 +1931,7 @@ AchievementSystem.achievements = {
         achievementPoints = 500,
         targetValue = 175,
         condition = function(achievement, stats)
-            return stats.highestKillStreak >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -2028,7 +1951,7 @@ AchievementSystem.achievements = {
         achievementPoints = 500,
         targetValue = 200,
         condition = function(achievement, stats)
-            return stats.highestKillStreak >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -2048,7 +1971,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 3,
         condition = function(achievement, stats)
-            return stats.highestMultiKill >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -2068,7 +1991,7 @@ AchievementSystem.achievements = {
         achievementPoints = 50,
         targetValue = 4,
         condition = function(achievement, stats)
-            return stats.highestMultiKill >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -2088,7 +2011,7 @@ AchievementSystem.achievements = {
         achievementPoints = 75,
         targetValue = 5,
         condition = function(achievement, stats)
-            return stats.highestMultiKill >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -2108,7 +2031,7 @@ AchievementSystem.achievements = {
         achievementPoints = 25,
         targetValue = 10,
         condition = function(achievement, stats)
-            return stats.mostKilledCount >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
@@ -2137,8 +2060,7 @@ AchievementSystem.achievements = {
         achievementPoints = 250,
         targetValue = 30,
         condition = function(achievement, stats)
-            local levelData = stats.levelData
-            return levelData["??"] >= achievement.targetValue
+            return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
