@@ -903,11 +903,31 @@ AchievementSystem.achievements = {
     },
     {
         id = "general_zone_redridge",
+        title = "Redridge Population Control",
+        description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
+        iconID = 236814,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Congratulations. You made an entire zone regret installing the game.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Redridge Mountains"] or 0
+        end,
+    },
+    {
+        id = "general_zone_redridge",
         title = "Redridge Renovation",
         description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
         iconID = 236814,
         achievementPoints = 500,
-        targetValue = 500,
+        targetValue = 10000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1959,7 +1979,7 @@ AchievementSystem.achievements = {
     },
     {
         id = "kills_streak_200",
-        title = "Flex contests",
+        title = "Top 0.01%",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 136101,
         achievementPoints = 500,
@@ -1998,50 +2018,10 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_225",
-        title = "/flex",
-        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
-        iconID = 236370,
-        achievementPoints = 500,
-        targetValue = 225,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d unbroken kills! Your /flex emote now causes a 10-yard fear. Even raid bosses check their aggro tables when you log in. Blizzard added a new GM macro: /who [YOUR NAME] – for threat assessment.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.highestKillStreak or 0
-        end,
-    },
-    {
-        id = "kills_streak_225",
-        title = "/flex",
-        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
-        iconID = 236370,
-        achievementPoints = 500,
-        targetValue = 225,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d unbroken kills! Your /flex emote now causes a 10-yard fear. Even raid bosses check their aggro tables when you log in. Blizzard added a new GM macro: /who [YOUR NAME] – for threat assessment.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.highestKillStreak or 0
-        end,
-    },
-    {
         id = "kills_streak_250",
-        title = "Certified Problem",
+        title = "Thumbs up!",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
-        iconID = 236370,
+        iconID = 236375,
         achievementPoints = 500,
         targetValue = 250,
         condition = function(achievement, stats)
@@ -2050,7 +2030,87 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("Half the server called for help. The other half ragequit.")
+            return ("https://knowyourmeme.com/memes/brent-rambo")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_streak_275",
+        title = "Faction Change Approved",
+        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
+        iconID = 1126583,
+        achievementPoints = 500,
+        targetValue = 275,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d victims later, half your enemies swapped factions. The rest swapped hobbies.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_streak_300",
+        title = "Main Character Syndrome",
+        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
+        iconID = 1126585,
+        achievementPoints = 500,
+        targetValue = 300,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d corpses. They logged onto their 'real' mains... and you killed those too. Dreams crushed.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_streak_325",
+        title = "Delete or Be Deleted",
+        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
+        iconID = 442272,
+        achievementPoints = 500,
+        targetValue = 325,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You didn't just defeat %d players — you defeated their entire friends list too.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_streak_350",
+        title = "Unsubbed and Unloved",
+        description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
+        iconID = 236671,
+        achievementPoints = 500,
+        targetValue = 350,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d unsubbed. Blizzard sent them a 'we miss you' email — and you a trophy. SICK!")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
