@@ -297,9 +297,9 @@ local function CleanupPlayerDetailFrame(content)
 end
 
 -- Helper functions for creating and manipulating the player detail frame
-function PSC_CreateKillHistoryForPlayer(playerName)
+function PSC_CreatePlayerDetailInfo(playerName)
     -- Create a basic entry even if we don't have complete info
-    local entry = {
+    local killHistory = {
         name = playerName,
         class = "Unknown",
         race = "Unknown",
@@ -324,12 +324,12 @@ function PSC_CreateKillHistoryForPlayer(playerName)
     local playerInfo = PSC_DB.PlayerInfoCache[infoKey]
     if playerInfo then
         -- Update with available information
-        entry.class = playerInfo.class or "Unknown"
-        entry.race = playerInfo.race or "Unknown"
-        entry.gender = playerInfo.gender or "Unknown"
-        entry.levelDisplay = playerInfo.level or -1
-        entry.guild = playerInfo.guild or ""
-        entry.rank = playerInfo.rank or 0
+        killHistory.class = playerInfo.class or "Unknown"
+        killHistory.race = playerInfo.race or "Unknown"
+        killHistory.gender = playerInfo.gender or "Unknown"
+        killHistory.levelDisplay = playerInfo.level or -1
+        killHistory.guild = playerInfo.guild or ""
+        killHistory.rank = playerInfo.rank or 0
     end
 
     -- Collect kill history across all characters
@@ -341,7 +341,7 @@ function PSC_CreateKillHistoryForPlayer(playerName)
                 local level = tonumber(string.match(nameWithLevel, ":(%d+)") or "-1") or -1
 
                 -- Update total kills
-                entry.kills = entry.kills + (killData.kills or 0)
+                killHistory.kills = killHistory.kills + (killData.kills or 0)
 
                 -- Get latest kill info from kill locations
                 local latestKillTimestamp = 0
@@ -358,15 +358,15 @@ function PSC_CreateKillHistoryForPlayer(playerName)
                 end
 
                 -- Keep track of the most recent kill timestamp
-                if latestKillTimestamp > entry.lastKill then
-                    entry.lastKill = latestKillTimestamp
-                    entry.zone = latestZone
+                if latestKillTimestamp > killHistory.lastKill then
+                    killHistory.lastKill = latestKillTimestamp
+                    killHistory.zone = latestZone
                 end
 
                 -- Extract kill history for each location entry
                 if killData.killLocations and #killData.killLocations > 0 then
                     for _, location in ipairs(killData.killLocations) do
-                        table.insert(entry.killHistory, {
+                        table.insert(killHistory.killHistory, {
                             level = level,
                             zone = location.zone or "Unknown",
                             timestamp = location.timestamp or 0,
@@ -377,7 +377,7 @@ function PSC_CreateKillHistoryForPlayer(playerName)
                     end
                 else
                     -- Fallback if no killLocations available
-                    table.insert(entry.killHistory, {
+                    table.insert(killHistory.killHistory, {
                         level = level,
                         zone = killData.zone or "Unknown", -- Legacy data might still have top-level zone
                         timestamp = killData.lastKill or 0,
@@ -394,13 +394,13 @@ function PSC_CreateKillHistoryForPlayer(playerName)
     local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
     if deathDataByPlayer[playerName] then
         local deathData = deathDataByPlayer[playerName]
-        entry.deaths = deathData.deaths or 0
-        entry.deathHistory = deathData.deathLocations or {}
+        killHistory.deaths = deathData.deaths or 0
+        killHistory.deathHistory = deathData.deathLocations or {}
     end
 
     -- Count assists and build assist history
     local assistCount, _ = PSC_CountPlayerAssists(playerName, deathDataByPlayer)
-    entry.assists = assistCount
+    killHistory.assists = assistCount
 
     for killerName, deathData in pairs(deathDataByPlayer) do
         if deathData.deathLocations then
@@ -429,7 +429,7 @@ function PSC_CreateKillHistoryForPlayer(playerName)
                                 end
                             end
 
-                            table.insert(entry.assistHistory, assistData)
+                            table.insert(killHistory.assistHistory, assistData)
                         end
                     end
                 end
@@ -437,7 +437,7 @@ function PSC_CreateKillHistoryForPlayer(playerName)
         end
     end
 
-    return entry
+    return killHistory
 end
 
 local function CreatePlayerDetailFrame()
@@ -469,16 +469,16 @@ local function CreatePlayerDetailFrame()
     return frame
 end
 
-local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
+local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     yOffset = CreateSection(content, "Player Information", yOffset)
 
     -- Setup player info directly from database
-    local playerName = playerEntry.name
-    local playerClass = playerEntry.class
-    local playerRace = playerEntry.race
-    local playerGender = playerEntry.gender
-    local playerLevel = playerEntry.levelDisplay == -1 and "??" or tostring(playerEntry.levelDisplay)
-    local playerGuild = playerEntry.guild
+    local playerName = playerDetail.name
+    local playerClass = playerDetail.class
+    local playerRace = playerDetail.race
+    local playerGender = playerDetail.gender
+    local playerLevel = playerDetail.levelDisplay == -1 and "??" or tostring(playerDetail.levelDisplay)
+    local playerGuild = playerDetail.guild
     local guildInfo = playerGuild ~= "" and " <" .. playerGuild .. ">" or ""
 
     -- Create left-aligned player info that matches the other detail rows
@@ -542,11 +542,11 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
         borderTexture:AddMaskTexture(maskTexture)
 
         -- Add PvP rank icon if rank is higher than 0
-        if playerEntry.rank and playerEntry.rank > 0 then
+        if playerDetail.rank and playerDetail.rank > 0 then
             local rankIcon = iconContainer:CreateTexture(nil, "OVERLAY")
             rankIcon:SetSize(32, 32)
             rankIcon:SetPoint("LEFT", classIcon, "RIGHT", 10, 0) -- Adjust position as needed
-            rankIcon:SetTexture(PVP_RANK_ICONS[playerEntry.rank])
+            rankIcon:SetTexture(PVP_RANK_ICONS[playerDetail.rank])
         end
     end
 
@@ -562,7 +562,7 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
     yOffset = yOffset - 20
 
     -- Add other player stats
-    yOffset = CreateDetailRow(content, "Rank:", playerEntry.rank and playerEntry.rank > 0 and tostring(playerEntry.rank) or "0", yOffset)
+    yOffset = CreateDetailRow(content, "Rank:", playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0", yOffset)
 
     -- Create Total kills row with conditional coloring
     local killsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -572,17 +572,17 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
 
     local killsValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     killsValue:SetPoint("TOPLEFT", 120, yOffset)
-    killsValue:SetText(tostring(playerEntry.kills))
+    killsValue:SetText(tostring(playerDetail.kills))
 
     -- Apply gold coloring if kills > deaths
-    if playerEntry.kills > playerEntry.deaths then
+    if playerDetail.kills > playerDetail.deaths then
         killsValue:SetTextColor(1, 0.82, 0) -- Gold color
     end
 
     yOffset = yOffset - 20
 
-    yOffset = CreateDetailRow(content, "Total deaths:", tostring(playerEntry.deaths), yOffset)
-    yOffset = CreateDetailRow(content, "Total assists:", tostring(playerEntry.assists), yOffset)
+    yOffset = CreateDetailRow(content, "Total deaths:", tostring(playerDetail.deaths), yOffset)
+    yOffset = CreateDetailRow(content, "Total assists:", tostring(playerDetail.assists), yOffset)
 
     -- Create K/D Ratio row with conditional coloring
     local kdLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -593,7 +593,7 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
     local kdValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     kdValue:SetPoint("TOPLEFT", 120, yOffset)
 
-    local kdRatio = playerEntry.deaths > 0 and playerEntry.kills / playerEntry.deaths or playerEntry.kills
+    local kdRatio = playerDetail.deaths > 0 and playerDetail.kills / playerDetail.deaths or playerDetail.kills
     kdValue:SetText(string.format("%.2f", kdRatio))
 
     -- Apply gold coloring if K/D ratio >= 2.0
@@ -607,7 +607,7 @@ local function DisplayPlayerSummarySection(content, playerEntry, yOffset)
 end
 
 -- Function to display the kill history section with individual entries
-local function DisplayKillHistorySection(content, playerEntry, yOffset)
+local function DisplayKillHistorySection(content, playerDetail, yOffset)
     yOffset = CreateSection(content, "Kill History", yOffset)
 
     -- Create header for individual kill entries
@@ -645,14 +645,14 @@ local function DisplayKillHistorySection(content, playerEntry, yOffset)
     yOffset = yOffset - 20
 
     -- Process kill history entries
-    if playerEntry and playerEntry.killHistory and #playerEntry.killHistory > 0 then
+    if playerDetail and playerDetail.killHistory and #playerDetail.killHistory > 0 then
         -- Sort by timestamp descending (most recent first)
-        table.sort(playerEntry.killHistory, function(a, b)
+        table.sort(playerDetail.killHistory, function(a, b)
             return (a.timestamp or 0) > (b.timestamp or 0)
         end)
 
         -- Display each kill history entry
-        for i, killData in ipairs(playerEntry.killHistory) do
+        for i, killData in ipairs(playerDetail.killHistory) do
             yOffset = CreateKillHistoryEntry(content, killData, i, yOffset)
         end
     else
@@ -700,14 +700,14 @@ local function CreateDeathHistoryHeaderRow(content, yOffset)
     return yOffset - 20
 end
 
-local function DisplayDeathHistorySection(content, playerEntry, yOffset)
+local function DisplayDeathHistorySection(content, playerDetail, yOffset)
     yOffset = CreateSection(content, "Death History", yOffset)
     yOffset = CreateDeathHistoryHeaderRow(content, yOffset)
 
     -- Death history entries
-    if playerEntry.deathHistory and #playerEntry.deathHistory > 0 then
+    if playerDetail.deathHistory and #playerDetail.deathHistory > 0 then
         -- Sort by timestamp descending (most recent first)
-        local sortedDeathHistory = SortDeathHistoryByTimestamp(playerEntry.deathHistory)
+        local sortedDeathHistory = SortDeathHistoryByTimestamp(playerDetail.deathHistory)
 
         for i, deathData in ipairs(sortedDeathHistory) do
             yOffset = CreateDeathHistoryEntry(content, deathData, i, yOffset)
@@ -876,18 +876,18 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
 end
 
 -- Collect and display assist history
-local function DisplayAssistHistorySection(content, playerEntry, yOffset)
+local function DisplayAssistHistorySection(content, playerDetail, yOffset)
     yOffset = CreateSection(content, "Assist History", yOffset)
     yOffset = CreateAssistHistoryHeaderRow(content, yOffset)
 
     -- Display assist history entries
-    if playerEntry.assistHistory and #playerEntry.assistHistory > 0 then
+    if playerDetail.assistHistory and #playerDetail.assistHistory > 0 then
         -- Sort by timestamp descending (most recent first)
-        table.sort(playerEntry.assistHistory, function(a, b)
+        table.sort(playerDetail.assistHistory, function(a, b)
             return (a.timestamp or 0) > (b.timestamp or 0)
         end)
 
-        for i, assistData in ipairs(playerEntry.assistHistory) do
+        for i, assistData in ipairs(playerDetail.assistHistory) do
             yOffset = CreateAssistHistoryEntry(content, assistData, i, yOffset)
         end
     else
@@ -906,8 +906,8 @@ function PSC_ShowPlayerDetailFrame(playerName)
     if not playerName then return end
 
     -- Find player entry
-    local playerEntry = PSC_CreateKillHistoryForPlayer(playerName)
-    if not playerEntry then
+    local playerDetail = PSC_CreatePlayerDetailInfo(playerName)
+    if not playerDetail then
         print("Could not find detailed information for player:", playerName)
         return
     end
@@ -932,16 +932,16 @@ function PSC_ShowPlayerDetailFrame(playerName)
     local yOffset = 0
 
     -- Player summary section
-    yOffset = DisplayPlayerSummarySection(content, playerEntry, yOffset)
+    yOffset = DisplayPlayerSummarySection(content, playerDetail, yOffset)
 
     -- Kill history section
-    yOffset = DisplayKillHistorySection(content, playerEntry, yOffset)
+    yOffset = DisplayKillHistorySection(content, playerDetail, yOffset)
 
     -- Death history section
-    yOffset = DisplayDeathHistorySection(content, playerEntry, yOffset)
+    yOffset = DisplayDeathHistorySection(content, playerDetail, yOffset)
 
     -- Assist history section
-    yOffset = DisplayAssistHistorySection(content, playerEntry, yOffset)
+    yOffset = DisplayAssistHistorySection(content, playerDetail, yOffset)
 
     -- Set final content height
     content:SetHeight(math.abs(yOffset) + 30)

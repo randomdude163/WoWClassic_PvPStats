@@ -4,6 +4,20 @@ PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
 
+PSC_GrayLevelThreshods = {
+    [1] = 0, [2] = 0, [3] = 0, [4] = 0, [5] = 0, [6] = 0,
+    [7] = 1, [8] = 2, [9] = 3, [10] = 4, [11] = 5, [12] = 6,
+    [13] = 7, [14] = 8, [15] = 9, [16] = 10, [17] = 11, [18] = 12,
+    [19] = 13, [20] = 13, [21] = 14, [22] = 15, [23] = 16, [24] = 17,
+    [25] = 18, [26] = 19, [27] = 20, [28] = 21, [29] = 22, [30] = 22,
+    [31] = 23, [32] = 24, [33] = 25, [34] = 26, [35] = 27, [36] = 28,
+    [37] = 29, [38] = 30, [39] = 31, [40] = 31, [41] = 32, [42] = 33,
+    [43] = 34, [44] = 35, [45] = 35, [46] = 36, [47] = 37, [48] = 38,
+    [49] = 39, [50] = 39, [51] = 40, [52] = 41, [53] = 42, [54] = 43,
+    [55] = 43, [56] = 44, [57] = 45, [58] = 46, [59] = 47, [60] = 47
+}
+
+
 AchievementSystem.achievements = {
     {
         id = "class_paladin_0",
@@ -1719,7 +1733,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d Tauren players got exactly what they deserved for picking the 'gentle giant' stereotype! Their 5% bonus health just meant they died 3 seconds slower while panic-pressing War Stomp. The real stampede was them rushing to the forums to complain about 'unfair pvp balance.'")
+            return ("%d Tauren players got exactly what they deserved for picking the 'gentle giant' stereotype! Their 5%% bonus health just meant they died 3 seconds slower while panic-pressing War Stomp. The real stampede was them rushing to the forums to complain about 'unfair pvp balance.'")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -1739,7 +1753,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("You've slaughtered %d Tauren! Thunder Bluff elevator accidents are now the SECOND leading cause of Tauren death. These gentle giants had 5% more health than other races, which gave them exactly 3 extra seconds to contemplate their life choices before you ended them. Mulgore's milk industry has collapsed, and the Grimtotem are sending you fan mail. The Earth Mother has filed a restraining order against you.")
+            return ("You've slaughtered %d Tauren! Thunder Bluff elevator accidents are now the SECOND leading cause of Tauren death. These gentle giants had 5%% more health than other races, which gave them exactly 3 extra seconds to contemplate their life choices before you ended them. Mulgore's milk industry has collapsed, and the Grimtotem are sending you fan mail. The Earth Mother has filed a restraining order against you.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -1800,7 +1814,7 @@ AchievementSystem.achievements = {
         completedDate = nil,
         subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
         progress = function(achievement, stats)
-            return PSC_CalculateGreyKills() or 0
+            return PSC_CalculateGrayKills() or 0
         end,
     }, -- Kill Streak Achievements
     {
