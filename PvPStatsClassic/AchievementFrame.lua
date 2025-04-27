@@ -41,11 +41,11 @@ local function GetPlayerStats()
     local playerStats = {}
 
     if PSC_DB and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey] then
-        -- Get kill streak data
+
         playerStats.currentKillStreak = PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreak or 0
         playerStats.highestKillStreak = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestKillStreak or 0
 
-        -- Additional stats if available
+
         if PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill then
             playerStats.highestMultiKill = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
         end
@@ -54,9 +54,9 @@ local function GetPlayerStats()
     return playerStats
 end
 
-local currentCategory = "Class"  -- default category
+local currentCategory = "Class"
 
--- Achievement Tabs!
+
 local function FilterAchievements(achievements, category)
     local filtered = {}
 
@@ -119,7 +119,7 @@ local function FilterAchievements(achievements, category)
     return filtered
 end
 
--- Helper: Remove all children from scrollContent
+
 local function ClearAchievementTiles()
     for _, child in pairs({scrollContent:GetChildren()}) do
         child:Hide()
@@ -143,7 +143,7 @@ function PSC_CalculateGreyKills()
 
     local greyKills = 0
 
-    -- Loop all characters for account-wide, or just current for per-character
+
     local charactersToProcess = {}
     if PSC_DB.ShowAccountWideStats then
         charactersToProcess = PSC_DB.PlayerKillCounts.Characters
@@ -153,7 +153,7 @@ function PSC_CalculateGreyKills()
     end
 
     for _, charData in pairs(charactersToProcess) do
-        -- For each killed player, get their name
+
         for nameWithLevel, _ in pairs(charData.Kills or {}) do
             local playerName = string.match(nameWithLevel, "^(.-):")
             if playerName then
@@ -175,13 +175,13 @@ function PSC_CalculateGreyKills()
     return greyKills
 end
 
--- Helper: Get progress and target for an achievement
+
 local function GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
     local id = achievement.id
     local targetValue = achievement.targetValue or 0
     local currentProgress = 0
 
-    -- Class achievements
+
     for _, class in ipairs({"Paladin","Priest","Warrior","Mage","Rogue","Warlock","Druid","Shaman","Hunter"}) do
         for i = 0, 3 do
             if id == ("class_"..class:lower().."_"..i) then
@@ -191,7 +191,7 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
         end
     end
 
-    -- Race achievements
+
     for _, race in ipairs({"Human","Night Elf","Dwarf","Gnome","Orc","Undead","Troll","Tauren"}) do
         for i = 0, 3 do
             if id == ("race_"..race:lower():gsub(" ", "").."_"..i) then
@@ -207,7 +207,7 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
         end
     end
 
-    -- Gender achievements
+
     for _, gender in ipairs({"Female","Male"}) do
         for i = 1, 4 do
             if id == ("general_gender_"..gender:lower().."_"..i) then
@@ -217,7 +217,7 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
         end
     end
 
-    -- Zone achievements
+
     local zoneMap = {
         ["general_zone_redridge"] = "Redridge Mountains",
         ["general_zone_elwynn"] = "Elwynn Forest",
@@ -230,7 +230,7 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
         return targetValue, currentProgress
     end
 
-    -- Guild/guildless kills
+
     if id == "kills_guild" then
         currentProgress = guildStatusData["In Guild"] or 0
         return targetValue, currentProgress
@@ -239,43 +239,43 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
         return targetValue, currentProgress
     end
 
-    -- Grey level kills
+
     if id == "kills_grey_level" then
         currentProgress = PSC_CalculateGreyKills()
         return targetValue, currentProgress
     end
 
-    -- Kill streaks
+
     if id:find("^kills_streak_") then
         currentProgress = summaryStats.highestKillStreak
         return targetValue, currentProgress
     end
 
-    -- Total kills
+
     if id:find("^kills_total_") then
         currentProgress = summaryStats.totalKills or 0
         return targetValue, currentProgress
     end
 
-    -- Unique kills
+
     if id:find("^kills_unique_") then
         currentProgress = summaryStats.uniqueKills or 0
         return targetValue, currentProgress
     end
 
-    -- Multi-kill
+
     if id:find("^kills_multi_") then
         currentProgress = summaryStats.highestMultiKill
         return targetValue, currentProgress
     end
 
-    -- Big game
+
     if id == "kills_big_game" then
         currentProgress = levelData["??"] or 0
         return targetValue, currentProgress
     end
 
-    -- Favorite target
+
     if id == "kills_favorite_target" then
         currentProgress = summaryStats.mostKilledCount or 0
         if achievement.subText and type(achievement.subText) == "function" then
@@ -287,7 +287,7 @@ local function GetAchievementProgress(achievement, classData, raceData, genderDa
     return targetValue, currentProgress
 end
 
--- Helper: Set tile border color by rarity
+
 local function SetTileBorderColor(tile, rarity)
     if rarity == "uncommon" then
         tile:SetBackdropBorderColor(0.1, 1.0, 0.1)
@@ -302,7 +302,7 @@ local function SetTileBorderColor(tile, rarity)
     end
 end
 
--- Helper: Create icon container and icon
+
 local function CreateAchievementIcon(tile, achievement)
     local iconContainer = CreateFrame("Frame", nil, tile)
     iconContainer:SetSize(40, 40)
@@ -325,7 +325,7 @@ local function CreateAchievementIcon(tile, achievement)
     return icon
 end
 
--- Helper: Create points image
+
 local function CreatePointsImage(tile, pointsValue)
     local function GetPointsImagePath(points)
         local basePath = "Interface\\AddOns\\PvPStatsClassic\\achievement_img\\Achievement_icon"
@@ -357,11 +357,11 @@ local function CreatePointsImage(tile, pointsValue)
 
     if imagePath then
         pointsImage:SetTexture(imagePath)
-        -- Optional: Check if the texture actually loaded, especially for the fallback
-        -- if not pointsImage:IsLoaded() then
-        --    print("Warning: Could not load achievement points image:", imagePath)
-        --    pointsImage:Hide() -- Hide if texture failed to load
-        -- end
+
+        if not pointsImage:IsLoaded() then
+           print("Warning: Could not load achievement points image:", imagePath)
+           pointsImage:Hide() -- Hide if texture failed to load
+        end
     else
         pointsImage:Hide()
     end
@@ -369,12 +369,12 @@ local function CreatePointsImage(tile, pointsValue)
     return pointsImage
 end
 
--- Helper: Create title and description
+
 local function CreateTitleAndDescription(tile, icon, pointsImage, achievement)
     local title = tile:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 0)
     title:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
-    -- Call the function if title is a function, otherwise use as string
+
     local titleText = type(achievement.title) == "function" and achievement.title(achievement) or achievement.title
     title:SetText(PSC_ReplacePlayerNamePlaceholder(titleText, nil, achievement))
     if achievement.unlocked then
@@ -387,7 +387,7 @@ local function CreateTitleAndDescription(tile, icon, pointsImage, achievement)
     desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
     desc:SetPoint("RIGHT", pointsImage, "LEFT", -10, 0)
     desc:SetJustifyH("LEFT")
-    -- Call the function if description is a function, otherwise use as string
+
     local descText = type(achievement.description) == "function" and achievement.description(achievement) or achievement.description
     desc:SetText(descText)
     if achievement.unlocked then
@@ -399,7 +399,7 @@ local function CreateTitleAndDescription(tile, icon, pointsImage, achievement)
     return title, desc
 end
 
--- Helper: Create progress bar and text
+
 local function CreateProgressBar(tile, targetValue, currentProgress, achievement, icon, title)
     local progressBar = CreateFrame("StatusBar", nil, tile, BackdropTemplateMixin and "BackdropTemplate")
     progressBar:SetSize(ACHIEVEMENT_WIDTH - 60, 10)
@@ -433,7 +433,7 @@ local function CreateProgressBar(tile, targetValue, currentProgress, achievement
     return progressBar, progressText
 end
 
--- Helper: Add overlay for locked achievements
+
 local function AddLockedOverlay(tile, achievement)
     if not achievement.unlocked then
         local overlay = tile:CreateTexture(nil, "OVERLAY")
@@ -442,7 +442,7 @@ local function AddLockedOverlay(tile, achievement)
     end
 end
 
--- Helper: Create a single achievement tile
+
 local function CreateAchievementTile(i, achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
     local column = (i - 1) % ACHIEVEMENTS_PER_ROW
     local row = math.floor((i - 1) / ACHIEVEMENTS_PER_ROW)
@@ -509,7 +509,7 @@ local function CreateAchievementTile(i, achievement, classData, raceData, gender
     end)
 end
 
--- Main function: Update achievement layout
+
 local function UpdateAchievementLayout()
     ClearAchievementTiles()
 
@@ -536,7 +536,7 @@ local function UpdateAchievementLayout()
         )
     end
 
-    -- Optionally update scrollContent size here if needed
+
 end
 
 local function CreateAchievementTabSystem(parent)

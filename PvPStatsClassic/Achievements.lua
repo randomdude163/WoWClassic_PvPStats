@@ -4,7 +4,7 @@ PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
 AchievementSystem.achievements = {
-    -- Paladin Achievements
+
 {
     id = "class_paladin_0",
     title = "White Knight Down",
@@ -61,7 +61,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("%d Paladins judged and executed. Every one of them still lives in their childhood bedroom, gives unsolicited advice about honor, and thinks 'simp' is the ultimate insult. Their Tinder bios all include 'protector of women.'"):format(a.targetValue) end,
-}, -- Priest Achievements
+},
 {
     id = "class_priest_0",
     title = "Therapy Session Over",
@@ -118,7 +118,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("%d Priests discovered their Power Word: Shield was just plot armor! Churches now offer combat training instead of Sunday service."):format(a.targetValue) end,
-}, -- Druid Achievements
+},
 {
     id = "class_druid_0",
     title = "I'm VEGAN, bro!",
@@ -175,7 +175,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("Druids claim they can do it all—tank, heal, DPS. %d of them just proved they can also die in every imaginable way. At this point, even their Innervate couldn't restore their dignity."):format(a.targetValue) end,
-}, -- Shaman Achievements
+},
 {
     id = "class_shaman_0",
     title = "Avatar State Deactivated",
@@ -232,7 +232,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("The world is down %d Shamans, and yet not a single one landed that mythical 3x Windfury crit. Meanwhile, Warriors are still laughing."):format(a.targetValue) end,
-}, -- Hunter Achievements
+},
 {
     id = "class_hunter_0",
     title = "Bear Grylls Roleplayers",
@@ -289,7 +289,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("You’ve ended the WoW careers of %d Hunters — that’s %d dudes who think  they’re ‘PvP Gods’ because they once kited Bellygrub 40 yards to the Guards. Their last words? 'I swear I had ammo!'"):format(a.targetValue, a.targetValue) end,
-}, -- Warrior Achievements
+},
 {
     id = "class_warrior_0",
     title = "Protein Power Shortage",
@@ -346,7 +346,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("%d Warriors down! Turns out, rolling the most played class doesn’t guarantee you rolled the smartest players."):format(a.targetValue) end,
-}, -- Mage Achievements
+},
 {
     id = "class_mage_0",
     title = "Actually, ...",
@@ -403,7 +403,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("After %d failed Blink escapes, local mages are petitioning to make Blink work properly. So far, no response from their corpses."):format(a.targetValue) end,
-}, -- Rogue Achievements
+},
 {
     id = "class_rogue_0",
     title = "Energy Drink Depleted",
@@ -460,7 +460,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("%d rogues with names like 'Stábbyou' and 'Shadowkilla' won't be making any more YouTube 'EPIC 1V5 WORLD PVP' videos! Their Discord status is now permanently set to 'offline'."):format(a.targetValue) end,
-}, -- Warlock Achievements
+},
 {
     id = "class_warlock_0",
     title = "Wand Wielding Weirdo Wipeout",
@@ -517,7 +517,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("%d Warlocks cursed you with everything they had—bad posture, social anxiety, and a Steam library full of games they’ll never finish. Joke’s on them: you were already cursed with exposure to their forum posts."):format(a.targetValue) end,
-}, -- Female Gender Achievements
+},
 {
     id = "general_gender_female_1",
     title = "Equal Rights, Equal Fights",
@@ -575,7 +575,7 @@ AchievementSystem.achievements = {
     completedDate = nil,
     subText = function(a) return ("%d female avatars deleted—and not a single real woman in the bunch. You've dismantled more online personas than a Tinder exposé thread. Next stop: catching streamers playing with voice changers."):format(a.targetValue) end,
 },
--- Male Gender Achievement
+
 {
     id = "general_gender_male_1",
     title = "Widowmaker",
@@ -632,7 +632,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("%d male characters vanquished! The average lifespan of men in Azeroth has plummeted. Blizzard is considering a 'protective bubble' feature that activates whenever you enter the zone. Support groups have formed for your victims - they meet every Tuesday at the graveyard."):format(a.targetValue) end,
-}, -- Zone-specific Achievements
+},
 {
     id = "general_zone_redridge",
     title = "Redridge Renovation",
@@ -689,7 +689,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("The Night Watch counted %d fresh corpses and decided to rename Darkshire to 'Deadshire'! Mor'Ladim is feeling professionally threatened, and Stiches filed for unemployment."):format(a.targetValue) end,
-}, -- Total Kills Achievements
+},
 {
     id = "kills_total_1",
     title = "Body Count Rising",
@@ -729,7 +729,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("%d confirmed kills! Even Mankrik’s wife had better odds of survival."):format(a.targetValue) end,
-}, -- Unique Player Kills Achievements
+},
 {
     id = "kills_unique_1",
     title = "Variety Slayer",
@@ -769,8 +769,8 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("%d unique souls claimed! At this point, it's easier to list who you HAVEN'T killed. How’s that kill addiction treating you? "):format(a.targetValue) end,
-}, -- Alliance Races
--- Human Achievements
+},
+
 {
     id = "race_human_0",
     title = "Human Error",
@@ -829,7 +829,7 @@ AchievementSystem.achievements = {
     subText = function(a) return ("%d Humans permanently retired from Azeroth! The most basic, uninspired race choice in gaming history. These generic NPCs rolled Human because the character creation screen was 'too overwhelming' and they couldn't be bothered to scroll down. Half of them are definitely bots farming gold, the other half might as well be with their keyboard-turning skills. They all picked the 'optimal PvE race' based on some min-max guide and they thought they were 'playing the meta' but ended up being the punchline."):format(a.targetValue) end,
 },
 
--- Night Elf Achievements
+
 {
     id = "race_nightelf_0",
     title = "Moonlight Massacre",
@@ -888,7 +888,7 @@ AchievementSystem.achievements = {
     subText = function(a) return ("%d Night Elves in the dirt! All that jumping around didn't save them from [YOUR NAME]. Each one was still typing 'shadows meld me!' when you ended them. Most died while taking screenshots of sunsets or AFKing in character-select poses. Their precious 'front flip' jumping animation is much less impressive from a corpse."):format(a.targetValue) end,
 },
 
--- Dwarf Achievements
+
 {
     id = "race_dwarf_0",
     title = "Mumble rap",
@@ -947,7 +947,7 @@ AchievementSystem.achievements = {
     subText = function(a) return ("Ironforge engineers are designing smaller coffins after %d 'height-challenged' casualties! Their spirits are now discovering that the Great Forge isn't so great."):format(a.targetValue) end,
 },
 
--- Gnome Achievements
+
 {
     id = "race_gnome_0",
     title = "Lawn Ornament Collector",
@@ -1006,8 +1006,8 @@ AchievementSystem.achievements = {
     subText = function(a) return ("The graveyard is using %d gnome corpses as speed bumps! Their families are demanding refunds on those expensive Engineering degrees."):format(a.targetValue) end,
 },
 
--- Horde Races
--- Orc Achievements
+
+
 {
     id = "race_orc_0",
     title = "Orc Slayer",
@@ -1066,7 +1066,7 @@ AchievementSystem.achievements = {
     subText = function(a) return ("%d min-maxing Orc players just discovered their PvP racial doesn't help when they keyboard turn! These meta-chasers who rolled the 'optimal race' couldn't optimize their way out of a [YOUR NAME] beatdown. All those forum guides didn't prepare them for someone who actually knows how to play. Should've practiced instead of bragging about stun resistance in trade chat!"):format(a.targetValue) end,
 },
 
--- Undead Achievements
+
 {
     id = "race_undead_0",
     title = "Re-dead",
@@ -1125,7 +1125,7 @@ AchievementSystem.achievements = {
     subText = function(a) return ("%d Forsaken now even more dead than before! The Dark Lady's weekly newsletter now includes a [YOUR NAME] survival guide. These edgelords thought being already-dead made them cool until you showed them what 'dead-dead' feels like. Now Brill is a ghost town (even more than usual), and Tirisfal Glades real estate is free for the taking. Even the Scarlet Crusade thinks you're taking this whole 'purging the undead' thing too far."):format(a.targetValue) end,
 },
 
--- Troll Achievements
+
 {
     id = "race_troll_0",
     title = "Troll Hunter",
@@ -1184,7 +1184,7 @@ AchievementSystem.achievements = {
     subText = function(a) return ("%d Trolls down! Their posture wasn’t the only thing broken today. Maybe they should’ve berserked their way to a real strategy instead of just hoping their racial would carry them."):format(a.targetValue) end,
 },
 
--- Tauren Achievements
+
 {
     id = "race_tauren_0",
     title = "Sacred Cow",
@@ -1241,7 +1241,7 @@ AchievementSystem.achievements = {
     unlocked = false,
     completedDate = nil,
     subText = function(a) return ("You've slaughtered %d Tauren! Thunder Bluff elevator accidents are now the SECOND leading cause of Tauren death. These gentle giants had 5% more health than other races, which gave them exactly 3 extra seconds to contemplate their life choices before you ended them. Mulgore's milk industry has collapsed, and the Grimtotem are sending you fan mail. The Earth Mother has filed a restraining order against you."):format(a.targetValue) end,
-}, -- Guild Achievements
+},
 {
     id = "kills_guild",
     title = "Guild Drama Generator",
@@ -1440,7 +1440,7 @@ AchievementSystem.achievements = {
     subText = function(a) return ("LEGENDARY! You just went full Faker on these noobs! 'GG EZ' has never been more appropriate. The enemy team pressed Alt + F4 simultaneously and uninstalled the game. Your MVP status is unrivaled, and Riot Games is sending you a cease and desist letter for being too OP."):format(a.targetValue) end,
 },
 
--- Most Killed Player Achievement
+
 {
     id = "kills_favorite_target",
     title = "Personal Vendetta",
