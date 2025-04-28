@@ -832,11 +832,6 @@ function PSC_CalculateSummaryStatistics()
     }
 end
 
--- Replace the PSC_CalculateAchievementPoints function with this simpler version
-function PSC_CalculateAchievementPoints()
-    return PSC_DB.TotalAchievementPoints or 0
-end
-
 local function createSummaryStats(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
@@ -904,7 +899,7 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
     -- Add the achievement points line:
-    local achievementPoints = PSC_CalculateAchievementPoints()
+    local achievementPoints = PSC_DB.TotalAchievementPoints
     statY = addSummaryStatLine(container, "Achievement points:", achievementPoints, statY - 15,
         "Total points earned from unlocked PvP achievements. Earn more by completing achievements!")
 

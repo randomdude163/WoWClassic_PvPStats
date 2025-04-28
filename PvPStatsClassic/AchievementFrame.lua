@@ -115,7 +115,7 @@ local function ClearAchievementTiles()
     end
 end
 
-local function CalculateGreyKillsForPlayer(playerName)
+local function CalculateGrayKillsForPlayer(playerName)
     local grayKills = 0
 
     local playerDetail = PSC_CreatePlayerDetailInfo(playerName)
@@ -139,7 +139,7 @@ local function CalculateGrayKillsForCharacter(charData)
     for nameWithLevel, _ in pairs(charData.Kills or {}) do
         local playerName = string.match(nameWithLevel, "^(.-):")
         if not alreadyProcessedPlayers[playerName] then
-            grayKills = grayKills + CalculateGreyKillsForPlayer(playerName)
+            grayKills = grayKills + CalculateGrayKillsForPlayer(playerName)
             alreadyProcessedPlayers[playerName] = true
         end
     end
@@ -149,22 +149,10 @@ end
 
 
 function PSC_CalculateGrayKills()
-
-
     local grayKills = 0
 
-
-    local charactersToProcess = {}
-    if PSC_DB.ShowAccountWideStats then
-        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
-    else
-        local currentCharacterKey = PSC_GetCharacterKey()
-        charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-    end
-
-    for _, charData in pairs(charactersToProcess) do
-        grayKills = grayKills + CalculateGrayKillsForCharacter(charData)
-    end
+    local currentCharacterKey = PSC_GetCharacterKey()
+    grayKills = grayKills + CalculateGrayKillsForCharacter(PSC_DB.PlayerKillCounts.Characters[currentCharacterKey])
 
     print("Gray kills: " .. grayKills)
     return grayKills
@@ -354,7 +342,6 @@ local function CreateAchievementTile(i, achievement, stats)
 
     local targetValue = achievement.targetValue
     local currentProgress = achievement.progress(achievement, stats)
-    -- GetAchievementProgress(achievement, classData, raceData, genderData, zoneData, levelData, guildStatusData, summaryStats, playerStats)
     CreateProgressBar(tile, targetValue, currentProgress, achievement, icon, title)
 
     tile:SetScript("OnEnter", function(self)
@@ -370,18 +357,10 @@ local function CreateAchievementTile(i, achievement, stats)
         GameTooltip:AddLine(" ")
 
         local subTextValue = achievement.subText
-        if type(subTextValue) == "function" then
-            subTextValue = subTextValue(achievement)
-        end
+        local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(subTextValue, nil, achievement)
+        GameTooltip:AddLine(personalizedSubText, 0.7, 0.7, 0.7, true) -- Grey subtext, wrap text
 
-        if subTextValue and type(subTextValue) == "string" then
-            local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(subTextValue, nil, achievement)
-            GameTooltip:AddLine(personalizedSubText, 0.7, 0.7, 0.7, true) -- Grey subtext, wrap text
-        else
-
-        end
-
-        if achievement.unlocked and achievement.completedDate then
+        if achievement.unlocked then
             GameTooltip:AddLine(" ") -- Spacer
             GameTooltip:AddLine("Completed: " .. achievement.completedDate, 0.6, 0.8, 1.0) -- Light blue date
         end
@@ -398,8 +377,7 @@ end
 local function UpdateAchievementLayout()
     ClearAchievementTiles()
 
-    local allAchievements = PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements or {}
-    local achievements = FilterAchievements(allAchievements, currentCategory)
+    local achievements = FilterAchievements(PVPSC.AchievementSystem.achievements, currentCategory)
     if #achievements == 0 then return end
 
     local stats = PSC_GetAllStatsForAchievements()
