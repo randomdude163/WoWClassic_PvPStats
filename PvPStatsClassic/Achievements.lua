@@ -1820,23 +1820,23 @@ AchievementSystem.achievements = {
             return stats.guildStatusData["No Guild"] or 0
         end,
     },
-    {
-        id = "kills_grey_level",
-        title = "Teach them young",
-        description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
-        iconID = 134435,
-        achievementPoints = 250,
-        targetValue = 250,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
-        progress = function(achievement, stats)
-            return PSC_CalculateGrayKills() or 0
-        end,
-    }, -- Kill Streak Achievements
+    -- {
+    --     id = "kills_grey_level",
+    --     title = "Teach them young",
+    --     description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
+    --     iconID = 134435,
+    --     achievementPoints = 250,
+    --     targetValue = 250,
+    --     condition = function(achievement, stats)
+    --         return achievement.progress(achievement, stats) >= achievement.targetValue
+    --     end,
+    --     unlocked = false,
+    --     completedDate = nil,
+    --     subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
+    --     progress = function(achievement, stats)
+    --         return PSC_CalculateGrayKills() or 0
+    --     end,
+    -- }, -- Kill Streak Achievements
     {
         id = "kills_streak_25",
         title = "Serial Killer",
@@ -2265,7 +2265,6 @@ function PSC_GetStatsForAchievements()
     local charactersToProcess = {}
     local currentCharacterKey = PSC_GetCharacterKey()
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-    print("Current character key: " .. currentCharacterKey)
 
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = PSC_CalculateBarChartStatistics(charactersToProcess)
     local summaryStats = PSC_CalculateSummaryStatistics(charactersToProcess)

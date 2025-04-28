@@ -541,9 +541,19 @@ function PSC_CheckBattlegroundStatus()
     local battlegroundZoneIds = {
         -- Correct IDs from here (all marked with patch 1.13.2:
         -- https://wowpedia.fandom.com/wiki/UiMapID
-        1459, -- "Alterac Valley"
-        1460, -- "Warsong Gulch"
-        1461  -- "Arathi Basin"
+        -- "Alterac Valley"
+        91,
+        1537,
+        2162,
+        1459,
+
+        -- "Warsong Gulch"
+        1460,
+
+        -- "Arathi Basin"
+        1461,
+
+        1433 -- Redridge Mountains
     }
 
     for _, bgMapId in ipairs(battlegroundZoneIds) do
