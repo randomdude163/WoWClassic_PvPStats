@@ -128,23 +128,25 @@ function AchievementPopup:DisplayPopup(achievementData)
         self.currentTimer = nil
     end
 
-
     popupFrame.icon:SetTexture(achievementData.icon)
     popupFrame.achievementName:SetText(achievementData.title)
     popupFrame.description:SetText(achievementData.description)
 
-
-    local rarity = achievementData.rarity
-    if rarity == "uncommon" then
-        popupFrame:SetBackdropBorderColor(0.1, 1.0, 0.1) -- Green
-    elseif rarity == "rare" then
-        popupFrame:SetBackdropBorderColor(0.0, 0.4, 1.0) -- Blue
-    elseif rarity == "epic" then
-        popupFrame:SetBackdropBorderColor(0.8, 0.3, 0.9) -- Purple
-    elseif rarity == "legendary" then
-        popupFrame:SetBackdropBorderColor(1.0, 0.5, 0.0) -- Orange
+    if achievementData.id and string.match(achievementData.id, "^bonus") and (achievementData.achievementPoints or 0) == 0 then
+        popupFrame:SetBackdropBorderColor(1.0, 0.1, 0.1)
     else
-        popupFrame:SetBackdropBorderColor(0.7, 0.7, 0.7) -- Light gray for common
+        local rarity = achievementData.rarity
+        if rarity == "uncommon" then
+            popupFrame:SetBackdropBorderColor(0.1, 1.0, 0.1) -- Green
+        elseif rarity == "rare" then
+            popupFrame:SetBackdropBorderColor(0.0, 0.4, 1.0) -- Blue
+        elseif rarity == "epic" then
+            popupFrame:SetBackdropBorderColor(0.8, 0.3, 0.9) -- Purple
+        elseif rarity == "legendary" then
+            popupFrame:SetBackdropBorderColor(1.0, 0.5, 0.0) -- Orange
+        else
+            popupFrame:SetBackdropBorderColor(0.7, 0.7, 0.7) -- Light gray for common
+        end
     end
 
 

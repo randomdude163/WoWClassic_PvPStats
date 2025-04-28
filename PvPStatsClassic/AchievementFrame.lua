@@ -94,6 +94,12 @@ local function FilterAchievements(achievements, category)
                 end
             elseif prefix == "kills" then
                 table.insert(filtered, achievement)
+            elseif prefix == "bonus" then
+                if string.find(achievement.id, "bonus_big_game_") then
+                    table.insert(filtered, achievement)
+                elseif achievement.id == "bonus_horde" and playerFaction == "Horde" then
+                    table.insert(filtered, achievement)
+                end
             end
         end
     end
@@ -165,7 +171,12 @@ function PSC_CalculateGrayKills()
 end
 
 
-local function SetTileBorderColor(tile, rarity)
+local function SetTileBorderColor(tile, rarity, achievement)
+    if achievement and string.match(achievement.id, "^bonus") and (achievement.achievementPoints or 0) == 0 then
+        tile:SetBackdropBorderColor(1.0, 0.1, 0.1)
+        return
+    end
+
     if rarity == "uncommon" then
         tile:SetBackdropBorderColor(0.1, 1.0, 0.1)
     elseif rarity == "rare" then
@@ -333,7 +344,7 @@ local function CreateAchievementTile(i, achievement, stats)
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
 
-    SetTileBorderColor(tile, achievement.rarity or "common")
+    SetTileBorderColor(tile, achievement.rarity or "common", achievement)
     AddLockedOverlay(tile, achievement)
 
     local icon = CreateAchievementIcon(tile, achievement)
@@ -405,7 +416,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "General"}
+    local tabNames = {"Class", "Race", "Kills", "General", "Bonus"}
     local tabs = {}
     local tabWidth, tabHeight = 85, 32
 

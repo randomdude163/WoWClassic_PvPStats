@@ -757,7 +757,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.genderData["FEMALE"] or 0
+            return stats.genderData["Female"] or 0
         end,
     },
     {
@@ -777,7 +777,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.genderData["FEMALE"] or 0
+            return stats.genderData["Female"] or 0
         end,
     },
     {
@@ -797,7 +797,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.genderData["FEMALE"] or 0
+            return stats.genderData["Female"] or 0
         end,
     },
     {
@@ -813,11 +813,11 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d female avatars deleted—and not a single real woman in the bunch. You've dismantled more online personas than a Tinder exposé thread. Next stop: catching streamers playing with voice changers.")
+            return ("%d dead girls—yet somehow not a single woman touched grass in the process.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.genderData["FEMALE"] or 0
+            return stats.genderData["Female"] or 0
         end,
     },
 
@@ -838,7 +838,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.genderData["MALE"] or 0
+            return stats.genderData["Male"] or 0
         end,
     },
     {
@@ -858,7 +858,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.genderData["MALE"] or 0
+            return stats.genderData["Male"] or 0
         end,
     },
     {
@@ -878,7 +878,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.genderData["MALE"] or 0
+            return stats.genderData["Male"] or 0
         end,
     },
     {
@@ -894,11 +894,11 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d male characters vanquished! The average lifespan of men in Azeroth has plummeted. Blizzard is considering a 'protective bubble' feature that activates whenever you enter the zone. Support groups have formed for your victims - they meet every Tuesday at the graveyard.")
+            return ("%d men deleted — your kill feed looks like a gender reveal gone horribly wrong.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.genderData["MALE"] or 0
+            return stats.genderData["Male"] or 0
         end,
     },
     {
@@ -922,11 +922,11 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_zone_redridge",
+        id = "bonus_horde",
         title = "Redridge Renovation",
         description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
         iconID = 236814,
-        achievementPoints = 500,
+        achievementPoints = 0,
         targetValue = 10000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1210,7 +1210,7 @@ AchievementSystem.achievements = {
 
     {
         id = "race_nightelf_0",
-        title = "Moonlight Massacre",
+        title = "Nightlight Off",
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 236449,
         achievementPoints = 10,
@@ -1241,7 +1241,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d Night Elves eliminated! They thought they disappeared… but all you saw was a free honor kill waiting to happen.")
+            return ("You’ve deleted more Elves than bad Tolkien fanfics.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -1250,7 +1250,7 @@ AchievementSystem.achievements = {
     },
     {
         id = "race_nightelf_2",
-        title = "One with Nature, Now One with the Dirt",
+        title = "Recycled by Force",
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 236450,
         achievementPoints = 50,
@@ -1261,7 +1261,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d Night Elf hippies permanently recycled back to nature! These Whole Foods shopping, kombucha brewing, crystal-healing enthusiasts thought their organic armor and free-range weapons would save them. They were too busy forming drum circles and protesting Goblin deforestation to notice your approach. Their last words were 'Namaste... in the graveyard.' Turns out their carbon footprint is now zero - just like their kill/death ratio.")
+            return ("Night Elf eco-warriors tried saving the trees, but couldn't save themselves. Composting at its finest. Your kill count just went carbon neutral.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -1270,7 +1270,7 @@ AchievementSystem.achievements = {
     },
     {
         id = "race_nightelf_3",
-        title = "Eternal No More",
+        title = "Plant-Based and Player-Slayed",
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 134161,
         achievementPoints = 75,
@@ -1281,7 +1281,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d Night Elves in the dirt! All that jumping around didn't save them from [YOUR NAME]. Each one was still typing 'shadows meld me!' when you ended them. Most died while taking screenshots of sunsets or AFKing in character-select poses. Their precious 'front flip' jumping animation is much less impressive from a corpse.")
+            return ("Vegan diets, spirit guides, and herbal teas couldn't boost their stamina. Turns out positive vibes don't stop crits to the face. Now they're part of the soil — gluten-free, non-GMO, and 100%% biodegradable.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -1445,7 +1445,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("The graveyard is using %d gnome corpses as speed bumps! Their families are demanding refunds on those expensive Engineering degrees.")
+            return ("%d Gnomes down, and every single one had 'server admin' in their Twitter bio. You didn’t just kill characters—you killed the dream of moderating a Minecraft server empire.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -1910,7 +1910,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("You've killed more players than some indie games have sales. Enemy raid leaders reference you like you're Voldemort — 'He-Who-Wipes-Raid-Groups.'' Even your local WiFi provider flagged you as a DDoS threat.")
+            return ("Triple digits! Damage, Devastation, Depression — the enemy faction unlocked all three achievements at once.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2207,11 +2207,11 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_big_game",
+        id = "bonus_big_game_1",
         title = "Big Game Hunter",
         description = function(a) return ("Eliminate %d level ?? players"):format(a.targetValue) end,
         iconID = 135614,
-        achievementPoints = 250,
+        achievementPoints = 0,
         targetValue = 50,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2219,13 +2219,33 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d level ?? enemies deleted! While lesser mortals flee at the sight of a ?? mark, you hunt them for sport. These walking raid bosses thought their level advantage made them untouchable and overconfident — until they met [YOUR NAME].")
+            return ("They thought your grey level meant free kill. Their damage numbers were bigger, their egos were even bigger. Too bad your killshot is the only number that mattered.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
             return stats.levelData["??"] or 0
         end,
     },
+    {
+        id = "bonus_big_game_2",
+        title = "High Level, High Cope",
+        description = function(a) return ("Eliminate %d level ?? players"):format(a.targetValue) end,
+        iconID = 135614,
+        achievementPoints = 0,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("No mains to switch to. No excuses left. Just one sad loading screen and the crushing realization: this was their peak.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.levelData["??"] or 0
+        end,
+    }
 }
 
 function PSC_ReplacePlayerNamePlaceholder(text, playerName, achievement)
