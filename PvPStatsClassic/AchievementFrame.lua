@@ -380,7 +380,7 @@ local function UpdateAchievementLayout()
     local achievements = FilterAchievements(PVPSC.AchievementSystem.achievements, currentCategory)
     if #achievements == 0 then return end
 
-    local stats = PSC_GetAllStatsForAchievements()
+    local stats = PSC_GetStatsForAchievements()
 
     for i, achievement in ipairs(achievements) do
         CreateAchievementTile(
@@ -471,12 +471,19 @@ end
 CreateAchievementTabSystem(AchievementFrame)
 
 local function LoadAchievementCompletionStatus()
-    if not PSC_DB.Achievements then return end
+    local characterKey = PSC_GetCharacterKey()
+
+    if not PSC_DB.CharacterAchievements or not PSC_DB.CharacterAchievements[characterKey] then
+        return
+    end
 
     local achievements = PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements or {}
 
     for _, achievement in ipairs(achievements) do
-        local savedData = PSC_DB.Achievements[achievement.id]
+        achievement.unlocked = false
+        achievement.completedDate = nil
+
+        local savedData = PSC_DB.CharacterAchievements[characterKey][achievement.id]
         if savedData and savedData.unlocked then
             achievement.unlocked = true
             achievement.completedDate = savedData.completedDate

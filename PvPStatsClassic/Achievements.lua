@@ -2261,10 +2261,14 @@ function PSC_ReplacePlayerNamePlaceholder(text, playerName, achievement)
 end
 
 
-function PSC_GetAllStatsForAchievements()
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
-        PSC_CalculateBarChartStatistics()
-    local summaryStats = PSC_CalculateSummaryStatistics()
+function PSC_GetStatsForAchievements()
+    local charactersToProcess = {}
+    local currentCharacterKey = PSC_GetCharacterKey()
+    charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+    print("Current character key: " .. currentCharacterKey)
+
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = PSC_CalculateBarChartStatistics(charactersToProcess)
+    local summaryStats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local stats = {
         classData = classData,
         raceData = raceData,
@@ -2288,7 +2292,8 @@ end
 function AchievementSystem:CheckAchievements()
     local playerName = UnitName("player")
     local achievementsUnlocked = 0
-    local stats = PSC_GetAllStatsForAchievements()
+    local stats = PSC_GetStatsForAchievements()
+    local characterKey = PSC_GetCharacterKey()
 
     for _, achievement in ipairs(self.achievements) do
         if not achievement.unlocked and achievement.condition(achievement, stats) then
@@ -2340,29 +2345,37 @@ for _, achievement in ipairs(AchievementSystem.achievements) do
 end
 
 function AchievementSystem:SaveAchievementPoints()
+    local characterKey = PSC_GetCharacterKey()
     local totalPoints = 0
 
-    if not PSC_DB.Achievements then
-        PSC_DB.Achievements = {}
+    if not PSC_DB.CharacterAchievements then
+        PSC_InitializeAchievementDataStructure()
+    end
+
+    if not PSC_DB.CharacterAchievements[characterKey] then
+        PSC_DB.CharacterAchievements[characterKey] = {}
     end
 
     for _, achievement in ipairs(self.achievements) do
         local achievementID = achievement.id
 
-        if PSC_DB.Achievements[achievementID] and PSC_DB.Achievements[achievementID].unlocked then
+        if PSC_DB.CharacterAchievements[characterKey][achievementID] and
+           PSC_DB.CharacterAchievements[characterKey][achievementID].unlocked then
             totalPoints = totalPoints + achievement.achievementPoints
-            PSC_DB.Achievements[achievementID].points = achievement.achievementPoints
+            PSC_DB.CharacterAchievements[characterKey][achievementID].points = achievement.achievementPoints
         end
     end
 
-    PSC_DB.TotalAchievementPoints = totalPoints
+    PSC_DB.CharacterAchievementPoints[characterKey] = totalPoints
 
     return totalPoints
 end
 
-function AchievementSystem:Initialize()
-    if PSC_DB.Achievements then
-        for achievementID, achievementData in pairs(PSC_DB.Achievements) do
+function AchievementSystem:LoadAchievementCompletedData()
+    local characterKey = PSC_GetCharacterKey()
+
+    if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[characterKey] then
+        for achievementID, achievementData in pairs(PSC_DB.CharacterAchievements[characterKey]) do
             for i, achievement in ipairs(self.achievements) do
                 if achievement.id == achievementID and achievementData.unlocked then
                     self.achievements[i].unlocked = true
@@ -2377,6 +2390,6 @@ end
 
 C_Timer.After(1, function()
     if PVPSC and PVPSC.AchievementSystem then
-        PVPSC.AchievementSystem:Initialize()
+        PVPSC.AchievementSystem:LoadAchievementCompletedData()
     end
 end)

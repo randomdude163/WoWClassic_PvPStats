@@ -679,7 +679,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     return yPosition - 20
 end
 
-function PSC_CalculateSummaryStatistics()
+function PSC_CalculateSummaryStatistics(charactersToProcess)
     local totalKills = 0
     local uniqueKills = 0
     local totalLevels = 0  -- Target levels
@@ -701,7 +701,6 @@ function PSC_CalculateSummaryStatistics()
 
     local killsPerPlayer = {}
 
-    local charactersToProcess = GetCharactersToProcessForStatistics()
     for characterKey, characterData in pairs(charactersToProcess) do
         if characterKey == PSC_GetCharacterKey() then
             currentKillStreak = characterData.CurrentKillStreak
@@ -735,7 +734,6 @@ function PSC_CalculateSummaryStatistics()
                 local level = nameWithLevel:match(":(%S+)")
                 local levelNum = tonumber(level or "0") or 0
 
-                -- Initialize unique player level tracking if needed
                 if levelNum > 0 then
                     if not uniquePlayerLevels[playerName] then
                         uniquePlayerLevels[playerName] = {
@@ -835,7 +833,8 @@ end
 local function createSummaryStats(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
-    local stats = PSC_CalculateSummaryStatistics()
+    local charactersToProcess = GetCharactersToProcessForStatistics()
+    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local statY = -30
 
     statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
@@ -899,14 +898,15 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
     -- Add the achievement points line:
-    local achievementPoints = PSC_DB.TotalAchievementPoints
+    local currentCharacterKey = PSC_GetCharacterKey()
+    local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey]
     statY = addSummaryStatLine(container, "Achievement points:", achievementPoints, statY - 15,
-        "Total points earned from unlocked PvP achievements. Earn more by completing achievements!")
+        "Total points earned from unlocked PvP achievements on this character. Earn more by completing achievements!")
 
     return container
 end
 
-function PSC_CalculateBarChartStatistics()
+function PSC_CalculateBarChartStatistics(charactersToProcess)
     local classData = {}
     local raceData = {}
     local genderData = {}
@@ -936,17 +936,6 @@ function PSC_CalculateBarChartStatistics()
 
     if not PSC_DB.PlayerKillCounts.Characters then
         return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
-    end
-
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local charactersToProcess = {}
-
-    if PSC_DB.ShowAccountWideStats then
-        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
-    else
-        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
-            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-        end
     end
 
     for characterKey, characterData in pairs(charactersToProcess) do
@@ -1175,8 +1164,18 @@ function PSC_UpdateStatisticsFrame(frame)
         return
     end
 
+    local currentCharacterKey = PSC_GetCharacterKey()
+    local charactersToProcess = {}
+    if PSC_DB.ShowAccountWideStats then
+        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    else
+        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
+            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+        end
+    end
+
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
-        PSC_CalculateBarChartStatistics()
+        PSC_CalculateBarChartStatistics(charactersToProcess)
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent
