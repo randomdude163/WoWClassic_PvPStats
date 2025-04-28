@@ -786,7 +786,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Defeat %d female characters"):format(a.targetValue) end,
         iconID = 135906,
         achievementPoints = 50,
-        targetValue = 750,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -806,7 +806,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Defeat %d female characters"):format(a.targetValue) end,
         iconID = 135908,
         achievementPoints = 75,
-        targetValue = 1000,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -867,7 +867,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Defeat %d male characters"):format(a.targetValue) end,
         iconID = 134166,
         achievementPoints = 50,
-        targetValue = 750,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -887,7 +887,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Defeat %d male characters"):format(a.targetValue) end,
         iconID = 134006,
         achievementPoints = 75,
-        targetValue = 1000,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
