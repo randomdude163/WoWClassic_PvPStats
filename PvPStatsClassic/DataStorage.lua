@@ -358,7 +358,8 @@ function PSC_InitializePlayerKillCounts()
             Kills = {},
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
-            HighestMultiKill = 0
+            HighestMultiKill = 0,
+            GrayKillsCount = nil -- We'll set this to nil initially to detect first run
         }
     end
 end

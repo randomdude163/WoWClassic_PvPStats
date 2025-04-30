@@ -5,6 +5,25 @@ local AchievementSystem = PVPSC.AchievementSystem
 
 AchievementSystem.achievements = {
     {
+        id = "kills_grey_level",
+        title = "Teach them young",
+        description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
+        iconID = 134435,
+        achievementPoints = 250,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
+        progress = function(achievement, stats)
+            local characterKey = PSC_GetCharacterKey()
+            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+            return characterData.GrayKillsCount or 0
+        end,
+    },
+    {
         id = "class_paladin_0",
         title = "White Knight Down",
         description = function(a) return ("Slay %d Paladins"):format(a.targetValue) end,
@@ -1804,24 +1823,7 @@ AchievementSystem.achievements = {
         progress = function(achievement, stats)
             return stats.guildStatusData["No Guild"] or 0
         end,
-    },
-    -- {
-    --     id = "kills_grey_level",
-    --     title = "Teach them young",
-    --     description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
-    --     iconID = 134435,
-    --     achievementPoints = 250,
-    --     targetValue = 250,
-    --     condition = function(achievement, stats)
-    --         return achievement.progress(achievement, stats) >= achievement.targetValue
-    --     end,
-    --     unlocked = false,
-    --     completedDate = nil,
-    --     subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
-    --     progress = function(achievement, stats)
-    --         return PSC_CalculateGrayKills() or 0
-    --     end,
-    -- }, -- Kill Streak Achievements
+    }, -- Kill Streak Achievements
     {
         id = "kills_streak_25",
         title = "Serial Killer",

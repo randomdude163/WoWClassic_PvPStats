@@ -465,19 +465,22 @@ local function HandlePlayerEnteringWorld()
     end
 
     PSC_MigratePlayerInfoCache()
-
     PSC_InitializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()
     PSC_UpdateMinimapButtonPosition()
     PSC_SetupMouseoverTooltip()
     PSC_InCombat = UnitAffectingCombat("player")
     PSC_CheckBattlegroundStatus()
+    PSC_InitializeGrayKillsCounter()
+
     if UnitIsDeadOrGhost("player") then
         HandlePlayerDeath()
     end
+
     if PSC_Debug then
         print("[PvPStats]: Debug mode enabled.")
     end
+
     C_Timer.After(2, function()
         PVPSC.AchievementSystem:CheckAchievements()
     end)

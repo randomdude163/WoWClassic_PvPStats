@@ -148,8 +148,19 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
             Kills = {},
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
-            HighestMultiKill = 0
+            HighestMultiKill = 0,
+            GrayKillsCount = 0
         }
+    end
+
+    -- Check if this is a gray level kill and increment counter if it is
+    if PSC_IsGrayLevelKill(playerLevel, level) then
+        PSC_DB.PlayerKillCounts.Characters[characterKey].GrayKillsCount =
+            PSC_DB.PlayerKillCounts.Characters[characterKey].GrayKillsCount + 1
+
+        if PSC_Debug then
+            print("[PvPStats]: Gray kill registered against " .. playerName .. " (Level " .. level .. ")")
+        end
     end
 
     UpdateKillStreak()
