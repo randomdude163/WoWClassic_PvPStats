@@ -2297,7 +2297,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "zone_horde_durotar",
+        id = "zone_alliance_durotar",
         title = "Durotar Dominator",
         description = function(a) return ("Eliminate %d players in Durotar"):format(a.targetValue) end,
         iconID = 236756,
@@ -2317,7 +2317,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "zone_horde_barrens",
+        id = "zone_alliance_barrens",
         title = "Barrens Butcher",
         description = function(a) return ("Eliminate %d players in The Barrens"):format(a.targetValue) end,
         iconID = 236717,
@@ -2337,7 +2337,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "zone_horde_tirisfal",
+        id = "zone_alliance_tirisfal",
         title = "Tirisfal Terror",
         description = function(a) return ("Eliminate %d players in Tirisfal Glades"):format(a.targetValue) end,
         iconID = 236849,
@@ -2357,7 +2357,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "zone_horde_stonetalon",
+        id = "zone_alliance_stonetalon",
         title = "Stonetalon Slaughterer",
         description = function(a) return ("Eliminate %d players in Stonetalon Mountains"):format(a.targetValue) end,
         iconID = 236831,
