@@ -191,6 +191,37 @@ function PVPSC.AchievementPopup:ShowPopup(achievementData)
     self:QueuePopup(achievementData)
 end
 
+function AchievementPopup:ShowMultipleAchievementsPopup(count)
+    -- Cancel any queued popups
+    self.queue = {}
+    self.isDisplaying = false
+    if self.currentTimer then
+        self.currentTimer:Cancel()
+        self.currentTimer = nil
+    end
+
+    popupFrame.icon:SetTexture(255349)
+    popupFrame.achievementName:SetText("Multiple Achievements Unlocked!")
+    popupFrame.description:SetText("You have unlocked " .. count .. " achievements at once.\nClick to view them all.")
+    popupFrame.achievementName:SetTextColor(1.0, 0.82, 0) -- Gold
+    popupFrame:SetBackdropBorderColor(1.0, 0.82, 0) -- Gold border
+    popupFrame:Show()
+    popupFrame:SetAlpha(1)
+
+    PlaySound(8473)
+
+
+    popupFrame:SetScript("OnMouseDown", function()
+        popupFrame:Hide()
+        PSC_ToggleAchievementFrame()
+    end)
+
+    self.currentTimer = C_Timer.NewTimer(POPUP_DISPLAY_TIME + 5, function()
+        popupFrame:Hide()
+        popupFrame:SetScript("OnMouseDown", nil)
+        self.currentTimer = nil
+    end)
+end
 
 function AchievementSystem:TestAchievementPopup()
 

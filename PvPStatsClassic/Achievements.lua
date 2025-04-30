@@ -90,6 +90,7 @@ function AchievementSystem:CheckAchievements()
     local achievementsUnlocked = 0
     local stats = PSC_GetStatsForAchievements()
     local characterKey = PSC_GetCharacterKey()
+    local unlockedList = {}
 
     for _, achievement in ipairs(self.achievements) do
         if not achievement.unlocked and achievement.condition(achievement, stats) then
@@ -98,12 +99,11 @@ function AchievementSystem:CheckAchievements()
 
             PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
 
-            local personalizedDescription = PSC_ReplacePlayerNamePlaceholder(achievement.description, playerName,
-                achievement)
+            local personalizedDescription = PSC_ReplacePlayerNamePlaceholder(achievement.description, playerName, achievement)
             local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(achievement.title, playerName, achievement)
             local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(achievement.subText, playerName, achievement)
 
-            PVPSC.AchievementPopup:ShowPopup({
+            table.insert(unlockedList, {
                 icon = achievement.iconID,
                 title = personalizedTitle,
                 description = personalizedDescription,
@@ -116,6 +116,15 @@ function AchievementSystem:CheckAchievements()
     end
 
     self:SaveAchievementPoints()
+
+    -- Show popups
+    if achievementsUnlocked > 3 then
+        PVPSC.AchievementPopup:ShowMultipleAchievementsPopup(achievementsUnlocked)
+    else
+        for _, popupData in ipairs(unlockedList) do
+            PVPSC.AchievementPopup:ShowPopup(popupData)
+        end
+    end
 
     return achievementsUnlocked
 end
