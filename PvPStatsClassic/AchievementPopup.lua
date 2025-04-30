@@ -166,7 +166,7 @@ function AchievementPopup:DisplayPopup(achievementData)
     popupFrame:SetAlpha(1)
 
 
-    local soundID = 8173
+    local soundID = 8473  -- Achievement gained sound
     PlaySound(soundID)
 
 
