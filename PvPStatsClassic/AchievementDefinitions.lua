@@ -2295,5 +2295,85 @@ AchievementSystem.achievements = {
         progress = function(achievement, stats)
             return stats.levelData["??"] or 0
         end,
-    }
+    },
+    {
+        id = "zone_horde_durotar",
+        title = "Durotar Dominator",
+        description = function(a) return ("Eliminate %d players in Durotar"):format(a.targetValue) end,
+        iconID = 236756,
+        achievementPoints = 100,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You turned Durotar into a no-fly zone for Alliance. Razor Hill guards are asking for YOUR autograph. %d kills and counting!")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Durotar"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_barrens",
+        title = "Barrens Butcher",
+        description = function(a) return ("Eliminate %d players in The Barrens"):format(a.targetValue) end,
+        iconID = 236717,
+        achievementPoints = 100,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in The Barrens! You made Barrens chat go silent. Even Mankrik’s wife is impressed.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["The Barrens"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_tirisfal",
+        title = "Tirisfal Terror",
+        description = function(a) return ("Eliminate %d players in Tirisfal Glades"):format(a.targetValue) end,
+        iconID = 236849,
+        achievementPoints = 100,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d bodies dropped in Tirisfal! Even the Forsaken are considering a second death.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Tirisfal Glades"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_stonetalon",
+        title = "Stonetalon Slaughterer",
+        description = function(a) return ("Eliminate %d players in Stonetalon Mountains"):format(a.targetValue) end,
+        iconID = 236831,
+        achievementPoints = 250,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Stonetalon! The only thing more toxic than the air here is your kill streak.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stonetalon Mountains"] or 0
+        end,
+    },
 }
