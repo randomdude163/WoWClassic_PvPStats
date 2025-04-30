@@ -553,7 +553,7 @@ function PSC_CheckBattlegroundStatus()
         -- "Arathi Basin"
         1461,
 
-        1433 -- Redridge Mountains
+        -- 1433 -- Redridge Mountains
     }
 
     for _, bgMapId in ipairs(battlegroundZoneIds) do
