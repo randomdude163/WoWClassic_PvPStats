@@ -887,26 +887,6 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "zone_horde_redridge",
-        title = "Redridge Population Control",
-        description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
-        iconID = 236814,
-        achievementPoints = 250,
-        targetValue = 500,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("Congratulations. You made an entire zone regret installing the game.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.zoneData["Redridge Mountains"] or 0
-        end,
-    },
-    {
         id = "bonus_horde",
         title = "Redridge Renovation",
         description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
@@ -924,70 +904,6 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return stats.zoneData["Redridge Mountains"] or 0
-        end,
-    },
-    {
-        id = "zone_horde_elwynn",
-        title = "Elwynn Exterminator",
-        description = function(a) return ("Eliminate %d players in Elwynn Forest"):format(a.targetValue) end,
-        iconID = 236761,
-        achievementPoints = 250,
-        targetValue = 100,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("After %d deaths in Elwynn, local humans are painting themselves green and practicing their 'zug zug'! Goldshire Inn's new special: 'Reroll Horde, Get Free Hearthstone to Durotar.' Even Marshal Dughan is considering a career in Orgrimmar.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.zoneData["Elwynn Forest"] or 0
-        end,
-    },
-    {
-        id = "zone_horde_westfall",
-        title = "[YOUR NAME] x Defias Traitor",
-        description = function(a) return ("Eliminate %d players in Westfall"):format(a.targetValue) end,
-        iconID = 236852,
-        achievementPoints = 250,
-        targetValue = 100,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("[YOUR NAME] x Defias Traitor vs. Westfall - the crossover nobody wanted, but %d players paid the price anyway, making Westfall unplayable.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            local westfallKills = stats.zoneData["Westfall"]
-            if westfallKills == nil then
-                return 0
-            end
-            return westfallKills
-        end,
-    },
-    {
-        id = "zone_horde_duskwood",
-        title = "Darkshire Destroyer",
-        description = function(a) return ("Eliminate %d players in Duskwood"):format(a.targetValue) end,
-        iconID = 236757,
-        achievementPoints = 250,
-        targetValue = 250,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("The Night Watch counted %d fresh corpses and decided to rename Darkshire to 'Deadshire'! Mor'Ladim is feeling professionally threatened, and Stiches filed for unemployment.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.zoneData["Duskwood"] or 0
         end,
     },
     {
@@ -1135,7 +1051,7 @@ AchievementSystem.achievements = {
         title = "Celebrity Stalker",
         description = function(a) return ("Kill %d unique players"):format(a.targetValue) end,
         iconID = 133785,
-        achievementPoints = 100,
+        achievementPoints = 250,
         targetValue = 10000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1197,7 +1113,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Humans"):format(a.targetValue) end,
         iconID = 236448,
         achievementPoints = 50,
-        targetValue = 2500,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1217,7 +1133,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Humans"):format(a.targetValue) end,
         iconID = 133730,
         achievementPoints = 100,
-        targetValue = 5000,
+        targetValue = 4000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1279,7 +1195,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 236450,
         achievementPoints = 50,
-        targetValue = 2500,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1299,7 +1215,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 134161,
         achievementPoints = 100,
-        targetValue = 5000,
+        targetValue = 4000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1361,7 +1277,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Dwarves"):format(a.targetValue) end,
         iconID = 236444,
         achievementPoints = 50,
-        targetValue = 2500,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1381,7 +1297,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Dwarves"):format(a.targetValue) end,
         iconID = 134159,
         achievementPoints = 100,
-        targetValue = 5000,
+        targetValue = 4000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1443,7 +1359,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Gnomes"):format(a.targetValue) end,
         iconID = 236446,
         achievementPoints = 50,
-        targetValue = 2500,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1463,7 +1379,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Gnomes"):format(a.targetValue) end,
         iconID = 134164,
         achievementPoints = 100,
-        targetValue = 5000,
+        targetValue = 4000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1525,7 +1441,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Orcs"):format(a.targetValue) end,
         iconID = 236452,
         achievementPoints = 50,
-        targetValue = 2500,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1545,7 +1461,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Orcs"):format(a.targetValue) end,
         iconID = 134170,
         achievementPoints = 100,
-        targetValue = 5000,
+        targetValue = 4000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1607,7 +1523,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Undead"):format(a.targetValue) end,
         iconID = 236458,
         achievementPoints = 50,
-        targetValue = 2500,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1627,7 +1543,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Undead"):format(a.targetValue) end,
         iconID = 136187,
         achievementPoints = 100,
-        targetValue = 5000,
+        targetValue = 4000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1689,7 +1605,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Trolls"):format(a.targetValue) end,
         iconID = 236456,
         achievementPoints = 50,
-        targetValue = 2500,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1709,7 +1625,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Trolls"):format(a.targetValue) end,
         iconID = 134177,
         achievementPoints = 100,
-        targetValue = 5000,
+        targetValue = 4000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1771,7 +1687,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Tauren"):format(a.targetValue) end,
         iconID = 236454,
         achievementPoints = 50,
-        targetValue = 2500,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1791,7 +1707,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Tauren"):format(a.targetValue) end,
         iconID = 134174,
         achievementPoints = 100,
-        targetValue = 5000,
+        targetValue = 4000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -2258,7 +2174,7 @@ AchievementSystem.achievements = {
     },
     {
         id = "bonus_big_game_1",
-        title = "Big Game Hunter",
+        title = "High Level, High Cope",
         description = function(a) return ("Eliminate %d level ?? players"):format(a.targetValue) end,
         iconID = 135614,
         achievementPoints = 0,
@@ -2278,7 +2194,7 @@ AchievementSystem.achievements = {
     },
     {
         id = "bonus_big_game_2",
-        title = "High Level, High Cope",
+        title = "Big Game Hunter",
         description = function(a) return ("Eliminate %d level ?? players"):format(a.targetValue) end,
         iconID = 135614,
         achievementPoints = 0,
@@ -2297,11 +2213,95 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "zone_horde_redridge",
+        title = "Redridge Population Control",
+        description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
+        iconID = 236814,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Congratulations. You made an entire zone regret installing the game.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Redridge Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_elwynn",
+        title = "Elwynn Exterminator",
+        description = function(a) return ("Eliminate %d players in Elwynn Forest"):format(a.targetValue) end,
+        iconID = 236761,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d deaths in Elwynn, local humans are painting themselves green and practicing their 'zug zug'! Goldshire Inn's new special: 'Reroll Horde, Get Free Hearthstone to Durotar.' Even Marshal Dughan is considering a career in Orgrimmar.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Elwynn Forest"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_westfall",
+        title = "[YOUR NAME] x Defias Traitor",
+        description = function(a) return ("Eliminate %d players in Westfall"):format(a.targetValue) end,
+        iconID = 236852,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("[YOUR NAME] x Defias Traitor vs. Westfall - the crossover nobody wanted, but %d players paid the price anyway, making Westfall unplayable.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local westfallKills = stats.zoneData["Westfall"]
+            if westfallKills == nil then
+                return 0
+            end
+            return westfallKills
+        end,
+    },
+    {
+        id = "zone_horde_duskwood",
+        title = "Darkshire Destroyer",
+        description = function(a) return ("Eliminate %d players in Duskwood"):format(a.targetValue) end,
+        iconID = 236757,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The Night Watch counted %d fresh corpses and decided to rename Darkshire to 'Deadshire'! Mor'Ladim is feeling professionally threatened, and Stiches filed for unemployment.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Duskwood"] or 0
+        end,
+    },
+    {
         id = "zone_horde_durotar",
         title = "Durotar Dominator",
         description = function(a) return ("Eliminate %d players in Durotar"):format(a.targetValue) end,
         iconID = 236756,
-        achievementPoints = 100,
+        achievementPoints = 50,
         targetValue = 100,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2321,7 +2321,7 @@ AchievementSystem.achievements = {
         title = "Barrens Butcher",
         description = function(a) return ("Eliminate %d players in The Barrens"):format(a.targetValue) end,
         iconID = 236717,
-        achievementPoints = 100,
+        achievementPoints = 50,
         targetValue = 100,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2341,7 +2341,7 @@ AchievementSystem.achievements = {
         title = "Tirisfal Terror",
         description = function(a) return ("Eliminate %d players in Tirisfal Glades"):format(a.targetValue) end,
         iconID = 236849,
-        achievementPoints = 100,
+        achievementPoints = 50,
         targetValue = 100,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2361,8 +2361,8 @@ AchievementSystem.achievements = {
         title = "Stonetalon Slaughterer",
         description = function(a) return ("Eliminate %d players in Stonetalon Mountains"):format(a.targetValue) end,
         iconID = 236831,
-        achievementPoints = 250,
-        targetValue = 250,
+        achievementPoints = 50,
+        targetValue = 100,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,

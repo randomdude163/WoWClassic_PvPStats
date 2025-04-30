@@ -79,19 +79,8 @@ local function FilterAchievements(achievements, category)
                 table.insert(filtered, achievement)
 
             elseif prefix == "zone" then
-                if playerFaction == "Horde" then
-                    if string.find(achievement.id, "_redridge") or
-                        string.find(achievement.id, "_elwynn") or
-                        string.find(achievement.id, "_duskwood") or
-                        string.find(achievement.id, "_westfall") then
-                        table.insert(filtered, achievement)
-                    end
-                elseif playerFaction == "Alliance" then
-                    if string.find(achievement.id, "_barrens") or
-                        string.find(achievement.id, "_durotar") or
-                        string.find(achievement.id, "_tirisfal") then
-                        table.insert(filtered, achievement)
-                    end
+                if string.find(achievement.id, string.lower(playerFaction)) then
+                    table.insert(filtered, achievement)
                 end
 
             elseif prefix == "kills" then
