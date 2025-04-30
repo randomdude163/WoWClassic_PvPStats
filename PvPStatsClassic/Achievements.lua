@@ -176,6 +176,18 @@ function AchievementSystem:SaveAchievementPoints()
     return totalPoints
 end
 
+function AchievementSystem:GetTotalPossiblePoints()
+    local totalPossiblePoints = 0
+
+    for _, achievement in ipairs(self.achievements) do
+        if achievement.achievementPoints then
+            totalPossiblePoints = totalPossiblePoints + achievement.achievementPoints
+        end
+    end
+
+    return totalPossiblePoints
+end
+
 function AchievementSystem:LoadAchievementCompletedData()
     local characterKey = PSC_GetCharacterKey()
 

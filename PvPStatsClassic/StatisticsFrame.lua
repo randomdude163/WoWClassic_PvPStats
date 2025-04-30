@@ -1,3 +1,8 @@
+local addonName, PVPSC = ...
+
+PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
+local AchievementSystem = PVPSC.AchievementSystem
+
 local statisticsFrame = nil
 
 local function CreateGoldHighlight(parent, height)
@@ -899,9 +904,10 @@ local function createSummaryStats(parent, x, y, width, height)
 
     -- Add the achievement points line:
     local currentCharacterKey = PSC_GetCharacterKey()
-    local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey]
-    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints, statY - 15,
-        "Total points earned from unlocked PvP achievements on this character. Earn more by completing achievements!")
+    local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
+    local totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
+    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints .. " / " .. totalPossiblePoints, statY - 15,
+        "Progress toward total possible achievement points (" .. achievementPoints .. " out of " .. totalPossiblePoints .. "). Earn more by completing achievements!")
 
     return container
 end
