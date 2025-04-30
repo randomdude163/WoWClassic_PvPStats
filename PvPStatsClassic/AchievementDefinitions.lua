@@ -2175,7 +2175,10 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            local stats = PSC_CalculateSummaryStatistics()
+            local charactersToProcess = {}
+            local currentCharacterKey = PSC_GetCharacterKey()
+            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+            local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
             local playerName = stats.mostKilledPlayer or "Unknown"
             local killCount = stats.mostKilledCount or 0
 
