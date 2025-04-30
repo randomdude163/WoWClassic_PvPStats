@@ -132,7 +132,7 @@ end
 local function GetRarityFromPoints(points)
     if points >= 250 then
         return "legendary"
-    elseif points >= 75 then
+    elseif points >= 100 then
         return "epic"
     elseif points >= 50 then
         return "rare"

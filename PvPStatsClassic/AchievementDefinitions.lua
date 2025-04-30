@@ -5,25 +5,6 @@ local AchievementSystem = PVPSC.AchievementSystem
 
 AchievementSystem.achievements = {
     {
-        id = "kills_grey_level",
-        title = "Teach them young",
-        description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
-        iconID = 134435,
-        achievementPoints = 250,
-        targetValue = 250,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
-        progress = function(achievement, stats)
-            local characterKey = PSC_GetCharacterKey()
-            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-            return characterData.GrayKillsCount or 0
-        end,
-    },
-    {
         id = "class_paladin_0",
         title = "White Knight Down",
         description = function(a) return ("Slay %d Paladins"):format(a.targetValue) end,
@@ -88,8 +69,8 @@ AchievementSystem.achievements = {
         title = "Divine Retirement Plan",
         description = function(a) return ("Slay %d Paladins"):format(a.targetValue) end,
         iconID = 133176,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -168,8 +149,8 @@ AchievementSystem.achievements = {
         title = "Religious Persecution",
         description = function(a) return ("Defeat %d Priests"):format(a.targetValue) end,
         iconID = 135922,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -248,8 +229,8 @@ AchievementSystem.achievements = {
         title = "Master of None",
         description = function(a) return ("Take down %d Druids"):format(a.targetValue) end,
         iconID = 132138,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -328,8 +309,8 @@ AchievementSystem.achievements = {
         title = "Windfury Wipeout",
         description = function(a) return ("Defeat %d Shamans"):format(a.targetValue) end,
         iconID = 136088,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -408,8 +389,8 @@ AchievementSystem.achievements = {
         title = "Click… No Ammo",
         description = function(a) return ("Take down %d Hunters"):format(a.targetValue) end,
         iconID = 135618,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -488,8 +469,8 @@ AchievementSystem.achievements = {
         title = "Big Numbers, Small Brain",
         description = function(a) return ("Eliminate %d Warriors"):format(a.targetValue) end,
         iconID = 132346,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -569,8 +550,8 @@ AchievementSystem.achievements = {
         title = "Arcane Accident",
         description = function(a) return ("Defeat %d Mages"):format(a.targetValue) end,
         iconID = 135736,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -649,8 +630,8 @@ AchievementSystem.achievements = {
         title = "xXShadowLegendXx Slayer",
         description = function(a) return ("Uncover and defeat %d Rogues"):format(a.targetValue) end,
         iconID = 132299,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -729,8 +710,8 @@ AchievementSystem.achievements = {
         title = "Curse you!",
         description = function(a) return ("Banish %d Warlocks"):format(a.targetValue) end,
         iconID = 135818,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -809,7 +790,7 @@ AchievementSystem.achievements = {
         title = "Wife Beater",
         description = function(a) return ("Defeat %d female characters"):format(a.targetValue) end,
         iconID = 135908,
-        achievementPoints = 75,
+        achievementPoints = 100,
         targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -890,7 +871,7 @@ AchievementSystem.achievements = {
         title = "Professional Man-Slayer",
         description = function(a) return ("Defeat %d male characters"):format(a.targetValue) end,
         iconID = 134006,
-        achievementPoints = 75,
+        achievementPoints = 100,
         targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1010,12 +991,32 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "kills_total_0",
+        title = "Death Distributor",
+        description = function(a) return ("Get %d player kills"):format(a.targetValue) end,
+        iconID = 236399, -- spell_shadow_shadowfury
+        achievementPoints = 10,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d player kills! The graveyard has a special registration line just for your victims. Spirit healers are filing for overtime pay and considering unionizing. The local coffin maker just bought a second home.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.totalKills or 0
+        end,
+    },
+    {
         id = "kills_total_1",
         title = "Body Count Rising",
-        description = function(a) return ("Slay %d players in total"):format(a.targetValue) end,
+        description = function(a) return ("Get %d player kills"):format(a.targetValue) end,
         iconID = 236399, -- spell_shadow_shadowfury
-        achievementPoints = 50,
-        targetValue = 500,
+        achievementPoints = 25,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1032,9 +1033,9 @@ AchievementSystem.achievements = {
     {
         id = "kills_total_2",
         title = "Graveyard Entrepreneur",
-        description = function(a) return ("Slay %d players in total"):format(a.targetValue) end,
+        description = function(a) return ("Get %d player kills"):format(a.targetValue) end,
         iconID = 237542,
-        achievementPoints = 100,
+        achievementPoints = 50,
         targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1052,9 +1053,9 @@ AchievementSystem.achievements = {
     {
         id = "kills_total_3",
         title = "Death Incorporated",
-        description = function(a) return ("Slay %d players in total"):format(a.targetValue) end,
+        description = function(a) return ("Get %d player kills"):format(a.targetValue) end,
         iconID = 132205,
-        achievementPoints = 500,
+        achievementPoints = 100,
         targetValue = 10000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1070,12 +1071,32 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "kills_unique_0",
+        title = "Face Collector",
+        description = function(a) return ("Kill %d unique players"):format(a.targetValue) end,
+        iconID = 133789,
+        achievementPoints = 10,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d unique players have felt your wrath! Your kill list is longer than the server queue on launch day. You don't need a friends list—you have a victims catalog organized alphabetically for easy reference.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.uniqueKills or 0
+        end,
+    },
+    {
         id = "kills_unique_1",
         title = "Variety Slayer",
-        description = function(a) return ("Defeat %d unique players"):format(a.targetValue) end,
+        description = function(a) return ("Kill %d unique players"):format(a.targetValue) end,
         iconID = 133789,
-        achievementPoints = 50,
-        targetValue = 500,
+        achievementPoints = 25,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1092,9 +1113,9 @@ AchievementSystem.achievements = {
     {
         id = "kills_unique_2",
         title = "Equal Opportunity Executioner",
-        description = function(a) return ("Defeat %d unique players"):format(a.targetValue) end,
+        description = function(a) return ("Kill %d unique players"):format(a.targetValue) end,
         iconID = 133787,
-        achievementPoints = 100,
+        achievementPoints = 50,
         targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1112,9 +1133,9 @@ AchievementSystem.achievements = {
     {
         id = "kills_unique_3",
         title = "Celebrity Stalker",
-        description = function(a) return ("Defeat %d unique players"):format(a.targetValue) end,
+        description = function(a) return ("Kill %d unique players"):format(a.targetValue) end,
         iconID = 133785,
-        achievementPoints = 500,
+        achievementPoints = 100,
         targetValue = 10000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1136,7 +1157,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Humans"):format(a.targetValue) end,
         iconID = 236447,
         achievementPoints = 10,
-        targetValue = 100,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1156,7 +1177,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Humans"):format(a.targetValue) end,
         iconID = 134167,
         achievementPoints = 25,
-        targetValue = 250,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1176,7 +1197,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Humans"):format(a.targetValue) end,
         iconID = 236448,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1195,8 +1216,8 @@ AchievementSystem.achievements = {
         title = "Uniqueness",
         description = function(a) return ("Eliminate %d Humans"):format(a.targetValue) end,
         iconID = 133730,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1218,7 +1239,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 236449,
         achievementPoints = 10,
-        targetValue = 100,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1238,7 +1259,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 134162,
         achievementPoints = 25,
-        targetValue = 250,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1258,7 +1279,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 236450,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1277,8 +1298,8 @@ AchievementSystem.achievements = {
         title = "Plant-Based and Player-Slayed",
         description = function(a) return ("Eliminate %d Night Elves"):format(a.targetValue) end,
         iconID = 134161,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1300,7 +1321,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Dwarves"):format(a.targetValue) end,
         iconID = 236443,
         achievementPoints = 10,
-        targetValue = 100,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1320,7 +1341,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Dwarves"):format(a.targetValue) end,
         iconID = 134160,
         achievementPoints = 25,
-        targetValue = 250,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1340,7 +1361,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Dwarves"):format(a.targetValue) end,
         iconID = 236444,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1359,8 +1380,8 @@ AchievementSystem.achievements = {
         title = "Height Disadvantage",
         description = function(a) return ("Eliminate %d Dwarves"):format(a.targetValue) end,
         iconID = 134159,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1382,7 +1403,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Gnomes"):format(a.targetValue) end,
         iconID = 236445,
         achievementPoints = 10,
-        targetValue = 100,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1402,7 +1423,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Gnomes"):format(a.targetValue) end,
         iconID = 134165,
         achievementPoints = 25,
-        targetValue = 250,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1422,7 +1443,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Gnomes"):format(a.targetValue) end,
         iconID = 236446,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1441,8 +1462,8 @@ AchievementSystem.achievements = {
         title = "Small Problems Solved",
         description = function(a) return ("Eliminate %d Gnomes"):format(a.targetValue) end,
         iconID = 134164,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1464,7 +1485,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Orcs"):format(a.targetValue) end,
         iconID = 236451,
         achievementPoints = 10,
-        targetValue = 100,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1484,7 +1505,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Orcs"):format(a.targetValue) end,
         iconID = 134171,
         achievementPoints = 25,
-        targetValue = 250,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1504,7 +1525,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Orcs"):format(a.targetValue) end,
         iconID = 236452,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1523,8 +1544,8 @@ AchievementSystem.achievements = {
         title = "Green Graveyard",
         description = function(a) return ("Eliminate %d Orcs"):format(a.targetValue) end,
         iconID = 134170,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1546,7 +1567,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Undead"):format(a.targetValue) end,
         iconID = 236457,
         achievementPoints = 10,
-        targetValue = 100,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1566,7 +1587,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Undead"):format(a.targetValue) end,
         iconID = 134180,
         achievementPoints = 25,
-        targetValue = 250,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1586,7 +1607,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Undead"):format(a.targetValue) end,
         iconID = 236458,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1605,8 +1626,8 @@ AchievementSystem.achievements = {
         title = "Permanent Death Status",
         description = function(a) return ("Eliminate %d Undead"):format(a.targetValue) end,
         iconID = 136187,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1628,7 +1649,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Trolls"):format(a.targetValue) end,
         iconID = 236455,
         achievementPoints = 10,
-        targetValue = 100,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1648,7 +1669,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Trolls"):format(a.targetValue) end,
         iconID = 134178,
         achievementPoints = 25,
-        targetValue = 250,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1668,7 +1689,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Trolls"):format(a.targetValue) end,
         iconID = 236456,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1687,8 +1708,8 @@ AchievementSystem.achievements = {
         title = "Hunched Back, Hunched Over in Defeat",
         description = function(a) return ("Eliminate %d Trolls"):format(a.targetValue) end,
         iconID = 134177,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1710,7 +1731,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Tauren"):format(a.targetValue) end,
         iconID = 236453,
         achievementPoints = 10,
-        targetValue = 100,
+        targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1730,7 +1751,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Tauren"):format(a.targetValue) end,
         iconID = 134175,
         achievementPoints = 25,
-        targetValue = 250,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1750,7 +1771,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d Tauren"):format(a.targetValue) end,
         iconID = 236454,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1769,8 +1790,8 @@ AchievementSystem.achievements = {
         title = "Cattle Depopulation",
         description = function(a) return ("Eliminate %d Tauren"):format(a.targetValue) end,
         iconID = 134174,
-        achievementPoints = 75,
-        targetValue = 750,
+        achievementPoints = 100,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -1784,52 +1805,32 @@ AchievementSystem.achievements = {
             return stats.raceData["Tauren"] or 0
         end,
     },
-    {
-        id = "kills_guild",
-        title = "Guild Drama Generator",
-        description = function(a) return ("Eliminate %d guild members"):format(a.targetValue) end,
-        iconID = 134473,
-        achievementPoints = 50,
-        targetValue = 500,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d so-called 'guildmates' slaughtered! Turns out, that guild tag above their heads didn’t make them any less squishy. Maybe they should try a PvE guild—less world PvP, more coping in raid chat.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.guildStatusData["In Guild"] or 0
-        end,
-    },
-    {
-        id = "kills_guildless",
-        title = "Lone Wolf Hunter",
-        description = function(a) return ("Eliminate %d guildless players"):format(a.targetValue) end,
-        iconID = 132203,
-        achievementPoints = 50,
-        targetValue = 500,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("Sent %d 'social anxiety' players back to retail! Their 'I don't need a guild to play' attitude didn't help against your killing spree. At least they didn't have to explain their deaths in guild chat.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.guildStatusData["No Guild"] or 0
-        end,
-    }, -- Kill Streak Achievements
-    {
+    -- {
+    --     id = "kills_guild",
+    --     title = "Guild Drama Generator",
+    --     description = function(a) return ("Eliminate %d guild members"):format(a.targetValue) end,
+    --     iconID = 134473,
+    --     achievementPoints = 50,
+    --     targetValue = 500,
+    --     condition = function(achievement, stats)
+    --         return achievement.progress(achievement, stats) >= achievement.targetValue
+    --     end,
+    --     unlocked = false,
+    --     completedDate = nil,
+    --     subText = function(a)
+    --         return ("%d so-called 'guildmates' slaughtered! Turns out, that guild tag above their heads didn’t make them any less squishy. Maybe they should try a PvE guild—less world PvP, more coping in raid chat.")
+    --             :format(a.targetValue)
+    --     end,
+    --     progress = function(achievement, stats)
+    --         return stats.guildStatusData["In Guild"] or 0
+    --     end,
+    -- },
+    {-- Kill Streak Achievements
         id = "kills_streak_25",
         title = "Serial Killer",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 133728,
-        achievementPoints = 25,
+        achievementPoints = 10,
         targetValue = 25,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1849,7 +1850,7 @@ AchievementSystem.achievements = {
         title = "Crime Scene",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236566,
-        achievementPoints = 50,
+        achievementPoints = 25,
         targetValue = 50,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1889,7 +1890,7 @@ AchievementSystem.achievements = {
         title = "TRIPLE D!!!",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236682,
-        achievementPoints = 100,
+        achievementPoints = 75,
         targetValue = 100,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1909,7 +1910,7 @@ AchievementSystem.achievements = {
         title = "PvP Plague",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 136123,
-        achievementPoints = 125,
+        achievementPoints = 75,
         targetValue = 125,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1929,7 +1930,7 @@ AchievementSystem.achievements = {
         title = "Fine Wine",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 132789,
-        achievementPoints = 250,
+        achievementPoints = 100,
         targetValue = 150,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1949,7 +1950,7 @@ AchievementSystem.achievements = {
         title = "Unstoppable Force",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 133050,
-        achievementPoints = 500,
+        achievementPoints = 100,
         targetValue = 175,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1969,7 +1970,7 @@ AchievementSystem.achievements = {
         title = "Top 0.01%",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 136101,
-        achievementPoints = 500,
+        achievementPoints = 100,
         targetValue = 200,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -1989,7 +1990,7 @@ AchievementSystem.achievements = {
         title = "/flex",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236370,
-        achievementPoints = 500,
+        achievementPoints = 150,
         targetValue = 225,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2009,7 +2010,7 @@ AchievementSystem.achievements = {
         title = "Thumbs up!",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236375,
-        achievementPoints = 500,
+        achievementPoints = 200,
         targetValue = 250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2029,7 +2030,7 @@ AchievementSystem.achievements = {
         title = "Faction Change Approved",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 1126583,
-        achievementPoints = 500,
+        achievementPoints = 300,
         targetValue = 275,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2049,7 +2050,7 @@ AchievementSystem.achievements = {
         title = "Main Character Syndrome",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 1126585,
-        achievementPoints = 500,
+        achievementPoints = 400,
         targetValue = 300,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2069,7 +2070,7 @@ AchievementSystem.achievements = {
         title = "Delete or Be Deleted",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 442272,
-        achievementPoints = 500,
+        achievementPoints = 450,
         targetValue = 325,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2102,6 +2103,58 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return stats.highestKillStreak or 0
+        end,
+    },
+    {
+        id = "kills_guildless",
+        title = "Lone Wolf Hunter",
+        description = function(a) return ("Eliminate %d guildless players"):format(a.targetValue) end,
+        iconID = 132203,
+        achievementPoints = 50,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Sent %d 'social anxiety' players back to retail! Their 'I don't need a guild to play' attitude didn't help against your killing spree. At least they didn't have to explain their deaths in guild chat.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.guildStatusData["No Guild"] or 0
+        end,
+    },
+    {
+        id = "kills_favorite_target",
+        title = "Personal Vendetta",
+        description = function(a) return ("Kill the same player %d times"):format(a.targetValue) end,
+        iconID = 136168,
+        achievementPoints = 100,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            local charactersToProcess = {}
+            local currentCharacterKey = PSC_GetCharacterKey()
+            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+            local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+            local playerName = stats.mostKilledPlayer or "Unknown"
+            local killCount = stats.mostKilledCount or 0
+
+            if playerName == "None" or killCount < 10 then
+                return "You have developed an unhealthy obsession with " .. playerName
+            end
+            return playerName ..
+                " has died to you " ..
+                killCount ..
+                " times! They've added your name to their '/who' macro and log off the moment you appear online. Their guild required them to change their hearthstone to a new continent just to avoid you. Every night, they check under their bed for [YOUR NAME] before going to sleep."
+        end,
+        progress = function(achievement, stats)
+            return stats.mostKilledCount or 0
         end,
     },
     {
@@ -2149,7 +2202,7 @@ AchievementSystem.achievements = {
         title = "PENTAKILL!!",
         description = function(a) return ("Get %d kills in a single combat"):format(a.targetValue) end,
         iconID = 236383,
-        achievementPoints = 75,
+        achievementPoints = 100,
         targetValue = 5,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2165,11 +2218,11 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_favorite_target",
-        title = "Personal Vendetta",
-        description = function(a) return ("Kill the same player %d times"):format(a.targetValue) end,
-        iconID = 136168,
-        achievementPoints = 25,
+        id = "kills_multi_10",
+        title = "DECA-STRUCTION!",
+        description = function(a) return ("Get %d kills in a single combat"):format(a.targetValue) end,
+        iconID = 236383,
+        achievementPoints = 250,
         targetValue = 10,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2177,23 +2230,30 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            local charactersToProcess = {}
-            local currentCharacterKey = PSC_GetCharacterKey()
-            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-            local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-            local playerName = stats.mostKilledPlayer or "Unknown"
-            local killCount = stats.mostKilledCount or 0
-
-            if playerName == "None" or killCount < 10 then
-                return "You have developed an unhealthy obsession with " .. playerName
-            end
-            return playerName ..
-                " has died to you " ..
-                killCount ..
-                " times! They've added your name to their '/who' macro and log off the moment you appear online. Their guild required them to change their hearthstone to a new continent just to avoid you. Every night, they check under their bed for [YOUR NAME] before going to sleep."
+            return ("TEN PLAYERS IN ONE GO! This isn't PvP anymore—it's a mass extinction event! League of Legends players are accusing you of 'killstealing,' Blizzard devs are analyzing your combat logs for exploits, and forum moderators had to create a special thread just for the salt. The enemy faction has officially added 'Avoid [YOUR NAME] at all costs' to their leveling guides. Your name now triggers PTSD in half the server population.")
+                :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.mostKilledCount or 0
+            return stats.highestMultiKill or 0
+        end,
+    },
+    {
+        id = "kills_grey_level",
+        title = "Teach them young",
+        description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
+        iconID = 134435,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a) return ("It ain't much but it's honest work!"):format(a.targetValue) end,
+        progress = function(achievement, stats)
+            local characterKey = PSC_GetCharacterKey()
+            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+            return characterData.GrayKillsCount or 0
         end,
     },
     {
