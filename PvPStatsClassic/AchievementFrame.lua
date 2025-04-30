@@ -57,6 +57,7 @@ local function FilterAchievements(achievements, category)
                        not string.find(achievement.id, "_shaman_") then
                     table.insert(filtered, achievement)
                 end
+
             elseif prefix == "race" then
                 if playerFaction == "Horde" then
                     if string.find(achievement.id, "_human_") or
@@ -73,27 +74,29 @@ local function FilterAchievements(achievements, category)
                         table.insert(filtered, achievement)
                     end
                 end
-            elseif prefix == "general" then
-                if string.find(achievement.id, "_zone_") then
-                    if playerFaction == "Horde" then
-                        if string.find(achievement.id, "_redridge") or
-                           string.find(achievement.id, "_elwynn") or
-                           string.find(achievement.id, "_duskwood") or
-                           string.find(achievement.id, "_westfall") then
-                            table.insert(filtered, achievement)
-                        end
-                    elseif playerFaction == "Alliance" then
-                        if string.find(achievement.id, "_barrens") or
-                           string.find(achievement.id, "_durotar") or
-                           string.find(achievement.id, "_tirisfal") then
-                            table.insert(filtered, achievement)
-                        end
+
+            elseif prefix == "gender" then
+                table.insert(filtered, achievement)
+
+            elseif prefix == "zone" then
+                if playerFaction == "Horde" then
+                    if string.find(achievement.id, "_redridge") or
+                        string.find(achievement.id, "_elwynn") or
+                        string.find(achievement.id, "_duskwood") or
+                        string.find(achievement.id, "_westfall") then
+                        table.insert(filtered, achievement)
                     end
-                else
-                    table.insert(filtered, achievement)
+                elseif playerFaction == "Alliance" then
+                    if string.find(achievement.id, "_barrens") or
+                        string.find(achievement.id, "_durotar") or
+                        string.find(achievement.id, "_tirisfal") then
+                        table.insert(filtered, achievement)
+                    end
                 end
+
             elseif prefix == "kills" then
                 table.insert(filtered, achievement)
+
             elseif prefix == "bonus" then
                 if string.find(achievement.id, "bonus_big_game_") then
                     table.insert(filtered, achievement)
@@ -394,7 +397,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "General", "Bonus"}
+    local tabNames = {"Class", "Race", "Kills", "Gender", "Zone", "Bonus"}
     local tabs = {}
     local tabWidth, tabHeight = 85, 32
 

@@ -745,7 +745,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_gender_female_1",
+        id = "gender_gender_female_1",
         title = "Equal Rights, Equal Fights",
         description = function(a) return ("Defeat %d female characters"):format(a.targetValue) end,
         iconID = 134167,
@@ -765,7 +765,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_gender_female_2",
+        id = "gender_gender_female_2",
         title = "Premium Women's Rights Activist",
         description = function(a) return ("Defeat %d female characters"):format(a.targetValue) end,
         iconID = 132356,
@@ -785,7 +785,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_gender_female_3",
+        id = "gender_gender_female_3",
         title = "She/Her/Dead",
         description = function(a) return ("Defeat %d female characters"):format(a.targetValue) end,
         iconID = 135906,
@@ -805,7 +805,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_gender_female_4",
+        id = "gender_gender_female_4",
         title = "Wife Beater",
         description = function(a) return ("Defeat %d female characters"):format(a.targetValue) end,
         iconID = 135908,
@@ -826,7 +826,7 @@ AchievementSystem.achievements = {
     },
 
     {
-        id = "general_gender_male_1",
+        id = "gender_gender_male_1",
         title = "Widowmaker",
         description = function(a) return ("Defeat %d male characters"):format(a.targetValue) end,
         iconID = 236557,
@@ -846,7 +846,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_gender_male_2",
+        id = "gender_gender_male_2",
         title = "Husband Hunter",
         description = function(a) return ("Defeat %d male characters"):format(a.targetValue) end,
         iconID = 132352,
@@ -866,7 +866,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_gender_male_3",
+        id = "gender_gender_male_3",
         title = "Masculinity Challenger",
         description = function(a) return ("Defeat %d male characters"):format(a.targetValue) end,
         iconID = 134166,
@@ -886,7 +886,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_gender_male_4",
+        id = "gender_gender_male_4",
         title = "Professional Man-Slayer",
         description = function(a) return ("Defeat %d male characters"):format(a.targetValue) end,
         iconID = 134006,
@@ -906,7 +906,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_zone_redridge",
+        id = "zone_horde_redridge",
         title = "Redridge Population Control",
         description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
         iconID = 236814,
@@ -946,7 +946,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_zone_elwynn",
+        id = "zone_horde_elwynn",
         title = "Elwynn Exterminator",
         description = function(a) return ("Eliminate %d players in Elwynn Forest"):format(a.targetValue) end,
         iconID = 236761,
@@ -966,7 +966,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_zone_westfall",
+        id = "zone_horde_westfall",
         title = "[YOUR NAME] x Defias Traitor",
         description = function(a) return ("Eliminate %d players in Westfall"):format(a.targetValue) end,
         iconID = 236852,
@@ -990,7 +990,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "general_zone_duskwood",
+        id = "zone_horde_duskwood",
         title = "Darkshire Destroyer",
         description = function(a) return ("Eliminate %d players in Duskwood"):format(a.targetValue) end,
         iconID = 236757,
