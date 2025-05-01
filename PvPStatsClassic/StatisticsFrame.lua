@@ -534,11 +534,24 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     local guildName = entry.key or "Unknown"
     local killCount = entry.value or 0
 
-    local rowButton = CreateFrame("Button", nil, content)
-    rowButton:SetSize(260, 20)
-    rowButton:SetPoint("TOPLEFT", 0, rowY)
+    local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    guildText:SetPoint("TOPLEFT", 0, rowY)
+    guildText:SetText(tostring(guildName))
+    guildText:SetWidth(200)
+    guildText:SetJustifyH("LEFT")
 
-    local highlightTexture = CreateGoldHighlight(rowButton, 20)
+    local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    killsText:SetPoint("TOPLEFT", 200 + 10, rowY)
+    killsText:SetText(tostring(killCount))
+    killsText:SetJustifyH("LEFT")
+
+    -- Create the button with proper height to not overlap the next row
+    local rowButton = CreateFrame("Button", nil, content)
+    rowButton:SetPoint("TOPLEFT", guildText, "TOPLEFT", 0, 0)
+    rowButton:SetPoint("BOTTOMRIGHT", killsText, "BOTTOMRIGHT", 10, 0) -- Remove the -15 offset
+
+    -- Use a smaller height value for the highlight (16 matches the font height better)
+    local highlightTexture = CreateGoldHighlight(rowButton, 16)
 
     rowButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -561,17 +574,6 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
 
         PSC_SetKillListSearch(guildName, nil, nil, nil, nil, nil, true)
     end)
-
-    local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    guildText:SetPoint("TOPLEFT", 0, rowY)
-    guildText:SetText(tostring(guildName))
-    guildText:SetWidth(200)
-    guildText:SetJustifyH("LEFT")
-
-    local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killsText:SetPoint("TOPLEFT", 200 + 10, rowY)
-    killsText:SetText(tostring(killCount))
-    killsText:SetJustifyH("LEFT")
 end
 
 local function createScrollFrame(container, width, height)
