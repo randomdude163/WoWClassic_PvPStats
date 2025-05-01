@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local configFrame = nil
 
 local PSC_CONFIG_HEADER_R = 1.0
@@ -613,6 +615,28 @@ local function CreateActionButtons(parent)
     }
 end
 
+local currentTestAchievement = 1
+
+local function CreateTestAchievementButton(parent)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(200, 22)
+    button:SetText("Test Achievement Popup")
+    button:SetPoint("TOPLEFT", 20, -240)
+
+    button:SetScript("OnClick", function()
+        -- Use our new test achievement function
+        PVPSC.AchievementSystem:TestAchievementPopup()
+    end)
+
+    -- Create a simple explanation text
+    local helpText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    helpText:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -5)
+    helpText:SetText("Press to display a randomly styled test achievement popup")
+    helpText:SetTextColor(0.8, 0.8, 0.8)
+
+    return button
+end
+
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(600, 660)
@@ -802,7 +826,7 @@ local function CreateAboutTab(parent)
 
     local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     versionText:SetPoint("TOP", header, "BOTTOM", 0, -5)
-    versionText:SetText("Version: 1.0.5")
+    versionText:SetText("Version: 2.0")
     versionText:SetTextColor(1, 1, 1)
 
     local creditsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -912,6 +936,8 @@ function PSC_CreateConfigFrame()
 
     local resetButtons = CreateActionButtons(tabFrames[3])
     configFrame.resetButtons = resetButtons
+
+    -- local testAchievementButton = CreateTestAchievementButton(tabFrames[3])
 
     CreateAboutTab(tabFrames[4])
 

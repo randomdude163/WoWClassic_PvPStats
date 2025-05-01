@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
 PSC_Debug = false
@@ -73,9 +75,9 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
     local subZoneText = GetSubZoneText()
     local playerPosition = ""
     if subZoneText ~= "" then
-        playerPosition =  subZoneText .. " (" .. playerCoords .. ")"
+        playerPosition = subZoneText .. " (" .. playerCoords .. ")"
     else
-        playerPosition =  playerCoords
+        playerPosition = playerCoords
     end
     local warningMsg = "I got killed by " .. killerName .. " (Level ?? " .. killerClass .. ") at " .. playerPosition .. "!"
     SendChatMessage(warningMsg, "PARTY")
@@ -95,9 +97,13 @@ function HandlePlayerDeath()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
-    if characterData.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and IsInGroup() then
+    if characterData.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages then
         local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", characterData.CurrentKillStreak)
-        SendChatMessage(streakEndedMsg, "PARTY")
+        if IsInGroup() then
+            SendChatMessage(streakEndedMsg, "PARTY")
+        else
+            print("[PvPStats]: " .. streakEndedMsg)
+        end
     end
 
     characterData.CurrentKillStreak = 0
@@ -142,7 +148,7 @@ local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destNam
     local damageAmount = param1 or param4 or 0
     if damageAmount <= 0 then return end
 
-     PSC_RecordPlayerDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
+    PSC_RecordPlayerDamage(sourceGUID, sourceName, destGUID, destName, damageAmount)
 end
 
 local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
@@ -158,11 +164,11 @@ local function HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, 
     elseif combatEvent == "RANGE_DAMAGE" then
         damageAmount = param4 or 0
     elseif combatEvent == "SPELL_DISPEL" or
-           combatEvent == "SPELL_INTERRUPT" or
-           combatEvent == "SPELL_AURA_APPLIED" or
-           combatEvent == "SPELL_AURA_APPLIED_DOSE" or
-           combatEvent == "SPELL_AURA_REFRESH" or
-           combatEvent == "SPELL_AURA_REMOVED" then
+        combatEvent == "SPELL_INTERRUPT" or
+        combatEvent == "SPELL_AURA_APPLIED" or
+        combatEvent == "SPELL_AURA_APPLIED_DOSE" or
+        combatEvent == "SPELL_AURA_REFRESH" or
+        combatEvent == "SPELL_AURA_REMOVED" then
         isUtilitySpell = true
         damageAmount = 1
     end
@@ -181,7 +187,15 @@ function IsHunterAndCanFeignDeath(destName)
     local isHunter = PSC_DB.PlayerInfoCache[infoKey].class == "Hunter"
     local level = PSC_DB.PlayerInfoCache[infoKey].level
 
-    if not isHunter or level < HUNTER_FEIGN_DEATH_MIN_LEVEL then
+    if not isHunter then
+        return false
+    end
+
+    if level == -1 then
+        return true
+    end
+
+    if level < HUNTER_FEIGN_DEATH_MIN_LEVEL then
         return false
     end
 
@@ -359,7 +373,6 @@ function PSC_ValidateHunterKill(destGUID)
 
         -- Call the existing party kill handler
         HandlePartyKillEvent(sourceGUID, sourceName, destGUID, eventData.name)
-
     elseif eventData.eventType == "UNIT_EVENT" then
         -- Call the existing unit died handler
         HandleUnitDiedEvent(destGUID, eventData.name)
@@ -440,6 +453,50 @@ function PSC_CleanupPendingHunterKills()
     end
 end
 
+local function HandlePlayerEnteringWorld()
+    PSC_PlayerGUID = UnitGUID("player")
+    PSC_CharacterName = UnitName("player")
+    PSC_RealmName = GetRealmName()
+
+    if not PSC_DB then
+        PSC_DB = {}
+        PSC_LoadDefaultSettings()
+        ResetAllStatsToDefault()
+    end
+
+    PSC_MigratePlayerInfoCache()
+    PSC_InitializePlayerKillCounts()
+    PSC_InitializePlayerLossCounts()
+    PSC_UpdateMinimapButtonPosition()
+    PSC_SetupMouseoverTooltip()
+    PSC_InCombat = UnitAffectingCombat("player")
+    PSC_CheckBattlegroundStatus()
+    PSC_InitializeGrayKillsCounter()
+
+    if UnitIsDeadOrGhost("player") then
+        HandlePlayerDeath()
+    end
+
+    if PSC_Debug then
+        print("[PvPStats]: Debug mode enabled.")
+    end
+
+    print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
+
+    C_Timer.After(2, function()
+        PVPSC.AchievementSystem:CheckAchievements()
+    end)
+end
+
+local function HandlePlayerRegenEnabled()
+    HandleCombatState(false)
+    CleanupRecentPetDamage()
+    PSC_CleanupRecentlyCountedKillsDict()
+    PSC_CleanupRecentPlayerDamage()
+    PSC_CleanupRecentDamageFromPlayers()
+    PSC_CleanupPendingHunterKills()
+end
+
 function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     pvpStatsClassicFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
@@ -453,30 +510,7 @@ function PSC_RegisterEvents()
 
     pvpStatsClassicFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_ENTERING_WORLD" then
-            PSC_PlayerGUID = UnitGUID("player")
-            PSC_CharacterName = UnitName("player")
-            PSC_RealmName = GetRealmName()
-
-            if not PSC_DB then
-                PSC_DB = {}
-                PSC_LoadDefaultSettings()
-                ResetAllStatsToDefault()
-            end
-
-            PSC_MigratePlayerInfoCache()
-
-            PSC_InitializePlayerKillCounts()
-            PSC_InitializePlayerLossCounts()
-            PSC_UpdateMinimapButtonPosition()
-            PSC_SetupMouseoverTooltip()
-            PSC_InCombat = UnitAffectingCombat("player")
-            PSC_CheckBattlegroundStatus()
-            if UnitIsDeadOrGhost("player") then
-                HandlePlayerDeath()
-            end
-            if PSC_Debug then
-                print("[PvPStats]: Debug mode enabled.")
-            end
+            HandlePlayerEnteringWorld()
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             HandleCombatLogEvent()
         elseif event == "PLAYER_TARGET_CHANGED" then
@@ -488,12 +522,7 @@ function PSC_RegisterEvents()
         elseif event == "PLAYER_REGEN_DISABLED" then
             HandleCombatState(true)
         elseif event == "PLAYER_REGEN_ENABLED" then
-            HandleCombatState(false)
-            CleanupRecentPetDamage()
-            PSC_CleanupRecentlyCountedKillsDict()
-            PSC_CleanupRecentPlayerDamage()
-            PSC_CleanupRecentDamageFromPlayers()
-            PSC_CleanupPendingHunterKills()
+            HandlePlayerRegenEnabled()
         elseif event == "PLAYER_LOGOUT" then
             PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
@@ -517,9 +546,19 @@ function PSC_CheckBattlegroundStatus()
     local battlegroundZoneIds = {
         -- Correct IDs from here (all marked with patch 1.13.2:
         -- https://wowpedia.fandom.com/wiki/UiMapID
-        1459, -- "Alterac Valley"
-        1460, -- "Warsong Gulch"
-        1461 -- "Arathi Basin"
+        -- "Alterac Valley"
+        91,
+        1537,
+        2162,
+        1459,
+
+        -- "Warsong Gulch"
+        1460,
+
+        -- "Arathi Basin"
+        1461,
+
+        -- 1433 -- Redridge Mountains
     }
 
     for _, bgMapId in ipairs(battlegroundZoneIds) do
@@ -633,7 +672,7 @@ function PSC_SetupMouseoverTooltip()
         if not PSC_DB.ShowScoreInPlayerTooltip then return end
         if not tooltip:IsShown() then return end
 
-        local line1 = _G[tooltip:GetName().."TextLeft1"]
+        local line1 = _G[tooltip:GetName() .. "TextLeft1"]
         if not line1 then return end
 
         local text = line1:GetText()

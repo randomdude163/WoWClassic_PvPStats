@@ -235,6 +235,71 @@ function PSC_CleanupPlayerInfoCache()
     PSC_DB.PlayerInfoCache = cleanedInfoCache
 end
 
+
+function PSC_InitializeAchievementDataStructure()
+    if not PSC_DB.CharacterAchievements then
+        PSC_DB.CharacterAchievements = {}
+    end
+
+    if not PSC_DB.CharacterAchievementPoints then
+        PSC_DB.CharacterAchievementPoints = {}
+    end
+
+    local characterKey = PSC_GetCharacterKey()
+
+    if not PSC_DB.CharacterAchievements[characterKey] then
+        PSC_DB.CharacterAchievements[characterKey] = {}
+    end
+
+    if not PSC_DB.CharacterAchievementPoints[characterKey] == nil then
+        PSC_DB.CharacterAchievementPoints[characterKey] = 0
+    end
+end
+
+
+function PSC_SaveAchievement(achievementID, completedDate, points)
+    if not PSC_DB.CharacterAchievements then
+        PSC_InitializeAchievementDataStructure()
+    end
+
+    local characterKey = PSC_GetCharacterKey()
+
+    if not PSC_DB.CharacterAchievements[characterKey] then
+        PSC_DB.CharacterAchievements[characterKey] = {}
+    end
+
+    if not PSC_DB.CharacterAchievements[characterKey][achievementID] then
+        PSC_DB.CharacterAchievements[characterKey][achievementID] = {}
+    end
+
+    PSC_DB.CharacterAchievements[characterKey][achievementID].unlocked = true
+    PSC_DB.CharacterAchievements[characterKey][achievementID].completedDate = completedDate
+    PSC_DB.CharacterAchievements[characterKey][achievementID].points = points or 0
+
+    -- Recalculate total points
+    PSC_UpdateTotalAchievementPoints()
+end
+
+-- Calculate total achievement points for the current character
+function PSC_UpdateTotalAchievementPoints()
+    local characterKey = PSC_GetCharacterKey()
+    local totalPoints = 0
+
+    if not PSC_DB.CharacterAchievements or not PSC_DB.CharacterAchievements[characterKey] then
+        PSC_DB.CharacterAchievementPoints[characterKey] = 0
+        return 0
+    end
+
+    for achievementID, achievementData in pairs(PSC_DB.CharacterAchievements[characterKey]) do
+        if achievementData.unlocked and achievementData.points then
+            totalPoints = totalPoints + achievementData.points
+        end
+    end
+
+    PSC_DB.CharacterAchievementPoints[characterKey] = totalPoints
+    return totalPoints
+end
+
 function PSC_LoadDefaultSettings()
     PSC_DB.EnableKillAnnounceMessages = true
     PSC_DB.EnableRecordAnnounceMessages = true
@@ -278,6 +343,8 @@ function PSC_LoadDefaultSettings()
     PSC_DB.NewMultiKillRecordMessage = "New personal best: MULTIKILLTEXT!"
 
     PSC_DB.MinimapButtonPosition = 195
+
+    PSC_InitializeAchievementDataStructure()
 end
 
 function PSC_InitializePlayerKillCounts()
@@ -291,7 +358,8 @@ function PSC_InitializePlayerKillCounts()
             Kills = {},
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
-            HighestMultiKill = 0
+            HighestMultiKill = 0,
+            GrayKillsCount = nil -- We'll set this to nil initially to detect first run
         }
     end
 end
@@ -313,9 +381,12 @@ function ResetAllStatsToDefault()
     PSC_DB.PlayerInfoCache = {}
     PSC_DB.PlayerKillCounts = {}
     PSC_DB.PvPLossCounts = {}
+    PSC_DB.CharacterAchievements = {}
+    PSC_DB.CharacterAchievementPoints = {}
 
     PSC_InitializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()
+    PSC_InitializeAchievementDataStructure()
 
     print("[PvPStats]: All statistics have been reset!")
 end

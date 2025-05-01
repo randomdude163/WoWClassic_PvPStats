@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 PSC_RecentPlayerDamage = {}
 PSC_ASSIST_DAMAGE_WINDOW = 60.0  -- 45 second window for kill assist credit
 
@@ -146,8 +148,19 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
             Kills = {},
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
-            HighestMultiKill = 0
+            HighestMultiKill = 0,
+            GrayKillsCount = 0
         }
+    end
+
+    -- Check if this is a gray level kill and increment counter if it is
+    if PSC_IsGrayLevelKill(playerLevel, level) then
+        PSC_DB.PlayerKillCounts.Characters[characterKey].GrayKillsCount =
+            PSC_DB.PlayerKillCounts.Characters[characterKey].GrayKillsCount + 1
+
+        if PSC_Debug then
+            print("[PvPStats]: Gray kill registered against " .. playerName .. " (Level " .. level .. ")")
+        end
     end
 
     UpdateKillStreak()
@@ -156,7 +169,6 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     UpdateKillCountEntry(nameWithLevel, playerLevel)
     UpdateMultiKill()
 
-    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
     local playerRank = PSC_DB.PlayerInfoCache[infoKey].rank or 0
 
     AnnounceKill(playerName, level, nameWithLevel, playerLevel)
@@ -165,6 +177,8 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     if (totalKills == 1 and PSC_DB.ShowMilestoneForFirstKill) or totalKills >= 2 then
         PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class, playerRank, totalKills)
     end
+
+    PVPSC.AchievementSystem:CheckAchievements()
 end
 
 function PSC_RecordPetDamage(petGUID, petName, targetGUID, amount)

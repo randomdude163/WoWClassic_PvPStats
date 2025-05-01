@@ -1,6 +1,10 @@
+local addonName, PVPSC = ...
+
 local function PrintSlashCommandUsage()
-    -- PSC_Print("Usage: /psc settings - Open settings UI")
-    -- PSC_Print("Usage: /psc stats - Show PvP history")
+    PSC_Print("Usage: /psc stats - Show PvP statistics")
+    PSC_Print("Usage: /psc history - Show PvP history")
+    PSC_Print("Usage: /psc achievements - Show PvP achievements")
+    PSC_Print("Usage: /psc settings - Open addon settings")
     -- PSC_Print("Usage: /psc status - Show current settings")
     -- PSC_Print("Usage: /psc debug - Show current streak values")
     -- PSC_Print("Usage: /psc registerkill [number] - Register test kill(s) for testing")
@@ -12,6 +16,7 @@ local function PrintSlashCommandUsage()
     -- PSC_Print("Usage: /psc simulatedeath [killers] [assists] - Simulate being killed")
     -- PSC_Print("Usage: /psc simcombatlog [killers] [assists] [damage] - Simulate combat log entries for death")
     -- PSC_Print("Usage: /psc deathstats - Show death statistics")
+
 end
 
 local function PrintStatus()
@@ -66,8 +71,10 @@ function PSC_SlashCommandHandler(msg)
         PSC_ShowDeathStats()
     elseif command == "status" then
         PrintStatus()
-    elseif command == "kills" or command == "stats" then
+    elseif command == "history" then
         PSC_CreateKillsListFrame()
+    elseif command == "stats" then
+        PSC_CreateStatisticsFrame()
     elseif command == "debug" then
         PSC_ShowDebugInfo()
     elseif command == "toggledebug" then
@@ -91,7 +98,9 @@ function PSC_SlashCommandHandler(msg)
     elseif command == "debugpet" then
         PSC_DebugPetKills()
     elseif command == "options" or command == "settings" then
-            PSC_CreateConfigUI()
+        PSC_CreateConfigUI()
+    elseif command == "achievements" then
+        PSC_ToggleAchievementFrame()
     elseif command == "roleplayer" then
         PSC_CreateRoleplayer()
     else

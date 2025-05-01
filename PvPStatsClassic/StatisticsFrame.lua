@@ -1,3 +1,8 @@
+local addonName, PVPSC = ...
+
+PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
+local AchievementSystem = PVPSC.AchievementSystem
+
 local statisticsFrame = nil
 
 local function CreateGoldHighlight(parent, height)
@@ -84,7 +89,7 @@ end
 local UI = {
     FRAME = {
         WIDTH = 850,
-        HEIGHT = 680
+        HEIGHT = 700
     },
     CHART = {
         WIDTH = 360,
@@ -300,8 +305,10 @@ end
 
 local function calculateChartHeight(data)
     local entries = 0
-    for _ in pairs(data) do
-        entries = entries + 1
+    for _, numKills in pairs(data) do
+        if numKills > 0 then
+            entries = entries + 1
+        end
     end
     return 30 + (entries * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
 end
@@ -461,32 +468,39 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     local container = createContainerWithTitle(parent, title, x, y, width, height)
 
     local sortedData = sortByValue(data, true)
-    local maxValue = sortedData[1] and sortedData[1].value or 0
+    local filteredData = {}
+    for _, entry in ipairs(sortedData) do
+        if entry.value > 0 then
+            table.insert(filteredData, entry)
+        end
+    end
+
+    local maxValue = filteredData[1] and filteredData[1].value or 0
 
     local total = 0
-    for _, entry in ipairs(sortedData) do
+    for _, entry in ipairs(filteredData) do
         total = total + entry.value
     end
 
     if (title == "Kills by Level") then
         local sortedLevelData = {}
         local unknownLevelEntry
-        for i, entry in ipairs(sortedData) do
+        for i, entry in ipairs(filteredData) do
             if entry.key == "??" then
                 unknownLevelEntry = entry
-                table.remove(sortedData, i)
+                table.remove(filteredData, i)
                 break
             end
         end
 
-        table.sort(sortedData, function(a, b)
+        table.sort(filteredData, function(a, b)
             local aNum = tonumber(a.key) or 0
             local bNum = tonumber(b.key) or 0
             return aNum < bNum
         end)
 
         if unknownLevelEntry then
-            table.insert(sortedData, unknownLevelEntry)
+            table.insert(filteredData, unknownLevelEntry)
         end
     end
 
@@ -503,7 +517,7 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         titleType = colorTable
     end
 
-    for i, entry in ipairs(sortedData) do
+    for i, entry in ipairs(filteredData) do
         createBar(container, entry, i, maxValue, total, titleType)
     end
 
@@ -520,11 +534,24 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     local guildName = entry.key or "Unknown"
     local killCount = entry.value or 0
 
-    local rowButton = CreateFrame("Button", nil, content)
-    rowButton:SetSize(260, 20)
-    rowButton:SetPoint("TOPLEFT", 0, rowY)
+    local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    guildText:SetPoint("TOPLEFT", 0, rowY)
+    guildText:SetText(tostring(guildName))
+    guildText:SetWidth(200)
+    guildText:SetJustifyH("LEFT")
 
-    local highlightTexture = CreateGoldHighlight(rowButton, 20)
+    local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    killsText:SetPoint("TOPLEFT", 200 + 10, rowY)
+    killsText:SetText(tostring(killCount))
+    killsText:SetJustifyH("LEFT")
+
+    -- Create the button with proper height to not overlap the next row
+    local rowButton = CreateFrame("Button", nil, content)
+    rowButton:SetPoint("TOPLEFT", guildText, "TOPLEFT", 0, 0)
+    rowButton:SetPoint("BOTTOMRIGHT", killsText, "BOTTOMRIGHT", 10, 0) -- Remove the -15 offset
+
+    -- Use a smaller height value for the highlight (16 matches the font height better)
+    local highlightTexture = CreateGoldHighlight(rowButton, 16)
 
     rowButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -547,17 +574,6 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
 
         PSC_SetKillListSearch(guildName, nil, nil, nil, nil, nil, true)
     end)
-
-    local guildText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    guildText:SetPoint("TOPLEFT", 0, rowY)
-    guildText:SetText(tostring(guildName))
-    guildText:SetWidth(200)
-    guildText:SetJustifyH("LEFT")
-
-    local killsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killsText:SetPoint("TOPLEFT", 200 + 10, rowY)
-    killsText:SetText(tostring(killCount))
-    killsText:SetJustifyH("LEFT")
 end
 
 local function createScrollFrame(container, width, height)
@@ -577,31 +593,34 @@ local function createScrollFrame(container, width, height)
     return scrollFrame
 end
 
-local function createGuildTable(parent, x, y, width, height)
-    local container = createContainerWithTitle(parent, "Guild Kills", x, y, width, height)
-
+function PSC_CalculateGuildKills()
     local guildKills = {}
 
-    if PSC_DB.PlayerKillCounts.Characters then
-        for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
-            if characterData.Kills then
-                for nameWithLevel, killData in pairs(characterData.Kills) do
-                    local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
-                    local kills = killData.kills or 0
+    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
+                local kills = killData.kills or 0
 
-                    local infoKey = PSC_GetInfoKeyFromName(playerNameWithoutLevel)
+                local infoKey = PSC_GetInfoKeyFromName(playerNameWithoutLevel)
 
-                    if PSC_DB.PlayerInfoCache[infoKey] then
-                        local guild = PSC_DB.PlayerInfoCache[infoKey].guild
-                        if guild ~= "" then
-                            guildKills[guild] = (guildKills[guild] or 0) + kills
-                        end
+                if PSC_DB.PlayerInfoCache[infoKey] then
+                    local guild = PSC_DB.PlayerInfoCache[infoKey].guild
+                    if guild ~= "" then
+                        guildKills[guild] = (guildKills[guild] or 0) + kills
                     end
                 end
             end
         end
     end
 
+    return guildKills
+end
+
+local function createGuildTable(parent, x, y, width, height)
+    local container = createContainerWithTitle(parent, "Guild Kills", x, y, width, height)
+
+    local guildKills = PSC_CalculateGuildKills()
     local sortedGuilds = sortByValue(guildKills, true)
 
     local totalContentWidth = 200 + 60 + 10
@@ -667,7 +686,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     return yPosition - 20
 end
 
-local function calculateStatistics()
+function PSC_CalculateSummaryStatistics(charactersToProcess)
     local totalKills = 0
     local uniqueKills = 0
     local totalLevels = 0  -- Target levels
@@ -689,7 +708,6 @@ local function calculateStatistics()
 
     local killsPerPlayer = {}
 
-    local charactersToProcess = GetCharactersToProcessForStatistics()
     for characterKey, characterData in pairs(charactersToProcess) do
         if characterKey == PSC_GetCharacterKey() then
             currentKillStreak = characterData.CurrentKillStreak
@@ -723,7 +741,6 @@ local function calculateStatistics()
                 local level = nameWithLevel:match(":(%S+)")
                 local levelNum = tonumber(level or "0") or 0
 
-                -- Initialize unique player level tracking if needed
                 if levelNum > 0 then
                     if not uniquePlayerLevels[playerName] then
                         uniquePlayerLevels[playerName] = {
@@ -823,7 +840,8 @@ end
 local function createSummaryStats(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
-    local stats = calculateStatistics()
+    local charactersToProcess = GetCharactersToProcessForStatistics()
+    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local statY = -30
 
     statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
@@ -886,10 +904,73 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
+    -- Add new line for achievements count
+    statY = statY - 15  -- Add some spacing before the achievement section
+
+    -- Count total and completed achievements
+    local currentCharacterKey = PSC_GetCharacterKey()
+    local completedCount = 0
+    local totalCount = 0
+
+    if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
+        totalCount = #PVPSC.AchievementSystem.achievements
+
+        if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[currentCharacterKey] then
+            for _, achievementData in pairs(PSC_DB.CharacterAchievements[currentCharacterKey]) do
+                if achievementData.unlocked then
+                    completedCount = completedCount + 1
+                end
+            end
+        end
+    end
+
+    local achievementText = completedCount .. " / " .. totalCount
+    local achievementTooltip = "Click to view your achievements (" .. completedCount .. " out of " .. totalCount .. " completed)"
+
+    local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    labelText:SetPoint("TOPLEFT", 0, statY)
+    labelText:SetText("Achievements unlocked:")
+
+    local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    valueText:SetPoint("TOPLEFT", 150, statY)
+    valueText:SetText(achievementText)
+
+    -- Create a clickable button for the achievements line
+    local achievementButton = CreateFrame("Button", nil, container)
+    achievementButton:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
+    achievementButton:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
+
+    -- Add gold highlight
+    CreateGoldHighlight(achievementButton, 20)
+
+    -- Add tooltip
+    achievementButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+        GameTooltip:AddLine(achievementTooltip, 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+
+    achievementButton:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+
+    -- Open achievement frame on click
+    achievementButton:SetScript("OnClick", function()
+        PSC_ToggleAchievementFrame()
+    end)
+
+    statY = statY - 20  -- Standard line height
+
+    -- Add the achievement points line:
+    local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
+    local totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
+    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints .. " / " .. totalPossiblePoints, statY,
+        "Progress toward total possible achievement points (" .. achievementPoints .. " out of " .. totalPossiblePoints .. "). Earn more by completing achievements!")
+
     return container
 end
 
-local function gatherStatistics()
+function PSC_CalculateBarChartStatistics(charactersToProcess)
     local classData = {}
     local raceData = {}
     local genderData = {}
@@ -901,22 +982,24 @@ local function gatherStatistics()
         ["No Guild"] = 0
     }
 
-    if not PSC_DB.PlayerKillCounts.Characters then
-        return {}, {}, {}, {}, {}, {}, {
-            ["In Guild"] = 0,
-            ["No Guild"] = 0
-        }
+    -- Ensure all classes, races, genders are present with at least 0
+    local allClasses = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
+    local allRaces = {"Human", "Dwarf", "Night Elf", "Gnome", "Orc", "Undead", "Troll", "Tauren"}
+    local allGenders = {"MALE", "FEMALE"}
+
+    for _, class in ipairs(allClasses) do
+        classData[class] = 0
+        unknownLevelClassData[class] = 0
+    end
+    for _, race in ipairs(allRaces) do
+        raceData[race] = 0
+    end
+    for _, gender in ipairs(allGenders) do
+        genderData[gender] = 0
     end
 
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local charactersToProcess = {}
-
-    if PSC_DB.ShowAccountWideStats then
-        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
-    else
-        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
-            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-        end
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
     end
 
     for characterKey, characterData in pairs(charactersToProcess) do
@@ -930,13 +1013,11 @@ local function gatherStatistics()
 
                     if PSC_DB.PlayerInfoCache[infoKey] then
                         local class = PSC_DB.PlayerInfoCache[infoKey].class
-                        -- Changed from +1 to +kills to count actual kills
                         classData[class] = (classData[class] or 0) + kills
 
                         local level = nameWithLevel:match(":(%S+)")
                         local levelNum = tonumber(level or "0") or 0
 
-                        -- Count unknown level kills
                         if levelNum == -1 then
                             unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
                             levelData["??"] = (levelData["??"] or 0) + kills
@@ -952,7 +1033,6 @@ local function gatherStatistics()
                         local gender = PSC_DB.PlayerInfoCache[infoKey].gender
                         genderData[gender] = (genderData[gender] or 0) + kills
 
-                        -- Get zone from kill locations instead of top-level attribute
                         if killData.killLocations and #killData.killLocations > 0 then
                             for _, location in ipairs(killData.killLocations) do
                                 local zone = location.zone or "Unknown"
@@ -1148,8 +1228,18 @@ function PSC_UpdateStatisticsFrame(frame)
         return
     end
 
+    local currentCharacterKey = PSC_GetCharacterKey()
+    local charactersToProcess = {}
+    if PSC_DB.ShowAccountWideStats then
+        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    else
+        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
+            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+        end
+    end
+
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
-        gatherStatistics()
+        PSC_CalculateBarChartStatistics(charactersToProcess)
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent

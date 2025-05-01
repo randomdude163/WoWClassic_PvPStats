@@ -1,3 +1,5 @@
+local addonName, PVPSC = ...
+
 local minimapButton = CreateFrame("Button", "PSC_MinimapButton", Minimap)
 minimapButton:SetSize(31, 31)
 minimapButton:SetFrameStrata("MEDIUM")
@@ -55,18 +57,22 @@ minimapButton:SetScript("OnClick", function(self, button)
             PSC_CreateStatisticsFrame()
         end
     elseif button == "RightButton" then
-        PSC_CreateKillsListFrame()
+        if IsControlKeyDown() then
+            PSC_ToggleAchievementFrame()
+        else
+            PSC_CreateKillsListFrame()
+        end
     end
 end)
-
 
 minimapButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:AddLine("PvP Stats (Classic)")
     GameTooltip:AddLine(" ")
     GameTooltip:AddLine("Left-Click: Statistics")
-    GameTooltip:AddLine("Right-Click: Kills List")
+    GameTooltip:AddLine("Right-Click: History")
     GameTooltip:AddLine("Ctrl+Left-Click: Settings")
+    GameTooltip:AddLine("Ctrl+Right-Click: Achievements")
     GameTooltip:Show()
 end)
 
