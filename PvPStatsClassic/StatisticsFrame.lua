@@ -89,7 +89,7 @@ end
 local UI = {
     FRAME = {
         WIDTH = 850,
-        HEIGHT = 680
+        HEIGHT = 700
     },
     CHART = {
         WIDTH = 360,
@@ -902,11 +902,67 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
-    -- Add the achievement points line:
+    -- Add new line for achievements count
+    statY = statY - 15  -- Add some spacing before the achievement section
+
+    -- Count total and completed achievements
     local currentCharacterKey = PSC_GetCharacterKey()
+    local completedCount = 0
+    local totalCount = 0
+
+    if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
+        totalCount = #PVPSC.AchievementSystem.achievements
+
+        if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[currentCharacterKey] then
+            for _, achievementData in pairs(PSC_DB.CharacterAchievements[currentCharacterKey]) do
+                if achievementData.unlocked then
+                    completedCount = completedCount + 1
+                end
+            end
+        end
+    end
+
+    local achievementText = completedCount .. " / " .. totalCount
+    local achievementTooltip = "Click to view your achievements (" .. completedCount .. " out of " .. totalCount .. " completed)"
+
+    local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    labelText:SetPoint("TOPLEFT", 0, statY)
+    labelText:SetText("Achievements unlocked:")
+
+    local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    valueText:SetPoint("TOPLEFT", 150, statY)
+    valueText:SetText(achievementText)
+
+    -- Create a clickable button for the achievements line
+    local achievementButton = CreateFrame("Button", nil, container)
+    achievementButton:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
+    achievementButton:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
+
+    -- Add gold highlight
+    CreateGoldHighlight(achievementButton, 20)
+
+    -- Add tooltip
+    achievementButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+        GameTooltip:AddLine(achievementTooltip, 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+
+    achievementButton:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+
+    -- Open achievement frame on click
+    achievementButton:SetScript("OnClick", function()
+        PSC_ToggleAchievementFrame()
+    end)
+
+    statY = statY - 20  -- Standard line height
+
+    -- Add the achievement points line:
     local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
     local totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
-    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints .. " / " .. totalPossiblePoints, statY - 15,
+    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints .. " / " .. totalPossiblePoints, statY,
         "Progress toward total possible achievement points (" .. achievementPoints .. " out of " .. totalPossiblePoints .. "). Earn more by completing achievements!")
 
     return container

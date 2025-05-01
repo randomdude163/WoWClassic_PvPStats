@@ -485,11 +485,15 @@ end
 
 function PSC_ToggleAchievementFrame()
     if AchievementFrame:IsShown() then
-        AchievementFrame:Hide()
+        PSC_FrameManager:HideFrame("Achievements")
     else
         LoadAchievementCompletionStatus()
-
         UpdateAchievementLayout()
-        AchievementFrame:Show()
+
+        -- Register the frame if it's not already registered
+        if not PSC_FrameManager.frames["Achievements"] then
+            PSC_FrameManager:RegisterFrame(AchievementFrame, "Achievements")
+        end
+        PSC_FrameManager:ShowFrame("Achievements")
     end
 end
