@@ -481,6 +481,8 @@ local function HandlePlayerEnteringWorld()
         print("[PvPStats]: Debug mode enabled.")
     end
 
+    print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
+
     C_Timer.After(2, function()
         PVPSC.AchievementSystem:CheckAchievements()
     end)
