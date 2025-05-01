@@ -1,7 +1,7 @@
 local addonName, PVPSC = ...
 
 local AchievementFrame = CreateFrame("Frame", "PVPSCAchievementFrame", UIParent, "BasicFrameTemplateWithInset")
-AchievementFrame:SetSize(1140, 520)
+AchievementFrame:SetSize(1140, 603)
 AchievementFrame:SetPoint("CENTER")
 AchievementFrame:SetMovable(true)
 AchievementFrame:EnableMouse(true)
@@ -14,7 +14,7 @@ tinsert(UISpecialFrames, "PVPSCAchievementFrame")
 
 AchievementFrame.TitleText = AchievementFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 AchievementFrame.TitleText:SetPoint("TOP", AchievementFrame, "TOP", 0, -5)
-AchievementFrame.TitleText:SetText("PvP Achievements")
+AchievementFrame.TitleText:SetText("PvP Achievements (this character)")
 
 local contentFrame = CreateFrame("Frame", nil, AchievementFrame)
 contentFrame:SetPoint("TOPLEFT", AchievementFrame, "TOPLEFT", 10, -30)
