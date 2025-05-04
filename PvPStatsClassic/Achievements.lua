@@ -31,18 +31,15 @@ end
 
 -- Helper function to check if a kill is a gray level kill
 function PSC_IsGrayLevelKill(playerLevel, targetLevel)
-    print("PSC_IsGrayLevelKill() called with playerLevel: " .. tostring(playerLevel) .. ", targetLevel: " .. tostring(targetLevel))
     if not playerLevel or not targetLevel or targetLevel == -1 then
         return false
     end
 
     -- Get the threshold from our table
     local threshold = PSC_GrayLevelThreshods[playerLevel] or 0
-    print("Threshold for player level " .. playerLevel .. " is " .. threshold)
 
     -- If player's level minus threshold is higher than target's level, it's a gray kill
     local isGrayKill = targetLevel <= threshold
-    print("Is gray kill: " .. tostring(isGrayKill))
     return isGrayKill
 end
 
