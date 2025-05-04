@@ -146,7 +146,9 @@ function PSC_CalculateGrayKills()
     local currentCharacterKey = PSC_GetCharacterKey()
     grayKills = grayKills + CalculateGrayKillsForCharacter(PSC_DB.PlayerKillCounts.Characters[currentCharacterKey])
 
-    print("Gray kills: " .. grayKills)
+    if PSC_Debug then
+        print("Gray kills: " .. grayKills)
+    end
     return grayKills
 end
 
