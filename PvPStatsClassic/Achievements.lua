@@ -21,28 +21,29 @@ function PSC_InitializeGrayKillsCounter()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
-    -- Only calculate if not already initialized
-    if characterData.GrayKillsCount == nil then
-        -- Calculate once using the existing function
-        characterData.GrayKillsCount = PSC_CalculateGrayKills() or 0
+    -- Calculate once using the existing function
+    characterData.GrayKillsCount = PSC_CalculateGrayKills() or 0
 
-        if PSC_Debug then
-            print("[PvPStats]: Initialized gray kills counter with " .. characterData.GrayKillsCount .. " kills")
-        end
+    if PSC_Debug then
+        print("[PvPStats]: Initialized gray kills counter with " .. characterData.GrayKillsCount .. " kills")
     end
 end
 
 -- Helper function to check if a kill is a gray level kill
 function PSC_IsGrayLevelKill(playerLevel, targetLevel)
+    print("PSC_IsGrayLevelKill() called with playerLevel: " .. tostring(playerLevel) .. ", targetLevel: " .. tostring(targetLevel))
     if not playerLevel or not targetLevel or targetLevel == -1 then
         return false
     end
 
     -- Get the threshold from our table
     local threshold = PSC_GrayLevelThreshods[playerLevel] or 0
+    print("Threshold for player level " .. playerLevel .. " is " .. threshold)
 
     -- If player's level minus threshold is higher than target's level, it's a gray kill
-    return (playerLevel - threshold) > targetLevel
+    local isGrayKill = targetLevel <= threshold
+    print("Is gray kill: " .. tostring(isGrayKill))
+    return isGrayKill
 end
 
 function PSC_ReplacePlayerNamePlaceholder(text, playerName, achievement)
