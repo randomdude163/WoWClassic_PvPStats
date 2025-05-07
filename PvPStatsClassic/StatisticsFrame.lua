@@ -1093,7 +1093,7 @@ function GetFrameTitleTextWithCharacterText(titleText)
     return titleText
 end
 
-local function setupMainFrame()
+local function setupStatisticsFrame()
     local frame = CreateFrame("Frame", "PSC_StatisticsFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(UI.FRAME.WIDTH, UI.FRAME.HEIGHT)
     frame:SetPoint("CENTER")
@@ -1191,7 +1191,7 @@ function PSC_CreateStatisticsFrame()
         return
     end
 
-    statisticsFrame = setupMainFrame()
+    statisticsFrame = setupStatisticsFrame()
     statisticsFrame:SetScript("OnKeyDown", nil)
     PSC_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
 
@@ -1208,15 +1208,15 @@ function PSC_CreateStatisticsFrame()
     local classData, raceData, genderData, zoneData, levelData, guildStatusData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
 
-    PSC_UpdateStatisticsFrame(statisticsFrame, classData, raceData, genderData, zoneData, levelData, guildStatusData)
+    local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
+    PSC_UpdateStatisticsFrame(statisticsFrame, classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
 end
 
-function PSC_UpdateStatisticsFrame(frame, classData, raceData, genderData, zoneData, levelData, guildStatusData)
+function PSC_UpdateStatisticsFrame(frame, classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
     if not frame then
         return
     end
 
-    local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
     frame.TitleText:SetText(titleText)
 
     if frame.leftScrollContent then

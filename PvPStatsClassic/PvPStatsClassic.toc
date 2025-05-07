@@ -26,3 +26,6 @@ StatisticsFrame.lua
 Utils.lua
 TestData.lua
 PvPStatsClassic.lua
+Leaderboard.lua
+Communication.lua
+DataCompression.lua
