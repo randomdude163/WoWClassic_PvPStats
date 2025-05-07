@@ -89,36 +89,46 @@ function PSC_CompressStatistics(stats)
 end
 
 -- Decompress statistics
-function PSC_DecompressStatistics(data, msgType)
+function PSC_DecompressStatistics(data, sender)
     -- Initialize data accumulator for multi-part messages if needed
     if not PSC_MessageAccumulator then
         PSC_MessageAccumulator = {}
     end
 
-    -- Get sender and message part info
+    -- Make sure we have an accumulator for this sender
+    if not PSC_MessageAccumulator[sender] then
+        PSC_MessageAccumulator[sender] = {}
+    end
+
+    -- Get message part info
     local partInfo, content, marker
 
     if data:sub(1,1) == "p" then
         -- This is a multi-part message
         partInfo, content, marker = data:match("p(%d+):(.*)(.)")
         partInfo = tonumber(partInfo)
+
+        if PSC_Debug then
+            print("[PSC Debug] Processing part " .. partInfo .. " from " .. sender .. ", marker: " .. marker)
+        end
     else
         -- Single message
         content = data:sub(1, -2) -- Remove marker
         marker = data:sub(-1)
+
+        if PSC_Debug then
+            print("[PSC Debug] Processing single message from " .. sender .. ", marker: " .. marker)
+        end
     end
 
     -- If this is a continuation message, store it
     if marker == CONTINUATION_MARKER then
-        -- We need to reconstruct this later
-        if not PSC_MessageAccumulator[msgType] then
-            PSC_MessageAccumulator[msgType] = {}
-        end
-
         if partInfo then
-            PSC_MessageAccumulator[msgType][partInfo] = content
-        else
-            table.insert(PSC_MessageAccumulator[msgType], content)
+            PSC_MessageAccumulator[sender][partInfo] = content
+
+            if PSC_Debug then
+                print("[PSC Debug] Stored part " .. partInfo .. " for " .. sender)
+            end
         end
 
         -- We don't have complete data yet
@@ -127,30 +137,44 @@ function PSC_DecompressStatistics(data, msgType)
 
     -- If this is the end message, combine with previous parts if any
     local fullContent = content
-    if partInfo and PSC_MessageAccumulator[msgType] then
+    if partInfo and PSC_MessageAccumulator[sender] then
         -- Reconstruct full message
         local allParts = {}
-        for i = 1, partInfo do
-            if PSC_MessageAccumulator[msgType][i] then
-                table.insert(allParts, PSC_MessageAccumulator[msgType][i])
-            else
-                -- Missing part, can't reconstruct
+
+        -- Check for missing parts
+        local missingParts = false
+        for i = 1, partInfo-1 do
+            if not PSC_MessageAccumulator[sender][i] then
                 if PSC_Debug then
-                    print("[PSC Debug] Missing part " .. i .. " for message type " .. msgType)
+                    print("[PSC Debug] Missing part " .. i .. " for " .. sender)
                 end
-                return { incomplete = true }
+                missingParts = true
+                break
             end
+        end
+
+        if missingParts then
+            return { incomplete = true }
+        end
+
+        -- Collect all parts
+        for i = 1, partInfo-1 do
+            table.insert(allParts, PSC_MessageAccumulator[sender][i])
         end
 
         -- Add the final part
         table.insert(allParts, content)
         fullContent = table.concat(allParts)
 
-        -- Clear accumulator for this message type
-        PSC_MessageAccumulator[msgType] = nil
+        if PSC_Debug then
+            print("[PSC Debug] Reconstructed full message from " .. sender .. " with " .. partInfo .. " parts")
+        end
+
+        -- Clear accumulator for this sender
+        PSC_MessageAccumulator[sender] = {}
     end
 
-    -- Parse the full content
+    -- Rest of your parsing code remains unchanged
     local stats = {}
 
     -- Split by sections
@@ -160,7 +184,7 @@ function PSC_DecompressStatistics(data, msgType)
         sections[sectionType] = sectionData
     end
 
-    -- Parse basic stats
+    -- Parse basic stats and other sections...
     if sections["BASIC"] then
         for key, value in sections["BASIC"]:gmatch("(%w+):([^,]+),?") do
             if key == "k" then stats.totalKills = tonumber(value)
