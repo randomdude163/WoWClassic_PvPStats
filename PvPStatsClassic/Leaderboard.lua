@@ -132,22 +132,6 @@ function PSC_RequestStatistics()
     end
 end
 
--- Initialize the communication module
-function PSC_InitLeaderboard()
-    PSC_SetupLeaderboardHandlers()
-
-    -- Setup event to share stats when they change
-    if not PSC_StatisticsUpdateEvent then
-        PSC_StatisticsUpdateEvent = CreateFrame("Frame")
-        PSC_StatisticsUpdateEvent:RegisterEvent("PLAYER_PVP_KILLS_CHANGED")
-        PSC_StatisticsUpdateEvent:SetScript("OnEvent", function(self, event, ...)
-            if event == "PLAYER_PVP_KILLS_CHANGED" then
-                C_Timer.After(1, PSC_ShareAllStatistics)
-            end
-        end)
-    end
-end
-
 -- UI Constants for Leaderboard
 local LEADERBOARD_UI = {
     FRAME = {

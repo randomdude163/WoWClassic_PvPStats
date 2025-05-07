@@ -1,7 +1,7 @@
 local addonName, PVPSC = ...
 
 -- Communication constants
-local PSC_MESSAGE_PREFIX = "PSC"
+PSC_MESSAGE_PREFIX = "PSC"
 local PSC_MESSAGE_QUEUE = {}
 local PSC_LAST_SEND_TIME = 0
 local PSC_DEFAULT_THROTTLE = 0.3  -- Start conservative
@@ -12,7 +12,7 @@ local PSC_MESSAGE_TIMEOUT = 5.0 -- Seconds to wait for response before consideri
 
 -- Track message statistics for debugging
 local PSC_DEBUG = {
-    enabled = false,
+    enabled = true,
     messagesSent = 0,
     messagesQueued = 0,
     throttledAttempts = 0,
@@ -131,12 +131,12 @@ end
 
 -- Send a single message
 function PSC_SendMessage(messageType, data, channel)
-    if not C_ChatInfo.RegisterAddonMessagePrefix(PSC_MESSAGE_PREFIX) then
-        if PSC_DEBUG.enabled then
-            print("[PSC Debug] Failed to register addon message prefix")
-        end
-        return false
-    end
+    -- if not C_ChatInfo.RegisterAddonMessagePrefix(PSC_MESSAGE_PREFIX) then
+    --     if PSC_DEBUG.enabled then
+    --         print("[PSC Debug] Failed to register addon message prefix")
+    --     end
+    --     return false
+    -- end
 
     local success = C_ChatInfo.SendAddonMessage(PSC_MESSAGE_PREFIX, messageType .. ":" .. data, channel)
     return success

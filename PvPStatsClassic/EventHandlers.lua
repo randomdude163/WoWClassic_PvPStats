@@ -2,7 +2,7 @@ local addonName, PVPSC = ...
 
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = false
+PSC_Debug = true
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
@@ -224,6 +224,44 @@ function PSC_ScheduleHunterKillValidation(destGUID, destName, eventType, validat
     end)
 
     return true
+end
+
+-- Add this function to handle addon communication messages
+local function HandleAddonMessage(prefix, message, channel, sender)
+    if prefix ~= PSC_MESSAGE_PREFIX then return end
+
+    local senderName = sender:match("([^-]+)")
+    if senderName == UnitName("player") then return end -- Ignore own messages
+
+    local msgType, data = message:match("^(%d+):(.+)$")
+    msgType = tonumber(msgType)
+
+    if not msgType then return end
+
+    if PSC_Debug then
+        print("[PSC Debug] Received message type " .. msgType .. " from " .. sender)
+    end
+
+    -- Handle request for statistics (type 99)
+    if msgType == 99 and data == "req" then
+        if PSC_DB.DisableStatSharing then
+            if PSC_Debug then
+                print("[PSC Debug] Stats sharing disabled, not responding to request")
+            end
+            return
+        end
+
+        if PSC_Debug then
+            print("[PSC Debug] Responding to stats request from " .. sender)
+        end
+
+        -- Send our statistics to the requester
+        PSC_ShareAllStatistics()
+        return
+    end
+
+    -- Process other message types (statistics data)
+    PSC_ProcessIncomingMessage(msgType, data, senderName)
 end
 
 local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
@@ -503,6 +541,7 @@ local function HandleNamePlateEvent(unit)
 end
 
 function PSC_RegisterEvents()
+    -- Existing event registrations
     pvpStatsClassicFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     pvpStatsClassicFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -515,7 +554,11 @@ function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("PLAYER_LOGOUT")
     pvpStatsClassicFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
+    -- Add the chat message event
+    pvpStatsClassicFrame:RegisterEvent("CHAT_MSG_ADDON")
+
     pvpStatsClassicFrame:SetScript("OnEvent", function(self, event, ...)
+        -- Existing event handlers
         if event == "PLAYER_ENTERING_WORLD" then
             HandlePlayerEnteringWorld()
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
@@ -539,8 +582,15 @@ function PSC_RegisterEvents()
             PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             PSC_CheckBattlegroundStatus()
+        elseif event == "CHAT_MSG_ADDON" then
+            -- Call our new handler for addon messages
+            local prefix, message, channel, sender = ...
+            HandleAddonMessage(prefix, message, channel, sender)
         end
     end)
+
+    -- Register the addon prefix
+    C_ChatInfo.RegisterAddonMessagePrefix(PSC_MESSAGE_PREFIX)
 end
 
 function PSC_CheckBattlegroundStatus()
