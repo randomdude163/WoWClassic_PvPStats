@@ -60,6 +60,13 @@ function PSC_ProcessIncomingMessage(msgType, data, sender)
 
     PSC_RemotePlayerStats[sender].lastUpdate = time()
 
+    if PSC_Debug then
+        print("[PSC Debug] Successfully processed stats from " .. sender)
+        print("  Total kills: " .. (stats.totalKills or "unknown"))
+        print("  Uniquekills: " .. (stats.uniqueKills or "unknown"))
+        print("  Updating leaderboard: " .. (PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsVisible() and "yes" or "no"))
+    end
+
     -- Update UI if leaderboard is visible
     if PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsVisible() then
         PSC_UpdateLeaderboardDisplay()
@@ -277,13 +284,32 @@ function PSC_UpdateLeaderboardDisplay()
     local playerName = UnitName("player")
     local playerData = PSC_GetLocalPlayerLeaderboardData()
 
+    -- Debug output to check if we have remote player data
+    if PSC_Debug then
+        print("[PSC Debug] Updating leaderboard display")
+        print("  Local player: " .. playerName)
+        print("  Remote players stored: " .. (next(PSC_RemotePlayerStats) and "yes" or "none"))
+
+        for name, data in pairs(PSC_RemotePlayerStats) do
+            print("  - " .. name .. " (last updated: " ..
+                  (data.lastUpdate and date("%H:%M:%S", data.lastUpdate) or "unknown") .. ")")
+        end
+    end
+
     -- Get other players' data from PSC_RemotePlayerStats
     local allPlayers = { { name = playerName, data = playerData } }
     for name, data in pairs(PSC_RemotePlayerStats) do
         if data.basicStats and time() - data.lastUpdate < 3600 then -- Data less than 1 hour old
+            local formattedData = PSC_FormatRemotePlayerData(data)
+
+            if PSC_Debug then
+                print("[PSC Debug] Adding remote player to leaderboard: " .. name)
+                print("  Kills: " .. (formattedData.totalKills or "unknown"))
+            end
+
             table.insert(allPlayers, {
                 name = name,
-                data = PSC_FormatRemotePlayerData(data)
+                data = formattedData
             })
         end
     end
@@ -493,7 +519,6 @@ function PSC_FormatRemotePlayerData(remoteData)
         totalKills = remoteData.basicStats.totalKills or 0,
         uniqueKills = remoteData.basicStats.uniqueKills or 0,
         unknownLevelKills = remoteData.basicStats.unknownLevelKills or 0,
-        mostKilledPlayer = remoteData.basicStats.mostKilledPlayer or "None (0)",
         avgLevel = remoteData.basicStats.avgLevel or 0,
         avgKillsPerPlayer = remoteData.basicStats.avgKillsPerPlayer or 0,
         avgLevelDiff = remoteData.basicStats.avgLevelDiff or 0,
@@ -504,6 +529,14 @@ function PSC_FormatRemotePlayerData(remoteData)
         achievementsUnlocked = remoteData.basicStats.achievementsUnlocked or 0,
         achievementPoints = remoteData.basicStats.achievementPoints or 0
     }
+
+    -- Format most killed player with count
+    if remoteData.basicStats.mostKilledPlayer and remoteData.basicStats.mostKilledPlayer ~= "None" then
+        result.mostKilledPlayer = remoteData.basicStats.mostKilledPlayer ..
+                                 " (" .. (remoteData.basicStats.mostKilledCount or 0) .. ")"
+    else
+        result.mostKilledPlayer = "None (0)"
+    end
 
     -- Calculate K/D ratio
     local kd = 0

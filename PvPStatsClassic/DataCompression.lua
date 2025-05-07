@@ -28,7 +28,10 @@ function PSC_CompressStatistics(stats)
                 "ad:" .. (stats.avgLevelDiff or 0) .. "," ..
                 "ap:" .. (stats.avgKillsPerPlayer or 0) .. "," ..
                 "au:" .. (stats.achievementsUnlocked or 0) .. "," ..
-                "ap:" .. (stats.achievementPoints or 0) .. ";"
+                "ap:" .. (stats.achievementPoints or 0) .. "," ..
+                -- Add most killed player information
+                "mkp:" .. (stats.mostKilledPlayer or "None") .. "," ..
+                "mkc:" .. (stats.mostKilledCount or 0) .. ";"
 
     -- Class data
     for class, count in pairs(stats.classData or {}) do
@@ -168,72 +171,102 @@ function PSC_DecompressStatistics(data, sender)
 
         if PSC_Debug then
             print("[PSC Debug] Reconstructed full message from " .. sender .. " with " .. partInfo .. " parts")
+            -- Print the first 100 chars of the message for debugging
+            print("[PSC Debug] Message starts with: " .. fullContent:sub(1, 100))
         end
 
         -- Clear accumulator for this sender
         PSC_MessageAccumulator[sender] = {}
     end
 
-    -- Rest of your parsing code remains unchanged
+    -- Parse the full content
     local stats = {}
 
-    -- Split by sections
-    local sections = {}
-    for section in fullContent:gmatch("([^;]+);") do
-        local sectionType, sectionData = section:match("(%w+);?(.*)")
-        sections[sectionType] = sectionData
+    -- Extract each section directly - more reliable than regex splitting
+    local basicSection = fullContent:match("BASIC;([^;]+)")
+    local classSection = fullContent:match("CLASS;([^;]+)")
+    local raceSection = fullContent:match("RACE;([^;]+)")
+    local levelSection = fullContent:match("LEVEL;([^;]+)")
+
+    -- Debug the sections
+    if PSC_Debug then
+        print("[PSC Debug] Sections found:")
+        print("BASIC: " .. (basicSection and "yes" or "no"))
+        print("CLASS: " .. (classSection and "yes" or "no"))
+        print("RACE: " .. (raceSection and "yes" or "no"))
+        print("LEVEL: " .. (levelSection and "yes" or "no"))
     end
 
-    -- Parse basic stats and other sections...
-    if sections["BASIC"] then
-        for key, value in sections["BASIC"]:gmatch("(%w+):([^,]+),?") do
-            if key == "k" then stats.totalKills = tonumber(value)
-            elseif key == "d" then stats.deaths = tonumber(value)
-            elseif key == "s" then stats.highestKillStreak = tonumber(value)
-            elseif key == "m" then stats.highestMultiKill = tonumber(value)
-            elseif key == "cs" then stats.currentKillStreak = tonumber(value)
-            elseif key == "u" then stats.uniqueKills = tonumber(value)
-            elseif key == "ul" then stats.unknownLevelKills = tonumber(value)
-            elseif key == "al" then stats.avgLevel = tonumber(value)
-            elseif key == "ad" then stats.avgLevelDiff = tonumber(value)
-            elseif key == "ap" and not stats.avgKillsPerPlayer then stats.avgKillsPerPlayer = tonumber(value)
-            elseif key == "au" then stats.achievementsUnlocked = tonumber(value)
-            elseif key == "ap" and not stats.achievementPoints then stats.achievementPoints = tonumber(value)
+    -- Parse basic stats
+    if basicSection then
+        for key, value in basicSection:gmatch("(%w+):([^,]+),?") do
+            if key == "k" then
+                stats.totalKills = tonumber(value)
+                if PSC_Debug then print("- Parsed totalKills: " .. value) end
+            elseif key == "d" then
+                stats.deaths = tonumber(value)
+                if PSC_Debug then print("- Parsed deaths: " .. value) end
+            elseif key == "s" then
+                stats.highestKillStreak = tonumber(value)
+                if PSC_Debug then print("- Parsed highestKillStreak: " .. value) end
+            elseif key == "m" then
+                stats.highestMultiKill = tonumber(value)
+                if PSC_Debug then print("- Parsed highestMultiKill: " .. value) end
+            elseif key == "cs" then
+                stats.currentKillStreak = tonumber(value)
+                if PSC_Debug then print("- Parsed currentKillStreak: " .. value) end
+            elseif key == "u" then
+                stats.uniqueKills = tonumber(value)
+                if PSC_Debug then print("- Parsed uniqueKills: " .. value) end
+            elseif key == "ul" then
+                stats.unknownLevelKills = tonumber(value)
+                if PSC_Debug then print("- Parsed unknownLevelKills: " .. value) end
+            elseif key == "al" then
+                stats.avgLevel = tonumber(value)
+                if PSC_Debug then print("- Parsed avgLevel: " .. value) end
+            elseif key == "ad" then
+                stats.avgLevelDiff = tonumber(value)
+                if PSC_Debug then print("- Parsed avgLevelDiff: " .. value) end
+            elseif key == "ap" and not stats.avgKillsPerPlayer then
+                stats.avgKillsPerPlayer = tonumber(value)
+                if PSC_Debug then print("- Parsed avgKillsPerPlayer: " .. value) end
+            elseif key == "au" then
+                stats.achievementsUnlocked = tonumber(value)
+                if PSC_Debug then print("- Parsed achievementsUnlocked: " .. value) end
+            elseif key == "ap" and stats.avgKillsPerPlayer then
+                stats.achievementPoints = tonumber(value)
+                if PSC_Debug then print("- Parsed achievementPoints: " .. value) end
+            elseif key == "mkp" then
+                stats.mostKilledPlayer = value
+                if PSC_Debug then print("- Parsed mostKilledPlayer: " .. value) end
+            elseif key == "mkc" then
+                stats.mostKilledCount = tonumber(value)
+                if PSC_Debug then print("- Parsed mostKilledCount: " .. value) end
             end
         end
     end
 
     -- Parse class data
-    if sections["CLASS"] then
+    if classSection then
         stats.classData = {}
-        for class, count in sections["CLASS"]:gmatch("([^:]+):([^,]+),?") do
+        for class, count in classSection:gmatch("([^:]+):([^,]+),?") do
             stats.classData[class] = tonumber(count)
         end
     end
 
     -- Parse race data
-    if sections["RACE"] then
+    if raceSection then
         stats.raceData = {}
-        for race, count in sections["RACE"]:gmatch("([^:]+):([^,]+),?") do
+        for race, count in raceSection:gmatch("([^:]+):([^,]+),?") do
             stats.raceData[race] = tonumber(count)
         end
     end
 
     -- Parse level data
-    if sections["LEVEL"] then
+    if levelSection then
         stats.levelData = {}
-        for level, count in sections["LEVEL"]:gmatch("([^:]+):([^,]+),?") do
+        for level, count in levelSection:gmatch("([^:]+):([^,]+),?") do
             stats.levelData[level] = tonumber(count)
-        end
-    end
-
-    -- Safe check for values
-    for key, value in pairs(stats) do
-        if type(value) == "number" and (value > 1000000 or value < -1000000) then
-            stats[key] = value > 0 and 1000000 or -1000000
-            if PSC_Debug then
-                print("[PSC Debug] Capped unrealistic value for " .. key)
-            end
         end
     end
 
