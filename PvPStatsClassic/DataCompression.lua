@@ -14,8 +14,12 @@ function PSC_CompressStatistics(stats)
     local classStats = "CLASS;"
     local raceStats = "RACE;"
     local levelStats = "LEVEL;"
+    local genderStats = "GENDER;" -- New section
+    local guildStatusStats = "GUILDSTATUS;" -- New section
+    local zoneStats = "ZONE;" -- New section
+    local guildKillsStats = "GUILDKILLS;" -- New section
 
-    -- Basic stats
+    -- Basic stats (no changes)
     basicStats = basicStats ..
                 "k:" .. (stats.totalKills or 0) .. "," ..
                 "d:" .. (stats.deaths or 0) .. "," ..
@@ -29,11 +33,10 @@ function PSC_CompressStatistics(stats)
                 "ap:" .. (stats.avgKillsPerPlayer or 0) .. "," ..
                 "au:" .. (stats.achievementsUnlocked or 0) .. "," ..
                 "ap:" .. (stats.achievementPoints or 0) .. "," ..
-                -- Add most killed player information
                 "mkp:" .. (stats.mostKilledPlayer or "None") .. "," ..
                 "mkc:" .. (stats.mostKilledCount or 0) .. ";"
 
-    -- Class data
+    -- Class data (no changes)
     for class, count in pairs(stats.classData or {}) do
         if count > 0 then
             classStats = classStats .. class .. ":" .. count .. ","
@@ -41,7 +44,7 @@ function PSC_CompressStatistics(stats)
     end
     classStats = classStats:gsub(",$", ";") -- Replace last comma with semicolon
 
-    -- Race data
+    -- Race data (no changes)
     for race, count in pairs(stats.raceData or {}) do
         if count > 0 then
             raceStats = raceStats .. race .. ":" .. count .. ","
@@ -49,19 +52,57 @@ function PSC_CompressStatistics(stats)
     end
     raceStats = raceStats:gsub(",$", ";") -- Replace last comma with semicolon
 
-    -- Level data (all individual levels)
+    -- Level data (no changes)
     for level, count in pairs(stats.levelData or {}) do
         levelStats = levelStats .. level .. ":" .. count .. ","
     end
     levelStats = levelStats:gsub(",$", ";") -- Replace last comma with semicolon
 
-    -- Combine all data
-    local fullData = basicStats .. classStats .. raceStats .. levelStats
+    -- Gender data (NEW)
+    if stats.genderData then
+        for gender, count in pairs(stats.genderData) do
+            genderStats = genderStats .. gender .. ":" .. count .. ","
+        end
+    end
+    genderStats = genderStats:gsub(",$", ";") -- Replace last comma with semicolon
 
-    -- Split into parts if necessary
+    -- Guild status data (NEW)
+    if stats.guildStatusData then
+        for status, count in pairs(stats.guildStatusData) do
+            -- Use underscore instead of spaces in keys
+            local safeStatus = status:gsub(" ", "_")
+            guildStatusStats = guildStatusStats .. safeStatus .. ":" .. count .. ","
+        end
+    end
+    guildStatusStats = guildStatusStats:gsub(",$", ";")
+
+    -- Zone data (NEW)
+    if stats.zoneData then
+        for zone, count in pairs(stats.zoneData) do
+            -- Replace problematic characters in zone names
+            local safeZone = zone:gsub("[ ,:]", "_")
+            zoneStats = zoneStats .. safeZone .. ":" .. count .. ","
+        end
+    end
+    zoneStats = zoneStats:gsub(",$", ";")
+
+    -- Guild kills data (NEW)
+    if stats.guildKills then
+        for guild, count in pairs(stats.guildKills) do
+            -- Replace problematic characters in guild names
+            local safeGuild = guild:gsub("[ ,:]", "_")
+            guildKillsStats = guildKillsStats .. safeGuild .. ":" .. count .. ","
+        end
+    end
+    guildKillsStats = guildKillsStats:gsub(",$", ";")
+
+    -- Combine all data
+    local fullData = basicStats .. classStats .. raceStats .. levelStats ..
+                     genderStats .. guildStatusStats .. zoneStats .. guildKillsStats
+
+    -- Split into parts if necessary (no changes)
     local parts = {}
     if #fullData <= MAX_MESSAGE_LENGTH then
-        -- Can fit in one message
         parts[1] = fullData .. END_MARKER
     else
         -- Need to split into multiple parts
@@ -182,11 +223,15 @@ function PSC_DecompressStatistics(data, sender)
     -- Parse the full content
     local stats = {}
 
-    -- Extract each section directly - more reliable than regex splitting
+    -- Extract each section directly
     local basicSection = fullContent:match("BASIC;([^;]+)")
     local classSection = fullContent:match("CLASS;([^;]+)")
     local raceSection = fullContent:match("RACE;([^;]+)")
     local levelSection = fullContent:match("LEVEL;([^;]+)")
+    local genderSection = fullContent:match("GENDER;([^;]+)")        -- NEW
+    local guildStatusSection = fullContent:match("GUILDSTATUS;([^;]+)") -- NEW
+    local zoneSection = fullContent:match("ZONE;([^;]+)")            -- NEW
+    local guildKillsSection = fullContent:match("GUILDKILLS;([^;]+)") -- NEW
 
     -- Debug the sections
     if PSC_Debug then
@@ -195,6 +240,10 @@ function PSC_DecompressStatistics(data, sender)
         print("CLASS: " .. (classSection and "yes" or "no"))
         print("RACE: " .. (raceSection and "yes" or "no"))
         print("LEVEL: " .. (levelSection and "yes" or "no"))
+        print("GENDER: " .. (genderSection and "yes" or "no"))
+        print("GUILDSTATUS: " .. (guildStatusSection and "yes" or "no"))
+        print("ZONE: " .. (zoneSection and "yes" or "no"))
+        print("GUILDKILLS: " .. (guildKillsSection and "yes" or "no"))
     end
 
     -- Parse basic stats
@@ -267,6 +316,42 @@ function PSC_DecompressStatistics(data, sender)
         stats.levelData = {}
         for level, count in levelSection:gmatch("([^:]+):([^,]+),?") do
             stats.levelData[level] = tonumber(count)
+        end
+    end
+
+    -- Parse gender data (NEW)
+    if genderSection then
+        stats.genderData = {}
+        for gender, count in genderSection:gmatch("([^:]+):([^,]+),?") do
+            stats.genderData[gender] = tonumber(count)
+        end
+    end
+
+    -- Parse guild status data (NEW)
+    if guildStatusSection then
+        stats.guildStatusData = {}
+        for status, count in guildStatusSection:gmatch("([^:]+):([^,]+),?") do
+            -- Convert underscores back to spaces
+            local originalStatus = status:gsub("_", " ")
+            stats.guildStatusData[originalStatus] = tonumber(count)
+        end
+    end
+
+    -- Parse zone data (NEW)
+    if zoneSection then
+        stats.zoneData = {}
+        for zone, count in zoneSection:gmatch("([^:]+):([^,]+),?") do
+            -- We'll keep zones with underscores for simplicity
+            stats.zoneData[zone] = tonumber(count)
+        end
+    end
+
+    -- Parse guild kills data (NEW)
+    if guildKillsSection then
+        stats.guildKills = {}
+        for guild, count in guildKillsSection:gmatch("([^:]+):([^,]+),?") do
+            -- We'll keep guilds with underscores for simplicity
+            stats.guildKills[guild] = tonumber(count)
         end
     end
 

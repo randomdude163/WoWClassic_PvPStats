@@ -98,6 +98,10 @@ function PSC_ShareAllStatistics()
     stats.classData = classData
     stats.raceData = raceData
     stats.levelData = levelData
+    stats.genderData = genderData            -- NEW
+    stats.zoneData = zoneData                -- NEW
+    stats.guildStatusData = guildStatusData  -- NEW
+    stats.guildKills = PSC_CalculateGuildKills() -- NEW
 
     -- Compress the data
     local messageParts = PSC_CompressStatistics(stats)
@@ -361,9 +365,7 @@ function PSC_UpdateLeaderboardDisplay()
             if playerInfo.name == playerName then
                 PSC_CreateStatisticsFrame()
             else
-                -- Future: Show remote player statistics if implemented
-                PSC_CreateStatisticsFrame()
-                print("Detailed statistics for other players not yet implemented")
+                PSC_ShowRemotePlayerStatistics(playerInfo.name)
             end
         end)
 
@@ -588,4 +590,89 @@ end
 -- Make sure to initialize when the addon loads
 if PSC_OnInitialize and not PSC_OnInitialize.leaderboard then
     PSC_OnInitialize.leaderboard = PSC_InitLeaderboard
+end
+
+-- Create a function to process remote player data for statistics display
+function PSC_ProcessRemotePlayerStatistics(remoteData, playerName)
+    if not remoteData or not remoteData.basicStats then
+        print("No data available for " .. playerName)
+        return
+    end
+
+    -- Create empty data structures for bar charts
+    local classData = {}
+    local raceData = {}
+    local genderData = {["MALE"] = 0, ["FEMALE"] = 0}
+    local levelData = {}
+    local zoneData = {}
+    local guildStatusData = {["In Guild"] = 0, ["No Guild"] = 0}
+    local guildKills = {}
+
+    -- Process class data
+    if remoteData.classData then
+        for class, count in pairs(remoteData.classData) do
+            classData[class] = count
+        end
+    end
+
+    -- Process race data
+    if remoteData.raceData then
+        for race, count in pairs(remoteData.raceData) do
+            raceData[race] = count
+        end
+    end
+
+    -- Process level data
+    if remoteData.levelData then
+        for level, count in pairs(remoteData.levelData) do
+            levelData[level] = count
+        end
+    end
+
+    -- Process gender data
+    if remoteData.basicStats.genderData then
+        genderData = remoteData.basicStats.genderData
+    end
+
+    -- Process guild status data
+    if remoteData.basicStats.guildStatusData then
+        guildStatusData = remoteData.basicStats.guildStatusData
+    end
+
+    -- Process zone data
+    if remoteData.basicStats.zoneData then
+        zoneData = remoteData.basicStats.zoneData
+    end
+
+    -- Process guild kills data
+    if remoteData.basicStats.guildKills then
+        guildKills = remoteData.basicStats.guildKills
+    end
+
+    -- Create and show the statistics frame
+    local titleText = "PvP Statistics - " .. playerName
+
+    -- Create a frame if it doesn't exist or reuse the existing one
+    if not PSC_StatisticsFrame then
+        PSC_CreateStatisticsFrame()
+    end
+
+    -- Update the statistics frame with the remote player's data
+    PSC_UpdateStatisticsFrame(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText, guildKills)
+
+    -- Add a "Request Update" button and timestamp
+    -- Rest of the function remains the same
+    -- ...
+
+    PSC_FrameManager:BringToFront("Statistics")
+end
+
+-- Create a wrapper function to show remote player statistics
+function PSC_ShowRemotePlayerStatistics(playerName)
+    if not PSC_RemotePlayerStats[playerName] then
+        print("No statistics available for " .. playerName)
+        return
+    end
+
+    PSC_ProcessRemotePlayerStatistics(PSC_RemotePlayerStats[playerName], playerName)
 end

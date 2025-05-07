@@ -3,7 +3,7 @@ local addonName, PVPSC = ...
 PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
-local statisticsFrame = nil
+PSC_StatisticsFrame = nil
 
 local function CreateGoldHighlight(parent, height)
     local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
@@ -569,7 +569,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
 
         if PSC_KillsListFrame then
             ---@diagnostic disable-next-line: need-check-nil, undefined-field
-            PSC_KillsListFrame:SetFrameLevel(statisticsFrame:GetFrameLevel() + 10)
+            PSC_KillsListFrame:SetFrameLevel(PSC_StatisticsFrame:GetFrameLevel() + 10)
         end
 
         PSC_SetKillListSearch(guildName, nil, nil, nil, nil, nil, true)
@@ -1172,10 +1172,10 @@ local function createEmptyStatsFrame()
 end
 
 function PSC_CreateStatisticsFrame()
-    if statisticsFrame then
-        statisticsFrame:Hide()
+    if PSC_StatisticsFrame then
+        PSC_StatisticsFrame:Hide()
         PSC_FrameManager:HideFrame("Statistics")
-        statisticsFrame = nil
+        PSC_StatisticsFrame = nil
     end
 
     for i = #UISpecialFrames, 1, -1 do
@@ -1186,14 +1186,14 @@ function PSC_CreateStatisticsFrame()
     end
 
     if not enoughPlayerKillsRecorded() then
-        statisticsFrame = createEmptyStatsFrame()
-        PSC_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
+        PSC_StatisticsFrame = createEmptyStatsFrame()
+        PSC_FrameManager:RegisterFrame(PSC_StatisticsFrame, "Statistics")
         return
     end
 
-    statisticsFrame = setupStatisticsFrame()
-    statisticsFrame:SetScript("OnKeyDown", nil)
-    PSC_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
+    PSC_StatisticsFrame = setupStatisticsFrame()
+    PSC_StatisticsFrame:SetScript("OnKeyDown", nil)
+    PSC_FrameManager:RegisterFrame(PSC_StatisticsFrame, "Statistics")
 
     local currentCharacterKey = PSC_GetCharacterKey()
     local charactersToProcess = {}
@@ -1209,34 +1209,34 @@ function PSC_CreateStatisticsFrame()
         PSC_CalculateBarChartStatistics(charactersToProcess)
 
     local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
-    PSC_UpdateStatisticsFrame(statisticsFrame, classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
+    PSC_UpdateStatisticsFrame(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
 end
 
-function PSC_UpdateStatisticsFrame(frame, classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
-    if not frame then
+function PSC_UpdateStatisticsFrame(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
+    if not PSC_StatisticsFrame then
         return
     end
 
-    frame.TitleText:SetText(titleText)
+    PSC_StatisticsFrame.TitleText:SetText(titleText)
 
-    if frame.leftScrollContent then
-        frame.leftScrollContent:SetParent(nil)
-        frame.leftScrollContent = nil
+    if PSC_StatisticsFrame.leftScrollContent then
+        PSC_StatisticsFrame.leftScrollContent:SetParent(nil)
+        PSC_StatisticsFrame.leftScrollContent = nil
     end
 
-    if frame.guildTable then
-        frame.guildTable:SetParent(nil)
-        frame.guildTable = nil
+    if PSC_StatisticsFrame.guildTable then
+        PSC_StatisticsFrame.guildTable:SetParent(nil)
+        PSC_StatisticsFrame.guildTable = nil
     end
 
-    if frame.summaryStats then
-        frame.summaryStats:SetParent(nil)
-        frame.summaryStats = nil
+    if PSC_StatisticsFrame.summaryStats then
+        PSC_StatisticsFrame.summaryStats:SetParent(nil)
+        PSC_StatisticsFrame.summaryStats = nil
     end
 
-    local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
-    frame.leftScrollContent = leftScrollContent
-    frame.leftScrollFrame = leftScrollFrame
+    local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(PSC_StatisticsFrame)
+    PSC_StatisticsFrame.leftScrollContent = leftScrollContent
+    PSC_StatisticsFrame.leftScrollFrame = leftScrollFrame
 
     local classChartHeight = calculateChartHeight(classData)
     local raceChartHeight = calculateChartHeight(raceData)
@@ -1282,7 +1282,7 @@ function PSC_UpdateStatisticsFrame(frame, classData, raceData, genderData, zoneD
     leftScrollContent:SetHeight(totalHeight)
 
     local summaryStatsWidth = 380
-    frame.guildTable = createGuildTable(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, UI.GUILD_LIST.HEIGHT)
-    frame.summaryStats = createSummaryStats(frame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth,
+    PSC_StatisticsFrame.guildTable = createGuildTable(PSC_StatisticsFrame, 440, -UI.TOP_PADDING, summaryStatsWidth, UI.GUILD_LIST.HEIGHT)
+    PSC_StatisticsFrame.summaryStats = createSummaryStats(PSC_StatisticsFrame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth,
         250)
 end
