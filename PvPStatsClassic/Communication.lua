@@ -111,7 +111,7 @@ function PSC_ProcessMessageQueue()
         PSC_ReduceThrottleIfPossible()
 
         if PSC_DEBUG.enabled then
-            print("[PSC Debug] Sent message type " .. message.type .. " to " .. message.channel)
+            print("[PSC Debug] Sent message type " .. message.type .. " to " .. message.channel .. ", data: " .. message.data)
         end
     else
         -- Re-queue with lower priority if send failed
@@ -131,13 +131,6 @@ end
 
 -- Send a single message
 function PSC_SendMessage(messageType, data, channel)
-    -- if not C_ChatInfo.RegisterAddonMessagePrefix(PSC_MESSAGE_PREFIX) then
-    --     if PSC_DEBUG.enabled then
-    --         print("[PSC Debug] Failed to register addon message prefix")
-    --     end
-    --     return false
-    -- end
-
     local success = C_ChatInfo.SendAddonMessage(PSC_MESSAGE_PREFIX, messageType .. ":" .. data, channel)
     return success
 end

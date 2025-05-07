@@ -39,17 +39,23 @@ function PSC_ProcessIncomingMessage(msgType, data, sender)
         }
     end
 
-    local stats = PSC_DecompressStatistics(data, msgType)
+    local stats = PSC_DecompressStatistics(data, sender)
 
-    -- Store the stats based on message type
-    if msgType == 1 then  -- Basic stats
-        PSC_RemotePlayerStats[sender].basicStats = stats
-    elseif msgType == 2 then  -- Class data
-        PSC_RemotePlayerStats[sender].classData = stats
-    elseif msgType == 3 then  -- Race data
-        PSC_RemotePlayerStats[sender].raceData = stats
-    elseif msgType == 4 then  -- Level data
-        PSC_RemotePlayerStats[sender].levelData = stats
+    -- Skip incomplete messages - we'll process them when all parts arrive
+    if stats.incomplete then
+        return
+    end
+
+    -- Store the stats
+    PSC_RemotePlayerStats[sender].basicStats = stats
+    if stats.classData then
+        PSC_RemotePlayerStats[sender].classData = stats.classData
+    end
+    if stats.raceData then
+        PSC_RemotePlayerStats[sender].raceData = stats.raceData
+    end
+    if stats.levelData then
+        PSC_RemotePlayerStats[sender].levelData = stats.levelData
     end
 
     PSC_RemotePlayerStats[sender].lastUpdate = time()
@@ -87,7 +93,7 @@ function PSC_ShareAllStatistics()
     stats.levelData = levelData
 
     -- Compress the data
-    local compressedStats = PSC_CompressStatistics(stats)
+    local messageParts = PSC_CompressStatistics(stats)
 
     -- Send to appropriate channels
     local channels = {}
@@ -102,10 +108,9 @@ function PSC_ShareAllStatistics()
 
     -- Queue messages for each channel
     for _, channel in ipairs(channels) do
-        PSC_QueueMessage(1, compressedStats[1], channel, PRIORITY_HIGH)
-        PSC_QueueMessage(2, compressedStats[2], channel, PRIORITY_NORMAL)
-        PSC_QueueMessage(3, compressedStats[3], channel, PRIORITY_NORMAL)
-        PSC_QueueMessage(4, compressedStats[4], channel, PRIORITY_LOW)
+        for i, part in ipairs(messageParts) do
+            PSC_QueueMessage(1, part, channel, i == 1 and PRIORITY_HIGH or PRIORITY_NORMAL)
+        end
     end
 end
 
