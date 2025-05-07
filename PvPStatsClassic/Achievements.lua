@@ -61,13 +61,12 @@ function PSC_GetStatsForAchievements()
     local currentCharacterKey = PSC_GetCharacterKey()
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = PSC_CalculateBarChartStatistics(charactersToProcess)
+    local classData, raceData, genderData, zoneData, levelData, guildStatusData = PSC_CalculateBarChartStatistics(charactersToProcess)
     local summaryStats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local stats = {
         classData = classData,
         raceData = raceData,
         genderData = genderData,
-        unknownLevelClassData = unknownLevelClassData,
         zoneData = zoneData,
         levelData = levelData,
         guildStatusData = guildStatusData,

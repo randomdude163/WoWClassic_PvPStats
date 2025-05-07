@@ -974,7 +974,6 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     local classData = {}
     local raceData = {}
     local genderData = {}
-    local unknownLevelClassData = {}
     local zoneData = {}
     local levelData = {}
     local guildStatusData = {
@@ -989,7 +988,6 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
 
     for _, class in ipairs(allClasses) do
         classData[class] = 0
-        unknownLevelClassData[class] = 0
     end
     for _, race in ipairs(allRaces) do
         raceData[race] = 0
@@ -999,7 +997,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     if not PSC_DB.PlayerKillCounts.Characters then
-        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
+        return classData, raceData, genderData, zoneData, levelData, guildStatusData
     end
 
     for characterKey, characterData in pairs(charactersToProcess) do
@@ -1019,7 +1017,6 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                         local levelNum = tonumber(level or "0") or 0
 
                         if levelNum == -1 then
-                            unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
                             levelData["??"] = (levelData["??"] or 0) + kills
                         else
                             if levelNum > 0 and levelNum <= 60 then
@@ -1052,7 +1049,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
+    return classData, raceData, genderData, zoneData, levelData, guildStatusData
 end
 
 local function createScrollableLeftPanel(parent)
@@ -1198,10 +1195,23 @@ function PSC_CreateStatisticsFrame()
     statisticsFrame:SetScript("OnKeyDown", nil)
     PSC_FrameManager:RegisterFrame(statisticsFrame, "Statistics")
 
-    PSC_UpdateStatisticsFrame(statisticsFrame)
+    local currentCharacterKey = PSC_GetCharacterKey()
+    local charactersToProcess = {}
+    if PSC_DB.ShowAccountWideStats then
+        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    else
+        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
+            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+        end
+    end
+
+    local classData, raceData, genderData, zoneData, levelData, guildStatusData =
+        PSC_CalculateBarChartStatistics(charactersToProcess)
+
+    PSC_UpdateStatisticsFrame(statisticsFrame, classData, raceData, genderData, zoneData, levelData, guildStatusData)
 end
 
-function PSC_UpdateStatisticsFrame(frame)
+function PSC_UpdateStatisticsFrame(frame, classData, raceData, genderData, zoneData, levelData, guildStatusData)
     if not frame then
         return
     end
@@ -1223,23 +1233,6 @@ function PSC_UpdateStatisticsFrame(frame)
         frame.summaryStats:SetParent(nil)
         frame.summaryStats = nil
     end
-
-    if frame:GetHeight() < 400 then
-        return
-    end
-
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local charactersToProcess = {}
-    if PSC_DB.ShowAccountWideStats then
-        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
-    else
-        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
-            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-        end
-    end
-
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
-        PSC_CalculateBarChartStatistics(charactersToProcess)
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent
