@@ -948,37 +948,52 @@ local function SortPlayerEntries(entries)
     return entries
 end
 
--- Main function to filter and sort entries
-function PSC_FilterAndSortEntries()
-    local entries = {}
-    local playerNameMap = {}
-    local searchText = PSC_SearchText or ""
-    searchText = searchText:lower()
-
-    -- Step 1: Get death data from all relevant characters based on account-wide setting
-    local deathDataByPlayer = GetDeathDataFromAllCharacters()
-
-    -- Step 2: Process players you've killed
-    ProcessKilledPlayers(searchText, playerNameMap, entries)
-
-    -- Step 3: Process players who killed you but you haven't killed
-    ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
-
-    -- Step 4: Process players who have only assisted in kills but never directly killed you
-    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
-
-    -- Step 5: Add death counts and assists counts to all entries
+-- Add assist and death data to all player entries
+local function AddAssistAndDeathData(entries, deathDataByPlayer)
     for _, entry in ipairs(entries) do
         -- Add death data
         local deathData = deathDataByPlayer[entry.name]
         entry.deaths = deathData and deathData.deaths or 0
         entry.deathHistory = deathData and deathData.deathLocations or {}
 
-        -- Add assists data
-        entry.assists = CountPlayerAssists(entry.name, deathDataByPlayer)
-    end
+        -- Add assists data and find most recent assist timestamp
+        entry.assists = 0
+        local mostRecentAssistTimestamp = 0
+        local mostRecentAssistZone = nil
 
-    -- Apply additional filters
+        -- Scan through all death data to find assists by this player
+        for _, deathInfo in pairs(deathDataByPlayer) do
+            if deathInfo.deathLocations then
+                for _, location in ipairs(deathInfo.deathLocations) do
+                    if location.assisters then
+                        for _, assister in ipairs(location.assisters) do
+                            if assister.name == entry.name then
+                                entry.assists = entry.assists + 1
+
+                                -- Track most recent assist timestamp
+                                if (location.timestamp or 0) > mostRecentAssistTimestamp then
+                                    mostRecentAssistTimestamp = location.timestamp or 0
+                                    mostRecentAssistZone = location.zone
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Update lastKill if the most recent assist is more recent
+        if mostRecentAssistTimestamp > (entry.lastKill or 0) then
+            entry.lastKill = mostRecentAssistTimestamp
+            entry.zone = mostRecentAssistZone or entry.zone
+        end
+    end
+    
+    return entries
+end
+
+-- Apply all active filters to the entry list
+local function ApplyFiltersToEntries(entries)
     local filteredEntries = {}
 
     for _, entry in ipairs(entries) do
@@ -1043,8 +1058,36 @@ function PSC_FilterAndSortEntries()
             table.insert(filteredEntries, entry)
         end
     end
+    
+    return filteredEntries
+end
 
-    -- Step 6: Sort entries
+-- Main function to filter and sort entries - now more modular
+function PSC_FilterAndSortEntries()
+    local entries = {}
+    local playerNameMap = {}
+    local searchText = PSC_SearchText or ""
+    searchText = searchText:lower()
+
+    -- Step 1: Get death data from all relevant characters based on account-wide setting
+    local deathDataByPlayer = GetDeathDataFromAllCharacters()
+
+    -- Step 2: Process players you've killed
+    ProcessKilledPlayers(searchText, playerNameMap, entries)
+
+    -- Step 3: Process players who killed you but you haven't killed
+    ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
+
+    -- Step 4: Process players who have only assisted in kills but never directly killed you
+    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
+
+    -- Step 5: Add death counts and assists counts to all entries
+    entries = AddAssistAndDeathData(entries, deathDataByPlayer)
+
+    -- Step 6: Apply additional filters
+    local filteredEntries = ApplyFiltersToEntries(entries)
+
+    -- Step 7: Sort entries
     return SortPlayerEntries(filteredEntries)
 end
 
