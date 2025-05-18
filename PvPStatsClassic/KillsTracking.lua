@@ -179,9 +179,9 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     end
 
     PVPSC.AchievementSystem:CheckAchievements()
-    if not PSC_DB.DisableStatSharing then
-        PSC_ShareAllStatistics()
-    end
+    -- if not PSC_DB.DisableStatSharing then
+    --     PSC_ShareAllStatistics()
+    -- end
 end
 
 function PSC_RecordPetDamage(petGUID, petName, targetGUID, amount)
