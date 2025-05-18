@@ -924,6 +924,7 @@ local function createSummaryStats(parent, x, y, width, height)
         end
     end
 
+    -- Find the achievement stats section
     local achievementText = completedCount .. " / " .. totalCount
     local achievementTooltip = "Click to view your achievements (" .. completedCount .. " out of " .. totalCount .. " completed)"
 
@@ -935,6 +936,14 @@ local function createSummaryStats(parent, x, y, width, height)
     valueText:SetPoint("TOPLEFT", 150, statY)
     valueText:SetText(achievementText)
 
+    local openAchievementsButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    openAchievementsButton:SetSize(130, 22)
+    openAchievementsButton:SetPoint("LEFT", valueText, "RIGHT", 10, 0)
+    openAchievementsButton:SetText("Open Achievements")
+    openAchievementsButton:SetScript("OnClick", function()
+        PSC_ToggleAchievementFrame()
+    end)
+
     -- Create a clickable button for the achievements line
     local achievementButton = CreateFrame("Button", nil, container)
     achievementButton:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
@@ -943,7 +952,7 @@ local function createSummaryStats(parent, x, y, width, height)
     -- Add gold highlight
     CreateGoldHighlight(achievementButton, 20)
 
-    -- Add tooltip
+    -- Add tooltip and click handlers
     achievementButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
         GameTooltip:AddLine(achievementTooltip, 1, 1, 1, true)
