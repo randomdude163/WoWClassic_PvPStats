@@ -1180,7 +1180,9 @@ local function createEmptyStatsFrame()
     return frame
 end
 
-function PSC_CreateStatisticsFrame()
+-- Add a new parameter to control whether it should load local data
+function PSC_CreateEmptyStatisticsFrame()
+    -- Keep the original frame creation code but without loading data
     if PSC_StatisticsFrame then
         PSC_StatisticsFrame:Hide()
         PSC_FrameManager:HideFrame("Statistics")
@@ -1194,31 +1196,118 @@ function PSC_CreateStatisticsFrame()
         end
     end
 
+    PSC_StatisticsFrame = setupStatisticsFrame()
+    PSC_StatisticsFrame:SetScript("OnKeyDown", nil)
+    PSC_FrameManager:RegisterFrame(PSC_StatisticsFrame, "Statistics")
+
+    return PSC_StatisticsFrame
+end
+
+-- Modify the original function to use the new empty frame creator
+function PSC_CreateStatisticsFrame(loadLocalPlayerData)
     if not enoughPlayerKillsRecorded() then
         PSC_StatisticsFrame = createEmptyStatsFrame()
         PSC_FrameManager:RegisterFrame(PSC_StatisticsFrame, "Statistics")
         return
     end
 
-    PSC_StatisticsFrame = setupStatisticsFrame()
-    PSC_StatisticsFrame:SetScript("OnKeyDown", nil)
-    PSC_FrameManager:RegisterFrame(PSC_StatisticsFrame, "Statistics")
+    PSC_CreateEmptyStatisticsFrame()
 
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local charactersToProcess = {}
-    if PSC_DB.ShowAccountWideStats then
-        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
-    else
-        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
-            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+    if loadLocalPlayerData then
+        local currentCharacterKey = PSC_GetCharacterKey()
+        local charactersToProcess = {}
+        if PSC_DB.ShowAccountWideStats then
+            charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+        else
+            if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
+                charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+            end
+        end
+
+        local classData, raceData, genderData, zoneData, levelData, guildStatusData =
+            PSC_CalculateBarChartStatistics(charactersToProcess)
+
+        local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
+
+        PSC_DebugStatisticsData(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText, "Local Player")
+
+        PSC_UpdateStatisticsFrame(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
+    end
+end
+
+function PSC_DebugStatisticsData(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText, source)
+    print("|cFF00FFFF====== PvPStats Debug: Statistics Data (" .. (source or "unknown") .. ") ======|r")
+    print("Title: " .. (titleText or "nil"))
+
+    -- Helper function to safely print a table
+    local function PrintTable(tbl, name, maxItems)
+        if not tbl then
+            print(name .. ": nil")
+            return
+        end
+
+        local count = 0
+        for _ in pairs(tbl) do count = count + 1 end
+        print(name .. ": table with " .. count .. " entries")
+
+        local displayCount = 0
+        for k, v in pairs(tbl) do
+            displayCount = displayCount + 1
+            if displayCount <= (maxItems or 10) then
+                if type(v) == "table" then
+                    local subCount = 0
+                    for _ in pairs(v) do subCount = subCount + 1 end
+                    print("  - " .. tostring(k) .. ": [Table with " .. subCount .. " entries]")
+                else
+                    print("  - " .. tostring(k) .. ": " .. tostring(v) .. " (" .. type(v) .. ")")
+                end
+            end
+        end
+        if displayCount > (maxItems or 10) then
+            print("  ... and " .. (displayCount - (maxItems or 10)) .. " more entries")
         end
     end
 
-    local classData, raceData, genderData, zoneData, levelData, guildStatusData =
-        PSC_CalculateBarChartStatistics(charactersToProcess)
+    -- Print each data structure
+    PrintTable(classData, "Class Data")
+    PrintTable(raceData, "Race Data")
+    PrintTable(genderData, "Gender Data")
+    PrintTable(zoneData, "Zone Data")
+    PrintTable(levelData, "Level Data")
+    PrintTable(guildStatusData, "Guild Status Data")
 
-    local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
-    PSC_UpdateStatisticsFrame(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
+    -- Check for common issues
+    print("|cFFFFFF00Data Structure Analysis:|r")
+
+    -- Check if any expected tables are nil
+    local nilTables = {}
+    if not classData then table.insert(nilTables, "classData") end
+    if not raceData then table.insert(nilTables, "raceData") end
+    if not genderData then table.insert(nilTables, "genderData") end
+    if not zoneData then table.insert(nilTables, "zoneData") end
+    if not levelData then table.insert(nilTables, "levelData") end
+    if not guildStatusData then table.insert(nilTables, "guildStatusData") end
+
+    if #nilTables > 0 then
+        print("|cFFFF0000WARNING: The following tables are nil:|r " .. table.concat(nilTables, ", "))
+    else
+        print("All expected tables are present (not nil)")
+    end
+
+    -- Check for empty tables
+    local emptyTables = {}
+    if classData and next(classData) == nil then table.insert(emptyTables, "classData") end
+    if raceData and next(raceData) == nil then table.insert(emptyTables, "raceData") end
+    if genderData and next(genderData) == nil then table.insert(emptyTables, "genderData") end
+    if zoneData and next(zoneData) == nil then table.insert(emptyTables, "zoneData") end
+    if levelData and next(levelData) == nil then table.insert(emptyTables, "levelData") end
+    if guildStatusData and next(guildStatusData) == nil then table.insert(emptyTables, "guildStatusData") end
+
+    if #emptyTables > 0 then
+        print("|cFFFFAA00NOTE: The following tables are empty:|r " .. table.concat(emptyTables, ", "))
+    end
+
+    print("|cFF00FFFF====== End of Statistics Debug ======|r")
 end
 
 function PSC_UpdateStatisticsFrame(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)

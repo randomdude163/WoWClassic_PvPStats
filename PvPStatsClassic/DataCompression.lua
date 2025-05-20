@@ -327,6 +327,16 @@ function PSC_DecompressStatistics(data, sender)
         end
     end
 
+    -- Parse zone data (NEW)
+    if zoneSection then
+        stats.zoneData = {}
+        for zone, count in zoneSection:gmatch("([^:]+):([^,]+),?") do
+            -- Convert underscores back to spaces
+            local originalZone = zone:gsub("_", " ")
+            stats.zoneData[originalZone] = tonumber(count)
+        end
+    end
+
     -- Parse guild status data (NEW)
     if guildStatusSection then
         stats.guildStatusData = {}
@@ -337,21 +347,13 @@ function PSC_DecompressStatistics(data, sender)
         end
     end
 
-    -- Parse zone data (NEW)
-    if zoneSection then
-        stats.zoneData = {}
-        for zone, count in zoneSection:gmatch("([^:]+):([^,]+),?") do
-            -- We'll keep zones with underscores for simplicity
-            stats.zoneData[zone] = tonumber(count)
-        end
-    end
-
     -- Parse guild kills data (NEW)
     if guildKillsSection then
         stats.guildKills = {}
         for guild, count in guildKillsSection:gmatch("([^:]+):([^,]+),?") do
-            -- We'll keep guilds with underscores for simplicity
-            stats.guildKills[guild] = tonumber(count)
+            -- Convert underscores back to spaces
+            local originalGuild = guild:gsub("_", " ")
+            stats.guildKills[originalGuild] = tonumber(count)
         end
     end
 

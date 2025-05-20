@@ -54,7 +54,7 @@ minimapButton:SetScript("OnClick", function(self, button)
         if IsControlKeyDown() then
             PSC_CreateConfigFrame()
         else
-            PSC_CreateStatisticsFrame()
+            PSC_CreateStatisticsFrame(true)
         end
     elseif button == "RightButton" then
         if IsControlKeyDown() then

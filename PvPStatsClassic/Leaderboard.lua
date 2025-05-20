@@ -363,7 +363,7 @@ function PSC_UpdateLeaderboardDisplay()
         -- Make the column header clickable to view full statistics
         playerHeader:SetScript("OnClick", function()
             if playerInfo.name == playerName then
-                PSC_CreateStatisticsFrame()
+                PSC_CreateStatisticsFrame(true)
             else
                 PSC_ShowRemotePlayerStatistics(playerInfo.name)
             end
@@ -602,11 +602,10 @@ function PSC_ProcessRemotePlayerStatistics(remoteData, playerName)
     -- Create empty data structures for bar charts
     local classData = {}
     local raceData = {}
-    local genderData = {["MALE"] = 0, ["FEMALE"] = 0}
+    local genderData = {["Male"] = 0, ["Female"] = 0}
     local levelData = {}
     local zoneData = {}
     local guildStatusData = {["In Guild"] = 0, ["No Guild"] = 0}
-    local guildKills = {}
 
     -- Process class data
     if remoteData.classData then
@@ -629,9 +628,15 @@ function PSC_ProcessRemotePlayerStatistics(remoteData, playerName)
         end
     end
 
-    -- Process gender data
+    -- Process gender data - normalize case
     if remoteData.basicStats.genderData then
-        genderData = remoteData.basicStats.genderData
+        for gender, count in pairs(remoteData.basicStats.genderData) do
+            -- Normalize gender case
+            local normalizedGender = gender
+            if gender == "MALE" then normalizedGender = "Male" end
+            if gender == "FEMALE" then normalizedGender = "Female" end
+            genderData[normalizedGender] = (genderData[normalizedGender] or 0) + count
+        end
     end
 
     -- Process guild status data
@@ -639,14 +644,9 @@ function PSC_ProcessRemotePlayerStatistics(remoteData, playerName)
         guildStatusData = remoteData.basicStats.guildStatusData
     end
 
-    -- Process zone data
+    -- Process zone data - already converted from underscores in DecompressStatistics
     if remoteData.basicStats.zoneData then
         zoneData = remoteData.basicStats.zoneData
-    end
-
-    -- Process guild kills data
-    if remoteData.basicStats.guildKills then
-        guildKills = remoteData.basicStats.guildKills
     end
 
     -- Create and show the statistics frame
@@ -654,17 +654,25 @@ function PSC_ProcessRemotePlayerStatistics(remoteData, playerName)
 
     -- Create a frame if it doesn't exist or reuse the existing one
     if not PSC_StatisticsFrame then
-        PSC_CreateStatisticsFrame()
+        PSC_CreateStatisticsFrame(false)
     end
 
-    -- Update the statistics frame with the remote player's data
-    PSC_UpdateStatisticsFrame(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText, guildKills)
+    -- Debug the data before updating the UI
+    PSC_DebugStatisticsData(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText, "Remote Player: " .. playerName)
 
-    -- Add a "Request Update" button and timestamp
-    -- Rest of the function remains the same
-    -- ...
+    -- Try the update with safety measures
+    print("About to call PSC_UpdateStatisticsFrame with remote player data...")
 
-    PSC_FrameManager:BringToFront("Statistics")
+    -- Use pcall to catch any errors that might otherwise crash the game
+    local success, errorMsg = pcall(function()
+        PSC_UpdateStatisticsFrame(classData, raceData, genderData, zoneData, levelData, guildStatusData, titleText)
+    end)
+
+    if not success then
+        print("|cFFFF0000Error updating statistics frame:|r " .. (errorMsg or "unknown error"))
+    else
+        PSC_FrameManager:BringToFront("Statistics")
+    end
 end
 
 -- Create a wrapper function to show remote player statistics

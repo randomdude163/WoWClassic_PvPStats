@@ -74,7 +74,7 @@ function PSC_SlashCommandHandler(msg)
     elseif command == "history" then
         PSC_CreateKillsListFrame()
     elseif command == "stats" then
-        PSC_CreateStatisticsFrame()
+        PSC_CreateStatisticsFrame(true)
     elseif command == "debug" then
         PSC_ShowDebugInfo()
     elseif command == "toggledebug" then
