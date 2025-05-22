@@ -85,13 +85,6 @@ function PSC_GetPlayerInfoKey(name, realm)
     return name .. "-" .. realm
 end
 
-function PSC_GetPlayerNameFromInfoKey(infoKey)
-    if not infoKey or not string.find(infoKey, "-") then
-        return infoKey
-    end
-    return string.match(infoKey, "^(.+)%-")
-end
-
 function PSC_GetRealmFromInfoKey(infoKey)
     if not infoKey or not string.find(infoKey, "-") then
         return PSC_RealmName
