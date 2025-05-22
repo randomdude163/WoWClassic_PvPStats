@@ -176,6 +176,31 @@ function PSC_GetAndStorePlayerInfoFromUnit(unit)
     PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
 end
 
+
+function GetRealmNameFromCharacterKey(characterKey)
+    local playerRealm = characterKey:match("%-([^-]+)$")
+    return playerRealm
+end
+
+
+local function GetPlayerInfoCacheKeyFromCharacterKeyAndEnemyPlayerName(characterKey, enemyPlayerName)
+    local parsedName, parsedRealm = enemyPlayerName:match("^([^-]+)-([^-]+)$")
+
+    if parsedRealm then
+        -- enemyPlayerName already includes a realm (e.g., "Player-SomeRealm")
+        -- This is assumed to be the correct and complete key.
+        return enemyPlayerName
+    else
+        -- enemyPlayerName is just a name (e.g., "Player"), use the characterKey's realm as context.
+        local characterContextRealm = GetRealmNameFromCharacterKey(characterKey)
+        if not characterContextRealm then
+            characterContextRealm = PSC_RealmName -- Fallback
+        end
+        return enemyPlayerName .. "-" .. characterContextRealm
+    end
+end
+
+
 function PSC_CleanupPlayerInfoCache()
     if not PSC_DB.PlayerKillCounts.Characters then return end
 
@@ -183,12 +208,13 @@ function PSC_CleanupPlayerInfoCache()
     local playersToKeep = {}
 
     -- Collect names of all players who have been killed by us
-    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
         for nameWithLevel, killData in pairs(characterData.Kills) do
             if killData.kills and killData.kills > 0 then
                 local name = nameWithLevel:match("([^:]+)")
                 if name then
-                    playersToKeep[PSC_GetInfoKeyFromName(name)] = true
+                    local killedPlayerNameWithRealm = GetPlayerInfoCacheKeyFromCharacterKeyAndEnemyPlayerName(characterKey, name)
+                    playersToKeep[killedPlayerNameWithRealm] = true
                 end
             end
         end
@@ -199,7 +225,8 @@ function PSC_CleanupPlayerInfoCache()
         if lossData.Deaths then
             for killerName, deathData in pairs(lossData.Deaths) do
                 if deathData.deaths and deathData.deaths > 0 then
-                    playersToKeep[PSC_GetInfoKeyFromName(killerName)] = true
+                    local killerNameWithRealm = GetPlayerInfoCacheKeyFromCharacterKeyAndEnemyPlayerName(characterKey, killerName)
+                    playersToKeep[killerNameWithRealm] = true
 
                     -- Also keep info for players who have assisted in killing us
                     if deathData.deathLocations then
@@ -207,7 +234,8 @@ function PSC_CleanupPlayerInfoCache()
                             if location.assisters then
                                 for _, assister in ipairs(location.assisters) do
                                     if assister.name then
-                                        playersToKeep[PSC_GetInfoKeyFromName(assister.name)] = true
+                                        local assisterNameWithRealm = GetPlayerInfoCacheKeyFromCharacterKeyAndEnemyPlayerName(characterKey, assister.name)
+                                        playersToKeep[assisterNameWithRealm] = true
                                     end
                                 end
                             end
