@@ -956,6 +956,28 @@ local function AddAssistAndDeathData(entries, deathDataByPlayer)
         entry.deaths = deathData and deathData.deaths or 0
         entry.deathHistory = deathData and deathData.deathLocations or {}
 
+        -- Find most recent death timestamp
+        local mostRecentDeathTimestamp = 0
+        local mostRecentDeathZone = nil
+
+        -- Check if there is death data for this player
+        if deathData and deathData.deathLocations and #deathData.deathLocations > 0 then
+            -- Sort death locations by timestamp descending (most recent first)
+            table.sort(deathData.deathLocations, function(a, b)
+                return (a.timestamp or 0) > (b.timestamp or 0)
+            end)
+
+            -- Get timestamp and zone from most recent death location
+            mostRecentDeathTimestamp = deathData.deathLocations[1].timestamp or 0
+            mostRecentDeathZone = deathData.deathLocations[1].zone
+
+            -- Update lastKill if the most recent death is more recent
+            if mostRecentDeathTimestamp > (entry.lastKill or 0) then
+                entry.lastKill = mostRecentDeathTimestamp
+                entry.zone = mostRecentDeathZone or entry.zone
+            end
+        end
+
         -- Add assists data and find most recent assist timestamp
         entry.assists = 0
         local mostRecentAssistTimestamp = 0
@@ -988,7 +1010,7 @@ local function AddAssistAndDeathData(entries, deathDataByPlayer)
             entry.zone = mostRecentAssistZone or entry.zone
         end
     end
-    
+
     return entries
 end
 
@@ -1058,7 +1080,7 @@ local function ApplyFiltersToEntries(entries)
             table.insert(filteredEntries, entry)
         end
     end
-    
+
     return filteredEntries
 end
 
