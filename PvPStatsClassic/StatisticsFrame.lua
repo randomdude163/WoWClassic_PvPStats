@@ -1022,7 +1022,9 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
 
                     if PSC_DB.PlayerInfoCache[infoKey] then
                         local class = PSC_DB.PlayerInfoCache[infoKey].class
-                        classData[class] = (classData[class] or 0) + kills
+                        if class then
+                            classData[class] = (classData[class] or 0) + kills
+                        end
 
                         local level = nameWithLevel:match(":(%S+)")
                         local levelNum = tonumber(level or "0") or 0
@@ -1037,10 +1039,14 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                         end
 
                         local race = PSC_DB.PlayerInfoCache[infoKey].race
-                        raceData[race] = (raceData[race] or 0) + kills
+                        if race then
+                            raceData[race] = (raceData[race] or 0) + kills
+                        end
 
                         local gender = PSC_DB.PlayerInfoCache[infoKey].gender
-                        genderData[gender] = (genderData[gender] or 0) + kills
+                        if gender then
+                            genderData[gender] = (genderData[gender] or 0) + kills
+                        end
 
                         if killData.killLocations and #killData.killLocations > 0 then
                             for _, location in ipairs(killData.killLocations) do
