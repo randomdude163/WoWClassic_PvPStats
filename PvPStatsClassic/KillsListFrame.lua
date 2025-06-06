@@ -442,9 +442,49 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
     local lastKillCell = CreateLastKillCell(rowContainer, genderCell, entry.lastKill, colWidths.lastKill)
 
-    -- Add click handler to view detailed history
-    rowContainer:SetScript("OnClick", function()
-        PSC_ShowPlayerDetailFrame(entry.name)
+    -- Add left click handler to view detailed history
+    rowContainer:SetScript("OnClick", function(self, button)
+        if button == "LeftButton" then
+            PSC_ShowPlayerDetailFrame(entry.name)
+        end
+    end)
+
+    -- Register right click for context menu
+    rowContainer:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+    -- Create context menu
+    rowContainer:SetScript("OnMouseDown", function(self, button)
+        if button == "RightButton" then
+            -- Create or show the dropdown menu
+            if not PSC_PlayerRowDropDown then
+                CreateFrame("Frame", "PSC_PlayerRowDropDown", UIParent, "UIDropDownMenuTemplate")
+            end
+
+            -- Set up the dropdown menu
+            UIDropDownMenu_Initialize(PSC_PlayerRowDropDown, function(self, level)
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = "Copy Name: " .. entry.name
+                info.notCheckable = true
+                info.func = function()
+                    if ChatEdit_GetActiveWindow() then
+                        ChatEdit_InsertLink(entry.name)
+                    else
+                        ChatFrame_OpenChat(entry.name)
+                    end
+                end
+                UIDropDownMenu_AddButton(info)
+
+                local infoNote = UIDropDownMenu_CreateInfo()
+                infoNote.text = "Add Note"
+                infoNote.notCheckable = true
+                infoNote.func = function() end
+                UIDropDownMenu_AddButton(infoNote)
+            end, "MENU")
+
+            -- Position and show the dropdown
+            ToggleDropDownMenu(1, nil, PSC_PlayerRowDropDown, self, 0, 0)
+            return
+        end
     end)
 
     -- Check if entry has incomplete information
@@ -455,7 +495,6 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     if not hasIncompleteInfo and RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class:upper()] then
         local color = RAID_CLASS_COLORS[entry.class:upper()]
         nameCell:SetTextColor(color.r, color.g, color.b)
-        -- Don't modify class cell color here - it stays white
     end
 
     if hasIncompleteInfo then
@@ -500,7 +539,8 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         end
 
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Click to view detailed history", 1, 1, 1)
+        GameTooltip:AddLine("Left-click to view detailed history", 1, 1, 1)
+        GameTooltip:AddLine("Right-click for options", 1, 1, 1)
         GameTooltip:Show()
     end)
 
