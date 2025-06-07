@@ -532,6 +532,19 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                         end
                     end)
 
+                    local closeOnClick = CreateFrame("Button", nil, UIParent, nil, nil)
+                    closeOnClick:SetFrameStrata("FULLSCREEN_DIALOG")
+                    closeOnClick:SetFrameLevel(9999)
+                    closeOnClick:SetAllPoints(UIParent)
+                    closeOnClick:EnableMouse(true)
+                    closeOnClick:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+                    closeOnClick:SetScript("OnClick", function(self, button)
+    copyContainer:Hide()
+    PSC_CopyBox = nil
+    PSC_CopyContainer = nil
+    closeOnClick:Hide()
+end)
+
                     PSC_CopyBox = copyBox
                     PSC_CopyContainer = copyContainer
                 end
