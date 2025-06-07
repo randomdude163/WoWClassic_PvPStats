@@ -465,8 +465,12 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                 info.notCheckable = true
                 info.func = function()
                     if PSC_CopyBox then
+                        if PSC_CopyContainer then
+                            PSC_CopyContainer:Hide()
+                        end
                         PSC_CopyBox:Hide()
                         PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
                     end
 
                     local copyContainer = CreateFrame("Frame", "PSC_CopyContainer", UIParent)
@@ -506,25 +510,30 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                     copyBox:SetScript("OnEscapePressed", function()
                         copyContainer:Hide()
                         PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
                     end)
                     copyBox:SetScript("OnEnterPressed", function()
                         copyContainer:Hide()
                         PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
                     end)
                     copyBox:SetScript("OnEditFocusLost", function()
                         copyContainer:Hide()
                         PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
                     end)
                     copyBox:SetScript("OnKeyDown", function(self, key)
                         if IsControlKeyDown() and key == "C" then
                             C_Timer.After(0.1, function()
                                 copyContainer:Hide()
                                 PSC_CopyBox = nil
+                                PSC_CopyContainer = nil
                             end)
                         end
                     end)
 
                     PSC_CopyBox = copyBox
+                    PSC_CopyContainer = copyContainer
                 end
                 UIDropDownMenu_AddButton(info)
 
