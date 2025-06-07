@@ -450,12 +450,19 @@ local function CreatePlayerDetailFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
-    -- Add background texture
+    frame:SetScript("OnMouseDown", function(self)
+        if self.activeNoteEditBox and self.activeNoteEditBox:IsVisible() and self.activeNoteEditBox:HasFocus() then
+            local mouseFocus = GetMouseFocus()
+            if mouseFocus ~= self.activeNoteEditBox and mouseFocus ~= self.activeNoteEditBox.editBox then
+                self.activeNoteEditBox:ClearFocus()
+            end
+        end
+    end)
+
     local bgTexture = frame:CreateTexture(nil, "BACKGROUND")
     bgTexture:SetAllPoints()
     bgTexture:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Background-Dark")
 
-    -- Create scrollable content frame
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 12, -30)
     scrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
@@ -472,7 +479,6 @@ end
 local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     yOffset = CreateSection(content, "Player Information", yOffset)
 
-    -- Setup player info directly from database
     local playerName = playerDetail.name
     local playerClass = playerDetail.class
     local playerRace = playerDetail.race
@@ -481,13 +487,11 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     local playerGuild = playerDetail.guild
     local guildInfo = playerGuild ~= "" and " <" .. playerGuild .. ">" or ""
 
-    -- Create left-aligned player info that matches the other detail rows
     local playerLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     playerLabel:SetPoint("TOPLEFT", 25, yOffset)
     playerLabel:SetText("Player:")
-    playerLabel:SetTextColor(1, 1, 1) -- White color
+    playerLabel:SetTextColor(1, 1, 1)
 
-    -- Create player info with class color
     local infoText = string.format("%s - Level %s %s %s%s",
         playerName, playerLevel, playerRace, playerGender ~= "Unknown" and (playerGender == "Male" and "Male" or "Female") .. " " or "", playerClass)
 
@@ -495,113 +499,158 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     playerInfoLabel:SetPoint("TOPLEFT", 120, yOffset)
     playerInfoLabel:SetText(infoText)
 
-    -- Add class icon texture
     if playerClass ~= "Unknown" then
         local classIconSize = 32
-
         local iconContainer = CreateFrame("Frame", nil, content)
-        iconContainer:SetSize(classIconSize + 10, classIconSize + 10) -- Slightly larger to accommodate border
-
+        iconContainer:SetSize(classIconSize + 10, classIconSize + 10)
         iconContainer:SetPoint("LEFT", 320, 0)
-
         local initialYOffset = yOffset
-        local rowsToKills = 2 -- Player info, Rank (before Total kills)
+        local rowsToKills = 2
         local killsYPosition = initialYOffset - (20 * rowsToKills)
         iconContainer:SetPoint("TOP", 0, killsYPosition)
-
-        -- Create the actual class icon
         local classIcon = iconContainer:CreateTexture(nil, "ARTWORK")
         classIcon:SetSize(classIconSize, classIconSize)
         classIcon:SetPoint("CENTER")
-
-        -- Set the appropriate texture based on class
         local classTexture = "Interface\\TargetingFrame\\UI-Classes-Circles"
         local coords = CLASS_ICON_TCOORDS[playerClass:upper()]
-
         if coords then
             classIcon:SetTexture(classTexture)
             classIcon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
         else
-            -- Fallback if coords not found
             classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
         end
-
-        -- Create a circular gold border using a mask
-        local borderSize = classIconSize + 1 -- Thinner border size
+        local borderSize = classIconSize + 1
         local borderTexture = iconContainer:CreateTexture(nil, "BORDER")
         borderTexture:SetSize(borderSize, borderSize)
         borderTexture:SetPoint("CENTER")
         borderTexture:SetTexture("Interface\\BUTTONS\\WHITE8X8")
-        borderTexture:SetColorTexture(0.83, 0.69, 0.22) -- Gold color (#d4af37)
-
-        -- Create circular mask for the border
+        borderTexture:SetColorTexture(0.83, 0.69, 0.22)
         local maskTexture = iconContainer:CreateMaskTexture()
         maskTexture:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
         maskTexture:SetSize(borderSize, borderSize)
         maskTexture:SetPoint("CENTER")
         borderTexture:AddMaskTexture(maskTexture)
-
-        -- Add PvP rank icon if rank is higher than 0
         if playerDetail.rank and playerDetail.rank > 0 then
             local rankIcon = iconContainer:CreateTexture(nil, "OVERLAY")
             rankIcon:SetSize(32, 32)
-            rankIcon:SetPoint("LEFT", classIcon, "RIGHT", 10, 0) -- Adjust position as needed
+            rankIcon:SetPoint("LEFT", classIcon, "RIGHT", 10, 0)
             rankIcon:SetTexture(PVP_RANK_ICONS[playerDetail.rank])
         end
     end
 
-    -- Apply class color to the player info text
     if playerClass ~= "Unknown" and RAID_CLASS_COLORS and RAID_CLASS_COLORS[playerClass:upper()] then
         local color = RAID_CLASS_COLORS[playerClass:upper()]
         playerInfoLabel:SetTextColor(color.r, color.g, color.b)
     else
-        -- Gray out text for incomplete player info
         playerInfoLabel:SetTextColor(0.7, 0.7, 0.7)
     end
 
     yOffset = yOffset - 20
-
-    -- Add other player stats
     yOffset = CreateDetailRow(content, "Rank:", playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0", yOffset)
 
-    -- Create Total kills row with conditional coloring
     local killsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     killsLabel:SetPoint("TOPLEFT", 25, yOffset)
     killsLabel:SetText("Total kills:")
     killsLabel:SetTextColor(1, 1, 1)
-
     local killsValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     killsValue:SetPoint("TOPLEFT", 120, yOffset)
     killsValue:SetText(tostring(playerDetail.kills))
-
-    -- Apply gold coloring if kills > deaths
     if playerDetail.kills > playerDetail.deaths then
-        killsValue:SetTextColor(1, 0.82, 0) -- Gold color
+        killsValue:SetTextColor(1, 0.82, 0)
     end
-
     yOffset = yOffset - 20
 
     yOffset = CreateDetailRow(content, "Total deaths:", tostring(playerDetail.deaths), yOffset)
     yOffset = CreateDetailRow(content, "Total assists:", tostring(playerDetail.assists), yOffset)
 
-    -- Create K/D Ratio row with conditional coloring
     local kdLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     kdLabel:SetPoint("TOPLEFT", 25, yOffset)
     kdLabel:SetText("K/D Ratio:")
     kdLabel:SetTextColor(1, 1, 1)
-
     local kdValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     kdValue:SetPoint("TOPLEFT", 120, yOffset)
-
     local kdRatio = playerDetail.deaths > 0 and playerDetail.kills / playerDetail.deaths or playerDetail.kills
     kdValue:SetText(string.format("%.2f", kdRatio))
-
-    -- Apply gold coloring if K/D ratio >= 2.0
     if kdRatio >= 2.0 then
-        kdValue:SetTextColor(1, 0.82, 0) -- Gold color
+        kdValue:SetTextColor(1, 0.82, 0)
+    end
+    yOffset = yOffset - 20
+
+    local noteLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    noteLabel:SetPoint("TOPLEFT", 25, yOffset)
+    noteLabel:SetText("Note:")
+    noteLabel:SetTextColor(1, 1, 1)
+
+    noteLabel:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Player Note", 1, 0.82, 0, 1)
+        GameTooltip:AddLine("You can link this note to another player by typing @PlayerName.", 1, 1, 1, true)
+        GameTooltip:AddLine("Example: 'Alt/Friend of @OtherPlayer'", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine("This will create a corresponding note for 'OtherPlayer'.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    noteLabel:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+
+    local noteEditBoxHeight = 50
+    local noteEditBoxWidth = (content:GetWidth()) - 120 - 25
+    local noteEditBox = CreateFrame("EditBox", playerName .. "NoteEditBox", content, "InputBoxTemplate")
+    noteEditBox:SetPoint("TOPLEFT", 120, yOffset)
+    noteEditBox:SetSize(noteEditBoxWidth, noteEditBoxHeight)
+    noteEditBox:SetMultiLine(true)
+    noteEditBox:SetMaxLetters(100)
+    noteEditBox:SetAutoFocus(false)
+    noteEditBox:SetFontObject(ChatFontNormal)
+    noteEditBox:SetTextInsets(5, 5, 5, 5)
+
+    if PSC_PlayerDetailFrame then
+        PSC_PlayerDetailFrame.activeNoteEditBox = noteEditBox
     end
 
-    yOffset = yOffset - 20
+    local infoKey = PSC_GetInfoKeyFromName(playerName)
+    if not PSC_DB then PSC_DB = {} end
+    if not PSC_DB.PlayerInfoCache then PSC_DB.PlayerInfoCache = {} end
+    if not PSC_DB.PlayerInfoCache[infoKey] then
+        PSC_DB.PlayerInfoCache[infoKey] = {}
+    end
+
+    local playerCacheEntry = PSC_DB.PlayerInfoCache[infoKey]
+    noteEditBox:SetText(playerCacheEntry.note or "")
+
+    local function saveNoteFunction(self)
+        local newText = self:GetText()
+        if newText ~= (playerCacheEntry.note or "") then
+            playerCacheEntry.note = newText
+
+            local currentCharacterName = playerDetail.name
+            local targetPlayerName = string.match(newText, "@([%w%-]+)")
+
+            if targetPlayerName and targetPlayerName ~= currentCharacterName then
+                local linkedNoteText = string.gsub(newText, "@" .. targetPlayerName, "@" .. currentCharacterName)
+
+                local targetInfoKey = PSC_GetInfoKeyFromName(targetPlayerName)
+                if not PSC_DB.PlayerInfoCache[targetInfoKey] then
+                    PSC_DB.PlayerInfoCache[targetInfoKey] = {}
+                end
+                PSC_DB.PlayerInfoCache[targetInfoKey].note = linkedNoteText
+            end
+        end
+    end
+
+    noteEditBox:SetScript("OnEnterPressed", function(self)
+        saveNoteFunction(self)
+        self:ClearFocus()
+    end)
+    noteEditBox:SetScript("OnEscapePressed", function(self)
+        saveNoteFunction(self)
+        self:ClearFocus()
+    end)
+    noteEditBox:SetScript("OnEditFocusLost", function(self)
+        saveNoteFunction(self)
+    end)
+
+    yOffset = yOffset - noteEditBoxHeight
 
     return yOffset - 20
 end
@@ -768,13 +817,11 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
     bg:SetHeight(20)
     bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4])
 
-    -- Display the assister level instead of victim level
-    -- We're looking at the history of this player, so we want to know their level when they assisted
     local levelText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     levelText:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
+    levelText:SetText(assistData.assisterLevel == -1 and "??" or tostring(assistData.assisterLevel))
 
-    -- Get the level from the assister in assistData - this is what we need to fix
-    -- In the assistHistory data, each enemy who assisted has their level at the time of assist
+    -- Find the specific level of the assister at the time of the kill, if available
     for _, otherAssister in ipairs(assistData.otherAssisters) do
         if otherAssister.name == assistData.assisterName then
             levelText:SetText(otherAssister.level == -1 and "??" or tostring(otherAssister.level))
@@ -902,47 +949,43 @@ local function DisplayAssistHistorySection(content, playerDetail, yOffset)
 end
 
 -- Main function to display the player detail frame
-function PSC_ShowPlayerDetailFrame(playerName)
+function PSC_ShowPlayerDetailFrame(playerName, focusNote)
     if not playerName then return end
 
-    -- Find player entry
     local playerDetail = PSC_CreatePlayerDetailInfo(playerName)
     if not playerDetail then
         print("Could not find detailed information for player:", playerName)
         return
     end
 
-    -- Create or reuse frame
     if not PSC_PlayerDetailFrame then
         PSC_PlayerDetailFrame = CreatePlayerDetailFrame()
-        -- Register with frame manager
         PSC_FrameManager:RegisterFrame(PSC_PlayerDetailFrame, "PlayerDetail")
     else
         CleanupPlayerDetailFrame(PSC_PlayerDetailFrame.content)
+    end
+
+    if PSC_PlayerDetailFrame then
+        PSC_PlayerDetailFrame.activeNoteEditBox = nil
     end
 
     local content = PSC_PlayerDetailFrame.content
     local titleText = "Player History - " .. playerName
     PSC_PlayerDetailFrame.TitleText:SetText(titleText)
 
-    -- Use frame manager to show and bring to front
     PSC_FrameManager:ShowFrame("PlayerDetail")
 
-    -- Setup each section
     local yOffset = 0
 
-    -- Player summary section
     yOffset = DisplayPlayerSummarySection(content, playerDetail, yOffset)
-
-    -- Kill history section
     yOffset = DisplayKillHistorySection(content, playerDetail, yOffset)
-
-    -- Death history section
     yOffset = DisplayDeathHistorySection(content, playerDetail, yOffset)
-
-    -- Assist history section
     yOffset = DisplayAssistHistorySection(content, playerDetail, yOffset)
 
-    -- Set final content height
     content:SetHeight(math.abs(yOffset) + 30)
+
+    if focusNote and PSC_PlayerDetailFrame and PSC_PlayerDetailFrame.activeNoteEditBox then
+        PSC_PlayerDetailFrame.activeNoteEditBox:SetFocus()
+        PSC_PlayerDetailFrame.activeNoteEditBox:HighlightText(0, -1)
+    end
 end

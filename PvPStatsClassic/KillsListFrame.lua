@@ -553,7 +553,9 @@ end)
                 local infoNote = UIDropDownMenu_CreateInfo()
                 infoNote.text = "Add Note"
                 infoNote.notCheckable = true
-                infoNote.func = function() end
+                infoNote.func = function()
+                    PSC_ShowPlayerDetailFrame(entry.name, true)
+                end
                 UIDropDownMenu_AddButton(infoNote)
             end, "MENU")
 
