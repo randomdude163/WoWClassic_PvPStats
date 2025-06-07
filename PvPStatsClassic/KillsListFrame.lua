@@ -469,31 +469,57 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                         PSC_CopyBox = nil
                     end
 
-                    local copyBox = CreateFrame("EditBox", "PSC_CopyBox", PSC_KillsListFrame, "InputBoxTemplate")
+                    local copyContainer = CreateFrame("Frame", "PSC_CopyContainer", UIParent)
+                    copyContainer:SetSize(220, 50)
+                    local x, y = GetCursorPosition()
+                    local scale = UIParent:GetEffectiveScale()
+                    copyContainer:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x/scale, y/scale)
+                    copyContainer:SetFrameStrata("FULLSCREEN_DIALOG")
+                    copyContainer:SetFrameLevel(10000)
+
+                    local bg = copyContainer:CreateTexture(nil, "BACKGROUND")
+                    bg:SetAllPoints()
+                    bg:SetColorTexture(0, 0, 0, 0.9)
+
+                    local border = copyContainer:CreateTexture(nil, "BACKGROUND", nil, 1)
+                    border:SetPoint("TOPLEFT", copyContainer, "TOPLEFT", -2, 2)
+                    border:SetPoint("BOTTOMRIGHT", copyContainer, "BOTTOMRIGHT", 2, -2)
+                    border:SetColorTexture(1, 0.82, 0, 0.8)
+
+                    local innerArea = copyContainer:CreateTexture(nil, "BACKGROUND", nil, 2)
+                    innerArea:SetPoint("TOPLEFT", border, "TOPLEFT", 1, -1)
+                    innerArea:SetPoint("BOTTOMRIGHT", border, "BOTTOMRIGHT", -1, 1)
+                    innerArea:SetColorTexture(0, 0, 0, 0.9)
+
+                    local label = copyContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                    label:SetPoint("TOP", copyContainer, "TOP", 0, -5)
+                    label:SetText("Press Ctrl+C to copy or ESC to cancel")
+                    label:SetTextColor(1, 0.8, 0)
+
+                    local copyBox = CreateFrame("EditBox", "PSC_CopyBox", copyContainer, "InputBoxTemplate")
                     copyBox:SetSize(200, 24)
-                    copyBox:SetPoint("TOP", PSC_KillsListFrame, "TOP", 0, 30)
+                    copyBox:SetPoint("TOP", label, "BOTTOM", 0, -2)
                     copyBox:SetText(entry.name)
                     copyBox:SetAutoFocus(true)
                     copyBox:HighlightText()
-                    copyBox:SetFrameStrata("FULLSCREEN_DIALOG")
-                    copyBox:SetFrameLevel(10000)
 
-                    local bg = copyBox:CreateTexture(nil, "BACKGROUND")
-                    bg:SetAllPoints()
-                    bg:SetColorTexture(0, 0, 0, 0.8)
-
-                    local label = copyBox:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-                    label:SetPoint("BOTTOM", copyBox, "TOP", 0, 2)
-                    label:SetText("Press Ctrl+C to copy")
-                    label:SetTextColor(1, 0.8, 0)
-
-                    copyBox:SetScript("OnEscapePressed", function() copyBox:Hide() end)
-                    copyBox:SetScript("OnEnterPressed", function() copyBox:Hide() end)
-                    copyBox:SetScript("OnEditFocusLost", function() copyBox:Hide() end)
+                    copyBox:SetScript("OnEscapePressed", function()
+                        copyContainer:Hide()
+                        PSC_CopyBox = nil
+                    end)
+                    copyBox:SetScript("OnEnterPressed", function()
+                        copyContainer:Hide()
+                        PSC_CopyBox = nil
+                    end)
+                    copyBox:SetScript("OnEditFocusLost", function()
+                        copyContainer:Hide()
+                        PSC_CopyBox = nil
+                    end)
                     copyBox:SetScript("OnKeyDown", function(self, key)
                         if IsControlKeyDown() and key == "C" then
                             C_Timer.After(0.1, function()
-                                copyBox:Hide()
+                                copyContainer:Hide()
+                                PSC_CopyBox = nil
                             end)
                         end
                     end)
