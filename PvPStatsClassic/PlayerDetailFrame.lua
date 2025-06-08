@@ -577,32 +577,38 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     yOffset = yOffset - 20
 
     local noteLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    noteLabel:SetPoint("TOPLEFT", 25, yOffset)
+    noteLabel:SetPoint("TOPLEFT", 25, yOffset - 7)
     noteLabel:SetText("Note:")
     noteLabel:SetTextColor(1, 1, 1)
 
-    noteLabel:SetScript("OnEnter", function(self)
+    local tooltipOnEnter = function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Player Note", 1, 0.82, 0, 1)
-        GameTooltip:AddLine("You can link this note to another player by typing @PlayerName.", 1, 1, 1, true)
+        GameTooltip:AddLine("You can link this note to multiple other players by typing @PlayerName.", 1, 1, 1, true)
         GameTooltip:AddLine("Example: 'Alt/Friend of @OtherPlayer'", 0.8, 0.8, 0.8, true)
         GameTooltip:AddLine("This will create a corresponding note for 'OtherPlayer'.", 1, 1, 1, true)
         GameTooltip:Show()
-    end)
-    noteLabel:SetScript("OnLeave", function(self)
+    end
+    local tooltipOnLeave = function(self)
         GameTooltip:Hide()
-    end)
+    end
 
-    local noteEditBoxHeight = 50
-    local noteEditBoxWidth = (content:GetWidth()) - 120 - 25
+    noteLabel:SetScript("OnEnter", tooltipOnEnter)
+    noteLabel:SetScript("OnLeave", tooltipOnLeave)
+
+    local noteEditBoxHeight = 25
+    local noteEditBoxWidth = (content:GetWidth()) - 120 - 25 - 5
     local noteEditBox = CreateFrame("EditBox", playerName .. "NoteEditBox", content, "InputBoxTemplate")
-    noteEditBox:SetPoint("TOPLEFT", 120, yOffset)
+    noteEditBox:SetPoint("TOPLEFT", 123, yOffset)
     noteEditBox:SetSize(noteEditBoxWidth, noteEditBoxHeight)
-    noteEditBox:SetMultiLine(true)
+    noteEditBox:SetMultiLine(false)
     noteEditBox:SetMaxLetters(100)
     noteEditBox:SetAutoFocus(false)
     noteEditBox:SetFontObject(ChatFontNormal)
     noteEditBox:SetTextInsets(5, 5, 5, 5)
+
+    noteEditBox:SetScript("OnEnter", tooltipOnEnter)
+    noteEditBox:SetScript("OnLeave", tooltipOnLeave)
 
     if PSC_PlayerDetailFrame then
         PSC_PlayerDetailFrame.activeNoteEditBox = noteEditBox
@@ -624,16 +630,18 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
             playerCacheEntry.note = newText
 
             local currentCharacterName = playerDetail.name
-            local targetPlayerName = string.match(newText, "@([%w%-]+)")
+            for targetPlayerName in string.gmatch(newText, "@([^@%s]+)") do
+                if targetPlayerName and targetPlayerName ~= currentCharacterName then
+                    local linkedNoteText = string.gsub(newText, "@" .. targetPlayerName, "@" .. currentCharacterName)
 
-            if targetPlayerName and targetPlayerName ~= currentCharacterName then
-                local linkedNoteText = string.gsub(newText, "@" .. targetPlayerName, "@" .. currentCharacterName)
-
-                local targetInfoKey = PSC_GetInfoKeyFromName(targetPlayerName)
-                if not PSC_DB.PlayerInfoCache[targetInfoKey] then
-                    PSC_DB.PlayerInfoCache[targetInfoKey] = {}
+                    local targetInfoKey = PSC_GetInfoKeyFromName(targetPlayerName)
+                    if targetInfoKey then
+                        if not PSC_DB.PlayerInfoCache[targetInfoKey] then
+                            PSC_DB.PlayerInfoCache[targetInfoKey] = {}
+                        end
+                        PSC_DB.PlayerInfoCache[targetInfoKey].note = linkedNoteText
+                    end
                 end
-                PSC_DB.PlayerInfoCache[targetInfoKey].note = linkedNoteText
             end
         end
     end
@@ -651,6 +659,141 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     end)
 
     yOffset = yOffset - noteEditBoxHeight
+
+    local skillRowYOffset = yOffset - 10
+
+    local skillLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    skillLabel:SetPoint("TOPLEFT", 25, skillRowYOffset)
+    skillLabel:SetText("Skill Level:")
+    skillLabel:SetTextColor(1, 1, 1)
+
+    local skillSlider = CreateFrame("Slider", playerName .. "SkillSlider", content, "OptionsSliderTemplate")
+    skillSlider:SetSize(180, 17)
+    skillSlider:SetPoint("TOPLEFT", 120, skillRowYOffset)
+    skillSlider:SetMinMaxValues(0, 10)
+    skillSlider:SetValueStep(1)
+    skillSlider:SetObeyStepOnDrag(true)
+    _G[skillSlider:GetName() .. "Low"]:SetText("0")
+    _G[skillSlider:GetName() .. "High"]:SetText("10")
+    _G[skillSlider:GetName() .. "Text"]:SetText("")
+
+    local skillValueDisplay = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    skillValueDisplay:SetPoint("LEFT", skillSlider, "RIGHT", 10, 0)
+
+    local skillEnableCheckBox = CreateFrame("CheckButton", playerName .. "SkillEnableCheckBox", content, "UICheckButtonTemplate")
+    skillEnableCheckBox:SetSize(20, 20)
+    skillEnableCheckBox:SetPoint("LEFT", skillValueDisplay, "RIGHT", 10, 0)
+    skillEnableCheckBox.Text:SetText("Enable")
+    skillEnableCheckBox.Text:SetFontObject(GameFontNormalSmall)
+    skillEnableCheckBox.Text:SetPoint("LEFT", skillEnableCheckBox, "RIGHT", 5, 0)
+
+
+    local function GetSkillTooltipText(value)
+        if value == 0 then return "0: New Player - Completely new to PvP or the game." end
+        if value == 1 then return "1: Totally Bad - Struggles with basic mechanics, unaware." end
+        if value == 2 then return "2: Backpedals - Uses 'S' key excessively, clicks abilities, poor movement." end
+        if value == 3 then return "3: Below Average - Understands some basics, many fundamental mistakes." end
+        if value == 4 then return "4: Slightly Below Average - Improving, but inconsistent, some awareness." end
+        if value == 5 then return "5: Average Player - Typical player, understands core concepts, decent mechanics." end
+        if value == 6 then return "6: Slightly Above Average - Good understanding, makes good plays, reliable." end
+        if value == 7 then return "7: Good Player - Consistently performs well, good awareness and positioning." end
+        if value == 8 then return "8: PvP Expert - Very skilled, strong mechanics and decision making, impactful." end
+        if value == 9 then return "9: Elite Player - Among the best, exceptional skill, anticipates plays." end
+        if value == 10 then return "10: PvP God - Master of PvP, rarely makes mistakes, game changer." end
+        return ""
+    end
+
+    function skillSlider:UpdateTooltip()
+        local value = self:GetValue()
+        GameTooltip:ClearLines()
+        GameTooltip:SetText("Skill Level: " .. value .. "/10", 1, 0.82, 0, 1)
+        GameTooltip:AddLine(GetSkillTooltipText(value), 1, 1, 1, true)
+        GameTooltip:Show()
+    end
+
+    skillSlider:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        self:UpdateTooltip()
+    end)
+
+    skillSlider:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+
+    skillSlider:SetScript("OnValueChanged", function(self, value)
+        local steppedValue = math.floor(value + 0.5)
+        if self.isDragging then
+            self.lastSteppedValue = steppedValue
+        else
+            if self:GetValue() ~= steppedValue then
+                self:SetValue(steppedValue)
+                return
+            end
+        end
+
+        skillValueDisplay:SetText(string.format("(%d/10)", steppedValue))
+        if skillEnableCheckBox:GetChecked() then
+            playerCacheEntry.skillLevel = steppedValue
+        end
+        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+            self:UpdateTooltip()
+        end
+    end)
+
+    skillSlider:SetScript("OnMouseDown", function(self)
+        self.isDragging = true
+    end)
+
+    skillSlider:SetScript("OnMouseUp", function(self)
+        self.isDragging = false
+        if self.lastSteppedValue and self:GetValue() ~= self.lastSteppedValue then
+             self:SetValue(self.lastSteppedValue)
+        end
+        if skillEnableCheckBox:GetChecked() then
+            playerCacheEntry.skillLevel = self:GetValue()
+        end
+    end)
+
+
+    skillEnableCheckBox:SetScript("OnClick", function(self)
+        local checked = self:GetChecked()
+        playerCacheEntry.skillRatingEnabled = checked
+        if checked then
+            skillSlider:Enable()
+            local currentSkill = playerCacheEntry.skillLevel
+            if type(currentSkill) ~= "number" or currentSkill < 0 or currentSkill > 10 then
+                currentSkill = 5
+            end
+            playerCacheEntry.skillLevel = currentSkill
+            skillSlider:SetValue(currentSkill)
+            skillValueDisplay:SetText(string.format("(%d/10)", currentSkill))
+        else
+            skillSlider:Disable()
+            skillValueDisplay:SetText("")
+        end
+    end)
+
+    if PSC_PlayerDetailFrame then
+        PSC_PlayerDetailFrame.activeSkillEnableCheckBox = skillEnableCheckBox
+    end
+
+    if playerCacheEntry.skillRatingEnabled then
+        skillEnableCheckBox:SetChecked(true)
+        skillSlider:Enable()
+        local currentSkill = playerCacheEntry.skillLevel
+        if type(currentSkill) ~= "number" or currentSkill < 0 or currentSkill > 10 then
+            currentSkill = 5
+        end
+        skillSlider:SetValue(currentSkill)
+        skillValueDisplay:SetText(string.format("(%d/10)", currentSkill))
+    else
+        skillEnableCheckBox:SetChecked(false)
+        skillSlider:Disable()
+        skillSlider:SetValue(5)
+        skillValueDisplay:SetText("")
+    end
+
+    yOffset = skillRowYOffset - 30
 
     return yOffset - 20
 end
@@ -949,7 +1092,7 @@ local function DisplayAssistHistorySection(content, playerDetail, yOffset)
 end
 
 -- Main function to display the player detail frame
-function PSC_ShowPlayerDetailFrame(playerName, focusNote)
+function PSC_ShowPlayerDetailFrame(playerName, focusNote, focusSkillRating)
     if not playerName then return end
 
     local playerDetail = PSC_CreatePlayerDetailInfo(playerName)
@@ -967,6 +1110,7 @@ function PSC_ShowPlayerDetailFrame(playerName, focusNote)
 
     if PSC_PlayerDetailFrame then
         PSC_PlayerDetailFrame.activeNoteEditBox = nil
+        PSC_PlayerDetailFrame.activeSkillEnableCheckBox = nil
     end
 
     local content = PSC_PlayerDetailFrame.content
@@ -987,5 +1131,14 @@ function PSC_ShowPlayerDetailFrame(playerName, focusNote)
     if focusNote and PSC_PlayerDetailFrame and PSC_PlayerDetailFrame.activeNoteEditBox then
         PSC_PlayerDetailFrame.activeNoteEditBox:SetFocus()
         PSC_PlayerDetailFrame.activeNoteEditBox:HighlightText(0, -1)
+    end
+
+    if focusSkillRating and PSC_PlayerDetailFrame and PSC_PlayerDetailFrame.activeSkillEnableCheckBox then
+        if not PSC_PlayerDetailFrame.activeSkillEnableCheckBox:GetChecked() then
+            PSC_PlayerDetailFrame.activeSkillEnableCheckBox:SetChecked(true)
+            if PSC_PlayerDetailFrame.activeSkillEnableCheckBox:GetScript("OnClick") then
+                PSC_PlayerDetailFrame.activeSkillEnableCheckBox:GetScript("OnClick")(PSC_PlayerDetailFrame.activeSkillEnableCheckBox)
+            end
+        end
     end
 end

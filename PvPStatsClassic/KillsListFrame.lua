@@ -554,9 +554,17 @@ end)
                 infoNote.text = "Add Note"
                 infoNote.notCheckable = true
                 infoNote.func = function()
-                    PSC_ShowPlayerDetailFrame(entry.name, true)
+                    PSC_ShowPlayerDetailFrame(entry.name, true, false)
                 end
                 UIDropDownMenu_AddButton(infoNote)
+
+                local infoSkill = UIDropDownMenu_CreateInfo()
+                infoSkill.text = "Set Player Skill Rating"
+                infoSkill.notCheckable = true
+                infoSkill.func = function()
+                    PSC_ShowPlayerDetailFrame(entry.name, false, true)
+                end
+                UIDropDownMenu_AddButton(infoSkill)
             end, "MENU")
 
             ToggleDropDownMenu(1, nil, PSC_PlayerRowDropDown, self, 0, 0)
