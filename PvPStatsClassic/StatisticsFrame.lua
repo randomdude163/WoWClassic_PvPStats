@@ -990,6 +990,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         ["In Guild"] = 0,
         ["No Guild"] = 0
     }
+    local guildData = {}
 
     -- Ensure all classes, races, genders are present with at least 0
     local allClasses = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
@@ -1008,7 +1009,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     if not PSC_DB.PlayerKillCounts.Characters then
-        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
+        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
     end
 
     for characterKey, characterData in pairs(charactersToProcess) do
@@ -1058,6 +1059,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                         local guild = PSC_DB.PlayerInfoCache[infoKey].guild
                         if guild ~= "" then
                             guildStatusData["In Guild"] = guildStatusData["In Guild"] + kills
+                            guildData[guild] = (guildData[guild] or 0) + kills
                         else
                             guildStatusData["No Guild"] = guildStatusData["No Guild"] + kills
                         end
@@ -1067,7 +1069,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
 end
 
 local function createScrollableLeftPanel(parent)
@@ -1253,7 +1255,7 @@ function PSC_UpdateStatisticsFrame(frame)
         end
     end
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData =
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)

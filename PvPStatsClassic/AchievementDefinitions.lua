@@ -2042,6 +2042,168 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "kills_guild_25_same",
+        title = "Guild Crasher",
+        description = function(a) return ("Eliminate %d players from the same guild"):format(a.targetValue) end,
+        iconID = 134473,
+        achievementPoints = 25,
+        targetValue = 25,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d guild members from the same guild eliminated! Their guild recruitment message now includes '[YOUR NAME] survivor' as a requirement. Guild chat has become a support group.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            if not stats.guildData then return 0 end
+            local maxSameGuild = 0
+            for guildName, count in pairs(stats.guildData) do
+                if count > maxSameGuild then
+                    maxSameGuild = count
+                end
+            end
+            return maxSameGuild
+        end,
+    },
+    {
+        id = "kills_guild_50_same",
+        title = "Guild Extinction Event",
+        description = function(a) return ("Eliminate %d players from the same guild"):format(a.targetValue) end,
+        iconID = 134471,
+        achievementPoints = 50,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d members of the same guild sent packing! Their guild master is considering a name change and server transfer. You've single-handedly caused more guild drama than a ninja-looted Thunderfury.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            if not stats.guildData then return 0 end
+            local maxSameGuild = 0
+            for guildName, count in pairs(stats.guildData) do
+                if count > maxSameGuild then
+                    maxSameGuild = count
+                end
+            end
+            return maxSameGuild
+        end,
+    },
+    {
+        id = "kills_guild_75_same",
+        title = "Guild Disbander",
+        description = function(a) return ("Eliminate %d players from the same guild"):format(a.targetValue) end,
+        iconID = 134472,
+        achievementPoints = 75,
+        targetValue = 75,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d guild members deleted! The guild bank is now just a memorial to better times. Their Discord server has been renamed to 'Survivors of [YOUR NAME]' and membership is declining daily.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            if not stats.guildData then return 0 end
+            local maxSameGuild = 0
+            for guildName, count in pairs(stats.guildData) do
+                if count > maxSameGuild then
+                    maxSameGuild = count
+                end
+            end
+            return maxSameGuild
+        end,
+    },
+    {
+        id = "kills_guild_100_same",
+        title = "Guild Genocide",
+        description = function(a) return ("Eliminate %d players from the same guild"):format(a.targetValue) end,
+        iconID = 134470,
+        achievementPoints = 100,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d members of the same guild obliterated! You've accomplished what guild drama, loot disputes, and officer favoritism couldn't: complete guild annihilation. Their guild recruitment posts now specify 'must be immune to [YOUR NAME]' as a hard requirement.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            if not stats.guildData then return 0 end
+            local maxSameGuild = 0
+            for guildName, count in pairs(stats.guildData) do
+                if count > maxSameGuild then
+                    maxSameGuild = count
+                end
+            end
+            return maxSameGuild
+        end,
+    },
+    {
+        id = "kills_guild_25_different",
+        title = "Guild Hopper",
+        description = function(a) return ("Eliminate players from %d different guilds"):format(a.targetValue) end,
+        iconID = 134328,
+        achievementPoints = 25,
+        targetValue = 25,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Killed members from %d different guilds! You're like a traveling salesman, except you're selling death and everyone's buying. Guild leaders are starting a support group.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            if not stats.guildData then return 0 end
+            local uniqueGuilds = 0
+            for guildName, count in pairs(stats.guildData) do
+                if count > 0 then
+                    uniqueGuilds = uniqueGuilds + 1
+                end
+            end
+            return uniqueGuilds
+        end,
+    },
+    {
+        id = "kills_guild_50_different",
+        title = "Inter-Guild Warfare",
+        description = function(a) return ("Eliminate players from %d different guilds"):format(a.targetValue) end,
+        iconID = 134327,
+        achievementPoints = 50,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Assassinated members from %d different guilds! You've united the server's guilds in one common goal: avoiding you. The monthly guild leader meeting agenda now has '[YOUR NAME] threat assessment' as item #1.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            if not stats.guildData then return 0 end
+            local uniqueGuilds = 0
+            for guildName, count in pairs(stats.guildData) do
+                if count > 0 then
+                    uniqueGuilds = uniqueGuilds + 1
+                end
+            end
+            return uniqueGuilds
+        end,
+    },
+    {
         id = "kills_favorite_target",
         title = "Personal Vendetta",
         description = function(a) return ("Kill the same player %d times"):format(a.targetValue) end,
