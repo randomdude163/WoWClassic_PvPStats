@@ -49,7 +49,9 @@ local function FilterAchievements(achievements, category)
 
         if prefix == category:lower() then
             if prefix == "class" then
-                if string.find(achievement.id, "_paladin_") and playerFaction == "Horde" then
+                if string.find(achievement.id, "class_mixed_") then
+                    table.insert(filtered, achievement)
+                elseif string.find(achievement.id, "_paladin_") and playerFaction == "Horde" then
                     table.insert(filtered, achievement)
                 elseif string.find(achievement.id, "_shaman_") and playerFaction == "Alliance" then
                     table.insert(filtered, achievement)

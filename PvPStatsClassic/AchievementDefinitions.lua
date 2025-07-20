@@ -1721,6 +1721,266 @@ AchievementSystem.achievements = {
             return stats.raceData["Tauren"] or 0
         end,
     },
+    {
+        id = "race_alliance_mixed_human_nightelf_dwarf_gnome_100",
+        title = "Alliance Sampler Platter",
+        description = function(a) return ("Eliminate %d of each Alliance race (400 total)"):format(a.targetValue) end,
+        iconID = 133784,
+        achievementPoints = 75,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've achieved perfect Alliance genocide balance! %d Humans, %d Gnomes, %d Dwarves, and %d Night Elves - that's equality in death! Stormwind's diversity committee is impressed by your non-discriminatory killing approach. You're like a serial killer with OCD, but for racial statistics.")
+                :format(a.targetValue, a.targetValue, a.targetValue, a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local humans = stats.raceData["Human"] or 0
+            local gnomes = stats.raceData["Gnome"] or 0
+            local dwarves = stats.raceData["Dwarf"] or 0
+            local nightElves = stats.raceData["Night Elf"] or 0
+            return math.min(humans, gnomes, dwarves, nightElves)
+        end,
+    },
+    {
+        id = "race_alliance_mixed_human_nightelf_dwarf_gnome_250",
+        title = "Alliance Census Corrector",
+        description = function(a) return ("Eliminate %d of each Alliance race (1000 total)"):format(a.targetValue) end,
+        iconID = 133785,
+        achievementPoints = 125,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Perfect Alliance extermination ratios achieved! %d kills per race shows your commitment to fair and balanced genocide. The Alliance leadership is considering renaming their faction to 'The Survivors of [YOUR NAME].' Even King Varian is impressed by your mathematical precision in mass murder.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local humans = stats.raceData["Human"] or 0
+            local gnomes = stats.raceData["Gnome"] or 0
+            local dwarves = stats.raceData["Dwarf"] or 0
+            local nightElves = stats.raceData["Night Elf"] or 0
+            return math.min(humans, gnomes, dwarves, nightElves)
+        end,
+    },
+    {
+        id = "race_alliance_mixed_human_nightelf_dwarf_gnome_500",
+        title = "Alliance Demographic Disaster",
+        description = function(a) return ("Eliminate %d of each Alliance race (2000 total)"):format(a.targetValue) end,
+        iconID = 133786,
+        achievementPoints = 200,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've single-handedly caused an Alliance population crisis! %d deaths per race means their birth rates can't keep up with your kill rate. Stormwind's Bureau of Statistics has classified you as a 'natural disaster.' The remaining Alliance players are considering a class action lawsuit against Blizzard for allowing you to exist.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local humans = stats.raceData["Human"] or 0
+            local gnomes = stats.raceData["Gnome"] or 0
+            local dwarves = stats.raceData["Dwarf"] or 0
+            local nightElves = stats.raceData["Night Elf"] or 0
+            return math.min(humans, gnomes, dwarves, nightElves)
+        end,
+    },
+    {
+        id = "race_alliance_mixed_human_nightelf_dwarf_gnome_1000",
+        title = "Alliance Extinction Protocol",
+        description = function(a) return ("Eliminate %d of each Alliance race (4000 total)"):format(a.targetValue) end,
+        iconID = 133787,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("LEGENDARY GENOCIDE ACHIEVEMENT! You've eliminated %d of each Alliance race with surgical precision. This level of systematic extermination would make even the Burning Legion jealous. The Alliance has officially petitioned the UN (United NPCs) to classify you as a war criminal. Congratulations, you've achieved what Arthas, Illidan, and Deathwing combined couldn't: perfect racial balance through annihilation!")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local humans = stats.raceData["Human"] or 0
+            local gnomes = stats.raceData["Gnome"] or 0
+            local dwarves = stats.raceData["Dwarf"] or 0
+            local nightElves = stats.raceData["Night Elf"] or 0
+            return math.min(humans, gnomes, dwarves, nightElves)
+        end,
+    },
+    {
+        id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_100",
+        title = "Class Warfare Initiate",
+        description = function(a) return ("Execute %d of each class"):format(a.targetValue) end,
+        iconID = 132147,
+        achievementPoints = 75,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Perfect class extermination achieved. %d deaths per class - no favorites, no mercy. Equal opportunity murder across all professions.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local playerFaction = UnitFactionGroup("player")
+            if playerFaction == "Horde" then
+                local warrior = stats.classData["Warrior"] or 0
+                local paladin = stats.classData["Paladin"] or 0
+                local hunter = stats.classData["Hunter"] or 0
+                local rogue = stats.classData["Rogue"] or 0
+                local priest = stats.classData["Priest"] or 0
+                local mage = stats.classData["Mage"] or 0
+                local warlock = stats.classData["Warlock"] or 0
+                local druid = stats.classData["Druid"] or 0
+                return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
+            else
+                local warrior = stats.classData["Warrior"] or 0
+                local shaman = stats.classData["Shaman"] or 0
+                local hunter = stats.classData["Hunter"] or 0
+                local rogue = stats.classData["Rogue"] or 0
+                local priest = stats.classData["Priest"] or 0
+                local mage = stats.classData["Mage"] or 0
+                local warlock = stats.classData["Warlock"] or 0
+                local druid = stats.classData["Druid"] or 0
+                return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
+            end
+        end,
+    },
+    {
+        id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_250",
+        title = "Professional Exterminator",
+        description = function(a) return ("Execute %d of each class"):format(a.targetValue) end,
+        iconID = 132349,
+        achievementPoints = 125,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("All classes equally decimated. %d corpses per profession. Your methodical approach to mass murder shows disturbing efficiency.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local playerFaction = UnitFactionGroup("player")
+            if playerFaction == "Horde" then
+                local warrior = stats.classData["Warrior"] or 0
+                local paladin = stats.classData["Paladin"] or 0
+                local hunter = stats.classData["Hunter"] or 0
+                local rogue = stats.classData["Rogue"] or 0
+                local priest = stats.classData["Priest"] or 0
+                local mage = stats.classData["Mage"] or 0
+                local warlock = stats.classData["Warlock"] or 0
+                local druid = stats.classData["Druid"] or 0
+                return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
+            else
+                local warrior = stats.classData["Warrior"] or 0
+                local shaman = stats.classData["Shaman"] or 0
+                local hunter = stats.classData["Hunter"] or 0
+                local rogue = stats.classData["Rogue"] or 0
+                local priest = stats.classData["Priest"] or 0
+                local mage = stats.classData["Mage"] or 0
+                local warlock = stats.classData["Warlock"] or 0
+                local druid = stats.classData["Druid"] or 0
+                return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
+            end
+        end,
+    },
+    {
+        id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_500",
+        title = "Class Genocide Specialist",
+        description = function(a) return ("Execute %d of each class"):format(a.targetValue) end,
+        iconID = 135999,
+        achievementPoints = 125,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Systematic class annihilation complete. %d deaths per class. Your kill count reads like a perfectly balanced apocalypse.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local playerFaction = UnitFactionGroup("player")
+            if playerFaction == "Horde" then
+                local warrior = stats.classData["Warrior"] or 0
+                local paladin = stats.classData["Paladin"] or 0
+                local hunter = stats.classData["Hunter"] or 0
+                local rogue = stats.classData["Rogue"] or 0
+                local priest = stats.classData["Priest"] or 0
+                local mage = stats.classData["Mage"] or 0
+                local warlock = stats.classData["Warlock"] or 0
+                local druid = stats.classData["Druid"] or 0
+                return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
+            else
+                local warrior = stats.classData["Warrior"] or 0
+                local shaman = stats.classData["Shaman"] or 0
+                local hunter = stats.classData["Hunter"] or 0
+                local rogue = stats.classData["Rogue"] or 0
+                local priest = stats.classData["Priest"] or 0
+                local mage = stats.classData["Mage"] or 0
+                local warlock = stats.classData["Warlock"] or 0
+                local druid = stats.classData["Druid"] or 0
+                return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
+            end
+        end,
+    },
+    {
+        id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_1000",
+        title = "The Great Leveler",
+        description = function(a) return ("Execute %d of each class"):format(a.targetValue) end,
+        iconID = 136149,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Ultimate class extinction achieved. %d corpses per class. You've reduced all professions to statistical equality through systematic slaughter.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local playerFaction = UnitFactionGroup("player")
+            if playerFaction == "Horde" then
+                local warrior = stats.classData["Warrior"] or 0
+                local paladin = stats.classData["Paladin"] or 0
+                local hunter = stats.classData["Hunter"] or 0
+                local rogue = stats.classData["Rogue"] or 0
+                local priest = stats.classData["Priest"] or 0
+                local mage = stats.classData["Mage"] or 0
+                local warlock = stats.classData["Warlock"] or 0
+                local druid = stats.classData["Druid"] or 0
+                return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
+            else
+                local warrior = stats.classData["Warrior"] or 0
+                local shaman = stats.classData["Shaman"] or 0
+                local hunter = stats.classData["Hunter"] or 0
+                local rogue = stats.classData["Rogue"] or 0
+                local priest = stats.classData["Priest"] or 0
+                local mage = stats.classData["Mage"] or 0
+                local warlock = stats.classData["Warlock"] or 0
+                local druid = stats.classData["Druid"] or 0
+                return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
+            end
+        end,
+    },
     -- {
     --     id = "kills_guild",
     --     title = "Guild Drama Generator",
@@ -2054,7 +2314,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d guild members from the same guild eliminated! Their guild recruitment message now includes '[YOUR NAME] survivor' as a requirement. Guild chat has become a support group.")
+            return ("%d guild members eliminated! Their Discord server now has more 'F' reactions than actual messages. Guild recruitment posts updated to include 'PTSD counseling available.'")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2081,7 +2341,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d members of the same guild sent packing! Their guild master is considering a name change and server transfer. You've single-handedly caused more guild drama than a ninja-looted Thunderfury.")
+            return ("%d members of the same guild sent packing! You've caused more guild drama than a ninja-looted rare mount. Their group therapy sessions are booked solid.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2108,7 +2368,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d guild members deleted! The guild bank is now just a memorial to better times. Their Discord server has been renamed to 'Survivors of [YOUR NAME]' and membership is declining daily.")
+            return ("%d guild members deleted! The guild bank is now just a memorial to better times. Their Discord renamed to 'Survivors Anonymous' with declining membership.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2135,7 +2395,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d members of the same guild obliterated! You've accomplished what guild drama, loot disputes, and officer favoritism couldn't: complete guild annihilation. Their guild recruitment posts now specify 'must be immune to [YOUR NAME]' as a hard requirement.")
+            return ("%d members obliterated! You've achieved complete guild annihilation. Their recruitment posts now specify 'emotional stability required' as a hard requirement.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2162,7 +2422,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("Killed members from %d different guilds! You're like a traveling salesman, except you're selling death and everyone's buying. Guild leaders are starting a support group.")
+            return ("Killed members from %d different guilds! You're like a traveling door-to-door salesman, except you're selling death and business is booming.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2189,7 +2449,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("Assassinated members from %d different guilds! You've united the server's guilds in one common goal: avoiding you. The monthly guild leader meeting agenda now has '[YOUR NAME] threat assessment' as item #1.")
+            return ("Assassinated members from %d different guilds! You've united the server in one common goal: avoiding you. Monthly guild meetings now include trauma counseling.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2216,7 +2476,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d members of the same guild eliminated! Their guild charter has been officially changed to a death certificate. The remaining members are considering a class action lawsuit, but their lawyers keep mysteriously dying to you too.")
+            return ("%d members eliminated! Their guild charter changed to a death certificate. The remaining members hired lawyers, but they keep mysteriously dying too.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2235,7 +2495,7 @@ AchievementSystem.achievements = {
         title = "Guild Extinction Protocol",
         description = function(a) return ("Eliminate %d players from the same guild"):format(a.targetValue) end,
         iconID = 134467,
-        achievementPoints = 150,
+        achievementPoints = 125,
         targetValue = 150,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2243,7 +2503,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d guild members sent to the afterlife! The guild's Discord server now requires therapy credentials to join. Their recruitment message has been updated to 'Seeking members with strong mental fortitude and fast respawn times.'")
+            return ("%d guild members sent to the afterlife! Their Discord requires therapy credentials to join. Recruitment updated to 'fast respawn times preferred.'")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2262,7 +2522,7 @@ AchievementSystem.achievements = {
         title = "Guild Apocalypse",
         description = function(a) return ("Eliminate %d players from the same guild"):format(a.targetValue) end,
         iconID = 134466,
-        achievementPoints = 200,
+        achievementPoints = 250,
         targetValue = 200,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2270,7 +2530,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d members of the same guild absolutely destroyed! The guild name has been added to Azeroth's endangered species list. Archaeological teams are being sent to study the remains of their guild hall. Even their guild tabard design has been retired out of respect for the deceased.")
+            return ("%d members absolutely destroyed! The guild name added to the endangered species list. Archaeological teams studying their guild hall remains.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2289,7 +2549,7 @@ AchievementSystem.achievements = {
         title = "Guild Network Destroyer",
         description = function(a) return ("Eliminate players from %d different guilds"):format(a.targetValue) end,
         iconID = 134326,
-        achievementPoints = 150,
+        achievementPoints = 125,
         targetValue = 75,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2297,7 +2557,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("Eliminated members from %d different guilds! The server's guild leaders have formed a coalition called 'Stop [YOUR NAME].' Their monthly meeting attendance has a 90%% no-show rate because they're all afraid to leave their capital cities.")
+            return ("Eliminated members from %d different guilds! Guild leaders formed a 'Stop the Madness' coalition. Meeting attendance: 10%% (everyone's too scared to leave town).")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -2324,7 +2584,7 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("Devastated members from %d different guilds! You've achieved what no raid boss, server maintenance, or expansion launch could: uniting every guild on the server in shared trauma. The server forums now have a '[YOUR NAME] Support Group' sticky thread with more posts than the trading forum.")
+            return ("Devastated members from %d different guilds! You've united every guild in shared trauma. The server forums have a support group sticky with more posts than trading.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
