@@ -312,3 +312,40 @@ function PSC_CountKillsInTimeRangeOnWeekdays(startHour, endHour, weekdays, timez
 
     return count
 end
+
+function PSC_IsTimestampOnDate(timestamp, day, month, timezoneOffsetHours)
+    if not timestamp or not day or not month then
+        return false
+    end
+
+    timezoneOffsetHours = timezoneOffsetHours or 0
+    local adjustedTimestamp = timestamp + (timezoneOffsetHours * 3600)
+    local dateInfo = date("*t", adjustedTimestamp)
+    if not dateInfo then
+        return false
+    end
+
+    return dateInfo.day == day and dateInfo.month == month
+end
+
+function PSC_CountKillsOnDate(day, month, timezoneOffsetHours)
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp and PSC_IsTimestampOnDate(killLocation.timestamp, day, month, timezoneOffsetHours) then
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    return count
+end

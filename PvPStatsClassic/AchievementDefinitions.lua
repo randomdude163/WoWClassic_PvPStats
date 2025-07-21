@@ -3181,4 +3181,72 @@ AchievementSystem.achievements = {
             return PSC_CountKillsOnWeekdays({1}, 2) -- Sunday
         end,
     },
+    {
+        id = "kills_christmas_eve",
+        title = "Holiday Spirit...Crusher",
+        description = "Kill 1 player on Christmas Eve (Dec 24th)",
+        iconID = 134062,
+        achievementPoints = 50,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Someone was trying to spread holiday cheer. You spread their entrails on the snow. Bah, humbug.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnDate(24, 12, 2)
+        end,
+    },
+    {
+        id = "kills_christmas_day",
+        title = "A Very Bloody Christmas",
+        description = "Kill 1 player on Christmas Day (Dec 25th)",
+        iconID = 134062,
+        achievementPoints = 50,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+unlocked = false,
+        completedDate = nil,
+        subText = "You gave someone the gift of a corpse run. They'll remember this Christmas forever... with rage.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnDate(25, 12, 2)
+        end,
+    },
+    {
+        id = "kills_new_years_eve",
+        title = "Dropping The Ball",
+        description = "Kill 1 player on New Year's Eve (Dec 31st)",
+        iconID = 134062,
+        achievementPoints = 50,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+unlocked = false,
+        completedDate = nil,
+        subText = "While everyone else was counting down, you were counting down some poor soul's health bar. Their new year's resolution is to avoid you.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnDate(31, 12, 2)
+        end,
+    },
+    {
+        id = "kills_new_years_day",
+        title = "Starting the Year with a Bang",
+        description = "Kill 1 player on New Year's Day (Jan 1st)",
+        iconID = 134062,
+        achievementPoints = 50,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+unlocked = false,
+        completedDate = nil,
+        subText = "New year, new victim. You've already ruined someone's 1st of January. At this rate, you'll be the server's most feared player by February.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnDate(1, 1, 2)
+        end,
+    },
 }
