@@ -3740,7 +3740,7 @@ unlocked = false,
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("You've murdered %d M-named maniacs! From Mike to Masterkiller, they all got M for 'Murdered'.")
+            return ("You've murdered %d M-named maniacs! From Mike to Mobman, they all got M for 'Murdered'.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -3860,7 +3860,7 @@ unlocked = false,
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("You've slaughtered %d S-named scrubs! From Simon to Soulripper, they all got S for 'Slain'.")
+            return ("You've slaughtered %d S-named scrubs! From Simon to Severussnipe, they all got S for 'Slain'.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -3900,7 +3900,7 @@ unlocked = false,
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("You've undertaken %d U-named users! From Ulrich to Underkiller, they all took a U-turn straight to the grave.")
+            return ("You've undertaken %d U-named users! From Ulrich to Uselessidiot, they all took a U-turn straight to the grave.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
