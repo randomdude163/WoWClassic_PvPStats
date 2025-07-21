@@ -3023,7 +3023,8 @@ AchievementSystem.achievements = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("%d players had their weekend plans canceled permanently. They were supposed to be relaxing, maybe doing some fishing... instead, they got a one-way ticket to the graveyard, courtesy of your 'no days off' policy."):format(a.targetValue)
+            return ("%d players had their weekend plans canceled permanently. You're the definition of a casual weekend warrior - can't play during the week because of 'responsibilities,' so you log in Saturday morning with your coffee, still figuring out your keybinds, and somehow manage to kill people through sheer luck and questionable decision-making. Your victims respect the dedication of someone who ganks between grocery runs and family dinners.")
+                :format(a.targetValue)
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsOnWeekdays({1, 7}, 2) -- Sunday (1) and Saturday (7)
