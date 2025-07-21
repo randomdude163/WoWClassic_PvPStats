@@ -378,11 +378,9 @@ local function CreateAchievementTile(i, achievement, stats)
     end)
 
     tile:SetScript("OnClick", function(self, button)
-        print("DEBUG: Button clicked:", button, "Achievement unlocked:", achievement.unlocked)
         if button == "LeftButton" and IsControlKeyDown() and achievement.unlocked then
             PSC_ShareAchievementInChat(achievement)
         elseif button == "RightButton" and achievement.unlocked then
-            print("DEBUG: Triggering achievement popup for:", achievement.title)
             -- Trigger achievement popup
             local achievementData = {
                 icon = achievement.iconID or "Interface\\Icons\\INV_Misc_QuestionMark",
