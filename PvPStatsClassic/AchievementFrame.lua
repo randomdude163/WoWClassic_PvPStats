@@ -88,6 +88,9 @@ local function FilterAchievements(achievements, category)
             elseif prefix == "kills" then
                 table.insert(filtered, achievement)
 
+            elseif prefix == "time" then
+                table.insert(filtered, achievement)
+
             elseif prefix == "bonus" then
                 if string.find(achievement.id, "bonus_big_game_") then
                     table.insert(filtered, achievement)
@@ -397,7 +400,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Gender", "Zone", "Bonus"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Gender", "Zone", "Bonus"}
     local tabs = {}
     local tabWidth, tabHeight = 85, 32
 

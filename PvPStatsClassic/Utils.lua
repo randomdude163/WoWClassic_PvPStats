@@ -349,3 +349,77 @@ function PSC_CountKillsOnDate(day, month, timezoneOffsetHours)
 
     return count
 end
+
+function PSC_IsTimestampOnFridayThe13th(timestamp, timezoneOffsetHours)
+    if not timestamp then
+        return false
+    end
+
+    timezoneOffsetHours = timezoneOffsetHours or 0
+    local adjustedTimestamp = timestamp + (timezoneOffsetHours * 3600)
+    local dateInfo = date("*t", adjustedTimestamp)
+    if not dateInfo then
+        return false
+    end
+
+    return dateInfo.day == 13 and dateInfo.wday == 6
+end
+
+function PSC_CountKillsOnFridayThe13th(timezoneOffsetHours)
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp and PSC_IsTimestampOnFridayThe13th(killLocation.timestamp, timezoneOffsetHours) then
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    return count
+end
+
+function PSC_IsTimestampInMonth(timestamp, month, timezoneOffsetHours)
+    if not timestamp or not month then
+        return false
+    end
+
+    timezoneOffsetHours = timezoneOffsetHours or 0
+    local adjustedTimestamp = timestamp + (timezoneOffsetHours * 3600)
+    local dateInfo = date("*t", adjustedTimestamp)
+    if not dateInfo then
+        return false
+    end
+
+    return dateInfo.month == month
+end
+
+function PSC_CountKillsInMonth(month, timezoneOffsetHours)
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp and PSC_IsTimestampInMonth(killLocation.timestamp, month, timezoneOffsetHours) then
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    return count
+end

@@ -2934,7 +2934,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_night_shift",
+        id = "time_night_shift",
         title = "Night Shift Nightmare",
         description = function(a) return ("Eliminate %d players between 10 PM - 6 AM"):format(a.targetValue) end,
         iconID = 136057,
@@ -2954,7 +2954,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_lunch_hour",
+        id = "time_lunch_hour",
         title = "Lunch Break Liquidator",
         description = function(a) return ("Eliminate %d players during lunch hour (12 PM - 2 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 134062,
@@ -2973,7 +2973,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_after_work",
+        id = "time_after_work",
         title = "After Work Assassin",
         description = function(a) return ("Eliminate %d players during after work hours (5 PM - 9 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 136116,
@@ -2992,7 +2992,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_work_hours",
+        id = "time_work_hours",
         title = "Work Hours Warrior",
         description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 135966,
@@ -3011,7 +3011,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_weekend_ganker",
+        id = "time_weekend_ganker",
         title = "Weekend Ganker",
         description = function(a) return ("Kill %d players during the weekend (Sat-Sun)"):format(a.targetValue) end,
         iconID = 132348, -- INV_Misc_Head_Dragon_01
@@ -3030,7 +3030,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_work_skipper",
+        id = "time_weekday_killer",
         title = "Weekday Killer",
         description = function(a) return ("Kill %d players during the week (Mon-Fri)"):format(a.targetValue) end,
         iconID = 133729, -- Achievement_Character_Human_Male
@@ -3049,7 +3049,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_monday_mayhem",
+        id = "time_monday_mayhem",
         title = "Monday Mayhem",
         description = function(a) return ("Kill %d players on a Monday"):format(a.targetValue) end,
         iconID = 135966,
@@ -3068,7 +3068,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_tuesday_terror",
+        id = "time_tuesday_terror",
         title = "Tuesday Terror",
         description = function(a) return ("Kill %d players on a Tuesday"):format(a.targetValue) end,
         iconID = 135966,
@@ -3087,7 +3087,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_wednesday_woe",
+        id = "time_wednesday_woe",
         title = "Wednesday Woe",
         description = function(a) return ("Kill %d players on a Wednesday"):format(a.targetValue) end,
         iconID = 135966,
@@ -3106,7 +3106,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_thursday_thrashing",
+        id = "time_thursday_thrashing",
         title = "Thursday Thrashing",
         description = function(a) return ("Kill %d players on a Thursday"):format(a.targetValue) end,
         iconID = 135966,
@@ -3125,7 +3125,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_friday_frenzy",
+        id = "time_friday_frenzy",
         title = "Friday Frenzy",
         description = function(a) return ("Kill %d players on a Friday"):format(a.targetValue) end,
         iconID = 135966,
@@ -3144,7 +3144,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_saturday_slaughter",
+        id = "time_saturday_slaughter",
         title = "Saturday Slaughter",
         description = function(a) return ("Kill %d players on a Saturday"):format(a.targetValue) end,
         iconID = 132348,
@@ -3163,7 +3163,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_sunday_suffering",
+        id = "time_sunday_suffering",
         title = "Sunday Suffering",
         description = function(a) return ("Kill %d players on a Sunday"):format(a.targetValue) end,
         iconID = 132348,
@@ -3182,11 +3182,11 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_christmas_eve",
+        id = "time_christmas_eve",
         title = "Holiday Spirit...Crusher",
         description = "Kill 1 player on Christmas Eve (Dec 24th)",
         iconID = 134062,
-        achievementPoints = 50,
+        achievementPoints = 500,
         targetValue = 1,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -3199,11 +3199,11 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_christmas_day",
+        id = "time_christmas_day",
         title = "A Very Bloody Christmas",
         description = "Kill 1 player on Christmas Day (Dec 25th)",
         iconID = 134062,
-        achievementPoints = 50,
+        achievementPoints = 500,
         targetValue = 1,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -3216,11 +3216,11 @@ unlocked = false,
         end,
     },
     {
-        id = "kills_new_years_eve",
+        id = "time_new_years_eve",
         title = "Dropping The Ball",
         description = "Kill 1 player on New Year's Eve (Dec 31st)",
         iconID = 134062,
-        achievementPoints = 50,
+        achievementPoints = 500,
         targetValue = 1,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -3233,11 +3233,11 @@ unlocked = false,
         end,
     },
     {
-        id = "kills_new_years_day",
+        id = "time_new_years_day",
         title = "Starting the Year with a Bang",
         description = "Kill 1 player on New Year's Day (Jan 1st)",
         iconID = 134062,
-        achievementPoints = 50,
+        achievementPoints = 500,
         targetValue = 1,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -3247,6 +3247,244 @@ unlocked = false,
         subText = "New year, new victim. You've already ruined someone's 1st of January. At this rate, you'll be the server's most feared player by February.",
         progress = function(achievement, stats)
             return PSC_CountKillsOnDate(1, 1, 2)
+        end,
+    },
+    {
+        id = "time_friday_13th",
+        title = "Friday the 13th Menace",
+        description = "Kill 13 players on any Friday the 13th.",
+        iconID = 135824,
+        achievementPoints = 250,
+        targetValue = 13,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You're the reason people are superstitious. You've made Friday the 13th a living nightmare for 13 unlucky souls. Jason Voorhees would be proud.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnFridayThe13th(2)
+        end,
+    },
+    {
+        id = "time_april_fools",
+        title = "April Fool's Punchline",
+        description = "Kill a player on April 1st.",
+        iconID = 135742,
+        achievementPoints = 100,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "They thought that gank was a joke. It wasn't. You've delivered the punchline to one player's very short-lived comedy routine. April Fools!",
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnDate(1, 4, 2)
+        end,
+    },
+    {
+        id = "time_monthly_january",
+        title = "January Juggernaut",
+        description = "Kill 100 players in January.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You started the year with a massacre. New Year's resolutions are for mortals.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(1, 2)
+        end,
+    },
+    {
+        id = "time_monthly_february",
+        title = "February Frenzy",
+        description = "Kill 100 players in February.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Love is in the air, and so are the corpses. You've been busy.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(2, 2)
+        end,
+    },
+    {
+        id = "time_monthly_march",
+        title = "March Madness",
+        description = "Kill 100 players in March.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "The Ides of March were nothing compared to your killing spree.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(3, 2)
+        end,
+    },
+    {
+        id = "time_monthly_april",
+        title = "April Annihilator",
+        description = "Kill 100 players in April.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "April showers bring May flowers, but you just brought pain.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(4, 2)
+        end,
+    },
+    {
+        id = "time_monthly_may",
+        title = "May Mayhem",
+        description = "Kill 100 players in May.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You turned May into a month of mourning for 100 players.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(5, 2)
+        end,
+    },
+    {
+        id = "time_monthly_june",
+        title = "June Juggernaut",
+        description = "Kill 100 players in June.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "School's out, and you've been schooling the competition.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(6, 2)
+        end,
+    },
+    {
+        id = "time_monthly_july",
+        title = "July Jubilee",
+        description = "Kill 100 players in July.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You celebrated summer with a hundred funerals.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(7, 2)
+        end,
+    },
+    {
+        id = "time_monthly_august",
+        title = "August Assault",
+        description = "Kill 100 players in August.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "The dog days of summer were deadly for your opponents.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(8, 2)
+        end,
+    },
+    {
+        id = "time_monthly_september",
+        title = "September Slaughter",
+        description = "Kill 100 players in September.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Back to school, back to the graveyard.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(9, 2)
+        end,
+    },
+    {
+        id = "time_monthly_october",
+        title = "October Overlord",
+        description = "Kill 100 players in October.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Trick or treat? They got tricked, you got a treat.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(10, 2)
+        end,
+    },
+    {
+        id = "time_monthly_november",
+        title = "November Nightmare",
+        description = "Kill 100 players in November.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You're the reason they're thankful for spirit healers.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(11, 2)
+        end,
+    },
+    {
+        id = "time_monthly_december",
+        title = "December Destroyer",
+        description = "Kill 100 players in December.",
+        iconID = 132857,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You put 100 names on the naughty list, permanently.",
+        progress = function(achievement, stats)
+            return PSC_CountKillsInMonth(12, 2)
         end,
     },
 }
