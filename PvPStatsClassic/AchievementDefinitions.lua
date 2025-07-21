@@ -3048,4 +3048,137 @@ AchievementSystem.achievements = {
             return PSC_CountKillsOnWeekdays({2, 3, 4, 5, 6}, 2) -- Monday-Friday
         end,
     },
+    {
+        id = "kills_monday_mayhem",
+        title = "Monday Mayhem",
+        description = function(a) return ("Kill %d players on a Monday"):format(a.targetValue) end,
+        iconID = 135966,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've given %d players a case of the Mondays they'll never recover from. They were already dreading the start of the week, and you just sent them straight to the spirit healer. Their boss is probably wondering why they're late for the raid."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({2}, 2) -- Monday
+        end,
+    },
+    {
+        id = "kills_tuesday_terror",
+        title = "Tuesday Terror",
+        description = function(a) return ("Kill %d players on a Tuesday"):format(a.targetValue) end,
+        iconID = 135966,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("For %d players, Tuesday was just another day. Then you showed up. Now it's the day they learned that the only thing worse than a Monday is a Tuesday spent being repeatedly sent to the graveyard by you."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({3}, 2) -- Tuesday
+        end,
+    },
+    {
+        id = "kills_wednesday_woe",
+        title = "Wednesday Woe",
+        description = function(a) return ("Kill %d players on a Wednesday"):format(a.targetValue) end,
+        iconID = 135966,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've turned Hump Day into 'Get Over This Corpse' Day for %d players. They were halfway through the week, dreaming of the weekend, and you just gave them a permanent vacation. To the spirit healer."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({4}, 2) -- Wednesday
+        end,
+    },
+    {
+        id = "kills_thursday_thrashing",
+        title = "Thursday Thrashing",
+        description = function(a) return ("Kill %d players on a Thursday"):format(a.targetValue) end,
+        iconID = 135966,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("It's Thirsty Thursday, and you've served up %d mugs of whoop-ass. These players were just trying to get a head start on the weekend, but you put them on a permanent timeout."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({5}, 2) -- Thursday
+        end,
+    },
+    {
+        id = "kills_friday_frenzy",
+        title = "Friday Frenzy",
+        description = function(a) return ("Kill %d players on a Friday"):format(a.targetValue) end,
+        iconID = 135966,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("TGIF? More like 'Thank God It's Over' for the %d players you just slaughtered. Their weekend plans are cancelled. Permanently. You're the reason they'll be spending Saturday morning complaining on the forums."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({6}, 2) -- Friday
+        end,
+    },
+    {
+        id = "kills_saturday_slaughter",
+        title = "Saturday Slaughter",
+        description = function(a) return ("Kill %d players on a Saturday"):format(a.targetValue) end,
+        iconID = 132348,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The boys are NOT for the boys. You've ruined %d weekends. They were supposed to be raiding, questing, or just chilling. Instead, they got a front-row seat to their own demise. Repeatedly."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({7}, 2) -- Saturday
+        end,
+    },
+    {
+        id = "kills_sunday_suffering",
+        title = "Sunday Suffering",
+        description = function(a) return ("Kill %d players on a Sunday"):format(a.targetValue) end,
+        iconID = 132348,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("A day of rest? Not on your watch. You've sent %d players to meet their maker... or at least the spirit healer. They'll be starting their week with repair bills and a deep-seated fear of you."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({1}, 2) -- Sunday
+        end,
+    },
 }
