@@ -91,6 +91,9 @@ local function FilterAchievements(achievements, category)
             elseif prefix == "time" then
                 table.insert(filtered, achievement)
 
+            elseif prefix == "name" then
+                table.insert(filtered, achievement)
+
             elseif prefix == "bonus" then
                 if string.find(achievement.id, "bonus_big_game_") then
                     table.insert(filtered, achievement)
@@ -322,6 +325,7 @@ local function CreateAchievementTile(i, achievement, stats)
     local tile = CreateFrame("Button", nil, scrollContent, BackdropTemplateMixin and "BackdropTemplate")
     tile:SetSize(ACHIEVEMENT_WIDTH, ACHIEVEMENT_HEIGHT + 5)
     tile:SetPoint("TOPLEFT", xPos, yPos)
+    tile:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     tile:SetBackdrop({
         bgFile = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -363,6 +367,7 @@ local function CreateAchievementTile(i, achievement, stats)
             GameTooltip:AddLine(" ") -- Spacer
             GameTooltip:AddLine("Completed: " .. achievement.completedDate, 0.6, 0.8, 1.0) -- Light blue date
             GameTooltip:AddLine("Ctrl+Click to share in chat", 0.5, 0.5, 0.5) -- Grey instruction text
+            GameTooltip:AddLine("Right-Click to show achievement popup", 0.5, 0.5, 0.5) -- Grey instruction text
         end
 
         GameTooltip:Show()
@@ -373,8 +378,21 @@ local function CreateAchievementTile(i, achievement, stats)
     end)
 
     tile:SetScript("OnClick", function(self, button)
-        if IsControlKeyDown() and achievement.unlocked then
+        print("DEBUG: Button clicked:", button, "Achievement unlocked:", achievement.unlocked)
+        if button == "LeftButton" and IsControlKeyDown() and achievement.unlocked then
             PSC_ShareAchievementInChat(achievement)
+        elseif button == "RightButton" and achievement.unlocked then
+            print("DEBUG: Triggering achievement popup for:", achievement.title)
+            -- Trigger achievement popup
+            local achievementData = {
+                icon = achievement.iconID or "Interface\\Icons\\INV_Misc_QuestionMark",
+                title = type(achievement.title) == "function" and achievement.title(achievement) or achievement.title,
+                description = type(achievement.description) == "function" and achievement.description(achievement) or achievement.description,
+                rarity = achievement.rarity or "common",
+                id = achievement.id,
+                achievementPoints = achievement.achievementPoints
+            }
+            PVPSC.AchievementPopup:ShowPopup(achievementData)
         end
     end)
 end
@@ -400,7 +418,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Gender", "Zone", "Bonus"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Name", "Gender", "Zone", "Bonus"}
     local tabs = {}
     local tabWidth, tabHeight = 85, 32
 

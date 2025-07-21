@@ -423,3 +423,115 @@ function PSC_CountKillsInMonth(month, timezoneOffsetHours)
 
     return count
 end
+
+function PSC_CountKillsStartingWithLetter(letter)
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    letter = string.upper(letter)
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        local playerName = string.match(playerKey, "^([^:]+)")
+        if playerName and string.upper(string.sub(playerName, 1, 1)) == letter then
+            count = count + (playerData.killCount or #playerData.killLocations)
+        end
+    end
+
+    return count
+end
+
+function PSC_CountKillsByLength(length)
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        local playerName = string.match(playerKey, "^([^:]+)")
+        if playerName and #playerName == length then
+            count = count + (playerData.killCount or #playerData.killLocations)
+        end
+    end
+
+    return count
+end
+
+function PSC_CountKillsWithAnyClassNameInName()
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    local classNames = {"warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid"}
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        local playerName = string.match(playerKey, "^([^:]+)")
+        if playerName then
+            local lowerPlayerName = string.lower(playerName)
+
+            for _, className in ipairs(classNames) do
+                if string.find(lowerPlayerName, className) then
+                    count = count + (playerData.killCount or #playerData.killLocations)
+                    break
+                end
+            end
+        end
+    end
+
+    return count
+end
+
+function PSC_CountKillsWithNameStartingWith(letter)
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    local count = 0
+    letter = string.upper(letter)
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        local playerName = string.match(playerKey, "^([^:]+)")
+        if playerName and string.len(playerName) > 0 then
+            local firstLetter = string.upper(string.sub(playerName, 1, 1))
+            if firstLetter == letter then
+                count = count + (playerData.killCount or #playerData.killLocations)
+            end
+        end
+    end
+
+    return count
+end
+
+function PSC_CountKillsWithNameLength(length)
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    local count = 0
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        local playerName = string.match(playerKey, "^([^:]+)")
+        if playerName and string.len(playerName) == length then
+            count = count + (playerData.killCount or #playerData.killLocations)
+        end
+    end
+
+    return count
+end

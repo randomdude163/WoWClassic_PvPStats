@@ -2976,7 +2976,7 @@ AchievementSystem.achievements = {
         id = "time_after_work",
         title = "After Work Assassin",
         description = function(a) return ("Eliminate %d players during after work hours (5 PM - 9 PM, Mon-Fri)"):format(a.targetValue) end,
-        iconID = 136116,
+        iconID = 132303,
         achievementPoints = 125,
         targetValue = 750,
         condition = function(achievement, stats)
@@ -2995,7 +2995,7 @@ AchievementSystem.achievements = {
         id = "time_work_hours",
         title = "Work Hours Warrior",
         description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
-        iconID = 135966,
+        iconID = 136248,
         achievementPoints = 125,
         targetValue = 1000,
         condition = function(achievement, stats)
@@ -3014,7 +3014,7 @@ AchievementSystem.achievements = {
         id = "time_weekend_ganker",
         title = "Weekend Ganker",
         description = function(a) return ("Kill %d players during the weekend (Sat-Sun)"):format(a.targetValue) end,
-        iconID = 132348, -- INV_Misc_Head_Dragon_01
+        iconID = 132162,
         achievementPoints = 125,
         targetValue = 2500,
         condition = function(achievement, stats)
@@ -3033,7 +3033,7 @@ AchievementSystem.achievements = {
         id = "time_weekday_killer",
         title = "Weekday Killer",
         description = function(a) return ("Kill %d players during the week (Mon-Fri)"):format(a.targetValue) end,
-        iconID = 133729, -- Achievement_Character_Human_Male
+        iconID = 132212, -- Achievement_Character_Human_Male
         achievementPoints = 125,
         targetValue = 2500,
         condition = function(achievement, stats)
@@ -3052,7 +3052,7 @@ AchievementSystem.achievements = {
         id = "time_monday_mayhem",
         title = "Monday Mayhem",
         description = function(a) return ("Kill %d players on a Monday"):format(a.targetValue) end,
-        iconID = 135966,
+        iconID = 236577,
         achievementPoints = 100,
         targetValue = 1000,
         condition = function(achievement, stats)
@@ -3071,7 +3071,7 @@ AchievementSystem.achievements = {
         id = "time_tuesday_terror",
         title = "Tuesday Terror",
         description = function(a) return ("Kill %d players on a Tuesday"):format(a.targetValue) end,
-        iconID = 135966,
+        iconID = 236578,
         achievementPoints = 100,
         targetValue = 1000,
         condition = function(achievement, stats)
@@ -3090,7 +3090,7 @@ AchievementSystem.achievements = {
         id = "time_wednesday_woe",
         title = "Wednesday Woe",
         description = function(a) return ("Kill %d players on a Wednesday"):format(a.targetValue) end,
-        iconID = 135966,
+        iconID = 236579,
         achievementPoints = 100,
         targetValue = 1000,
         condition = function(achievement, stats)
@@ -3109,7 +3109,7 @@ AchievementSystem.achievements = {
         id = "time_thursday_thrashing",
         title = "Thursday Thrashing",
         description = function(a) return ("Kill %d players on a Thursday"):format(a.targetValue) end,
-        iconID = 135966,
+        iconID = 236580,
         achievementPoints = 100,
         targetValue = 1000,
         condition = function(achievement, stats)
@@ -3128,7 +3128,7 @@ AchievementSystem.achievements = {
         id = "time_friday_frenzy",
         title = "Friday Frenzy",
         description = function(a) return ("Kill %d players on a Friday"):format(a.targetValue) end,
-        iconID = 135966,
+        iconID = 236581,
         achievementPoints = 100,
         targetValue = 1000,
         condition = function(achievement, stats)
@@ -3147,7 +3147,7 @@ AchievementSystem.achievements = {
         id = "time_saturday_slaughter",
         title = "Saturday Slaughter",
         description = function(a) return ("Kill %d players on a Saturday"):format(a.targetValue) end,
-        iconID = 132348,
+        iconID = 236582,
         achievementPoints = 100,
         targetValue = 1000,
         condition = function(achievement, stats)
@@ -3166,7 +3166,7 @@ AchievementSystem.achievements = {
         id = "time_sunday_suffering",
         title = "Sunday Suffering",
         description = function(a) return ("Kill %d players on a Sunday"):format(a.targetValue) end,
-        iconID = 132348,
+        iconID = 236583,
         achievementPoints = 100,
         targetValue = 1000,
         condition = function(achievement, stats)
@@ -3185,7 +3185,7 @@ AchievementSystem.achievements = {
         id = "time_christmas_eve",
         title = "Holiday Spirit...Crusher",
         description = "Kill 1 player on Christmas Eve (Dec 24th)",
-        iconID = 134062,
+        iconID = 132641,
         achievementPoints = 500,
         targetValue = 1,
         condition = function(achievement, stats)
@@ -3202,7 +3202,7 @@ AchievementSystem.achievements = {
         id = "time_christmas_day",
         title = "A Very Bloody Christmas",
         description = "Kill 1 player on Christmas Day (Dec 25th)",
-        iconID = 134062,
+        iconID = 133202,
         achievementPoints = 500,
         targetValue = 1,
         condition = function(achievement, stats)
@@ -3219,7 +3219,7 @@ unlocked = false,
         id = "time_new_years_eve",
         title = "Dropping The Ball",
         description = "Kill 1 player on New Year's Eve (Dec 31st)",
-        iconID = 134062,
+        iconID = 134273,
         achievementPoints = 500,
         targetValue = 1,
         condition = function(achievement, stats)
@@ -3236,7 +3236,7 @@ unlocked = false,
         id = "time_new_years_day",
         title = "Starting the Year with a Bang",
         description = "Kill 1 player on New Year's Day (Jan 1st)",
-        iconID = 134062,
+        iconID = 134270,
         achievementPoints = 500,
         targetValue = 1,
         condition = function(achievement, stats)
@@ -3253,7 +3253,7 @@ unlocked = false,
         id = "time_friday_13th",
         title = "Friday the 13th Menace",
         description = "Kill 13 players on any Friday the 13th.",
-        iconID = 135824,
+        iconID = 132299,
         achievementPoints = 250,
         targetValue = 13,
         condition = function(achievement, stats)
@@ -3270,7 +3270,7 @@ unlocked = false,
         id = "time_april_fools",
         title = "April Fool's Punchline",
         description = "Kill a player on April 1st.",
-        iconID = 135742,
+        iconID = 236281,
         achievementPoints = 100,
         targetValue = 1,
         condition = function(achievement, stats)
@@ -3485,6 +3485,566 @@ unlocked = false,
         subText = "You put 100 names on the naughty list, permanently.",
         progress = function(achievement, stats)
             return PSC_CountKillsInMonth(12, 2)
+        end,
+    },
+    {
+        id = "name_letter_a",
+        title = "A-Team Annihilator",
+        description = function(a) return ("Eliminate %d players whose names start with 'A'"):format(a.targetValue) end,
+        iconID = 134939,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've alphabetized %d players starting with 'A' into the graveyard! From Aaron to Ass... these A-listers are now A-corpses.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("A")
+        end,
+    },
+    {
+        id = "name_letter_b",
+        title = "B-List Butcher",
+        description = function(a) return ("Eliminate %d players whose names start with 'B'"):format(a.targetValue) end,
+        iconID = 134939,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've brutalized %d B-named players! From Bob to Broly, they all got the same treatment: a brutal beatdown.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("B")
+        end,
+    },
+    {
+        id = "name_letter_c",
+        title = "C-Grade Crusher",
+        description = function(a) return ("Eliminate %d players whose names start with 'C'"):format(a.targetValue) end,
+        iconID = 134939,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've crushed %d C-named champions! From Cedric to Cheesewheels, they all learned that C stands for 'Corpse'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("C")
+        end,
+    },
+    {
+        id = "name_letter_d",
+        title = "Dust to Dust",
+        description = function(a) return ("Eliminate %d players whose names start with 'D'"):format(a.targetValue) end,
+        iconID = 134939,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've delivered devastation to %d D-named players! From Dave to Dragonslayer, they all got the same D: Death.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("D")
+        end,
+    },
+    {
+        id = "name_letter_e",
+        title = "E-List Eliminator",
+        description = function(a) return ("Eliminate %d players whose names start with 'E'"):format(a.targetValue) end,
+        iconID = 134942,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've exterminated %d E-named enemies! From Eric to Ethereal, they all got an E for 'Eliminated'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("E")
+        end,
+    },
+    {
+        id = "name_letter_f",
+        title = "F-Tier Finisher",
+        description = function(a) return ("Eliminate %d players whose names start with 'F'"):format(a.targetValue) end,
+        iconID = 134942,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've finished %d F-named fools! From Felix to Faggiodriver, they all got an F in staying alive.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("F")
+        end,
+    },
+    {
+        id = "name_letter_g",
+        title = "G-Force Graveyard",
+        description = function(a) return ("Eliminate %d players whose names start with 'G'"):format(a.targetValue) end,
+        iconID = 134942,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've graveyarded %d G-named gamers! From Gary to Godslayer, they all got G'd up... in the graveyard.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("G")
+        end,
+    },
+    {
+        id = "name_letter_h",
+        title = "H-Bomb Handler",
+        description = function(a) return ("Eliminate %d players whose names start with 'H'"):format(a.targetValue) end,
+        iconID = 134942,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've handled %d H-named heroes! From Howaito to Hkfarmer, they all got H-bombed into oblivion.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("H")
+        end,
+    },
+    {
+        id = "name_letter_i",
+        title = "I-Con Iceman",
+        description = function(a) return ("Eliminate %d players whose names start with 'I'"):format(a.targetValue) end,
+        iconID = 134940,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've iced %d I-named individuals! From Ian to Icecrown, they all learned that I stands for 'Instant death'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("I")
+        end,
+    },
+    {
+        id = "name_letter_j",
+        title = "J-Walking Judge",
+        description = function(a) return ("Eliminate %d players whose names start with 'J'"):format(a.targetValue) end,
+        iconID = 134940,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've judged %d J-named jockeys! From Jan to Jokester, they all got J-walked straight to the afterlife.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("J")
+        end,
+    },
+    {
+        id = "name_letter_k",
+        title = "K-Pop Killer",
+        description = function(a) return ("Eliminate %d players whose names start with 'K'"):format(a.targetValue) end,
+        iconID = 134940,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d K-named keyboard warriors! From Kenny to Kingslayer, they all got K.O.'d permanently.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("K")
+        end,
+    },
+    {
+        id = "name_letter_l",
+        title = "L-Train Liquidator",
+        description = function(a) return ("Eliminate %d players whose names start with 'L'"):format(a.targetValue) end,
+        iconID = 134940,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've liquidated %d L-named losers! From Larry to Lordmaster, they all took the L train to the graveyard.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("L")
+        end,
+    },
+    {
+        id = "name_letter_m",
+        title = "M-Class Murderer",
+        description = function(a) return ("Eliminate %d players whose names start with 'M'"):format(a.targetValue) end,
+        iconID = 237448,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've murdered %d M-named maniacs! From Mike to Masterkiller, they all got M for 'Murdered'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("M")
+        end,
+    },
+    {
+        id = "name_letter_n",
+        title = "N-Word Neutralizer",
+        description = function(a) return ("Eliminate %d players whose names start with 'N'"):format(a.targetValue) end,
+        iconID = 237448,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've neutralized %d N-named noobs! From Nick to Nightbringer, they all got the big N: 'No more life'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("N")
+        end,
+    },
+    {
+        id = "name_letter_o",
+        title = "O-Zone Obliterator",
+        description = function(a) return ("Eliminate %d players whose names start with 'O'"):format(a.targetValue) end,
+        iconID = 237448,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've obliterated %d O-named opponents! From Oscar to Oathbreaker, they all got O for 'Over and out'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("O")
+        end,
+    },
+    {
+        id = "name_letter_p",
+        title = "P-Rated Pulverizer",
+        description = function(a) return ("Eliminate %d players whose names start with 'P'"):format(a.targetValue) end,
+        iconID = 237448,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've pulverized %d P-named players! From Paul to Phohp, they all got P'd on... permanently.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("P")
+        end,
+    },
+    {
+        id = "name_letter_q",
+        title = "Q-Anon Queller",
+        description = function(a) return ("Eliminate %d players whose names start with 'Q'"):format(a.targetValue) end,
+        iconID = 134943,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've quelled %d Q-named questers! From Quinn to Questbreaker, they all got Q'd into the afterlife.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("Q")
+        end,
+    },
+    {
+        id = "name_letter_r",
+        title = "R-Rated Reaper",
+        description = function(a) return ("Eliminate %d players whose names start with 'R'"):format(a.targetValue) end,
+        iconID = 134943,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've reaped %d R-named raiders! From Rick to Raidkiller, they all got R.I.P.'d by your blade.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("R")
+        end,
+    },
+    {
+        id = "name_letter_s",
+        title = "S-Tier Slaughterer",
+        description = function(a) return ("Eliminate %d players whose names start with 'S'"):format(a.targetValue) end,
+        iconID = 134943,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've slaughtered %d S-named scrubs! From Simon to Soulripper, they all got S for 'Slain'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("S")
+        end,
+    },
+    {
+        id = "name_letter_t",
+        title = "T-Pose Terminator",
+        description = function(a) return ("Eliminate %d players whose names start with 'T'"):format(a.targetValue) end,
+        iconID = 134943,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've terminated %d T-named targets! From Timo to Titanslayer, they all got T-bagged by death itself.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("T")
+        end,
+    },
+    {
+        id = "name_letter_u",
+        title = "U-Turn Undertaker",
+        description = function(a) return ("Eliminate %d players whose names start with 'U'"):format(a.targetValue) end,
+        iconID = 134937,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've undertaken %d U-named users! From Ulrich to Underkiller, they all took a U-turn straight to the grave.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("U")
+        end,
+    },
+    {
+        id = "name_letter_v",
+        title = "V-Day Vanquisher",
+        description = function(a) return ("Eliminate %d players whose names start with 'V'"):format(a.targetValue) end,
+        iconID = 134937,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've vanquished %d V-named villains! From Victoria to Voidbringer, they all got V for 'Vanquished'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("V")
+        end,
+    },
+    {
+        id = "name_letter_w",
+        title = "W-Key Warrior",
+        description = function(a) return ("Eliminate %d players whose names start with 'W'"):format(a.targetValue) end,
+        iconID = 134937,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've wasted %d W-named warriors! From Will to Worldbreaker, they all got W for 'Wrecked'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("W")
+        end,
+    },
+    {
+        id = "name_letter_x",
+        title = "X-Factor Executioner",
+        description = function(a) return ("Eliminate %d players whose names start with 'X'"):format(a.targetValue) end,
+        iconID = 134937,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've X'd out %d X-named xenophobes! From Xavier to Xanathos, they all got marked with an X for 'eXterminated'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("X")
+        end,
+    },
+    {
+        id = "name_letter_y",
+        title = "Y-Generation Yielder",
+        description = function(a) return ("Eliminate %d players whose names start with 'Y'"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've yielded %d Y-named youngsters! From Yuri to Yggdrasil, they all got Y for 'Yesterday's news'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("Y")
+        end,
+    },
+    {
+        id = "name_letter_z",
+        title = "Z-List Zombie",
+        description = function(a) return ("Eliminate %d players whose names start with 'Z'"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 25,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've zombified %d Z-named zealots! From Zack to Zzzzrakthul, they all got Z for 'Zzzzz... permanently'.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameStartingWith("Z")
+        end,
+    },
+    {
+        id = "name_length_3",
+        title = "Tri-Letter Terminator",
+        description = function(a) return ("Eliminate %d players with exactly 3-letter names"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 15,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've terminated %d players with 3-letter names! Bob, Jim, Sue - all gone. Short names, shorter lives. These minimalists took their name philosophy too far and ended up with the shortest lifespan possible.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameLength(3)
+        end,
+    },
+    {
+        id = "name_length_12",
+        title = "Dozen-Letter Destroyer",
+        description = function(a) return ("Eliminate %d players with exactly 12-letter names"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 75,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've destroyed %d players with 12-letter names! These verbose victims thought longer names meant longer lives. Shadowknight, Dragonslayer, Deathbringer - all equally dead. Turns out, character count doesn't count when you're counting corpses.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameLength(12)
         end,
     },
 }
