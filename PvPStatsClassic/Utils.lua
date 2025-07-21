@@ -169,3 +169,146 @@ function PSC_FormatLastKillTimespan(lastKillTimestamp)
         return format("%dd", math.floor(timeDiff/86400))
     end
 end
+
+function PSC_TimestampToHour(timestamp, timezoneOffsetHours)
+    if not timestamp then
+        return nil
+    end
+
+    -- Default timezone offset to 0 if not provided
+    timezoneOffsetHours = timezoneOffsetHours or 0
+
+    -- Apply timezone offset
+    local adjustedTimestamp = timestamp + (timezoneOffsetHours * 3600)
+
+    -- Use WoW's date function (same as KillsListFrame uses)
+    local dateInfo = date("*t", adjustedTimestamp)
+    if not dateInfo then
+        return nil
+    end
+
+    return dateInfo.hour
+end
+
+function PSC_IsTimestampInHourRange(timestamp, startHour, endHour, timezoneOffsetHours)
+    local hour = PSC_TimestampToHour(timestamp, timezoneOffsetHours)
+    if not hour then
+        return false
+    end
+
+    -- Handle ranges that cross midnight (e.g., 22-6 means 22:00-05:59)
+    if startHour > endHour then
+        return hour >= startHour or hour < endHour
+    else
+        return hour >= startHour and hour < endHour
+    end
+end
+
+function PSC_CountKillsInTimeRange(startHour, endHour, timezoneOffsetHours)
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp and PSC_IsTimestampInHourRange(killLocation.timestamp, startHour, endHour, timezoneOffsetHours) then
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    return count
+end
+
+function PSC_TestDataAccess()
+    local characterKey = PSC_GetCharacterKey()
+    if not PSC_DB or not PSC_DB.PlayerKillCounts or not PSC_DB.PlayerKillCounts.Characters then
+        return
+    end
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+    if not characterData or not characterData.Kills then
+        return
+    end
+    local totalKills = 0
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            totalKills = totalKills + #playerData.killLocations
+        end
+    end
+
+    print("SUCCESS: Found", totalKills, "total kills")
+    print("=== End Test ===")
+end
+
+function PSC_IsTimestampOnWeekday(timestamp, weekdays, timezoneOffsetHours)
+    if not timestamp or not weekdays then
+        return false
+    end
+
+    timezoneOffsetHours = timezoneOffsetHours or 0
+    local adjustedTimestamp = timestamp + (timezoneOffsetHours * 3600)
+    local dateInfo = date("*t", adjustedTimestamp)
+    if not dateInfo then
+        return false
+    end
+
+    for _, day in ipairs(weekdays) do
+        if dateInfo.wday == day then
+            return true
+        end
+    end
+
+    return false
+end
+
+function PSC_CountKillsOnWeekdays(weekdays, timezoneOffsetHours)
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp and PSC_IsTimestampOnWeekday(killLocation.timestamp, weekdays, timezoneOffsetHours) then
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    return count
+end
+
+function PSC_CountKillsInTimeRangeOnWeekdays(startHour, endHour, weekdays, timezoneOffsetHours)
+    local count = 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp and
+                   PSC_IsTimestampInHourRange(killLocation.timestamp, startHour, endHour, timezoneOffsetHours) and
+                   PSC_IsTimestampOnWeekday(killLocation.timestamp, weekdays, timezoneOffsetHours) then
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    return count
+end

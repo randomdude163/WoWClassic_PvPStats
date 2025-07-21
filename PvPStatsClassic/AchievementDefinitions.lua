@@ -2933,4 +2933,119 @@ AchievementSystem.achievements = {
             return stats.zoneData["Stonetalon Mountains"] or 0
         end,
     },
+    {
+        id = "kills_night_shift",
+        title = "Night Shift Nightmare",
+        description = function(a) return ("Eliminate %d players between 10 PM - 6 AM"):format(a.targetValue) end,
+        iconID = 136057,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Ruined %d late-night gaming sessions! Parents worldwide grateful for your 'mandatory bedtime enforcement.' Energy drink sales in your region mysteriously plummeted.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsInTimeRange(22, 6, 2) -- 10 PM to 6 AM, CEST (+2 hours)
+        end,
+    },
+    {
+        id = "kills_lunch_hour",
+        title = "Lunch Break Liquidator",
+        description = function(a) return ("Eliminate %d players during lunch hour (12 PM - 2 PM, Mon-Fri)"):format(a.targetValue) end,
+        iconID = 134062,
+        achievementPoints = 75,
+        targetValue = 300,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've ruined %d corporate lunch breaks. These players tried to squeeze in a quick gank between spreadsheets and got absolutely deleted. Their bosses are thrilled with the productivity spike, but the local deli is filing for bankruptcy. Hope the cold sandwich was worth the corpse run."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsInTimeRangeOnWeekdays(12, 14, {2, 3, 4, 5, 6}, 2)
+        end,
+    },
+    {
+        id = "kills_after_work",
+        title = "After Work Assassin",
+        description = function(a) return ("Eliminate %d players during after work hours (5 PM - 9 PM, Mon-Fri)"):format(a.targetValue) end,
+        iconID = 136116,
+        achievementPoints = 125,
+        targetValue = 750,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d players tried to de-stress after a long day at the office and you sent them straight to bed angry. Their spouses thank you for the extra family time, but their therapists are booking extra sessions to deal with the sudden surge in rage-quitting-related trauma."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsInTimeRangeOnWeekdays(17, 21, {2, 3, 4, 5, 6}, 2)
+        end,
+    },
+    {
+        id = "kills_work_hours",
+        title = "Work Hours Warrior",
+        description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
+        iconID = 135966,
+        achievementPoints = 125,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've terminated %d employees who were definitely not working from home. Their bosses are sending you gift baskets for boosting company-wide productivity. You're not just a player; you're a corporate asset."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsInTimeRangeOnWeekdays(9, 17, {2, 3, 4, 5, 6}, 2)
+        end,
+    },
+    {
+        id = "kills_weekend_ganker",
+        title = "Weekend Ganker",
+        description = function(a) return ("Kill %d players during the weekend (Sat-Sun)"):format(a.targetValue) end,
+        iconID = 132348, -- INV_Misc_Head_Dragon_01
+        achievementPoints = 125,
+        targetValue = 2500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d players had their weekend plans canceled permanently. They were supposed to be relaxing, maybe doing some fishing... instead, they got a one-way ticket to the graveyard, courtesy of your 'no days off' policy."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({1, 7}, 2) -- Sunday (1) and Saturday (7)
+        end,
+    },
+    {
+        id = "kills_work_skipper",
+        title = "Weekday Killer",
+        description = function(a) return ("Kill %d players during the week (Mon-Fri)"):format(a.targetValue) end,
+        iconID = 133729, -- Achievement_Character_Human_Male
+        achievementPoints = 125,
+        targetValue = 2500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've caught and executed %d players who were clearly skipping out on their responsibilities. Their managers might not know where they are, but the Spirit Healer has them on speed dial. You're the ultimate truant officer."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsOnWeekdays({2, 3, 4, 5, 6}, 2) -- Monday-Friday
+        end,
+    },
 }
