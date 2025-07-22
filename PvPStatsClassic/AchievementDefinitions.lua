@@ -3881,7 +3881,7 @@ unlocked = false,
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("You've terminated %d T-named targets! From Timo to Titanslayer, they all got T-bagged by death itself.")
+            return ("You've terminated %d T-named targets! From Tametimo to Titanslayer, they all got T-bagged by death itself.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
