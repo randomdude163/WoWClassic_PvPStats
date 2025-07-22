@@ -49,7 +49,9 @@ local function FilterAchievements(achievements, category)
 
         if prefix == category:lower() then
             if prefix == "class" then
-                if string.find(achievement.id, "_paladin_") and playerFaction == "Horde" then
+                if string.find(achievement.id, "class_mixed_") then
+                    table.insert(filtered, achievement)
+                elseif string.find(achievement.id, "_paladin_") and playerFaction == "Horde" then
                     table.insert(filtered, achievement)
                 elseif string.find(achievement.id, "_shaman_") and playerFaction == "Alliance" then
                     table.insert(filtered, achievement)
@@ -357,6 +359,7 @@ local function CreateAchievementTile(i, achievement, stats)
         if achievement.unlocked then
             GameTooltip:AddLine(" ") -- Spacer
             GameTooltip:AddLine("Completed: " .. achievement.completedDate, 0.6, 0.8, 1.0) -- Light blue date
+            GameTooltip:AddLine("Ctrl+Click to share in chat", 0.5, 0.5, 0.5) -- Grey instruction text
         end
 
         GameTooltip:Show()
@@ -364,6 +367,12 @@ local function CreateAchievementTile(i, achievement, stats)
 
     tile:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
+    end)
+
+    tile:SetScript("OnClick", function(self, button)
+        if IsControlKeyDown() and achievement.unlocked then
+            PSC_ShareAchievementInChat(achievement)
+        end
     end)
 end
 

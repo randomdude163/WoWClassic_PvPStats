@@ -61,7 +61,7 @@ function PSC_GetStatsForAchievements()
     local currentCharacterKey = PSC_GetCharacterKey()
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData = PSC_CalculateBarChartStatistics(charactersToProcess)
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData = PSC_CalculateBarChartStatistics(charactersToProcess)
     local summaryStats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local stats = {
         classData = classData,
@@ -71,6 +71,7 @@ function PSC_GetStatsForAchievements()
         zoneData = zoneData,
         levelData = levelData,
         guildStatusData = guildStatusData,
+        guildData = guildData,
         totalKills = summaryStats.totalKills,
         uniqueKills = summaryStats.uniqueKills,
         highestKillStreak = summaryStats.highestKillStreak,
@@ -208,3 +209,27 @@ C_Timer.After(1, function()
         PVPSC.AchievementSystem:LoadAchievementCompletedData()
     end
 end)
+
+function PSC_ShareAchievementInChat(achievement)
+    if not achievement or not achievement.unlocked then
+        return
+    end
+
+    local titleText = type(achievement.title) == "function" and achievement.title(achievement) or achievement.title
+    local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(titleText, UnitName("player"), achievement)
+
+    local descText = type(achievement.description) == "function" and achievement.description(achievement) or achievement.description
+    local personalizedDesc = PSC_ReplacePlayerNamePlaceholder(descText, UnitName("player"), achievement)
+
+    local shareText = personalizedTitle .. " (" .. personalizedDesc .. ") Completed: " .. achievement.completedDate
+
+    if ChatFrame1EditBox:IsShown() then
+        ChatFrame1EditBox:SetText(shareText)
+        ChatFrame1EditBox:SetCursorPosition(string.len(shareText))
+    else
+        ChatFrame1EditBox:Show()
+        ChatFrame1EditBox:SetText(shareText)
+        ChatFrame1EditBox:SetCursorPosition(string.len(shareText))
+        ChatFrame1EditBox:SetFocus()
+    end
+end
