@@ -2939,7 +2939,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d players between 10 PM - 6 AM"):format(a.targetValue) end,
         iconID = 136057,
         achievementPoints = 100,
-        targetValue = 500,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -2997,7 +2997,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 136248,
         achievementPoints = 125,
-        targetValue = 5000,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
