@@ -279,6 +279,7 @@ local TimeBasedAchievementConfig = {
         {0, 6, "midnight_to_dawn"},    -- Midnight to dawn: 12 AM - 6 AM
         {6, 12, "morning"},            -- Morning: 6 AM - 12 PM
         {18, 24, "evening"},           -- Evening: 6 PM - 12 AM
+        {5, 8, "early_bird"},          -- Early bird: 5 AM - 8 AM
         -- Add more time ranges here as needed
     },
 

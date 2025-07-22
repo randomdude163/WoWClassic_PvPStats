@@ -4057,4 +4057,522 @@ unlocked = false,
             return PSC_CountKillsWithNameLength(12)
         end,
     },
+    {
+        id = "time_early_bird",
+        title = "Early Bird Hunter",
+        description = function(a) return ("Kill %d players between 5 AM - 8 AM"):format(a.targetValue) end,
+        iconID = 136245,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Sometimes the early bird does not get the worm! You've caught %d early risers who thought they'd get some peaceful morning gaming. They were up with the sunrise, coffee in hand, ready to start their day with some light PvP. Instead, they got a wake-up call they'll never recover from. Their morning routine now includes a mandatory graveyard sprint.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByTimeRangeName("early_bird")
+        end,
+    },
+    {
+        id = "time_month_january",
+        title = "January Jester",
+        description = function(a) return ("Kill %d players during January"):format(a.targetValue) end,
+        iconID = 236372,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've turned %d New Year's resolutions into permanent resting positions! These players resolved to 'get better at PvP' and 'play more WoW.' Mission accomplished... from the wrong perspective.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("january")
+        end,
+    },
+    {
+        id = "time_month_february",
+        title = "February Fiend",
+        description = function(a) return ("Kill %d players during February"):format(a.targetValue) end,
+        iconID = 236373,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've sent %d players straight to the graveyard this February! While others were celebrating love, you were spreading death. Cupid's got nothing on your kill count. These players thought February was about hearts and flowers - you showed them it's about corpses and tombstones.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("february")
+        end,
+    },
+    {
+        id = "time_month_march",
+        title = "March Madness",
+        description = function(a) return ("Kill %d players during March"):format(a.targetValue) end,
+        iconID = 236374,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("March Madness? More like March Massacre! You've eliminated %d players who came in like lions and went out like... well, corpses. Spring forward? These players sprung backwards to the spirit healer. The only bracket that matters is your kill bracket.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("march")
+        end,
+    },
+    {
+        id = "time_month_april",
+        title = "April Annihilator",
+        description = function(a) return ("Kill %d players during April"):format(a.targetValue) end,
+        iconID = 236375,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("April showers bring May flowers, but your April brought %d corpses! These players thought spring meant renewal and growth. You taught them it means respawn timers and graveyard runs. The only thing blooming this April was your kill count.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("april")
+        end,
+    },
+    {
+        id = "time_month_may",
+        title = "May Mayhem",
+        description = function(a) return ("Kill %d players during May"):format(a.targetValue) end,
+        iconID = 236376,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("May the Fourth be with you? More like 'May the corpse be with the spirit healer!' You've terminated %d players this May. While others celebrated spring festivals, you created a festival of death. These players brought flowers for Mother's Day - you sent them to meet their maker.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("may")
+        end,
+    },
+    {
+        id = "time_month_june",
+        title = "June Juggernaut",
+        description = function(a) return ("Kill %d players during June"):format(a.targetValue) end,
+        iconID = 236377,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("June bugs got nothing on your June kills! You've squashed %d players this month. Summer vacation started early for these players - permanent vacation at the graveyard. They wanted to enjoy the longest days of the year, but you gave them the shortest lives instead.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("june")
+        end,
+    },
+    {
+        id = "time_month_july",
+        title = "July Jackhammer",
+        description = function(a) return ("Kill %d players during July"):format(a.targetValue) end,
+        iconID = 236378,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Fourth of July fireworks? You provided the real fireworks with %d explosive kills! These players wanted to celebrate independence - you gave them independence from the mortal coil. The only red, white, and blue they saw was the colors of their death screen.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("july")
+        end,
+    },
+    {
+        id = "time_month_august",
+        title = "August Assassin",
+        description = function(a) return ("Kill %d players during August"):format(a.targetValue) end,
+        iconID = 236379,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Dog days of summer? More like 'Dead days of summer!' You've put %d players to eternal rest this August. They wanted to enjoy their last weeks of summer vacation - you gave them their last weeks of being alive. The heat wasn't the only thing that was deadly this month.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("august")
+        end,
+    },
+    {
+        id = "time_month_september",
+        title = "September Slayer",
+        description = function(a) return ("Kill %d players during September"):format(a.targetValue) end,
+        iconID = 236380,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Back to school? More like back to the graveyard! You've educated %d players in the art of dying this September. They thought they were learning new skills and meeting new people. Turns out, the only skill they learned was how to quickly release their spirits.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("september")
+        end,
+    },
+    {
+        id = "time_month_october",
+        title = "October Obliterator",
+        description = function(a) return ("Kill %d players during October"):format(a.targetValue) end,
+        iconID = 236381,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Halloween came early with %d spooky kills! These players dressed up for October 31st, but you made sure they looked like corpses all month long. The only trick-or-treating they did was treating the spirit healer to repeat business. You turned October into 'Scare-tober.'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("october")
+        end,
+    },
+    {
+        id = "time_month_november",
+        title = "November Nightmare",
+        description = function(a) return ("Kill %d players during November"):format(a.targetValue) end,
+        iconID = 236382,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Thanksgiving feast? You provided the main course with %d fresh kills! These players were thankful for many things - until they met you. Now the only thing they're thankful for is the spirit healer's quick service. You carved them up better than any turkey.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("november")
+        end,
+    },
+    {
+        id = "time_month_december",
+        title = "December Destroyer",
+        description = function(a) return ("Kill %d players during December"):format(a.targetValue) end,
+        iconID = 236383,
+        achievementPoints = 75,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("'Tis the season to be deadly! You've gifted %d players a one-way ticket to the afterlife this December. They hung their stockings by the chimney with care, but you hung their corpses everywhere. Santa's naughty list has nothing on your kill list. The only white Christmas they got was the color of the graveyard snow.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("december")
+        end,
+    },
+    {
+        id = "time_january_massacre",
+        title = "New Year's Carnage",
+        description = function(a) return ("Kill %d players during January"):format(a.targetValue) end,
+        iconID = 135614,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You started the year with %d kills! While everyone else was making resolutions to be better people, you resolved to be a better killer. Mission accomplished. The champagne wasn't the only thing popping - so were their heads.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("january")
+        end,
+    },
+    {
+        id = "time_february_bloodbath",
+        title = "Valentine's Day Massacre",
+        description = function(a) return ("Kill %d players during February"):format(a.targetValue) end,
+        iconID = 135453,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Love was definitely NOT in the air - just the smell of %d corpses! You've redefined 'Be My Valentine' to 'Be My Victim.' Cupid's arrows got nothing on your killing spree. Romance is dead, and so are they.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("february")
+        end,
+    },
+    {
+        id = "time_march_slaughter",
+        title = "Spring Break Breakdown",
+        description = function(a) return ("Kill %d players during March"):format(a.targetValue) end,
+        iconID = 135861,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Spring cleaning took on a whole new meaning with %d bodies to dispose of! These players thought March meant fresh starts and new beginnings. You gave them the freshest possible start - at the graveyard. The only thing sprouting this spring was your kill count.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("march")
+        end,
+    },
+    {
+        id = "time_april_carnage",
+        title = "Easter Egg Hunt Champion",
+        description = function(a) return ("Kill %d players during April"):format(a.targetValue) end,
+        iconID = 135617,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You found %d Easter eggs - all shaped like corpses! While others hunted for chocolate, you hunted for kills. The Easter Bunny is filing a restraining order. These players thought April meant rebirth and renewal - you showed them it means death and funeral.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("april")
+        end,
+    },
+    {
+        id = "time_may_genocide",
+        title = "Mother's Day Special",
+        description = function(a) return ("Kill %d players during May"):format(a.targetValue) end,
+        iconID = 135450,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You sent %d players home to their mommies... permanently! Mother's Day got really awkward when their kids had to explain why daddy won't be coming to dinner. Ever. You've created more orphans than a Disney movie.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("may")
+        end,
+    },
+    {
+        id = "time_june_extermination",
+        title = "Summer Solstice Slayer",
+        description = function(a) return ("Kill %d players during June"):format(a.targetValue) end,
+        iconID = 135619,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The longest day of the year was also the last day for %d players! Summer vacation plans got permanently cancelled. They wanted to enjoy the sunshine - you gave them eternal darkness. The only thing hot this summer was your killing streak.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("june")
+        end,
+    },
+    {
+        id = "time_july_liberation",
+        title = "Independence Day Liberator",
+        description = function(a) return ("Kill %d players during July"):format(a.targetValue) end,
+        iconID = 135620,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You liberated %d players from the burden of living! While others celebrated freedom with fireworks, you celebrated with firepower. The Declaration of Independence got nothing on your declaration of war. Red, white, and blue? More like red blood, white bones, and blue corpses.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("july")
+        end,
+    },
+    {
+        id = "time_august_apocalypse",
+        title = "Dog Days Executioner",
+        description = function(a) return ("Kill %d players during August"):format(a.targetValue) end,
+        iconID = 132190,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The dog days of summer turned into the 'dead days' of summer with %d kills! These players thought August heat was unbearable - you showed them what real heat feels like. The only thing lazier than summer afternoons were their corpses.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("august")
+        end,
+    },
+    {
+        id = "time_september_genocide",
+        title = "Back-to-School Bully",
+        description = function(a) return ("Kill %d players during September"):format(a.targetValue) end,
+        iconID = 134330,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("School's in session and you taught %d players the final lesson! They came back from summer vacation relaxed and refreshed - you sent them back to the graveyard stressed and dead. The only homework they're doing now is decomposition.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("september")
+        end,
+    },
+    {
+        id = "time_october_butchery",
+        title = "Trick-or-Treat Tyrant",
+        description = function(a) return ("Kill %d players during October"):format(a.targetValue) end,
+        iconID = 133982,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Trick or treat? They got the ultimate trick - %d permanent treats for the graveyard! You turned Halloween into 'Hell-o-ween.' Their costumes were scary, but not as scary as your kill count. The real horror show was your PvP performance.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("october")
+        end,
+    },
+    {
+        id = "time_november_bloodlust",
+        title = "Turkey Day Terminator",
+        description = function(a) return ("Kill %d players during November"):format(a.targetValue) end,
+        iconID = 250626,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You carved up %d players better than any Thanksgiving turkey! They were thankful for family, friends, and good health - until you showed up. Now their families are thankful for life insurance policies. The only stuffing happening was corpses into graveyards.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("november")
+        end,
+    },
+    {
+        id = "time_december_armageddon",
+        title = "Christmas Carol Killer",
+        description = function(a) return ("Kill %d players during December"):format(a.targetValue) end,
+        iconID = 134140,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Silent night, deadly night! You've composed a Christmas carol with %d death screams. They dreamed of a white Christmas - you gave them red snow. Santa's workshop has nothing on your kill factory. The only thing jingling was the sound of their gear dropping.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByMonthName("december")
+        end,
+    },
+    {
+        id = "time_wow_anniversary",
+        title = "World of Warcraft Anniversary",
+        description = "Kill 1 player on November 23rd (WoW Vanilla Release Date)",
+        iconID = 135724,
+        achievementPoints = 500,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You celebrated the birth of World of Warcraft by sending someone back to the character creation screen! November 23rd, 2004 - the day millions of lives changed forever. Today, you made sure one player's life ended forever. Happy Anniversary!",
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.specialDates["23_11"] or 0 -- November 23rd, WoW release date
+        end,
+    },
 }
