@@ -118,6 +118,12 @@ function AchievementSystem:CheckAchievements()
 
     -- Show popups
     if achievementsUnlocked > 3 then
+        -- Print achievements in chat
+        print("|cffffffff[PvPStats]|r You have unlocked |cffffff00" .. achievementsUnlocked .. "|r new achievements:")
+        for _, achievement in ipairs(unlockedList) do
+            print("|cffffff00" .. achievement.title .. "|r: |cffffffff" .. achievement.description .. "|r")
+        end
+
         PVPSC.AchievementPopup:ShowMultipleAchievementsPopup(achievementsUnlocked)
     else
         for _, popupData in ipairs(unlockedList) do
