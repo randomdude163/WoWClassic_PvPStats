@@ -2950,7 +2950,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsInTimeRange(22, 6, 2) -- 10 PM to 6 AM, CEST (+2 hours)
+            return PSC_CountKillsByTimeRangeName("night_shift") -- 10 PM to 6 AM, optimized
         end,
     },
     {
@@ -2969,7 +2969,7 @@ AchievementSystem.achievements = {
             return ("You've ruined %d corporate lunch breaks. These players tried to squeeze in a quick gank between spreadsheets and got absolutely deleted. Their bosses are thrilled with the productivity spike, but the local deli is filing for bankruptcy. Hope the cold sandwich was worth the corpse run."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsInTimeRangeOnWeekdays(12, 14, {2, 3, 4, 5, 6}, 2)
+            return PSC_CountKillsByCombination("lunch_weekdays") -- 12-2 PM on weekdays, optimized
         end,
     },
     {
@@ -2988,7 +2988,7 @@ AchievementSystem.achievements = {
             return ("%d players tried to de-stress after a long day at the office and you sent them straight to bed angry. Their spouses thank you for the extra family time, but their therapists are booking extra sessions to deal with the sudden surge in rage-quitting-related trauma."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsInTimeRangeOnWeekdays(17, 21, {2, 3, 4, 5, 6}, 2)
+            return PSC_CountKillsByCombination("afterwork_weekdays") -- 5-9 PM on weekdays, optimized
         end,
     },
     {
@@ -2997,7 +2997,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 136248,
         achievementPoints = 125,
-        targetValue = 1000,
+        targetValue = 5000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -3007,7 +3007,7 @@ AchievementSystem.achievements = {
             return ("You've terminated %d employees who were definitely not working from home. Their bosses are sending you gift baskets for boosting company-wide productivity. You're not just a player; you're a corporate asset."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsInTimeRangeOnWeekdays(9, 17, {2, 3, 4, 5, 6}, 2)
+            return PSC_CountKillsByCombination("workhours_weekdays") -- 9 AM-5 PM on weekdays, optimized
         end,
     },
     {
@@ -3027,7 +3027,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({1, 7}, 2) -- Sunday (1) and Saturday (7)
+            return PSC_CountKillsByWeekdayGroup("weekend") -- Saturday and Sunday, optimized
         end,
     },
     {
@@ -3046,7 +3046,7 @@ AchievementSystem.achievements = {
             return ("You've caught and executed %d players who were clearly skipping out on their responsibilities. Their managers might not know where they are, but the Spirit Healer has them on speed dial. You're the ultimate truant officer."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({2, 3, 4, 5, 6}, 2) -- Monday-Friday
+            return PSC_CountKillsByWeekdayGroup("weekdays") -- Monday-Friday, optimized
         end,
     },
     {
@@ -3065,7 +3065,8 @@ AchievementSystem.achievements = {
             return ("You've given %d players a case of the Mondays they'll never recover from. They were already dreading the start of the week, and you just sent them straight to the spirit healer. Their boss is probably wondering why they're late for the raid."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({2}, 2) -- Monday
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.monday or 0 -- Monday, optimized
         end,
     },
     {
@@ -3084,7 +3085,8 @@ AchievementSystem.achievements = {
             return ("For %d players, Tuesday was just another day. Then you showed up. Now it's the day they learned that the only thing worse than a Monday is a Tuesday spent being repeatedly sent to the graveyard by you."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({3}, 2) -- Tuesday
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.tuesday or 0 -- Tuesday, optimized
         end,
     },
     {
@@ -3103,7 +3105,8 @@ AchievementSystem.achievements = {
             return ("You've turned Hump Day into 'Get Over This Corpse' Day for %d players. They were halfway through the week, dreaming of the weekend, and you just gave them a permanent vacation. To the spirit healer."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({4}, 2) -- Wednesday
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.wednesday or 0 -- Wednesday, optimized
         end,
     },
     {
@@ -3122,7 +3125,8 @@ AchievementSystem.achievements = {
             return ("It's Thirsty Thursday, and you've served up %d mugs of whoop-ass. These players were just trying to get a head start on the weekend, but you put them on a permanent timeout."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({5}, 2) -- Thursday
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.thursday or 0 -- Thursday, optimized
         end,
     },
     {
@@ -3141,7 +3145,8 @@ AchievementSystem.achievements = {
             return ("TGIF? More like 'Thank God It's Over' for the %d players you just slaughtered. Their weekend plans are cancelled. Permanently. You're the reason they'll be spending Saturday morning complaining on the forums."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({6}, 2) -- Friday
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.friday or 0 -- Friday, optimized
         end,
     },
     {
@@ -3160,7 +3165,8 @@ AchievementSystem.achievements = {
             return ("The boys are NOT for the boys. You've ruined %d weekends. They were supposed to be raiding, questing, or just chilling. Instead, they got a front-row seat to their own demise. Repeatedly."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({7}, 2) -- Saturday
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.saturday or 0 -- Saturday, optimized
         end,
     },
     {
@@ -3179,7 +3185,8 @@ AchievementSystem.achievements = {
             return ("A day of rest? Not on your watch. You've sent %d players to meet their maker... or at least the spirit healer. They'll be starting their week with repair bills and a deep-seated fear of you."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsOnWeekdays({1}, 2) -- Sunday
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.sunday or 0 -- Sunday, optimized
         end,
     },
     {
@@ -3196,7 +3203,8 @@ AchievementSystem.achievements = {
         completedDate = nil,
         subText = "Someone was trying to spread holiday cheer. You spread their entrails on the snow. Bah, humbug.",
         progress = function(achievement, stats)
-            return PSC_CountKillsOnDate(24, 12, 2)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.specialDates["24_12"] or 0 -- Christmas Eve, optimized
         end,
     },
     {
@@ -3213,7 +3221,7 @@ unlocked = false,
         completedDate = nil,
         subText = "You gave someone the gift of a corpse run. They'll remember this Christmas forever... with rage.",
         progress = function(achievement, stats)
-            return PSC_CountKillsOnDate(25, 12, 2)
+            return PSC_CountKillsBySpecialDate("christmas") -- Christmas Day, optimized
         end,
     },
     {
@@ -3230,7 +3238,7 @@ unlocked = false,
         completedDate = nil,
         subText = "While everyone else was counting down, you were counting down some poor soul's health bar. Their new year's resolution is to avoid you.",
         progress = function(achievement, stats)
-            return PSC_CountKillsOnDate(31, 12, 2)
+            return PSC_CountKillsBySpecialDate("new_years_eve") -- New Year's Eve, optimized
         end,
     },
     {
@@ -3247,7 +3255,7 @@ unlocked = false,
         completedDate = nil,
         subText = "New year, new victim. You've already ruined someone's 1st of January. At this rate, you'll be the server's most feared player by February.",
         progress = function(achievement, stats)
-            return PSC_CountKillsOnDate(1, 1, 2)
+            return PSC_CountKillsBySpecialDate("new_years_day") -- New Year's Day, optimized
         end,
     },
     {
@@ -3264,7 +3272,7 @@ unlocked = false,
         completedDate = nil,
         subText = "You're the reason people are superstitious. You've made Friday the 13th a living nightmare for 13 unlucky souls. Jason Voorhees would be proud.",
         progress = function(achievement, stats)
-            return PSC_CountKillsOnFridayThe13th(2)
+            return PSC_CountKillsBySpecialCondition("friday13th") -- Friday 13th, optimized
         end,
     },
     {
@@ -3281,7 +3289,8 @@ unlocked = false,
         completedDate = nil,
         subText = "They thought that gank was a joke. It wasn't. You've delivered the punchline to one player's very short-lived comedy routine. April Fools!",
         progress = function(achievement, stats)
-            return PSC_CountKillsOnDate(1, 4, 2)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.specialDates["1_4"] or 0 -- April 1st, optimized
         end,
     },
     {
@@ -3298,7 +3307,7 @@ unlocked = false,
         completedDate = nil,
         subText = "You started the year with a massacre. New Year's resolutions are for mortals.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(1, 2)
+            return PSC_CountKillsByMonthName("january") -- January, optimized
         end,
     },
     {
@@ -3315,7 +3324,7 @@ unlocked = false,
         completedDate = nil,
         subText = "Love is in the air, and so are the corpses. You've been busy.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(2, 2)
+            return PSC_CountKillsByMonthName("february") -- February, optimized
         end,
     },
     {
@@ -3332,7 +3341,7 @@ unlocked = false,
         completedDate = nil,
         subText = "The Ides of March were nothing compared to your killing spree.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(3, 2)
+            return PSC_CountKillsByMonthName("march") -- March, optimized
         end,
     },
     {
@@ -3349,7 +3358,7 @@ unlocked = false,
         completedDate = nil,
         subText = "April showers bring May flowers, but you just brought pain.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(4, 2)
+            return PSC_CountKillsByMonthName("april") -- April, optimized
         end,
     },
     {
@@ -3366,7 +3375,7 @@ unlocked = false,
         completedDate = nil,
         subText = "You turned May into a month of mourning for 100 players.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(5, 2)
+            return PSC_CountKillsByMonthName("may") -- May, optimized
         end,
     },
     {
@@ -3383,7 +3392,7 @@ unlocked = false,
         completedDate = nil,
         subText = "School's out, and you've been schooling the competition.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(6, 2)
+            return PSC_CountKillsByMonthName("june") -- June, optimized
         end,
     },
     {
@@ -3400,7 +3409,7 @@ unlocked = false,
         completedDate = nil,
         subText = "You celebrated summer with a hundred funerals.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(7, 2)
+            return PSC_CountKillsByMonthName("july") -- July, optimized
         end,
     },
     {
@@ -3417,7 +3426,7 @@ unlocked = false,
         completedDate = nil,
         subText = "The dog days of summer were deadly for your opponents.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(8, 2)
+            return PSC_CountKillsByMonthName("august") -- August, optimized
         end,
     },
     {
@@ -3434,7 +3443,7 @@ unlocked = false,
         completedDate = nil,
         subText = "Back to school, back to the graveyard.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(9, 2)
+            return PSC_CountKillsByMonthName("september") -- September, optimized
         end,
     },
     {
@@ -3451,7 +3460,7 @@ unlocked = false,
         completedDate = nil,
         subText = "Trick or treat? They got tricked, you got a treat.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(10, 2)
+            return PSC_CountKillsByMonthName("october") -- October, optimized
         end,
     },
     {
@@ -3468,7 +3477,7 @@ unlocked = false,
         completedDate = nil,
         subText = "You're the reason they're thankful for spirit healers.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(11, 2)
+            return PSC_CountKillsByMonthName("november") -- November, optimized
         end,
     },
     {
@@ -3485,7 +3494,7 @@ unlocked = false,
         completedDate = nil,
         subText = "You put 100 names on the naughty list, permanently.",
         progress = function(achievement, stats)
-            return PSC_CountKillsInMonth(12, 2)
+            return PSC_CountKillsByMonthName("december") -- December, optimized
         end,
     },
     {
