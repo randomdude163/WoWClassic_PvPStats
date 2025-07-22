@@ -126,7 +126,7 @@ AchievementSystem.achievements = {
     },
     {
         id = "class_priest_2",
-        title = "Scripture Shreader",
+        title = "Scripture Shredder",
         description = function(a) return ("Defeat %d Priests"):format(a.targetValue) end,
         iconID = 135898,
         achievementPoints = 50,
