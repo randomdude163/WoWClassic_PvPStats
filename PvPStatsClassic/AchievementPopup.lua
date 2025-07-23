@@ -20,7 +20,7 @@ local function CreateAchievementPopupFrame()
     local frame = CreateFrame("Frame", "PVPStatsClassicAchievementPopup", UIParent, BackdropTemplateMixin and "BackdropTemplate")
     frame:SetSize(300, 100)
     frame:SetPoint("TOP", UIParent, "TOP", 0, -100)
-    frame:SetFrameStrata("FULLSCREEN_DIALOG")
+    frame:SetFrameStrata("HIGH")
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
@@ -28,9 +28,9 @@ local function CreateAchievementPopupFrame()
     frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
     frame:SetClampedToScreen(true)
 
-    -- Register with FrameManager to ensure it stays on top
+    -- Register with FrameManager as a notification popup (no keyboard handling)
     if PSC_FrameManager then
-        PSC_FrameManager:RegisterFrame(frame, "AchievementPopup")
+        PSC_FrameManager:RegisterFrame(frame, "AchievementPopup", true)
     end
 
 
@@ -137,10 +137,10 @@ function AchievementPopup:DisplayPopup(achievementData)
     popupFrame.achievementName:SetText(achievementData.title)
     popupFrame.description:SetText(achievementData.description)
 
-    local rarity = achievementData.rarity
     if achievementData.id and string.match(achievementData.id, "^bonus") and (achievementData.achievementPoints or 0) == 0 then
         popupFrame:SetBackdropBorderColor(1.0, 0.1, 0.1)
     else
+        local rarity = achievementData.rarity
         if rarity == "uncommon" then
             popupFrame:SetBackdropBorderColor(0.1, 1.0, 0.1) -- Green
         elseif rarity == "rare" then

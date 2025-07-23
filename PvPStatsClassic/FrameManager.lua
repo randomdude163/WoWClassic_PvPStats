@@ -9,7 +9,7 @@ PSC_FrameManager.baseLevel = 100
 PSC_FrameManager.levelStep = 10
 PSC_FrameManager.maxFrames = 10
 
-function PSC_FrameManager:RegisterFrame(frame, frameName)
+function PSC_FrameManager:RegisterFrame(frame, frameName, isNotificationPopup)
     if not frame or not frameName then
         return
     end
@@ -19,49 +19,57 @@ function PSC_FrameManager:RegisterFrame(frame, frameName)
     frame:SetFrameStrata("FULLSCREEN_DIALOG")
     frame:SetFrameLevel(self.baseLevel)
 
-    frame:SetScript("OnMouseDown", function(self, button)
-        if button == "LeftButton" then
-            PSC_FrameManager:BringToFront(frameName)
+    -- Only add mouse and keyboard handling for interactive frames, not notification popups
+    if not isNotificationPopup then
+        frame:SetScript("OnMouseDown", function(self, button)
+            if button == "LeftButton" then
+                PSC_FrameManager:BringToFront(frameName)
+            end
+        end)
+
+        if frame:IsMovable() then
+            local originalOnDragStart = frame:GetScript("OnDragStart")
+            frame:SetScript("OnDragStart", function(self)
+                self:StartMoving()
+                if originalOnDragStart then
+                    originalOnDragStart(self)
+                end
+                PSC_FrameManager:BringToFront(frameName)
+            end)
+
+            local originalOnDragStop = frame:GetScript("OnDragStop")
+            frame:SetScript("OnDragStop", function(self)
+                self:StopMovingOrSizing()
+                if originalOnDragStop then
+                    originalOnDragStop(self)
+                end
+            end)
         end
-    end)
 
-    if frame:IsMovable() then
-        local originalOnDragStart = frame:GetScript("OnDragStart")
-        frame:SetScript("OnDragStart", function(self)
-            self:StartMoving()
-            if originalOnDragStart then
-                originalOnDragStart(self)
-            end
-            PSC_FrameManager:BringToFront(frameName)
-        end)
+        frame:EnableKeyboard(true)
 
-        local originalOnDragStop = frame:GetScript("OnDragStop")
-        frame:SetScript("OnDragStop", function(self)
-            self:StopMovingOrSizing()
-            if originalOnDragStop then
-                originalOnDragStop(self)
-            end
-        end)
-    end
-
-    frame:EnableKeyboard(true)
-
-    frame:SetScript("OnKeyDown", function(self, key)
-        if key == "ESCAPE" then
-            if self:IsVisible() and PSC_FrameManager:IsTopMostVisibleFrame(frameName) then
-                self:SetPropagateKeyboardInput(false)
-                PSC_FrameManager:HideFrame(frameName)
+        frame:SetScript("OnKeyDown", function(self, key)
+            if key == "ESCAPE" then
+                if self:IsVisible() and PSC_FrameManager:IsTopMostVisibleFrame(frameName) then
+                    self:SetPropagateKeyboardInput(false)
+                    PSC_FrameManager:HideFrame(frameName)
+                else
+                    self:SetPropagateKeyboardInput(true)
+                end
             else
                 self:SetPropagateKeyboardInput(true)
             end
-        else
-            self:SetPropagateKeyboardInput(true)
-        end
-    end)
+        end)
 
-    frame:SetScript("OnShow", function(self)
-        PSC_FrameManager:BringToFront(frameName)
-    end)
+        frame:SetScript("OnShow", function(self)
+            PSC_FrameManager:BringToFront(frameName)
+        end)
+    else
+        -- For notification popups, just ensure they stay on top without keyboard interference
+        frame:SetScript("OnShow", function(self)
+            PSC_FrameManager:BringToFront(frameName)
+        end)
+    end
 
     self:BringToFront(frameName)
 
@@ -127,13 +135,13 @@ function PSC_FrameManager:UpdateKeyboardFocus()
     end
 
     for name, frame in pairs(self.frames) do
-        if frame:IsShown() then
+        if frame:IsShown() and frame:IsKeyboardEnabled() then -- Only manage keyboard for frames that have it enabled
             frame:SetPropagateKeyboardInput(false)
 
             if name == topFrameName then
                 frame:EnableKeyboard(true)
                 C_Timer.After(0.05, function()
-                    if frame:IsShown() and self:IsTopMostVisibleFrame(name) then
+                    if frame:IsShown() and self:IsTopMostVisibleFrame(name) and frame:IsKeyboardEnabled() then
                         frame:SetPropagateKeyboardInput(false)
                     end
                 end)
