@@ -2978,7 +2978,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d players during after work hours (5 PM - 9 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 132303,
         achievementPoints = 125,
-        targetValue = 750,
+        targetValue = 1000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -3262,6 +3262,24 @@ AchievementSystem.achievements = {
         progress = function(achievement, stats)
             local timeStats = PSC_GetTimeBasedStats()
             return timeStats.specialDates["1_4"] or 0 -- April 1st, optimized
+        end,
+    },
+    {
+        id = "seasonal_independence_day",
+        title = "Independence Day Executioner",
+        description = "Kill 1 player on Independence Day (July 4th)",
+        iconID = 134278,
+        achievementPoints = 500,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You declared independence from their HP bar! While they were celebrating freedom with fireworks, you gave them a one-way ticket to the spirit healer. Red, white, blue, and very, very dead. Happy 4th of July!",
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.specialDates["4_7"] or 0 -- July 4th, optimized
         end,
     },
     {
