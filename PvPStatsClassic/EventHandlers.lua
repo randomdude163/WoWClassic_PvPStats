@@ -483,6 +483,9 @@ local function HandlePlayerEnteringWorld()
 
     print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
 
+    -- Initialize time-based stats cache for achievements
+    PSC_GetTimeBasedStats()
+
     C_Timer.After(2, function()
         PVPSC.AchievementSystem:CheckAchievements()
     end)

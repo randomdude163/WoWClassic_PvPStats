@@ -41,6 +41,11 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     newKillLocation.x, newKillLocation.y = PSC_GetPlayerCoordinates()
 
     table.insert(killData.killLocations, newKillLocation)
+
+    -- Invalidate time-based statistics cache when new kill is recorded
+    if PSC_GetTimeBasedStats then
+        PSC_GetTimeBasedStats(true) -- Force refresh
+    end
 end
 
 local function UpdateMultiKill()

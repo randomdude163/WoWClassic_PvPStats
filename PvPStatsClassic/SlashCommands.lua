@@ -5,6 +5,7 @@ local function PrintSlashCommandUsage()
     PSC_Print("Usage: /psc history - Show PvP history")
     PSC_Print("Usage: /psc achievements - Show PvP achievements")
     PSC_Print("Usage: /psc settings - Open addon settings")
+    -- PSC_Print("Usage: /psc timezonetest - Test timezone detection")
     -- PSC_Print("Usage: /psc status - Show current settings")
     -- PSC_Print("Usage: /psc debug - Show current streak values")
     -- PSC_Print("Usage: /psc registerkill [number] - Register test kill(s) for testing")
@@ -101,6 +102,8 @@ function PSC_SlashCommandHandler(msg)
         PSC_CreateConfigUI()
     elseif command == "achievements" then
         PSC_ToggleAchievementFrame()
+    elseif command == "timezonetest" then
+        PSC_TestTimeZoneOffsetCalculation()
     elseif command == "roleplayer" then
         PSC_CreateRoleplayer()
     else
