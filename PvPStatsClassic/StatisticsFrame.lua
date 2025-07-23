@@ -353,6 +353,12 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     local displayName = entry.key
     if titleType == "class" then
         displayName = properCase(entry.key)
+    elseif titleType == "hour" then
+        local hour = tonumber(entry.key)
+        if hour then
+            local endHour = (hour + 1) % 24
+            displayName = string.format("%02d - %02d", hour, endHour)
+        end
     end
 
     local barButton = CreateFrame("Button", nil, container)
@@ -374,6 +380,13 @@ local function createBar(container, entry, index, maxValue, total, titleType)
                 GameTooltip:AddLine("Click to show all kill for level ??", 1, 1, 1, true)
             else
                 GameTooltip:AddLine("Click to show all kills for this level", 1, 1, 1, true)
+            end
+        elseif titleType == "hour" then
+            local hour = tonumber(entry.key)
+            if hour then
+                local startTime = string.format("%02d:00", hour)
+                local endTime = string.format("%02d:00", (hour + 1) % 24)
+                GameTooltip:AddLine("Kills between " .. startTime .. " and " .. endTime, 1, 1, 1, true)
             end
         elseif titleType == raceColors then
             GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
@@ -502,6 +515,13 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         if unknownLevelEntry then
             table.insert(filteredData, unknownLevelEntry)
         end
+    elseif (title == "Kills by Hour of Day") then
+        -- Sort hours numerically from 0 to 23
+        table.sort(filteredData, function(a, b)
+            local aNum = tonumber(a.key) or 0
+            local bNum = tonumber(b.key) or 0
+            return aNum < bNum
+        end)
     end
 
     local titleType
@@ -513,6 +533,8 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         titleType = "zone"
     elseif title == "Kills by Level" then
         titleType = "level"
+    elseif title == "Kills by Hour of Day" then
+        titleType = "hour"
     else
         titleType = colorTable
     end
@@ -1072,6 +1094,38 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
 end
 
+function PSC_CalculateHourlyStatistics(charactersToProcess)
+    local hourlyData = {}
+
+    -- Initialize all hours (0-23) with 0 kills
+    for hour = 0, 23 do
+        hourlyData[hour] = 0
+    end
+
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return hourlyData
+    end
+
+    for characterKey, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                if killData.kills and killData.kills > 0 and killData.killLocations then
+                    for _, location in ipairs(killData.killLocations) do
+                        if location.timestamp then
+                            local dateInfo = date("*t", location.timestamp)
+                            if dateInfo and dateInfo.hour then
+                                hourlyData[dateInfo.hour] = hourlyData[dateInfo.hour] + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return hourlyData
+end
+
 local function createScrollableLeftPanel(parent)
     local leftPanel = CreateFrame("Frame", nil, parent)
     leftPanel:SetPoint("TOPLEFT", 0, 0)
@@ -1258,6 +1312,8 @@ function PSC_UpdateStatisticsFrame(frame)
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
 
+    local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
+
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent
     frame.leftScrollFrame = leftScrollFrame
@@ -1265,6 +1321,7 @@ function PSC_UpdateStatisticsFrame(frame)
     local classChartHeight = calculateChartHeight(classData)
     local raceChartHeight = calculateChartHeight(raceData)
     local genderChartHeight = calculateChartHeight(genderData)
+    local hourlyChartHeight = calculateChartHeight(hourlyData)
     local levelChartHeight = calculateChartHeight(levelData)
     local zoneChartHeight = calculateChartHeight(zoneData)
 
@@ -1297,6 +1354,9 @@ function PSC_UpdateStatisticsFrame(frame)
         UI.CHART.WIDTH, guildStatusChartHeight)
 
     yOffset = yOffset - guildStatusChartHeight - UI.CHART.PADDING
+    createBarChart(leftScrollContent, "Kills by Hour of Day", hourlyData, nil, 0, yOffset, UI.CHART.WIDTH, hourlyChartHeight)
+
+    yOffset = yOffset - hourlyChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
