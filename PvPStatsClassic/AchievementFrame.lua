@@ -91,6 +91,9 @@ local function FilterAchievements(achievements, category)
             elseif prefix == "time" then
                 table.insert(filtered, achievement)
 
+            elseif prefix == "seasonal" then
+                table.insert(filtered, achievement)
+
             elseif prefix == "name" then
                 table.insert(filtered, achievement)
 
@@ -416,9 +419,9 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Name", "Gender", "Zone", "Bonus"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Bonus"}
     local tabs = {}
-    local tabWidth, tabHeight = 85, 32
+    local tabWidth, tabHeight = 78, 32
 
     local tabContainer = CreateFrame("Frame", nil, parent)
     tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
@@ -445,7 +448,7 @@ local function CreateAchievementTabSystem(parent)
         end
         if tabSelectedMiddle then
             tabSelectedMiddle:ClearAllPoints()
-            tabSelectedSelectedMiddle:SetPoint("LEFT", tabSelectedLeft, "RIGHT", 0, 0)
+            tabSelectedMiddle:SetPoint("LEFT", tabSelectedLeft, "RIGHT", 0, 0)
             tabSelectedMiddle:SetWidth(tabWidth - 31)
         end
 
