@@ -470,10 +470,6 @@ local function CreateAchievementTabSystem(parent)
             UpdateAchievementLayout()
             PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
             PanelTemplates_SetTab(parent, i)
-
-            for j = 1, #tabs do
-                PanelTemplates_TabResize(tabs[j], 0)
-            end
         end)
 
         tabs[i] = tab
@@ -483,11 +479,6 @@ local function CreateAchievementTabSystem(parent)
     parent.numTabs = #tabs
 
     PanelTemplates_SetNumTabs(parent, #tabs)
-
-    for i = 1, #tabs do
-        PanelTemplates_TabResize(tabs[i], 0)
-    end
-
     PanelTemplates_SetTab(parent, 1)
 
     return tabs
