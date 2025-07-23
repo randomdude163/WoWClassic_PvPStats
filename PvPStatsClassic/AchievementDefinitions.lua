@@ -3369,24 +3369,24 @@ AchievementSystem.achievements = {
             return PSC_CountKillsByWeekdayGroup("weekdays") -- Monday-Friday, optimized
         end,
     },
-    {
-        id = "time_night_shift_half",
-        title = "Midnight Marauder",
-        description = function(a) return ("Eliminate %d players between 10 PM - 6 AM"):format(a.targetValue) end,
-        iconID = 136057,
+        {
+        id = "time_monday_massacre_half",
+        title = "Monday Blues",
+        description = function(a) return ("Kill %d players on a Monday"):format(a.targetValue) end,
+        iconID = 236576,
         achievementPoints = 50,
-        targetValue = 1250,
+        targetValue = 500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("Halfway to ruining %d late-night gaming sessions! You're the reason parents everywhere are installing parental controls. These night owls thought darkness was their friend - you taught them it's their enemy.")
-                :format(a.targetValue)
+            return ("You've given %d players a case of the Monday Blues they'll never recover from. Half way to making Mondays truly miserable!"):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsByTimeRangeName("night_shift") -- 10 PM to 6 AM, optimized
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.monday or 0 -- Monday, optimized
         end,
     },
     {
