@@ -4339,9 +4339,9 @@ unlocked = false,
     },
     {
         id = "time_february_bloodbath",
-        title = "Valentine's Day Massacre",
+        title = "February Freeze-Out",
         description = function(a) return ("Kill %d players during February"):format(a.targetValue) end,
-        iconID = 135453,
+        iconID = 135843,
         achievementPoints = 250,
         targetValue = 500,
         condition = function(achievement, stats)
@@ -4350,11 +4350,31 @@ unlocked = false,
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("Love was definitely NOT in the air - just the smell of %d corpses! You've redefined 'Be My Valentine' to 'Be My Victim.' Cupid's arrows got nothing on your killing spree. Romance is dead, and so are they.")
+            return ("While everyone else was dealing with the cold weather, you made %d players feel the ultimate chill! February might be the shortest month, but your kill streak was anything but short. Winter is coming? No, winter was here, and so were you.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsByMonthName("february")
+        end,
+    },
+    {
+        id = "time_valentines_day_lonely_ganker",
+        title = "Valentine's Day Massacre",
+        description = function(a) return ("Kill %d players on Valentine's Day (February 14th)"):format(a.targetValue) end,
+        iconID = 135453,
+        achievementPoints = 250,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("While everyone else was out on romantic dates, you were busy making %d players your 'valentine'... permanently! No girlfriend? No problem! Who needs love when you have a sword and %d fresh corpses to show for it? You've redefined 'lonely hearts' to 'lonely ganker.' Cupid's got nothing on your kill count!")
+                :format(a.targetValue, a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsBySpecialDate("valentines_day")
         end,
     },
     {
