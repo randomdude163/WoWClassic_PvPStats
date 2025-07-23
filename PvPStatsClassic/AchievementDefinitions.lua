@@ -2934,6 +2934,26 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "time_night_shift_half",
+        title = "Midnight Marauder",
+        description = function(a) return ("Eliminate %d players between 10 PM - 6 AM"):format(a.targetValue) end,
+        iconID = 136057,
+        achievementPoints = 50,
+        targetValue = 1250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Halfway to ruining %d late-night gaming sessions! You're the reason parents everywhere are installing parental controls. These night owls thought darkness was their friend - you taught them it's their enemy.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByTimeRangeName("night_shift") -- 10 PM to 6 AM, optimized
+        end,
+    },
+    {
         id = "time_night_shift",
         title = "Night Shift Nightmare",
         description = function(a) return ("Eliminate %d players between 10 PM - 6 AM"):format(a.targetValue) end,
@@ -2951,6 +2971,26 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsByTimeRangeName("night_shift") -- 10 PM to 6 AM, optimized
+        end,
+    },
+    {
+        id = "time_lunch_hour_half",
+        title = "Quick Bite Killer",
+        description = function(a) return ("Eliminate %d players during lunch hour (12 PM - 2 PM, Mon-Fri)"):format(a.targetValue) end,
+        iconID = 134062,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've ruined %d quick lunch breaks! Halfway to becoming the corporate productivity booster. These players thought they could sneak in a quick game during lunch - you served them a knuckle sandwich instead.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByCombination("lunch_weekdays") -- 12-2 PM on weekdays, optimized
         end,
     },
     {
@@ -2973,6 +3013,26 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "time_after_work_half",
+        title = "Post-Work Predator",
+        description = function(a) return ("Eliminate %d players during after work hours (5 PM - 10 PM, Mon-Fri)"):format(a.targetValue) end,
+        iconID = 132303,
+        achievementPoints = 50,
+        targetValue = 1250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Halfway to %d post-work stress reliefs turned into stress inducers! These players clocked out of work just to get clocked by you. Happy hour? More like crappy hour.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByCombination("afterwork_weekdays") -- 5-10 PM on weekdays, optimized
+        end,
+    },
+    {
         id = "time_after_work",
         title = "After Work Assassin",
         description = function(a) return ("Eliminate %d players during after work hours (5 PM - 10 PM, Mon-Fri)"):format(a.targetValue) end,
@@ -2992,6 +3052,26 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "time_work_hours_half",
+        title = "Office Hour Executioner",
+        description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
+        iconID = 136248,
+        achievementPoints = 50,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've terminated %d employees halfway to full productivity enforcement! These 'remote workers' are definitely working from the graveyard now. Their Zoom meetings just got a lot quieter.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByCombination("workhours_weekdays") -- 9 AM-5 PM on weekdays, optimized
+        end,
+    },
+    {
         id = "time_work_hours",
         title = "Work Hours Warrior",
         description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
@@ -3008,6 +3088,26 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsByCombination("workhours_weekdays") -- 9 AM-5 PM on weekdays, optimized
+        end,
+    },
+    {
+        id = "time_early_bird_half",
+        title = "Dawn Patrol",
+        description = function(a) return ("Kill %d players between 5 AM - 8 AM"):format(a.targetValue) end,
+        iconID = 136245,
+        achievementPoints = 125,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Halfway to catching all the early birds! You've woken up %d players permanently. They thought 5 AM was too early for PvP - you proved them dead wrong. Their morning coffee got cold while they waited for resurrection.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByTimeRangeName("early_bird")
         end,
     },
     {
@@ -3031,6 +3131,26 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "time_weekend_ganker_half",
+        title = "Saturday Morning Slayer",
+        description = function(a) return ("Kill %d players during the weekend (Sat-Sun)"):format(a.targetValue) end,
+        iconID = 132162,
+        achievementPoints = 50,
+        targetValue = 1250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Halfway to %d weekend plans canceled! You're the reason parents schedule family activities around server maintenance. These casual warriors thought weekends were for relaxation - you gave them permanent vacation.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByWeekdayGroup("weekend") -- Saturday and Sunday, optimized
+        end,
+    },
+    {
         id = "time_weekend_ganker",
         title = "Weekend Ganker",
         description = function(a) return ("Kill %d players during the weekend (Sat-Sun)"):format(a.targetValue) end,
@@ -3048,6 +3168,26 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsByWeekdayGroup("weekend") -- Saturday and Sunday, optimized
+        end,
+    },
+    {
+        id = "time_weekday_killer_half",
+        title = "Weekday Wanderer",
+        description = function(a) return ("Kill %d players during the week (Mon-Fri)"):format(a.targetValue) end,
+        iconID = 132212,
+        achievementPoints = 50,
+        targetValue = 1250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've caught %d players halfway to their full truancy sentence! These weekday warriors thought Tuesday was safe - you proved them wrong. Their productivity reports are looking suspiciously clean.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsByWeekdayGroup("weekdays") -- Monday-Friday, optimized
         end,
     },
     {
@@ -3070,23 +3210,23 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "time_monday_massacre_half",
-        title = "Monday Blues",
-        description = function(a) return ("Kill %d players on a Monday"):format(a.targetValue) end,
-        iconID = 236576,
+        id = "time_night_shift_half",
+        title = "Midnight Marauder",
+        description = function(a) return ("Eliminate %d players between 10 PM - 6 AM"):format(a.targetValue) end,
+        iconID = 136057,
         achievementPoints = 50,
-        targetValue = 500,
+        targetValue = 1250,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return ("You've given %d players a case of the Monday Blues they'll never recover from. Half way to making Mondays truly miserable!"):format(a.targetValue)
+            return ("Halfway to ruining %d late-night gaming sessions! You're the reason parents everywhere are installing parental controls. These night owls thought darkness was their friend - you taught them it's their enemy.")
+                :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local timeStats = PSC_GetTimeBasedStats()
-            return timeStats.weekdays.monday or 0 -- Monday, optimized
+            return PSC_CountKillsByTimeRangeName("night_shift") -- 10 PM to 6 AM, optimized
         end,
     },
     {
