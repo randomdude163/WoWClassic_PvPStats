@@ -442,9 +442,137 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local genderCell = CreateGenderCell(rowContainer, raceCell, entry.gender, colWidths.gender)
     local lastKillCell = CreateLastKillCell(rowContainer, genderCell, entry.lastKill, colWidths.lastKill)
 
-    -- Add click handler to view detailed history
-    rowContainer:SetScript("OnClick", function()
-        PSC_ShowPlayerDetailFrame(entry.name)
+    -- Add left click handler to view detailed history
+    rowContainer:SetScript("OnClick", function(self, button)
+        if button == "LeftButton" then
+            PSC_ShowPlayerDetailFrame(entry.name)
+        end
+    end)
+
+    -- Register right click for context menu
+    rowContainer:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+    -- Create context menu
+    rowContainer:SetScript("OnMouseDown", function(self, button)
+        if button == "RightButton" then
+            if not PSC_PlayerRowDropDown then
+                CreateFrame("Frame", "PSC_PlayerRowDropDown", UIParent, "UIDropDownMenuTemplate")
+            end
+
+            UIDropDownMenu_Initialize(PSC_PlayerRowDropDown, function(self, level)
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = "Copy Name: " .. entry.name
+                info.notCheckable = true
+                info.func = function()
+                    if PSC_CopyBox then
+                        if PSC_CopyContainer then
+                            PSC_CopyContainer:Hide()
+                        end
+                        PSC_CopyBox:Hide()
+                        PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
+                    end
+
+                    local copyContainer = CreateFrame("Frame", "PSC_CopyContainer", UIParent)
+                    copyContainer:SetSize(220, 50)
+                    local x, y = GetCursorPosition()
+                    local scale = UIParent:GetEffectiveScale()
+                    copyContainer:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale, y / scale)
+                    copyContainer:SetFrameStrata("FULLSCREEN_DIALOG")
+                    copyContainer:SetFrameLevel(10000)
+
+                    local bg = copyContainer:CreateTexture(nil, "BACKGROUND")
+                    bg:SetAllPoints()
+                    bg:SetColorTexture(0, 0, 0, 0.9)
+
+                    local border = copyContainer:CreateTexture(nil, "BACKGROUND", nil, 1)
+                    border:SetPoint("TOPLEFT", copyContainer, "TOPLEFT", -2, 2)
+                    border:SetPoint("BOTTOMRIGHT", copyContainer, "BOTTOMRIGHT", 2, -2)
+                    border:SetColorTexture(1, 0.82, 0, 0.8)
+
+                    local innerArea = copyContainer:CreateTexture(nil, "BACKGROUND", nil, 2)
+                    innerArea:SetPoint("TOPLEFT", border, "TOPLEFT", 1, -1)
+                    innerArea:SetPoint("BOTTOMRIGHT", border, "BOTTOMRIGHT", -1, 1)
+                    innerArea:SetColorTexture(0, 0, 0, 0.9)
+
+                    local label = copyContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                    label:SetPoint("TOP", copyContainer, "TOP", 0, -5)
+                    label:SetText("Press Ctrl+C to copy or ESC to cancel")
+                    label:SetTextColor(1, 0.8, 0)
+
+                    local copyBox = CreateFrame("EditBox", "PSC_CopyBox", copyContainer, "InputBoxTemplate")
+                    copyBox:SetSize(200, 24)
+                    copyBox:SetPoint("TOP", label, "BOTTOM", 0, -2)
+                    copyBox:SetText(entry.name)
+                    copyBox:SetAutoFocus(true)
+
+                    -- Ensure this EditBox gets focus by clearing focus from any other EditBox first
+                    copyBox:SetFocus()
+                    copyBox:HighlightText()
+
+                    -- Use a timer to ensure focus is properly set after UI rendering
+                    C_Timer.After(0.01, function()
+                        if copyBox and copyBox:IsVisible() then
+                            copyBox:SetFocus()
+                            copyBox:HighlightText()
+                        end
+                    end)
+
+                    copyBox:SetScript("OnEscapePressed", function()
+                        copyContainer:Hide()
+                        PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
+                    end)
+                    copyBox:SetScript("OnEnterPressed", function()
+                        copyContainer:Hide()
+                        PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
+                    end)
+                    copyBox:SetScript("OnEditFocusLost", function()
+                        copyContainer:Hide()
+                        PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
+                    end)
+                    copyBox:SetScript("OnKeyDown", function(self, key)
+                        if IsControlKeyDown() and key == "C" then
+                            C_Timer.After(0.1, function()
+                                copyContainer:Hide()
+                                PSC_CopyBox = nil
+                                PSC_CopyContainer = nil
+                            end)
+                        end
+                    end)
+
+                    local closeOnClick = CreateFrame("Button", nil, UIParent, nil, nil)
+                    closeOnClick:SetFrameStrata("FULLSCREEN_DIALOG")
+                    closeOnClick:SetFrameLevel(9999)
+                    closeOnClick:SetAllPoints(UIParent)
+                    closeOnClick:EnableMouse(true)
+                    closeOnClick:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+                    closeOnClick:SetScript("OnClick", function(self, button)
+                        copyContainer:Hide()
+                        PSC_CopyBox = nil
+                        PSC_CopyContainer = nil
+                        closeOnClick:Hide()
+                    end)
+
+                    PSC_CopyBox = copyBox
+                    PSC_CopyContainer = copyContainer
+                end
+                UIDropDownMenu_AddButton(info)
+
+                local infoNote = UIDropDownMenu_CreateInfo()
+                infoNote.text = "Add Note"
+                infoNote.notCheckable = true
+                infoNote.func = function()
+                    PSC_ShowPlayerDetailFrame(entry.name, true)
+                end
+                UIDropDownMenu_AddButton(infoNote)
+            end, "MENU")
+
+            ToggleDropDownMenu(1, nil, PSC_PlayerRowDropDown, self, 0, 0)
+            return
+        end
     end)
 
     -- Check if entry has incomplete information
@@ -455,7 +583,6 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     if not hasIncompleteInfo and RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class:upper()] then
         local color = RAID_CLASS_COLORS[entry.class:upper()]
         nameCell:SetTextColor(color.r, color.g, color.b)
-        -- Don't modify class cell color here - it stays white
     end
 
     if hasIncompleteInfo then

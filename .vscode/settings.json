@@ -32,7 +32,11 @@
         "ID",
         "Event",
         "GetUnitName",
-        "ChatFrame1EditBox"
+        "ChatFrame1EditBox",
+        "UIDropDownMenu_Initialize",
+        "ToggleDropDownMenu",
+        "UIDropDownMenu_AddButton",
+        "UIDropDownMenu_CreateInfo"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {
