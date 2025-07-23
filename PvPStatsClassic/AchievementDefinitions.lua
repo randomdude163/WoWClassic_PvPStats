@@ -2939,7 +2939,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d players between 10 PM - 6 AM"):format(a.targetValue) end,
         iconID = 136057,
         achievementPoints = 100,
-        targetValue = 1000,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -2975,10 +2975,10 @@ AchievementSystem.achievements = {
     {
         id = "time_after_work",
         title = "After Work Assassin",
-        description = function(a) return ("Eliminate %d players during after work hours (5 PM - 9 PM, Mon-Fri)"):format(a.targetValue) end,
+        description = function(a) return ("Eliminate %d players during after work hours (5 PM - 10 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 132303,
         achievementPoints = 125,
-        targetValue = 1000,
+        targetValue = 2500,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
@@ -2988,7 +2988,7 @@ AchievementSystem.achievements = {
             return ("%d players tried to de-stress after a long day at the office and you sent them straight to bed angry. Their spouses thank you for the extra family time, but their therapists are booking extra sessions to deal with the sudden surge in rage-quitting-related trauma."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_CountKillsByCombination("afterwork_weekdays") -- 5-9 PM on weekdays, optimized
+            return PSC_CountKillsByCombination("afterwork_weekdays") -- 5-10 PM on weekdays, optimized
         end,
     },
     {
@@ -2997,7 +2997,7 @@ AchievementSystem.achievements = {
         description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 136248,
         achievementPoints = 125,
-        targetValue = 1000,
+        targetValue = 2000,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,

@@ -326,7 +326,7 @@ local TimeBasedAchievementConfig = {
     -- Time range + weekday combinations (startHour, endHour, {weekdays}, name)
     combinations = {
         {12, 14, {WEEKDAY.MONDAY, WEEKDAY.TUESDAY, WEEKDAY.WEDNESDAY, WEEKDAY.THURSDAY, WEEKDAY.FRIDAY}, "lunch_weekdays"},      -- Lunch on weekdays
-        {17, 21, {WEEKDAY.MONDAY, WEEKDAY.TUESDAY, WEEKDAY.WEDNESDAY, WEEKDAY.THURSDAY, WEEKDAY.FRIDAY}, "afterwork_weekdays"},  -- After work on weekdays
+        {17, 22, {WEEKDAY.MONDAY, WEEKDAY.TUESDAY, WEEKDAY.WEDNESDAY, WEEKDAY.THURSDAY, WEEKDAY.FRIDAY}, "afterwork_weekdays"},  -- After work on weekdays
         {9, 17, {WEEKDAY.MONDAY, WEEKDAY.TUESDAY, WEEKDAY.WEDNESDAY, WEEKDAY.THURSDAY, WEEKDAY.FRIDAY}, "workhours_weekdays"},   -- Work hours on weekdays
         {22, 6, {WEEKDAY.SATURDAY, WEEKDAY.SUNDAY}, "night_shift_weekend"},           -- Night shift on weekends
         {18, 24, {WEEKDAY.FRIDAY}, "friday_evening"},                  -- Friday evening
