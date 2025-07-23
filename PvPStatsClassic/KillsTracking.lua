@@ -124,7 +124,7 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
 
     if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold then
         local multiKillText = GetMultiKillText(PSC_MultiKillCount)
-        if PSC_DB.EnableMultiKillAnnounceMessages then
+        if PSC_DB.EnableMultiKillAnnounceMessages and IsInGroup() then
             SendChatMessage(multiKillText, "PARTY")
         else
             print("[PvPStats]: " .. multiKillText)
