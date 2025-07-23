@@ -314,12 +314,16 @@ local TimeBasedAchievementConfig = {
     -- Special dates (day, month, name)
     specialDates = {
         {25, 12, "christmas"},
+        {24, 12, "christmas_eve"}, -- Christmas Eve
         {31, 12, "new_years_eve"},
         {1, 1, "new_years_day"},
         {14, 2, "valentines_day"},
+        {1, 4, "april_fools"}, -- April Fool's Day
         {31, 10, "halloween"},
         {4, 7, "independence_day"}, -- US
+        {22, 7, "july_22_test"}, -- July 22nd Test Date
         {1, 5, "may_day"},
+        {23, 11, "wow_anniversary"}, -- WoW Vanilla Release Date
         -- Add more special dates here as needed
     },
 
