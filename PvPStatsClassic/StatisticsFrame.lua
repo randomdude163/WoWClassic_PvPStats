@@ -380,7 +380,7 @@ local function createBar(container, entry, index, maxValue, total, titleType)
 
     -- Only add highlight and click functionality for clickable chart types
     local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month"
-    
+
     if isClickable then
         local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
     end
@@ -477,6 +477,27 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         }
     elseif titleType == "class" or titleType == "unknownLevelClass" then
         color = getClassColor(entry.key)
+    elseif titleType == "hour" then
+        -- Light red for hour charts
+        color = {
+            r = 1.0,
+            g = 0.6,
+            b = 0.6
+        }
+    elseif titleType == "weekday" then
+        -- Light blue for weekday charts
+        color = {
+            r = 0.6,
+            g = 0.8,
+            b = 1.0
+        }
+    elseif titleType == "month" then
+        -- Light yellow for month charts
+        color = {
+            r = 1.0,
+            g = 1.0,
+            b = 0.6
+        }
     else
         color = titleType and titleType[entry.key] or {
             r = 0.8,
