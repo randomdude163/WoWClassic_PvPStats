@@ -1002,3 +1002,23 @@ function PSC_CountKillsWithNameLength(length)
 
     return count
 end
+
+function PSC_GetCurrentAchievementPoints()
+    local characterKey = PSC_GetCharacterKey()
+    return PSC_DB.CharacterAchievementPoints and PSC_DB.CharacterAchievementPoints[characterKey] or 0
+end
+
+function PSC_GetUnlockedAchievementCount()
+    local characterKey = PSC_GetCharacterKey()
+    local count = 0
+
+    if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[characterKey] then
+        for _, achievementData in pairs(PSC_DB.CharacterAchievements[characterKey]) do
+            if achievementData.unlocked then
+                count = count + 1
+            end
+        end
+    end
+
+    return count
+end

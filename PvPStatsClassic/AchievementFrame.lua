@@ -102,6 +102,10 @@ local function FilterAchievements(achievements, category)
                     table.insert(filtered, achievement)
                 elseif achievement.id == "bonus_horde" and playerFaction == "Horde" then
                     table.insert(filtered, achievement)
+                elseif string.find(achievement.id, "bonus_points_") then
+                    table.insert(filtered, achievement)
+                elseif string.find(achievement.id, "bonus_unlocked_") then
+                    table.insert(filtered, achievement)
                 end
             end
         end

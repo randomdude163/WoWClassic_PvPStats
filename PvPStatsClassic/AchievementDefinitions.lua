@@ -906,6 +906,166 @@ AchievementSystem.achievements = {
             return stats.zoneData["Redridge Mountains"] or 0
         end,
     },
+        {
+        id = "bonus_points_2000",
+        title = "Point Collector",
+        description = function(a) return ("Earn %d achievement points"):format(a.targetValue) end,
+        iconID = 236665,
+        achievementPoints = 0,
+        targetValue = 2000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d achievement points earned! That little *ding* sound is now your favorite song. You're officially addicted to meaningless digital validation.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.totalAchievementPoints or 0
+        end,
+    },
+    {
+        id = "bonus_points_4000",
+        title = "Achievement Addict",
+        description = function(a) return ("Earn %d achievement points"):format(a.targetValue) end,
+        iconID = 236665,
+        achievementPoints = 0,
+        targetValue = 4000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d achievement points collected! You've memorized every achievement icon and their exact pixel positions. Your guild chat is basically just achievement spam.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.totalAchievementPoints or 0
+        end,
+    },
+    {
+        id = "bonus_points_8000",
+        title = "Digital Hoarder",
+        description = function(a) return ("Earn %d achievement points"):format(a.targetValue) end,
+        iconID = 236668,
+        achievementPoints = 0,
+        targetValue = 8000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d achievement points amassed! You print and frame achievement screenshots. Your therapist gave up and started playing WoW instead.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.totalAchievementPoints or 0
+        end,
+    },
+    {
+        id = "bonus_points_16000",
+        title = "Achievement Overlord",
+        description = function(a) return ("Earn %d achievement points"):format(a.targetValue) end,
+        iconID = 236670,
+        achievementPoints = 0,
+        targetValue = 16000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d achievement points conquered! Scientists want to study your brain but you're too busy hunting achievements. Your obituary will just be a list of your unlocks.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.totalAchievementPoints or 0
+        end,
+    },
+    {
+        id = "bonus_unlocked_50",
+        title = "Trophy Cabinet",
+        description = function(a) return ("Unlock %d achievements"):format(a.targetValue) end,
+        iconID = 236682,
+        achievementPoints = 0,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d achievements unlocked! Your parents are proud but confused. 'That's nice, dear, but did you eat today?'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.unlockedAchievements or 0
+        end,
+    },
+    {
+        id = "bonus_unlocked_100",
+        title = "Completionist's Curse",
+        description = function(a) return ("Unlock %d achievements"):format(a.targetValue) end,
+        iconID = 236683,
+        achievementPoints = 0,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d achievements completed! Every notification sound makes you drool like Pavlov's dog. You've bookmarked 47 achievement guides.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.unlockedAchievements or 0
+        end,
+    },
+    {
+        id = "bonus_unlocked_150",
+        title = "Achievement Archaeologist",
+        description = function(a) return ("Unlock %d achievements"):format(a.targetValue) end,
+        iconID = 236685,
+        achievementPoints = 0,
+        targetValue = 150,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d achievements excavated! You check this addon more than your bank account. Indiana Jones called—he wants his obsession back.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.unlockedAchievements or 0
+        end,
+    },
+    {
+        id = "bonus_unlocked_200",
+        title = "Achievement Immortal",
+        description = function(a) return ("Unlock %d achievements"):format(a.targetValue) end,
+        iconID = 236686,
+        achievementPoints = 0,
+        targetValue = 200,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d achievements ascended! Your soul is permanently bound to this addon. When you die, your ghost will still be hunting for missing achievements.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.unlockedAchievements or 0
+        end,
+    },
     {
         id = "kills_total_0",
         title = "Death Distributor",

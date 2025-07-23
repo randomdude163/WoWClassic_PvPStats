@@ -77,7 +77,9 @@ function PSC_GetStatsForAchievements()
         highestKillStreak = summaryStats.highestKillStreak,
         highestMultiKill = summaryStats.highestMultiKill,
         mostKilledPlayer = summaryStats.mostKilledPlayer,
-        mostKilledCount = summaryStats.mostKilledCount
+        mostKilledCount = summaryStats.mostKilledCount,
+        totalAchievementPoints = PSC_GetCurrentAchievementPoints(),
+        unlockedAchievements = PSC_GetUnlockedAchievementCount()
     }
 
     return stats
