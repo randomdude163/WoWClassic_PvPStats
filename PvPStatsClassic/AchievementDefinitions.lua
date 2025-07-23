@@ -3070,6 +3070,26 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "time_monday_massacre_half",
+        title = "Monday Blues",
+        description = function(a) return ("Kill %d players on a Monday"):format(a.targetValue) end,
+        iconID = 236576,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've given %d players a case of the Monday Blues they'll never recover from. Half way to making Mondays truly miserable!"):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.monday or 0 -- Monday, optimized
+        end,
+    },
+    {
         id = "time_monday_mayhem",
         title = "Monday Mayhem",
         description = function(a) return ("Kill %d players on a Monday"):format(a.targetValue) end,
@@ -3087,6 +3107,26 @@ AchievementSystem.achievements = {
         progress = function(achievement, stats)
             local timeStats = PSC_GetTimeBasedStats()
             return timeStats.weekdays.monday or 0 -- Monday, optimized
+        end,
+    },
+    {
+        id = "time_tuesday_terror_half",
+        title = "Tuesday Trouble",
+        description = function(a) return ("Kill %d players on a Tuesday"):format(a.targetValue) end,
+        iconID = 236578,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("For %d players, Tuesday became troublesome. You're halfway to making every Tuesday a terror!"):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.tuesday or 0 -- Tuesday, optimized
         end,
     },
     {
@@ -3110,6 +3150,26 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "time_wednesday_woe_half",
+        title = "Wednesday Worry",
+        description = function(a) return ("Kill %d players on a Wednesday"):format(a.targetValue) end,
+        iconID = 236579,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've turned Hump Day into 'Worry Day' for %d players. Halfway through the week, halfway to maximum woe!"):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.wednesday or 0 -- Wednesday, optimized
+        end,
+    },
+    {
         id = "time_wednesday_woe",
         title = "Wednesday Woe",
         description = function(a) return ("Kill %d players on a Wednesday"):format(a.targetValue) end,
@@ -3127,6 +3187,26 @@ AchievementSystem.achievements = {
         progress = function(achievement, stats)
             local timeStats = PSC_GetTimeBasedStats()
             return timeStats.weekdays.wednesday or 0 -- Wednesday, optimized
+        end,
+    },
+    {
+        id = "time_thursday_thrashing_half",
+        title = "Thursday Thumping",
+        description = function(a) return ("Kill %d players on a Thursday"):format(a.targetValue) end,
+        iconID = 236580,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've given %d players a Thursday thumping! Halfway to a full thrashing!"):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.thursday or 0 -- Thursday, optimized
         end,
     },
     {
@@ -3150,6 +3230,26 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "time_friday_frenzy_half",
+        title = "Friday Fear",
+        description = function(a) return ("Kill %d players on a Friday"):format(a.targetValue) end,
+        iconID = 236581,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("TGIF? More like 'Thank God I'm... Dead' for %d players. Halfway to a full Friday frenzy!"):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.friday or 0 -- Friday, optimized
+        end,
+    },
+    {
         id = "time_friday_frenzy",
         title = "Friday Frenzy",
         description = function(a) return ("Kill %d players on a Friday"):format(a.targetValue) end,
@@ -3170,6 +3270,26 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "time_saturday_slaughter_half",
+        title = "Saturday Scrimmage",
+        description = function(a) return ("Kill %d players on a Saturday"):format(a.targetValue) end,
+        iconID = 236582,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've turned %d Saturday scrimmages into Saturday scares! Halfway to a complete slaughter!"):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.saturday or 0 -- Saturday, optimized
+        end,
+    },
+    {
         id = "time_saturday_slaughter",
         title = "Saturday Slaughter",
         description = function(a) return ("Kill %d players on a Saturday"):format(a.targetValue) end,
@@ -3187,6 +3307,26 @@ AchievementSystem.achievements = {
         progress = function(achievement, stats)
             local timeStats = PSC_GetTimeBasedStats()
             return timeStats.weekdays.saturday or 0 -- Saturday, optimized
+        end,
+    },
+    {
+        id = "time_sunday_suffering_half",
+        title = "Sunday Sorrow",
+        description = function(a) return ("Kill %d players on a Sunday"):format(a.targetValue) end,
+        iconID = 236583,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've brought Sunday sorrow to %d players. A day of rest became a day of regret. Halfway to complete suffering!"):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local timeStats = PSC_GetTimeBasedStats()
+            return timeStats.weekdays.sunday or 0 -- Sunday, optimized
         end,
     },
     {
