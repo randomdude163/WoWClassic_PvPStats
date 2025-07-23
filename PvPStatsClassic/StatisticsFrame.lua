@@ -93,7 +93,7 @@ local UI = {
     },
     CHART = {
         WIDTH = 360,
-        PADDING = 10
+        PADDING = 1
     },
     BAR = {
         HEIGHT = 16,
@@ -102,7 +102,7 @@ local UI = {
     },
     GUILD_LIST = {
         WIDTH = 375,
-        HEIGHT = 302
+        HEIGHT = 240
     },
     TITLE_SPACING = 3,
     TOP_PADDING = 40,
@@ -359,13 +359,31 @@ local function createBar(container, entry, index, maxValue, total, titleType)
             local endHour = (hour + 1) % 24
             displayName = string.format("%02d - %02d", hour, endHour)
         end
+    elseif titleType == "weekday" then
+        local weekdayNames = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+        local weekday = tonumber(entry.key)
+        if weekday and weekdayNames[weekday] then
+            displayName = weekdayNames[weekday]
+        end
+    elseif titleType == "month" then
+        local monthNames = {"January", "February", "March", "April", "May", "June",
+                           "July", "August", "September", "October", "November", "December"}
+        local month = tonumber(entry.key)
+        if month and monthNames[month] then
+            displayName = monthNames[month]
+        end
     end
 
     local barButton = CreateFrame("Button", nil, container)
     barButton:SetSize(UI.CHART.WIDTH, UI.BAR.HEIGHT)
     barButton:SetPoint("TOPLEFT", 0, barY)
 
-    local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
+    -- Only add highlight and click functionality for clickable chart types
+    local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month"
+    
+    if isClickable then
+        local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
+    end
 
     barButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -388,6 +406,10 @@ local function createBar(container, entry, index, maxValue, total, titleType)
                 local endTime = string.format("%02d:00", (hour + 1) % 24)
                 GameTooltip:AddLine("Kills between " .. startTime .. " and " .. endTime, 1, 1, 1, true)
             end
+        elseif titleType == "weekday" then
+            GameTooltip:AddLine("Kills on " .. displayName, 1, 1, 1, true)
+        elseif titleType == "month" then
+            GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
         elseif titleType == raceColors then
             GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
         elseif titleType == genderColors then
@@ -401,31 +423,34 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         GameTooltip:Hide()
     end)
 
-    barButton:SetScript("OnClick", function()
-        PSC_CreateKillsListFrame()
-        C_Timer.After(0.05, function()
-            if titleType == "class" or titleType == "unknownLevelClass" then
-                PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
-            elseif titleType == "zone" then
-                PSC_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
-            elseif titleType == "level" then
-                if entry.key == "??" then
-                    PSC_SetKillListLevelRange(-1, -1, true)
-                else
-                    local level = tonumber(entry.key)
-                    if level then
-                        PSC_SetKillListLevelRange(level, level, true)
+    -- Only add click functionality for clickable chart types
+    if isClickable then
+        barButton:SetScript("OnClick", function()
+            PSC_CreateKillsListFrame()
+            C_Timer.After(0.05, function()
+                if titleType == "class" or titleType == "unknownLevelClass" then
+                    PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
+                elseif titleType == "zone" then
+                    PSC_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
+                elseif titleType == "level" then
+                    if entry.key == "??" then
+                        PSC_SetKillListLevelRange(-1, -1, true)
+                    else
+                        local level = tonumber(entry.key)
+                        if level then
+                            PSC_SetKillListLevelRange(level, level, true)
+                        end
                     end
+                elseif titleType == raceColors then
+                    PSC_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
+                elseif titleType == genderColors then
+                    PSC_SetKillListSearch("", nil, nil, nil, entry.key, nil, true)
                 end
-            elseif titleType == raceColors then
-                PSC_SetKillListSearch("", nil, nil, entry.key, nil, nil, true)
-            elseif titleType == genderColors then
-                PSC_SetKillListSearch("", nil, nil, nil, entry.key, nil, true)
-            end
 
-            PSC_FrameManager:BringToFront("KillsList")
+                PSC_FrameManager:BringToFront("KillsList")
+            end)
         end)
-    end)
+    end
 
     local itemLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     itemLabel:SetPoint("TOPLEFT", 0, barY)
@@ -522,6 +547,20 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
             local bNum = tonumber(b.key) or 0
             return aNum < bNum
         end)
+    elseif (title == "Kills by Weekday") then
+        -- Sort weekdays from Sunday (1) to Saturday (7)
+        table.sort(filteredData, function(a, b)
+            local aNum = tonumber(a.key) or 0
+            local bNum = tonumber(b.key) or 0
+            return aNum < bNum
+        end)
+    elseif (title == "Kills by Month") then
+        -- Sort months from January (1) to December (12)
+        table.sort(filteredData, function(a, b)
+            local aNum = tonumber(a.key) or 0
+            local bNum = tonumber(b.key) or 0
+            return aNum < bNum
+        end)
     end
 
     local titleType
@@ -535,6 +574,10 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         titleType = "level"
     elseif title == "Kills by Hour of Day" then
         titleType = "hour"
+    elseif title == "Kills by Weekday" then
+        titleType = "weekday"
+    elseif title == "Kills by Month" then
+        titleType = "month"
     else
         titleType = colorTable
     end
@@ -730,6 +773,19 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
 
     local killsPerPlayer = {}
 
+    -- New statistics tracking
+    local weekdayKills = {0, 0, 0, 0, 0, 0, 0} -- Sunday=1, Monday=2, etc.
+    local hourlyKills = {}
+    for i = 0, 23 do
+        hourlyKills[i] = 0
+    end
+    local monthlyKills = {}
+    for i = 1, 12 do
+        monthlyKills[i] = 0
+    end
+    local firstKillTimestamp = nil
+    local lastKillTimestamp = nil
+
     for characterKey, characterData in pairs(charactersToProcess) do
         if characterKey == PSC_GetCharacterKey() then
             currentKillStreak = characterData.CurrentKillStreak
@@ -786,6 +842,25 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
                     for _, location in ipairs(killData.killLocations) do
                         local targetLevel = levelNum
                         local playerLevel = location.playerLevel or 0
+                        local timestamp = location.timestamp
+
+                        -- Track timestamps for time-based statistics
+                        if timestamp then
+                            if not firstKillTimestamp or timestamp < firstKillTimestamp then
+                                firstKillTimestamp = timestamp
+                            end
+                            if not lastKillTimestamp or timestamp > lastKillTimestamp then
+                                lastKillTimestamp = timestamp
+                            end
+
+                            -- Calculate weekday, hour, and month statistics
+                            local dateInfo = date("*t", timestamp)
+                            if dateInfo then
+                                weekdayKills[dateInfo.wday] = weekdayKills[dateInfo.wday] + 1
+                                hourlyKills[dateInfo.hour] = hourlyKills[dateInfo.hour] + 1
+                                monthlyKills[dateInfo.month] = monthlyKills[dateInfo.month] + 1
+                            end
+                        end
 
                         if targetLevel > 0 and playerLevel > 0 then
                             levelDiffSum = levelDiffSum + (playerLevel - targetLevel)
@@ -835,6 +910,48 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
         end
     end
 
+    -- Find busiest weekday
+    local busiestWeekday = "None"
+    local maxWeekdayKills = 0
+    local weekdayNames = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+    for i, kills in ipairs(weekdayKills) do
+        if kills > maxWeekdayKills then
+            maxWeekdayKills = kills
+            busiestWeekday = weekdayNames[i]
+        end
+    end
+
+    -- Find busiest hour
+    local busiestHour = "None"
+    local maxHourlyKills = 0
+    for hour, kills in pairs(hourlyKills) do
+        if kills > maxHourlyKills then
+            maxHourlyKills = kills
+            busiestHour = string.format("%02d:00 - %02d:00", hour, (hour + 1) % 24)
+        end
+    end
+
+    -- Find busiest month
+    local busiestMonth = "None"
+    local maxMonthlyKills = 0
+    local monthNames = {"January", "February", "March", "April", "May", "June",
+                       "July", "August", "September", "October", "November", "December"}
+    for i, kills in ipairs(monthlyKills) do
+        if kills > maxMonthlyKills then
+            maxMonthlyKills = kills
+            busiestMonth = monthNames[i]
+        end
+    end
+
+    -- Calculate average kills per day
+    local avgKillsPerDay = 0
+    if firstKillTimestamp and lastKillTimestamp then
+        local activitySpanDays = math.floor((lastKillTimestamp - firstKillTimestamp) / 86400) + 1
+        if activitySpanDays > 0 then
+            avgKillsPerDay = totalKills / activitySpanDays
+        end
+    end
+
     local knownLevelKills = totalKills - unknownLevelKills
     local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
     local avgUniqueLevel = uniquePlayersWithLevel > 0 and (uniqueLevelSum / uniquePlayersWithLevel) or 0
@@ -855,16 +972,25 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
         highestKillStreak = highestKillStreak,
         highestMultiKill = highestMultiKill,
         highestKillStreakCharacter = highestKillStreakCharacter,
-        highestMultiKillCharacter = highestMultiKillCharacter
+        highestMultiKillCharacter = highestMultiKillCharacter,
+        -- Only the 4 requested time-based statistics
+        busiestWeekday = busiestWeekday,
+        busiestWeekdayKills = maxWeekdayKills,
+        busiestHour = busiestHour,
+        busiestHourKills = maxHourlyKills,
+        busiestMonth = busiestMonth,
+        busiestMonthKills = maxMonthlyKills,
+        avgKillsPerDay = avgKillsPerDay
     }
 end
 
 local function createSummaryStats(parent, x, y, width, height)
+    local spacing_between_sections = 10
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
     local charactersToProcess = GetCharactersToProcessForStatistics()
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-    local statY = -30
+    local statY = -22
 
     statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
         "Total number of players you have killed.")
@@ -873,7 +999,7 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills, statY,
         "Total number of times you have killed a level ?? player.")
     local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
-    statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - 15,
+    statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections,
         "Click to show all kills of this player")
 
     if stats.mostKilledPlayer ~= "None" then
@@ -894,7 +1020,7 @@ local function createSummaryStats(parent, x, y, width, height)
         end
     end
 
-    statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - 15,
+    statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - spacing_between_sections,
         "Average level of players you have killed.")
     statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
         "Average number of kills per unique player.")
@@ -904,7 +1030,7 @@ local function createSummaryStats(parent, x, y, width, height)
         "Average level difference between you and the players you have killed.")
 
 
-    statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - 15,
+    statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - spacing_between_sections,
         "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.")
 
     local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
@@ -926,10 +1052,30 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
-    -- Add new line for achievements count
-    statY = statY - 15  -- Add some spacing before the achievement section
+    statY = statY - spacing_between_sections  -- Add some spacing before the achievement section
+
+    if stats.busiestWeekday ~= "None" then
+        statY = addSummaryStatLine(container, "Busiest weekday:", stats.busiestWeekday .. " (" .. stats.busiestWeekdayKills .. ")", statY,
+            "Your most active day of the week for PvP kills.")
+    end
+
+    if stats.busiestHour ~= "None" then
+        statY = addSummaryStatLine(container, "Busiest hour:", stats.busiestHour .. " (" .. stats.busiestHourKills .. ")", statY,
+            "Your most active hour of the day for PvP kills.")
+    end
+
+    if stats.busiestMonth ~= "None" then
+        statY = addSummaryStatLine(container, "Busiest month:", stats.busiestMonth .. " (" .. stats.busiestMonthKills .. ")", statY,
+            "Your most active month for PvP kills.")
+    end
+
+    if stats.avgKillsPerDay > 0 then
+        statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY,
+            "Your average kills per day from your first recorded kill to your most recent kill. This includes all days in that time period, even days when you didn't play.")
+    end
 
     -- Count total and completed achievements
+    statY = statY - spacing_between_sections  -- Extra spacing before new section
     local currentCharacterKey = PSC_GetCharacterKey()
     local completedCount = 0
     local totalCount = 0
@@ -1126,6 +1272,70 @@ function PSC_CalculateHourlyStatistics(charactersToProcess)
     return hourlyData
 end
 
+function PSC_CalculateWeekdayStatistics(charactersToProcess)
+    local weekdayData = {}
+
+    -- Initialize all weekdays (1-7, Sunday=1) with 0 kills
+    for weekday = 1, 7 do
+        weekdayData[weekday] = 0
+    end
+
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return weekdayData
+    end
+
+    for characterKey, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                if killData.kills and killData.kills > 0 and killData.killLocations then
+                    for _, location in ipairs(killData.killLocations) do
+                        if location.timestamp then
+                            local dateInfo = date("*t", location.timestamp)
+                            if dateInfo and dateInfo.wday then
+                                weekdayData[dateInfo.wday] = weekdayData[dateInfo.wday] + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return weekdayData
+end
+
+function PSC_CalculateMonthlyStatistics(charactersToProcess)
+    local monthlyData = {}
+
+    -- Initialize all months (1-12) with 0 kills
+    for month = 1, 12 do
+        monthlyData[month] = 0
+    end
+
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return monthlyData
+    end
+
+    for characterKey, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                if killData.kills and killData.kills > 0 and killData.killLocations then
+                    for _, location in ipairs(killData.killLocations) do
+                        if location.timestamp then
+                            local dateInfo = date("*t", location.timestamp)
+                            if dateInfo and dateInfo.month then
+                                monthlyData[dateInfo.month] = monthlyData[dateInfo.month] + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return monthlyData
+end
+
 local function createScrollableLeftPanel(parent)
     local leftPanel = CreateFrame("Frame", nil, parent)
     leftPanel:SetPoint("TOPLEFT", 0, 0)
@@ -1313,6 +1523,8 @@ function PSC_UpdateStatisticsFrame(frame)
         PSC_CalculateBarChartStatistics(charactersToProcess)
 
     local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
+    local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
+    local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent
@@ -1322,6 +1534,8 @@ function PSC_UpdateStatisticsFrame(frame)
     local raceChartHeight = calculateChartHeight(raceData)
     local genderChartHeight = calculateChartHeight(genderData)
     local hourlyChartHeight = calculateChartHeight(hourlyData)
+    local weekdayChartHeight = calculateChartHeight(weekdayData)
+    local monthlyChartHeight = calculateChartHeight(monthlyData)
     local levelChartHeight = calculateChartHeight(levelData)
     local zoneChartHeight = calculateChartHeight(zoneData)
 
@@ -1357,6 +1571,12 @@ function PSC_UpdateStatisticsFrame(frame)
     createBarChart(leftScrollContent, "Kills by Hour of Day", hourlyData, nil, 0, yOffset, UI.CHART.WIDTH, hourlyChartHeight)
 
     yOffset = yOffset - hourlyChartHeight - UI.CHART.PADDING
+    createBarChart(leftScrollContent, "Kills by Weekday", weekdayData, nil, 0, yOffset, UI.CHART.WIDTH, weekdayChartHeight)
+
+    yOffset = yOffset - weekdayChartHeight - UI.CHART.PADDING
+    createBarChart(leftScrollContent, "Kills by Month", monthlyData, nil, 0, yOffset, UI.CHART.WIDTH, monthlyChartHeight)
+
+    yOffset = yOffset - monthlyChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
