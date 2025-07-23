@@ -3213,7 +3213,7 @@ AchievementSystem.achievements = {
     },
     {
         id = "time_work_hours_half",
-        title = "Office Hour Executioner",
+        title = "Office Hour Execution",
         description = function(a) return ("Eliminate %d players during work hours (9 AM - 5 PM, Mon-Fri)"):format(a.targetValue) end,
         iconID = 136248,
         achievementPoints = 50,
