@@ -1022,3 +1022,80 @@ function PSC_GetUnlockedAchievementCount()
 
     return count
 end
+
+function PSC_CountConsecutiveDaysWithMinKills(minKills)
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills or not minKills or minKills <= 0 then
+        return 0
+    end
+
+    -- Collect all kill timestamps and group them by date
+    local killsByDate = {}
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp then
+                    -- Convert timestamp to date string (YYYY-MM-DD format)
+                    local dateInfo = date("*t", killLocation.timestamp)
+                    if dateInfo then
+                        local dateKey = string.format("%04d-%02d-%02d", dateInfo.year, dateInfo.month, dateInfo.day)
+                        killsByDate[dateKey] = (killsByDate[dateKey] or 0) + 1
+                    end
+                end
+            end
+        end
+    end
+
+    -- Convert date strings to sorted array of dates that meet minimum kills requirement
+    local validDates = {}
+    for dateKey, killCount in pairs(killsByDate) do
+        if killCount >= minKills then
+            table.insert(validDates, dateKey)
+        end
+    end
+
+    -- Sort dates chronologically
+    table.sort(validDates)
+
+    if #validDates == 0 then
+        return 0
+    end
+
+    -- Helper function to convert date string to timestamp for day comparison
+    local function dateStringToTimestamp(dateStr)
+        local year, month, day = dateStr:match("(%d+)-(%d+)-(%d+)")
+        year, month, day = tonumber(year), tonumber(month), tonumber(day)
+
+        -- Calculate approximate days since epoch for comparison
+        -- This is a simple approximation that works for consecutive day checking
+        local days = year * 365 + month * 30 + day
+        return days
+    end
+
+    -- Find the longest consecutive streak
+    local maxStreak = 1  -- At least one valid day exists
+    local currentStreak = 1
+
+    -- Check consecutive days from first to last
+    for i = 2, #validDates do
+        local prevTimestamp = dateStringToTimestamp(validDates[i - 1])
+        local currTimestamp = dateStringToTimestamp(validDates[i])
+
+        -- Check if current date is exactly one day after previous date
+        -- Allow for some flexibility in calculation due to month/year boundaries
+        local dayDiff = currTimestamp - prevTimestamp
+        if dayDiff >= 1 and dayDiff <= 2 then  -- Allow 1-2 day difference to handle month boundaries
+            currentStreak = currentStreak + 1
+            if currentStreak > maxStreak then
+                maxStreak = currentStreak
+            end
+        else
+            currentStreak = 1
+        end
+    end
+
+    return maxStreak
+end
