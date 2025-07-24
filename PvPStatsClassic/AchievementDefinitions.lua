@@ -1226,6 +1226,90 @@ AchievementSystem.achievements = {
             return stats.uniqueKills or 0
         end,
     },
+    {
+        id = "kills_honorable_0",
+        title = "Honor System Initiated",
+        description = function(a) return ("Get %d honorable kills"):format(a.targetValue) end,
+        iconID = 135024, -- Spell_holy_restoration
+        achievementPoints = 25,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d honorable kills earned! You've officially joined the honor grind. The gray kills don't count here—this is about quality, not quantity. Spirit healers are starting to recognize your commitment to actual PvP.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local honorableKills, dishonorableKills, highestRank = GetPVPLifetimeStats()
+            return honorableKills or 0
+        end,
+    },
+    {
+        id = "kills_honorable_1",
+        title = "Honor Guard",
+        description = function(a) return ("Get %d honorable kills"):format(a.targetValue) end,
+        iconID = 133440, -- Spell_holy_holyProtection
+        achievementPoints = 50,
+        targetValue = 2500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d honorable kills achieved! You're building a respectable honor rank. No more gray ganking—these kills actually matter for your standing. The PvP system respects your dedication.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local honorableKills, dishonorableKills, highestRank = GetPVPLifetimeStats()
+            return honorableKills or 0
+        end,
+    },
+    {
+        id = "kills_honorable_2",
+        title = "Honorable Executioner",
+        description = function(a) return ("Get %d honorable kills"):format(a.targetValue) end,
+        iconID = 135953, -- Spell_holy_retributionAura
+        achievementPoints = 100,
+        targetValue = 10000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d honorable kills secured! You've mastered the art of meaningful PvP. Every kill contributes to your honor rank progression. The battlegrounds know your name.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local honorableKills, dishonorableKills, highestRank = GetPVPLifetimeStats()
+            return honorableKills or 0
+        end,
+    },
+    {
+        id = "kills_honorable_3",
+        title = "Grand Marshal's Nightmare",
+        description = function(a) return ("Get %d honorable kills"):format(a.targetValue) end,
+        iconID = 135729, -- Spell_holy_weaponMastery
+        achievementPoints = 250,
+        targetValue = 25000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d honorable kills conquered! You've transcended the honor system entirely. Grand Marshals wake up in cold sweats dreaming about your kill count. The honor system wasn't designed for players like you.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local honorableKills, dishonorableKills, highestRank = GetPVPLifetimeStats()
+            return honorableKills or 0
+        end,
+    },
 
     {
         id = "race_human_0",
