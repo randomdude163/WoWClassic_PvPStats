@@ -1010,15 +1010,28 @@ end
 
 function PSC_GetUnlockedAchievementCount()
     local characterKey = PSC_GetCharacterKey()
-    local count = 0
-
-    if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[characterKey] then
-        for _, achievementData in pairs(PSC_DB.CharacterAchievements[characterKey]) do
-            if achievementData.unlocked then
-                count = count + 1
-            end
-        end
+    if not PSC_DB or not PSC_DB.CharacterAchievements or not PSC_DB.CharacterAchievements[characterKey] then
+        return 0
     end
 
+    local count = 0
+    for id, data in pairs(PSC_DB.CharacterAchievements[characterKey]) do
+        if data.unlocked then
+            count = count + 1
+        end
+    end
     return count
+end
+
+function PSC_CalculateAchievementCompletion(achievement, stats)
+    if not achievement or achievement.unlocked or not achievement.progress or not achievement.targetValue or achievement.targetValue == 0 then
+        return 0
+    end
+
+    local currentProgress = achievement.progress(achievement, stats)
+    if currentProgress >= achievement.targetValue then
+        return 100
+    end
+
+    return (currentProgress / achievement.targetValue) * 100
 end

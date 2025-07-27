@@ -24,6 +24,13 @@ local scrollFrame = CreateFrame("ScrollFrame", "PVPSCAchievementScrollFrame", co
 scrollFrame:SetPoint("TOPLEFT", 0, 0)
 scrollFrame:SetPoint("BOTTOMRIGHT", -30, 0)
 
+local AlmostCompletedLabel = contentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+AlmostCompletedLabel:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 15)
+AlmostCompletedLabel:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 0, 15)
+AlmostCompletedLabel:SetJustifyH("CENTER")
+AlmostCompletedLabel:SetText("Your 16 almost completed achievements")
+AlmostCompletedLabel:Hide()
+
 local scrollContent = CreateFrame("Frame", "PVPSCAchievementContent", scrollFrame)
 scrollContent:SetSize(scrollFrame:GetWidth(), 1) -- Height will be adjusted dynamically
 scrollFrame:SetScrollChild(scrollContent)
@@ -306,7 +313,11 @@ local function CreateProgressBar(tile, targetValue, currentProgress, achievement
         else
             progressBar:SetMinMaxValues(0, targetValue)
             progressBar:SetValue(currentProgress)
-            progressText:SetText(currentProgress.."/"..targetValue)
+            if currentCategory == "Almost" and achievement.completion then
+                progressText:SetText(string.format("%d/%d (%d%%)", currentProgress, targetValue, achievement.completion))
+            else
+                progressText:SetText(currentProgress.."/"..targetValue)
+            end
         end
     end
 
@@ -406,24 +417,52 @@ end
 local function UpdateAchievementLayout()
     ClearAchievementTiles()
 
-    local achievements = FilterAchievements(PVPSC.AchievementSystem.achievements, currentCategory)
-    if #achievements == 0 then return end
-
-    local stats = PSC_GetStatsForAchievements()
-
-    for i, achievement in ipairs(achievements) do
-        CreateAchievementTile(
-            i,
-            achievement,
-            stats
-        )
+    if currentCategory == "Almost" then
+        AlmostCompletedLabel:Show()
+        scrollFrame:SetPoint("TOPLEFT", 0, -20)
+    else
+        AlmostCompletedLabel:Hide()
+        scrollFrame:SetPoint("TOPLEFT", 0, 0)
     end
 
+    local achievements
+    local stats = PSC_GetStatsForAchievements()
 
+    if currentCategory == "Almost" then
+        achievements = {}
+        local allAchievements = PVPSC.AchievementSystem.achievements
+        for _, achievement in ipairs(allAchievements) do
+            if not achievement.unlocked then
+                local completion = PSC_CalculateAchievementCompletion(achievement, stats)
+                if completion > 0 then
+                    local achievementCopy = {}
+                    for k, v in pairs(achievement) do achievementCopy[k] = v end
+                    achievementCopy.completion = completion
+                    table.insert(achievements, achievementCopy)
+                end
+            end
+        end
+
+        table.sort(achievements, function(a, b)
+            return a.completion > b.completion
+        end)
+
+        while #achievements > 16 do
+            table.remove(achievements)
+        end
+    else
+        achievements = FilterAchievements(PVPSC.AchievementSystem.achievements, currentCategory)
+    end
+
+    if #achievements == 0 then return end
+
+    for i, achievement in ipairs(achievements) do
+        CreateAchievementTile(i, achievement, stats)
+    end
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Bonus"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Bonus", "Almost"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 
