@@ -1099,3 +1099,85 @@ function PSC_CountConsecutiveDaysWithMinKills(minKills)
 
     return maxStreak
 end
+
+-- Function to generate test streak data for testing PSC_CountConsecutiveDaysWithMinKills
+function PSC_GenerateStreakTestData(days, killsPerDay, daysAgo)
+    local characterKey = PSC_GetCharacterKey()
+
+    if not PSC_DB or not PSC_DB.PlayerKillCounts or not PSC_DB.PlayerKillCounts.Characters then
+        PSC_Print("Error: Database not initialized")
+        return
+    end
+
+    if not PSC_DB.PlayerKillCounts.Characters[characterKey] then
+        PSC_DB.PlayerKillCounts.Characters[characterKey] = {
+            Kills = {},
+            CurrentKillStreak = 0,
+            HighestKillStreak = 0,
+            HighestMultiKill = 0,
+            GrayKillsCount = 0
+        }
+    end
+
+    daysAgo = daysAgo or 0
+    local currentTime = time()
+    local startTime = currentTime - (daysAgo * 24 * 60 * 60) -- Start daysAgo days in the past
+
+    PSC_Print(string.format("Generating %d days of test data with %d kills per day, starting %d days ago...",
+        days, killsPerDay, daysAgo))
+
+    local testNames = {
+        "TestVictim", "TestTarget", "TestEnemy", "TestPlayer", "TestFoe",
+        "DummyPlayer", "TestSubject", "MockVictim", "SampleTarget", "FakeEnemy"
+    }
+
+    local totalKillsAdded = 0
+
+    for day = 0, days - 1 do
+        local dayTime = startTime + (day * 24 * 60 * 60)
+        local dateStr = date("%Y-%m-%d", dayTime)
+
+        for kill = 1, killsPerDay do
+            -- Create a realistic time within the day (spread kills throughout the day)
+            local killTime = dayTime + (kill * (24 * 60 * 60) / killsPerDay) + math.random(-3600, 3600)
+
+            local victimName = testNames[((kill - 1) % #testNames) + 1] .. day .. "_" .. kill
+            local victimLevel = math.random(10, 60)
+            local nameWithLevel = victimName .. ":" .. victimLevel
+
+            -- Initialize kill entry if it doesn't exist
+            if not PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel] then
+                PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel] = {
+                    kills = 0,
+                    lastKill = 0,
+                    killLocations = {},
+                    rank = 0
+                }
+            end
+
+            -- Add the kill
+            local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
+            killData.kills = killData.kills + 1
+            killData.lastKill = killTime
+
+            local killLocation = {
+                zone = "Test Zone",
+                timestamp = killTime,
+                killNumber = killData.kills,
+                playerLevel = UnitLevel("player") or 60,
+                x = math.random(0, 100) / 100,
+                y = math.random(0, 100) / 100
+            }
+
+            table.insert(killData.killLocations, killLocation)
+            totalKillsAdded = totalKillsAdded + 1
+        end
+
+        PSC_Print(string.format("Generated %d kills for %s", killsPerDay, dateStr))
+    end
+
+    PSC_Print(string.format("Test data generation complete! Total kills added: %d", totalKillsAdded))
+    PSC_Print("You can now test the streak function with various commands:")
+    PSC_Print("- View achievements to see current streaks")
+    PSC_Print("- Use '/psc debug' to see total kill counts")
+end
