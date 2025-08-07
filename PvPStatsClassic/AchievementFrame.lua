@@ -54,7 +54,7 @@ local function FilterAchievements(achievements, category)
     for _, achievement in ipairs(achievements) do
         local prefix = string.match(achievement.id, "^([^_]+)")
 
-        if prefix == category:lower() then
+        if prefix == category:lower() or (category:lower() == "cities" and prefix == "city") then
             if prefix == "class" then
                 if string.find(achievement.id, "class_mixed_") then
                     table.insert(filtered, achievement)
@@ -88,7 +88,46 @@ local function FilterAchievements(achievements, category)
                 table.insert(filtered, achievement)
 
             elseif prefix == "zone" then
-                if string.find(achievement.id, string.lower(playerFaction)) then
+                -- Show faction-specific zones and contested zones
+                if string.find(achievement.id, string.lower(playerFaction)) or
+                   -- Contested zones (no faction prefix)
+                   string.find(achievement.id, "zone_ashenvale") or
+                   string.find(achievement.id, "zone_hillsbrad") or
+                   string.find(achievement.id, "zone_alterac") or
+                   string.find(achievement.id, "zone_arathi") or
+                   string.find(achievement.id, "zone_desolace") or
+                   string.find(achievement.id, "zone_stranglethorn") or
+                   string.find(achievement.id, "zone_hinterlands") or
+                   string.find(achievement.id, "zone_tanaris") or
+                   string.find(achievement.id, "zone_ungoro") or
+                   string.find(achievement.id, "zone_felwood") or
+                   string.find(achievement.id, "zone_thousand") or
+                   string.find(achievement.id, "zone_dustwallow") or
+                   string.find(achievement.id, "zone_azshara") or
+                   string.find(achievement.id, "zone_redridge") or
+                   string.find(achievement.id, "zone_duskwood") or
+                   string.find(achievement.id, "zone_wetlands") or
+                   string.find(achievement.id, "zone_badlands") or
+                   string.find(achievement.id, "zone_feralas") or
+                   string.find(achievement.id, "zone_searinggorge") or
+                   string.find(achievement.id, "zone_burningsteppes") or
+                   string.find(achievement.id, "zone_westernplaguelands") or
+                   string.find(achievement.id, "zone_easternplaguelands") or
+                   string.find(achievement.id, "zone_winterspring") or
+                   string.find(achievement.id, "zone_silithus") then
+                    table.insert(filtered, achievement)
+                end
+
+            elseif prefix == "city" then
+                if playerFaction == "Horde" and
+                   (string.find(achievement.id, "city_stormwind") or
+                    string.find(achievement.id, "city_ironforge") or
+                    string.find(achievement.id, "city_darnassus")) then
+                    table.insert(filtered, achievement)
+                elseif playerFaction == "Alliance" and
+                       (string.find(achievement.id, "city_orgrimmar") or
+                        string.find(achievement.id, "city_thunderbluff") or
+                        string.find(achievement.id, "city_undercity")) then
                     table.insert(filtered, achievement)
                 end
 
@@ -462,7 +501,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Bonus", "Almost"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Cities", "Bonus", "Almost"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 
