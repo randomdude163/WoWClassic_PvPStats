@@ -233,6 +233,25 @@ local function SetTileBorderColor(tile, rarity, achievement)
     end
 end
 
+local function GetRarityTooltipColor(rarity, achievement)
+    -- Check if it's a bonus achievement with 0 points
+    if achievement and (achievement.achievementPoints or 0) == 0 then
+        return 1.0, 0.2, 0.2  -- Red for bonus achievements
+    end
+
+    if rarity == "uncommon" then
+        return 0.1, 1.0, 0.1  -- Bright green
+    elseif rarity == "rare" then
+        return 0.2, 0.6, 1.0  -- Brighter blue for better readability
+    elseif rarity == "epic" then
+        return 0.8, 0.3, 0.9  -- Purple
+    elseif rarity == "legendary" then
+        return 1.0, 0.6, 0.0  -- Brighter orange/gold for legendary
+    else
+        return 1.0, 1.0, 1.0  -- White for common
+    end
+end
+
 
 local function CreateAchievementIcon(tile, achievement)
     local iconContainer = CreateFrame("Frame", nil, tile)
@@ -409,7 +428,9 @@ local function CreateAchievementTile(i, achievement, stats)
         GameTooltip:ClearLines()
 
         local titleText = type(achievement.title) == "function" and achievement.title(achievement) or achievement.title
-        GameTooltip:AddLine(PSC_ReplacePlayerNamePlaceholder(titleText, nil, achievement), 1, 0.82, 0) -- Yellow title
+        local rarity = achievement.rarity or "common"
+        local r, g, b = GetRarityTooltipColor(rarity, achievement)
+        GameTooltip:AddLine(PSC_ReplacePlayerNamePlaceholder(titleText, nil, achievement), r, g, b) -- Rarity-colored title
 
         local descText = type(achievement.description) == "function" and achievement.description(achievement) or achievement.description
         GameTooltip:AddLine(descText, 1, 1, 1, true)
