@@ -95,7 +95,7 @@ function PSC_SlashCommandHandler(msg)
         local days, killsPerDay, daysAgo = rest:match("(%d+)%s+(%d+)%s*(%d*)")
         days = tonumber(days) or 7
         killsPerDay = tonumber(killsPerDay) or 10
-        daysAgo = tonumber(daysAgo) or 0
+        daysAgo = tonumber(daysAgo) or nil
 
         PSC_GenerateStreakTestData(days, killsPerDay, daysAgo)
     elseif command == "bgmode" then
