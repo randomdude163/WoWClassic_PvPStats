@@ -2061,6 +2061,105 @@ AchievementSystem.achievements = {
             return math.min(humans, gnomes, dwarves, nightElves)
         end,
     },
+
+    -- HORDE MIXED RACE ACHIEVEMENTS
+    {
+        id = "race_horde_mixed_orc_undead_troll_tauren_100",
+        title = "Horde Variety Pack",
+        description = function(a) return ("Eliminate %d of each Horde race (400 total)"):format(a.targetValue) end,
+        iconID = 255132,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d of each Horde breed deleted. Equal opportunity slaughter across the savage races.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local orcs = stats.raceData["Orc"] or 0
+            local undead = stats.raceData["Undead"] or 0
+            local trolls = stats.raceData["Troll"] or 0
+            local tauren = stats.raceData["Tauren"] or 0
+            return math.min(orcs, undead, trolls, tauren)
+        end,
+    },
+    {
+        id = "race_horde_mixed_orc_undead_troll_tauren_250",
+        title = "Horde Population Control",
+        description = function(a) return ("Eliminate %d of each Horde race (1000 total)"):format(a.targetValue) end,
+        iconID = 255132,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills per race. Thrall's diversity program is failing spectacularly.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local orcs = stats.raceData["Orc"] or 0
+            local undead = stats.raceData["Undead"] or 0
+            local trolls = stats.raceData["Troll"] or 0
+            local tauren = stats.raceData["Tauren"] or 0
+            return math.min(orcs, undead, trolls, tauren)
+        end,
+    },
+    {
+        id = "race_horde_mixed_orc_undead_troll_tauren_500",
+        title = "Horde Demographic Crisis",
+        description = function(a) return ("Eliminate %d of each Horde race (2000 total)"):format(a.targetValue) end,
+        iconID = 255132,
+        achievementPoints = 75,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d deaths each. Orgrimmar's census is now just a death toll.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local orcs = stats.raceData["Orc"] or 0
+            local undead = stats.raceData["Undead"] or 0
+            local trolls = stats.raceData["Troll"] or 0
+            local tauren = stats.raceData["Tauren"] or 0
+            return math.min(orcs, undead, trolls, tauren)
+        end,
+    },
+    {
+        id = "race_horde_mixed_orc_undead_troll_tauren_1000",
+        title = "Horde Extinction Event",
+        description = function(a) return ("Eliminate %d of each Horde race (4000 total)"):format(a.targetValue) end,
+        iconID = 255132,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills per race. The Horde is now the Whored - you've made them your playthings.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local orcs = stats.raceData["Orc"] or 0
+            local undead = stats.raceData["Undead"] or 0
+            local trolls = stats.raceData["Troll"] or 0
+            local tauren = stats.raceData["Tauren"] or 0
+            return math.min(orcs, undead, trolls, tauren)
+        end,
+    },
+
     {
         id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_100",
         title = "Class Warfare Initiate",
@@ -3014,90 +3113,6 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "zone_horde_redridge",
-        title = "Redridge Population Control",
-        description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
-        iconID = 236814,
-        achievementPoints = 100,
-        targetValue = 500,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("Congratulations. You made an entire zone regret installing the game.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.zoneData["Redridge Mountains"] or 0
-        end,
-    },
-    {
-        id = "zone_horde_elwynn",
-        title = "Elwynn Exterminator",
-        description = function(a) return ("Eliminate %d players in Elwynn Forest"):format(a.targetValue) end,
-        iconID = 236761,
-        achievementPoints = 50,
-        targetValue = 100,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("After %d deaths in Elwynn, local humans are painting themselves green and practicing their 'zug zug'! Goldshire Inn's new special: 'Reroll Horde, Get Free Hearthstone to Durotar.' Even Marshal Dughan is considering a career in Orgrimmar.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.zoneData["Elwynn Forest"] or 0
-        end,
-    },
-    {
-        id = "zone_horde_westfall",
-        title = "[YOUR NAME] x Defias Traitor",
-        description = function(a) return ("Eliminate %d players in Westfall"):format(a.targetValue) end,
-        iconID = 236852,
-        achievementPoints = 50,
-        targetValue = 100,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("[YOUR NAME] x Defias Traitor vs. Westfall - the crossover nobody wanted, but %d players paid the price anyway, making Westfall unplayable.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            local westfallKills = stats.zoneData["Westfall"]
-            if westfallKills == nil then
-                return 0
-            end
-            return westfallKills
-        end,
-    },
-    {
-        id = "zone_horde_duskwood",
-        title = "Darkshire Destroyer",
-        description = function(a) return ("Eliminate %d players in Duskwood"):format(a.targetValue) end,
-        iconID = 236757,
-        achievementPoints = 50,
-        targetValue = 100,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("The Night Watch counted %d fresh corpses and decided to rename Darkshire to 'Deadshire'! Mor'Ladim is feeling professionally threatened, and Stiches filed for unemployment.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return stats.zoneData["Duskwood"] or 0
-        end,
-    },
-    {
         id = "zone_alliance_durotar",
         title = "Durotar Dominator",
         description = function(a) return ("Eliminate %d players in Durotar"):format(a.targetValue) end,
@@ -3175,6 +3190,1839 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return stats.zoneData["Stonetalon Mountains"] or 0
+        end,
+    },
+
+    -- =====================================================
+    -- ADDITIONAL ZONE ACHIEVEMENTS - CONTESTED ZONES
+    -- =====================================================
+
+    -- REDRIDGE MOUNTAINS (Horde) - Adding missing tiers
+    {
+        id = "zone_horde_redridge_100",
+        title = "Redridge Reaper",
+        description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
+        iconID = 236814,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Alliance fell in Redridge! The local guards are asking for hazard pay, and Lakeshire Inn is considering a 'death insurance' policy for guests.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Redridge Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_redridge_250",
+        title = "Redridge Ravager",
+        description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
+        iconID = 236814,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d kills in Redridge, you've made the zone so dangerous that even the gnolls are filing insurance claims. Stormwind is considering declaring it a disaster area.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Redridge Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_redridge",
+        title = "Redridge Population Control",
+        description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
+        iconID = 236814,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Congratulations. You made an entire zone regret installing the game.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Redridge Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_redridge_1000",
+        title = "The Redridge Apocalypse",
+        description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,
+        iconID = 236814,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Redridge, the zone has been renamed 'Bloodridge Mountains' on official Alliance maps. You've created more orphans than the Third War. Stormwind City Council is considering building a memorial wall just for your victims.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Redridge Mountains"] or 0
+        end,
+    },
+
+    -- STONETALON MOUNTAINS (Alliance) - Adding missing tiers
+    {
+        id = "zone_alliance_stonetalon_250",
+        title = "Stonetalon Executioner",
+        description = function(a) return ("Eliminate %d players in Stonetalon Mountains"):format(a.targetValue) end,
+        iconID = 236831,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d Horde dead, Stonetalon's toxic air is the least of their problems. Even the Venture Co. goblins are impressed by your efficiency in 'resource extraction.'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stonetalon Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_alliance_stonetalon_500",
+        title = "Stonetalon Annihilator",
+        description = function(a) return ("Eliminate %d players in Stonetalon Mountains"):format(a.targetValue) end,
+        iconID = 236831,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Stonetalon! The mountains themselves are considering relocating to a safer zone. Your body count is higher than the peak elevation.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stonetalon Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_alliance_stonetalon_1000",
+        title = "The Stonetalon Catastrophe",
+        description = function(a) return ("Eliminate %d players in Stonetalon Mountains"):format(a.targetValue) end,
+        iconID = 236831,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Stonetalon Mountains has been renamed 'Bonetal on Mountains' by surviving Horde. The Venture Co. has offered you a management position in their 'Hostile Takeover' department.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stonetalon Mountains"] or 0
+        end,
+    },
+
+    -- ASHENVALE (Contested) - All 4 tiers
+    {
+        id = "zone_ashenvale_100",
+        title = "Ashenvale Assassin",
+        description = function(a) return ("Eliminate %d players in Ashenvale"):format(a.targetValue) end,
+        iconID = 236713,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Ashenvale! The Sentinels are requesting backup, and the ancient trees are considering an early autumn to avoid witnessing more carnage.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Ashenvale"] or 0
+        end,
+    },
+    {
+        id = "zone_ashenvale_250",
+        title = "Ashenvale Exterminator",
+        description = function(a) return ("Eliminate %d players in Ashenvale"):format(a.targetValue) end,
+        iconID = 236713,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses fertilizing Ashenvale, the forest is growing at an alarming rate! Druids are filing environmental impact reports about your 'composting' methods.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Ashenvale"] or 0
+        end,
+    },
+    {
+        id = "zone_ashenvale_500",
+        title = "Ashenvale Apocalypse",
+        description = function(a) return ("Eliminate %d players in Ashenvale"):format(a.targetValue) end,
+        iconID = 236713,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Ashenvale! The wisps are organizing a support group for trauma victims. Even Cenarius is considering a career change to avoid your 'forest management' style.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Ashenvale"] or 0
+        end,
+    },
+    {
+        id = "zone_ashenvale_1000",
+        title = "The Ashenvale Cataclysm",
+        description = function(a) return ("Eliminate %d players in Ashenvale"):format(a.targetValue) end,
+        iconID = 236713,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Ashenvale has been declared a 'Natural Disaster Zone' by both factions. The World Tree is considering relocating. Your name is carved into every trunk as a warning to future generations.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Ashenvale"] or 0
+        end,
+    },
+
+    -- DUSKWOOD (Horde) - Adding missing tiers
+        {
+        id = "zone_horde_duskwood",
+        title = "Darkshire Destroyer",
+        description = function(a) return ("Eliminate %d players in Duskwood"):format(a.targetValue) end,
+        iconID = 236757,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The Night Watch counted %d fresh corpses and decided to rename Darkshire to 'Deadshire'! Mor'Ladim is feeling professionally threatened, and Stiches filed for unemployment.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Duskwood"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_duskwood_250",
+        title = "Duskwood Devastator",
+        description = function(a) return ("Eliminate %d players in Duskwood"):format(a.targetValue) end,
+        iconID = 236757,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d kills, Duskwood is now officially darker than its name suggests. The undead residents are filing noise complaints about all the screaming.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Duskwood"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_duskwood_500",
+        title = "Duskwood Doomsday",
+        description = function(a) return ("Eliminate %d players in Duskwood"):format(a.targetValue) end,
+        iconID = 236757,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d corpses in Duskwood! Even Stitches is asking for your autograph. The Scythe of Elune dims in comparison to your killing streak.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Duskwood"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_duskwood_1000",
+        title = "The Duskwood Eclipse",
+        description = function(a) return ("Eliminate %d players in Duskwood"):format(a.targetValue) end,
+        iconID = 236757,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Duskwood has achieved permanent midnight. The Worgen are howling in fear, not rage. Local ghost tours now include your kill locations as premium stops.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Duskwood"] or 0
+        end,
+    },
+
+    -- HILLSBRAD FOOTHILLS (Contested) - All 4 tiers
+    {
+        id = "zone_hillsbrad_100",
+        title = "Hillsbrad Hunter",
+        description = function(a) return ("Eliminate %d players in Hillsbrad Foothills"):format(a.targetValue) end,
+        iconID = 236779,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Hillsbrad! Tarren Mill and Southshore are considering a peace treaty just to deal with you. The hillsides are littered with more bodies than flowers.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Hillsbrad Foothills"] or 0
+        end,
+    },
+    {
+        id = "zone_hillsbrad_250",
+        title = "Hillsbrad Havoc",
+        description = function(a) return ("Eliminate %d players in Hillsbrad Foothills"):format(a.targetValue) end,
+        iconID = 236779,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses in Hillsbrad, the farmers are switching to bone meal fertilizer. The ongoing war between Tarren Mill and Southshore seems peaceful compared to your rampage.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Hillsbrad Foothills"] or 0
+        end,
+    },
+    {
+        id = "zone_hillsbrad_500",
+        title = "Hillsbrad Hunter",
+        description = function(a) return ("Eliminate %d players in Hillsbrad Foothills"):format(a.targetValue) end,
+        iconID = 236779,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Hillsbrad! The zone's famous for PvP battles, but now it's famous for your personal war crimes. Travel brochures have been updated to include survivor testimonies.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Hillsbrad Foothills"] or 0
+        end,
+    },
+    {
+        id = "zone_hillsbrad_1000",
+        title = "The Hillsbrad Hegemon",
+        description = function(a) return ("Eliminate %d players in Hillsbrad Foothills"):format(a.targetValue) end,
+        iconID = 236779,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, both Tarren Mill and Southshore have erected statues of you as a 'Shared Threat Memorial.' You've achieved what diplomacy never could: unity through terror.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Hillsbrad Foothills"] or 0
+        end,
+    },
+
+    -- THOUSAND NEEDLES (Alliance) - All 4 tiers
+    {
+        id = "zone_alliance_needles_100",
+        title = "Thousand Needles Nightmare",
+        description = function(a) return ("Eliminate %d players in Thousand Needles"):format(a.targetValue) end,
+        iconID = 236848,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Horde fell in Thousand Needles! The Centaur are impressed by your hunting skills, and the Shimmering Flats have more bodies than mirages.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Thousand Needles"] or 0
+        end,
+    },
+    {
+        id = "zone_alliance_needles_250",
+        title = "Thousand Needles Terror",
+        description = function(a) return ("Eliminate %d players in Thousand Needles"):format(a.targetValue) end,
+        iconID = 236848,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d kills, Thousand Needles now has a thousand corpses to match! The racing teams in Shimmering Flats are using your kill locations as course markers.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Thousand Needles"] or 0
+        end,
+    },
+    {
+        id = "zone_alliance_needles_500",
+        title = "Thousand Needles Tyrant",
+        description = function(a) return ("Eliminate %d players in Thousand Needles"):format(a.targetValue) end,
+        iconID = 236848,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d corpses dot Thousand Needles like deadly cacti! Even the salt flats are seasoned with blood now. The Centaur have nominated you for their 'Hunter of the Century' award.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Thousand Needles"] or 0
+        end,
+    },
+    {
+        id = "zone_alliance_needles_1000",
+        title = "The Thousand Needles Overlord",
+        description = function(a) return ("Eliminate %d players in Thousand Needles"):format(a.targetValue) end,
+        iconID = 236848,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Thousand Needles has been renamed 'Thousand Corpses' by the Horde. The zone is now considered a natural wonder - a testament to one player's dedication to mass murder.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Thousand Needles"] or 0
+        end,
+    },
+
+    -- ALTERAC MOUNTAINS (Contested) - All 4 tiers
+    {
+        id = "zone_alterac_100",
+        title = "Alterac Assassin",
+        description = function(a) return ("Eliminate %d players in Alterac Mountains"):format(a.targetValue) end,
+        iconID = 236711,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Alterac Mountains! The yeti are considering hibernating permanently to avoid witnessing more bloodshed. Even the Syndicate is impressed by your criminal efficiency.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Alterac Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_alterac_250",
+        title = "Alterac Annihilator",
+        description = function(a) return ("Eliminate %d players in Alterac Mountains"):format(a.targetValue) end,
+        iconID = 236711,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses frozen in Alterac, you've created a winter wonderland of death! The Frostwolf and Stormpike clans have called a temporary ceasefire to deal with the 'you' problem.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Alterac Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_alterac_500",
+        title = "Alterac Apocalypse",
+        description = function(a) return ("Eliminate %d players in Alterac Mountains"):format(a.targetValue) end,
+        iconID = 236711,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Alterac! The mountains are red with blood, and the snow won't melt because it's too busy being a crime scene. Alterac Valley battleground seems peaceful in comparison.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Alterac Mountains"] or 0
+        end,
+    },
+    {
+        id = "zone_alterac_1000",
+        title = "The Alterac Overlord",
+        description = function(a) return ("Eliminate %d players in Alterac Mountains"):format(a.targetValue) end,
+        iconID = 236711,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Alterac Mountains has been designated a 'Monument to Malice.' Both factions agree that you make the Scourge look friendly. The mountain peaks are now known as the 'Monuments of [YOUR NAME].'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Alterac Mountains"] or 0
+        end,
+    },
+
+    -- ARATHI HIGHLANDS (Contested) - All 4 tiers
+    {
+        id = "zone_arathi_100",
+        title = "Arathi Aggressor",
+        description = function(a) return ("Eliminate %d players in Arathi Highlands"):format(a.targetValue) end,
+        iconID = 236712,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Arathi Highlands! The Arathi Basin battleground looks tame compared to your personal war. The ogres in Boulderfist Hall are taking notes on your techniques.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Arathi Highlands"] or 0
+        end,
+    },
+    {
+        id = "zone_arathi_250",
+        title = "Arathi Annihilator",
+        description = function(a) return ("Eliminate %d players in Arathi Highlands"):format(a.targetValue) end,
+        iconID = 236712,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses in Arathi, the Highland has become a lowland of death! The Syndicate and the Boulderfist ogres have formed an alliance just to avoid you.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Arathi Highlands"] or 0
+        end,
+    },
+    {
+        id = "zone_arathi_500",
+        title = "Arathi Apocalypse",
+        description = function(a) return ("Eliminate %d players in Arathi Highlands"):format(a.targetValue) end,
+        iconID = 236712,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Arathi! The ancient ruins are now modern graveyards. Archaeologists are more interested in studying your kill patterns than ancient artifacts.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Arathi Highlands"] or 0
+        end,
+    },
+    {
+        id = "zone_arathi_1000",
+        title = "The Arathi Emperor",
+        description = function(a) return ("Eliminate %d players in Arathi Highlands"):format(a.targetValue) end,
+        iconID = 236712,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, you've claimed dominion over Arathi Highlands. The ancient Arathi Empire pales in comparison to your reign of terror. History books will remember this as the '[YOUR NAME] Era.'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Arathi Highlands"] or 0
+        end,
+    },
+
+    -- DESOLACE (Contested) - All 4 tiers
+    {
+        id = "zone_desolace_100",
+        title = "Desolace Destroyer",
+        description = function(a) return ("Eliminate %d players in Desolace"):format(a.targetValue) end,
+        iconID = 236742,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Desolace! You've made a desolate zone even more desolate. The Centaur clans are considering you for honorary membership in their 'Masters of Mayhem' society.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Desolace"] or 0
+        end,
+    },
+    {
+        id = "zone_desolace_250",
+        title = "Desolace Devastator",
+        description = function(a) return ("Eliminate %d players in Desolace"):format(a.targetValue) end,
+        iconID = 236742,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses scattered across Desolace, you've redecorated the wasteland! Even the demons in the Demon Fall Canyon are impressed by your commitment to chaos.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Desolace"] or 0
+        end,
+    },
+    {
+        id = "zone_desolace_500",
+        title = "Desolace Doomsday",
+        description = function(a) return ("Eliminate %d players in Desolace"):format(a.targetValue) end,
+        iconID = 236742,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have made Desolace truly live up to its name! The Burning Legion scouts are taking notes on your efficiency. You've out-desolated desolation itself.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Desolace"] or 0
+        end,
+    },
+    {
+        id = "zone_desolace_1000",
+        title = "The Desolace Despot",
+        description = function(a) return ("Eliminate %d players in Desolace"):format(a.targetValue) end,
+        iconID = 236742,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Desolace has been renamed 'The [YOUR NAME] Memorial Wasteland.' Even the demons respect your territory. You've achieved what the Legion couldn't: making Desolace actually scary.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Desolace"] or 0
+        end,
+    },
+
+    -- STRANGLETHORN VALE (Contested) - All 4 tiers
+    {
+        id = "zone_stranglethorn_100",
+        title = "Stranglethorn Stalker",
+        description = function(a) return ("Eliminate %d players in Stranglethorn Vale"):format(a.targetValue) end,
+        iconID = 236844,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Stranglethorn! The jungle vines are using corpses as fertilizer, and Hemet Nesingwary is asking for hunting tips. The tigers are jealous of your predatory skills.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stranglethorn Vale"] or 0
+        end,
+    },
+    {
+        id = "zone_stranglethorn_250",
+        title = "Stranglethorn Slaughterer",
+        description = function(a) return ("Eliminate %d players in Stranglethorn Vale"):format(a.targetValue) end,
+        iconID = 236844,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses feeding the jungle, Stranglethorn has never been more lush! The Bloodsail Buccaneers have offered you a captain's commission in their 'Terror of the Seas' division.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stranglethorn Vale"] or 0
+        end,
+    },
+    {
+        id = "zone_stranglethorn_500",
+        title = "Stranglethorn Scourge",
+        description = function(a) return ("Eliminate %d players in Stranglethorn Vale"):format(a.targetValue) end,
+        iconID = 236844,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Stranglethorn! The jungle is so dangerous now that even King Bagoon won't venture out of his cave. You've become the apex predator of the food chain.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stranglethorn Vale"] or 0
+        end,
+    },
+    {
+        id = "zone_stranglethorn_1000",
+        title = "The Stranglethorn Sovereign",
+        description = function(a) return ("Eliminate %d players in Stranglethorn Vale"):format(a.targetValue) end,
+        iconID = 236844,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, you rule Stranglethorn Vale absolutely. The jungle bow to your supremacy. Booty Bay has erected a statue in your honor - and also to appease you so you don't sink their port.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stranglethorn Vale"] or 0
+        end,
+    },
+
+    -- THE HINTERLANDS (Contested) - All 4 tiers
+    {
+        id = "zone_hinterlands_100",
+        title = "Hinterlands Hunter",
+        description = function(a) return ("Eliminate %d players in The Hinterlands"):format(a.targetValue) end,
+        iconID = 236780,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in The Hinterlands! The Wildhammer dwarfs are impressed by your 'aerial superiority' - you drop bodies faster than their gryphons drop altitude.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["The Hinterlands"] or 0
+        end,
+    },
+    {
+        id = "zone_hinterlands_250",
+        title = "Hinterlands Havoc",
+        description = function(a) return ("Eliminate %d players in The Hinterlands"):format(a.targetValue) end,
+        iconID = 236780,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses in The Hinterlands, the trolls of Jintha'Alor are considering you for their pantheon of death gods. Even the forest trolls are scared of your hunting efficiency.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["The Hinterlands"] or 0
+        end,
+    },
+    {
+        id = "zone_hinterlands_500",
+        title = "Hinterlands - 'no-fly zone'",
+        description = function(a) return ("Eliminate %d players in The Hinterlands"):format(a.targetValue) end,
+        iconID = 236780,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have made The Hinterlands a 'no-fly zone' - literally. Gryphons refuse to land here. The zone's wildlife has formed a support group for trauma survivors.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["The Hinterlands"] or 0
+        end,
+    },
+    {
+        id = "zone_hinterlands_1000",
+        title = "The Hinterlands Hegemon",
+        description = function(a) return ("Eliminate %d players in The Hinterlands"):format(a.targetValue) end,
+        iconID = 236780,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, The Hinterlands has been renamed 'The [YOUR NAME] Lands' on all official maps. You've achieved what no empire could: complete territorial dominance through pure terror.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["The Hinterlands"] or 0
+        end,
+    },
+
+    -- TANARIS (Contested) - All 4 tiers
+    {
+        id = "zone_tanaris_100",
+        title = "Tanaris Terror",
+        description = function(a) return ("Eliminate %d players in Tanaris"):format(a.targetValue) end,
+        iconID = 236846,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Tanaris! The desert sands are now red with blood instead of just sand. Gadgetzan's insurance rates have skyrocketed since you arrived.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Tanaris"] or 0
+        end,
+    },
+    {
+        id = "zone_tanaris_250",
+        title = "Tanaris Tyrant",
+        description = function(a) return ("Eliminate %d players in Tanaris"):format(a.targetValue) end,
+        iconID = 236846,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses buried in Tanaris, you've created the largest graveyard in Kalimdor! The Wastewander bandits have disbanded out of professional respect.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Tanaris"] or 0
+        end,
+    },
+    {
+        id = "zone_tanaris_500",
+        title = "Tanaris Tornado",
+        description = function(a) return ("Eliminate %d players in Tanaris"):format(a.targetValue) end,
+        iconID = 236846,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Tanaris! You've caused more destruction than the Caverns of Time themselves. Nozdormu is considering adding you to the timeline as a 'Temporal Anomaly.'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Tanaris"] or 0
+        end,
+    },
+    {
+        id = "zone_tanaris_1000",
+        title = "The Tanaris Titan",
+        description = function(a) return ("Eliminate %d players in Tanaris"):format(a.targetValue) end,
+        iconID = 236846,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Tanaris has been designated a 'Temporal Hazard Zone.' The Bronze Dragonflight refuses to patrol here. Your legend transcends time itself - mostly because everyone who could tell it is dead.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Tanaris"] or 0
+        end,
+    },
+
+    -- UN'GORO CRATER (Contested) - All 4 tiers
+    {
+        id = "zone_ungoro_100",
+        title = "Un'Goro Undertaker",
+        description = function(a) return ("Eliminate %d players in Un'Goro Crater"):format(a.targetValue) end,
+        iconID = 236850,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Un'Goro! The dinosaurs are considering you for their 'Apex Predator Hall of Fame.' Even the T-Rex thinks your hunting methods are excessive.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Un'Goro Crater"] or 0
+        end,
+    },
+    {
+        id = "zone_ungoro_250",
+        title = "Un'Goro Extinction Event",
+        description = function(a) return ("Eliminate %d players in Un'Goro Crater"):format(a.targetValue) end,
+        iconID = 236850,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses in Un'Goro, you've created a fossil record of your own! Paleontologists are naming a new extinction period after you: 'The [YOUR NAME]ocene Era.'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Un'Goro Crater"] or 0
+        end,
+    },
+    {
+        id = "zone_ungoro_500",
+        title = "Un'Goro Upheaval",
+        description = function(a) return ("Eliminate %d players in Un'Goro Crater"):format(a.targetValue) end,
+        iconID = 236850,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Un'Goro! You've out-evolved evolution itself. The crater's elemental forces are considering relocating to a safer dimension.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Un'Goro Crater"] or 0
+        end,
+    },
+    {
+        id = "zone_ungoro_1000",
+        title = "The Un'Goro Overlord",
+        description = function(a) return ("Eliminate %d players in Un'Goro Crater"):format(a.targetValue) end,
+        iconID = 236850,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Un'Goro Crater has been reclassified as 'The [YOUR NAME] Memorial Impact Site.' You've caused more devastation than the asteroid that killed the dinosaurs - and you did it personally.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Un'Goro Crater"] or 0
+        end,
+    },
+
+    -- FELWOOD (Contested) - All 4 tiers
+    {
+        id = "zone_felwood_100",
+        title = "Felwood Fiend",
+        description = function(a) return ("Eliminate %d players in Felwood"):format(a.targetValue) end,
+        iconID = 236763,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Felwood! The corruption here has nothing on your moral flexibility. Even the demons are taking notes on your creative torture methods.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Felwood"] or 0
+        end,
+    },
+    {
+        id = "zone_felwood_250",
+        title = "Felwood Firelord",
+        description = function(a) return ("Eliminate %d players in Felwood"):format(a.targetValue) end,
+        iconID = 236763,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses in Felwood, you've out-corrupted the corruption itself! The Burning Legion scouts are considering you for a leadership position in the 'Department of Atrocities.'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Felwood"] or 0
+        end,
+    },
+    {
+        id = "zone_felwood_500",
+        title = "Felwood Apocalypse",
+        description = function(a) return ("Eliminate %d players in Felwood"):format(a.targetValue) end,
+        iconID = 236763,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Felwood! You've made a corrupted forest even more terrifying. The Furbolgs have started worshipping you as a god of war. Archimonde is jealous of your efficiency.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Felwood"] or 0
+        end,
+    },
+    {
+        id = "zone_felwood_1000",
+        title = "The Felwood Overlord",
+        description = function(a) return ("Eliminate %d players in Felwood"):format(a.targetValue) end,
+        iconID = 236763,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Felwood has been renamed 'The [YOUR NAME] Dominion.' You've achieved what the Burning Legion couldn't: making a corrupted wasteland actually scary. Sargeras sends his regards... and his resume.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Felwood"] or 0
+        end,
+    },
+
+    -- BADLANDS (Contested) - All 4 tiers
+    {
+        id = "zone_badlands_100",
+        title = "Badlands Brawler",
+        description = function(a) return ("Eliminate %d players in Badlands"):format(a.targetValue) end,
+        iconID = 236716,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Badlands. Even the wasteland thinks you're too much.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Badlands"] or 0
+        end,
+    },
+    {
+        id = "zone_badlands_250",
+        title = "Badlands Butcher",
+        description = function(a) return ("Eliminate %d players in Badlands"):format(a.targetValue) end,
+        iconID = 236716,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses, you've made Badlands worse than its name suggests. The dragons are relocating.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Badlands"] or 0
+        end,
+    },
+    {
+        id = "zone_badlands_500",
+        title = "Badlands Blight",
+        description = function(a) return ("Eliminate %d players in Badlands"):format(a.targetValue) end,
+        iconID = 236716,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have turned Badlands into 'Deadlands.' You're the reason it's called bad.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Badlands"] or 0
+        end,
+    },
+    {
+        id = "zone_badlands_1000",
+        title = "The Badlands Overlord",
+        description = function(a) return ("Eliminate %d players in Badlands"):format(a.targetValue) end,
+        iconID = 236716,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Badlands has been renamed '[YOUR NAME]lands.' You've out-badded the Badlands.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Badlands"] or 0
+        end,
+    },
+
+    -- FERALAS (Contested) - All 4 tiers
+    {
+        id = "zone_feralas_100",
+        title = "Feralas Fiend",
+        description = function(a) return ("Eliminate %d players in Feralas"):format(a.targetValue) end,
+        iconID = 236764,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Feralas. The hippogryphs are afraid to fly here now.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Feralas"] or 0
+        end,
+    },
+    {
+        id = "zone_feralas_250",
+        title = "Feralas Fury",
+        description = function(a) return ("Eliminate %d players in Feralas"):format(a.targetValue) end,
+        iconID = 236764,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses, Feralas isn't so feral anymore - you are. The druids call you an 'unnatural disaster.'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Feralas"] or 0
+        end,
+    },
+    {
+        id = "zone_feralas_500",
+        title = "Feralas Firestorm",
+        description = function(a) return ("Eliminate %d players in Feralas"):format(a.targetValue) end,
+        iconID = 236764,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have made Feralas less wild, more dead. You've tamed the wilderness with corpses.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Feralas"] or 0
+        end,
+    },
+    {
+        id = "zone_feralas_1000",
+        title = "The Feralas Overlord",
+        description = function(a) return ("Eliminate %d players in Feralas"):format(a.targetValue) end,
+        iconID = 236764,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Feralas has been domesticated by death. The only wild thing left is your kill count.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Feralas"] or 0
+        end,
+    },
+
+    -- SEARING GORGE (Contested) - All 4 tiers
+    {
+        id = "zone_searinggorge_100",
+        title = "Searing Gorge Slayer",
+        description = function(a) return ("Eliminate %d players in Searing Gorge"):format(a.targetValue) end,
+        iconID = 236815,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Searing Gorge. You're hotter than the lava.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Searing Gorge"] or 0
+        end,
+    },
+    {
+        id = "zone_searinggorge_250",
+        title = "Searing Gorge Scorcher",
+        description = function(a) return ("Eliminate %d players in Searing Gorge"):format(a.targetValue) end,
+        iconID = 236815,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d bodies, you've out-burned the burning. The Dark Iron dwarfs are impressed by your heat.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Searing Gorge"] or 0
+        end,
+    },
+    {
+        id = "zone_searinggorge_500",
+        title = "Searing Gorge Inferno",
+        description = function(a) return ("Eliminate %d players in Searing Gorge"):format(a.targetValue) end,
+        iconID = 236815,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have made Searing Gorge actually searing. You're the new fire elemental lord.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Searing Gorge"] or 0
+        end,
+    },
+    {
+        id = "zone_searinggorge_1000",
+        title = "The Searing Gorge Overlord",
+        description = function(a) return ("Eliminate %d players in Searing Gorge"):format(a.targetValue) end,
+        iconID = 236815,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, you've made Searing Gorge a crematorium. Ragnaros wants your job application.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Searing Gorge"] or 0
+        end,
+    },
+
+    -- BURNING STEPPES (Contested) - All 4 tiers
+    {
+        id = "zone_burningsteppes_100",
+        title = "Burning Steppes Burner",
+        description = function(a) return ("Eliminate %d players in Burning Steppes"):format(a.targetValue) end,
+        iconID = 236734,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Burning Steppes. You've added fuel to the fire - literally.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Burning Steppes"] or 0
+        end,
+    },
+    {
+        id = "zone_burningsteppes_250",
+        title = "Burning Steppes Blaze",
+        description = function(a) return ("Eliminate %d players in Burning Steppes"):format(a.targetValue) end,
+        iconID = 236734,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses, you're burning through players faster than the zone burns stone. Step by step, corpse by corpse.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Burning Steppes"] or 0
+        end,
+    },
+    {
+        id = "zone_burningsteppes_500",
+        title = "Burning Steppes Bonfire",
+        description = function(a) return ("Eliminate %d players in Burning Steppes"):format(a.targetValue) end,
+        iconID = 236734,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have made you the hottest thing in the Steppes. The dragons are taking notes on your burn rate.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Burning Steppes"] or 0
+        end,
+    },
+    {
+        id = "zone_burningsteppes_1000",
+        title = "The Burning Steppes Overlord",
+        description = function(a) return ("Eliminate %d players in Burning Steppes"):format(a.targetValue) end,
+        iconID = 236734,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, you've made Burning Steppes your personal furnace. Even Nefarian respects your heat.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Burning Steppes"] or 0
+        end,
+    },
+
+    -- WESTERN PLAGUELANDS (Contested) - All 4 tiers
+    {
+        id = "zone_westernplaguelands_100",
+        title = "Western Plaguelands Plague",
+        description = function(a) return ("Eliminate %d players in Western Plaguelands"):format(a.targetValue) end,
+        iconID = 236851,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Western Plaguelands. You're more infectious than the actual plague.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Western Plaguelands"] or 0
+        end,
+    },
+    {
+        id = "zone_westernplaguelands_250",
+        title = "Western Plaguelands Pandemic",
+        description = function(a) return ("Eliminate %d players in Western Plaguelands"):format(a.targetValue) end,
+        iconID = 236851,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses, you've out-plagues the Plaguelands. The Scourge wants to hire you.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Western Plaguelands"] or 0
+        end,
+    },
+    {
+        id = "zone_westernplaguelands_500",
+        title = "Western Plaguelands Pestilence",
+        description = function(a) return ("Eliminate %d players in Western Plaguelands"):format(a.targetValue) end,
+        iconID = 236851,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have made you Patient Zero of PvP. The Lich King is jealous of your infection rate.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Western Plaguelands"] or 0
+        end,
+    },
+    {
+        id = "zone_westernplaguelands_1000",
+        title = "The Western Plaguelands Overlord",
+        description = function(a) return ("Eliminate %d players in Western Plaguelands"):format(a.targetValue) end,
+        iconID = 236851,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, you've become the plague the Plaguelands needed. Even the undead are dying again.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Western Plaguelands"] or 0
+        end,
+    },
+
+    -- EASTERN PLAGUELANDS (Contested) - All 4 tiers
+    {
+        id = "zone_easternplaguelands_100",
+        title = "Eastern Plaguelands Executioner",
+        description = function(a) return ("Eliminate %d players in Eastern Plaguelands"):format(a.targetValue) end,
+        iconID = 236760,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Eastern Plaguelands. You're spreading faster than any disease.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Eastern Plaguelands"] or 0
+        end,
+    },
+    {
+        id = "zone_easternplaguelands_250",
+        title = "Eastern Plaguelands Epidemic",
+        description = function(a) return ("Eliminate %d players in Eastern Plaguelands"):format(a.targetValue) end,
+        iconID = 236760,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d bodies, you've made the Eastern Plaguelands properly plagued. The Argent Dawn fears you more than undeath.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Eastern Plaguelands"] or 0
+        end,
+    },
+    {
+        id = "zone_easternplaguelands_500",
+        title = "Eastern Plaguelands Extinction",
+        description = function(a) return ("Eliminate %d players in Eastern Plaguelands"):format(a.targetValue) end,
+        iconID = 236760,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have made you the final boss of the Plaguelands. Kel'Thuzad wants your resume.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Eastern Plaguelands"] or 0
+        end,
+    },
+    {
+        id = "zone_easternplaguelands_1000",
+        title = "The Eastern Plaguelands Overlord",
+        description = function(a) return ("Eliminate %d players in Eastern Plaguelands"):format(a.targetValue) end,
+        iconID = 236760,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, you've become the Lich King of PvP. The undead bow to your superior killing skills.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Eastern Plaguelands"] or 0
+        end,
+    },
+
+    -- WINTERSPRING (Contested) - All 4 tiers
+    {
+        id = "zone_winterspring_100",
+        title = "Winterspring Warrior",
+        description = function(a) return ("Eliminate %d players in Winterspring"):format(a.targetValue) end,
+        iconID = 236854,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Winterspring. You're colder than the climate.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Winterspring"] or 0
+        end,
+    },
+    {
+        id = "zone_winterspring_250",
+        title = "Winterspring Wipeout",
+        description = function(a) return ("Eliminate %d players in Winterspring"):format(a.targetValue) end,
+        iconID = 236854,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d frozen corpses, you've made winter eternal. The yeti are hibernating permanently.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Winterspring"] or 0
+        end,
+    },
+    {
+        id = "zone_winterspring_500",
+        title = "Winterspring Wasteland",
+        description = function(a) return ("Eliminate %d players in Winterspring"):format(a.targetValue) end,
+        iconID = 236854,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have frozen Winterspring in fear. You've brought nuclear winter to Azeroth.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Winterspring"] or 0
+        end,
+    },
+    {
+        id = "zone_winterspring_1000",
+        title = "The Winterspring Overlord",
+        description = function(a) return ("Eliminate %d players in Winterspring"):format(a.targetValue) end,
+        iconID = 236854,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, Winterspring is permanently winter. You've made the Ice Age jealous.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Winterspring"] or 0
+        end,
+    },
+
+    -- SILITHUS (Contested) - All 4 tiers
+    {
+        id = "zone_silithus_100",
+        title = "Silithus Slayer",
+        description = function(a) return ("Eliminate %d players in Silithus"):format(a.targetValue) end,
+        iconID = 236829,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in Silithus. You're buggier than the silithid.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Silithus"] or 0
+        end,
+    },
+    {
+        id = "zone_silithus_250",
+        title = "Silithus Swarm",
+        description = function(a) return ("Eliminate %d players in Silithus"):format(a.targetValue) end,
+        iconID = 236829,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses, you've out-swarmed the silithid. C'Thun is impressed by your hive mind mentality.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Silithus"] or 0
+        end,
+    },
+    {
+        id = "zone_silithus_500",
+        title = "Silithus Sandstorm",
+        description = function(a) return ("Eliminate %d players in Silithus"):format(a.targetValue) end,
+        iconID = 236829,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills have made you the apex predator of the desert. The Old Gods want your autograph.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Silithus"] or 0
+        end,
+    },
+    {
+        id = "zone_silithus_1000",
+        title = "The Silithus Overlord",
+        description = function(a) return ("Eliminate %d players in Silithus"):format(a.targetValue) end,
+        iconID = 236829,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, you've become the Fifth Old God. C'Thun fears your whispers of death.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Silithus"] or 0
+        end,
+    },
+
+{
+        id = "zone_horde_elwynn",
+        title = "Elwynn Exterminator",
+        description = function(a) return ("Eliminate %d players in Elwynn Forest"):format(a.targetValue) end,
+        iconID = 236761,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d deaths in Elwynn, local humans are painting themselves green and practicing their 'zug zug'! Goldshire Inn's new special: 'Reroll Horde, Get Free Hearthstone to Durotar.' Even Marshal Dughan is considering a career in Orgrimmar.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Elwynn Forest"] or 0
+        end,
+    },
+    {
+        id = "zone_horde_westfall",
+        title = "[YOUR NAME] x Defias Traitor",
+        description = function(a) return ("Eliminate %d players in Westfall"):format(a.targetValue) end,
+        iconID = 236852,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("[YOUR NAME] x Defias Traitor vs. Westfall - the crossover nobody wanted, but %d players paid the price anyway, making Westfall unplayable.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local westfallKills = stats.zoneData["Westfall"]
+            if westfallKills == nil then
+                return 0
+            end
+            return westfallKills
         end,
     },
     {
@@ -5440,6 +7288,505 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return PSC_CountConsecutiveDaysWithMinKills(100) or 0
+        end
+    },
+    -- =====================================================
+    -- CITY ACHIEVEMENTS - HORDE
+    -- =====================================================
+
+    -- STORMWIND (For Horde)
+    {
+        id = "city_stormwind_50",
+        title = "Stormwind Skirmisher",
+        description = function(a) return ("Defeat %d players in Stormwind City"):format(a.targetValue) end,
+        iconID = 135763,
+        achievementPoints = 25,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d Alliance in their capital city. The guards barely noticed, but the local merchants are starting to get annoyed at having to clean blood off their storefronts.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stormwind City"] or 0
+        end,
+    },
+    {
+        id = "city_stormwind_100",
+        title = "Stormwind Slayer",
+        description = function(a) return ("Defeat %d players in Stormwind City"):format(a.targetValue) end,
+        iconID = 135763,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Stormwind, they've started posting 'Wanted' posters with your face at every inn. The bounty is quite flattering, actually.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stormwind City"] or 0
+        end,
+    },
+    {
+        id = "city_stormwind_250",
+        title = "Stormwind Terrorist",
+        description = function(a) return ("Defeat %d players in Stormwind City"):format(a.targetValue) end,
+        iconID = 135763,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d Alliance corpses littering the streets of Stormwind, King Varian has personally ordered his royal guard to hunt you down. The city's economy has taken a hit as merchants fear opening their shops.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stormwind City"] or 0
+        end,
+    },
+    {
+        id = "city_stormwind_1000",
+        title = "The Scourge of Stormwind",
+        description = function(a) return ("Defeat %d players in Stormwind City"):format(a.targetValue) end,
+        iconID = 135763,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After slaughtering %d Alliance in Stormwind, your name is whispered in fear throughout the Eastern Kingdoms. Children are told to behave or [YOUR NAME] will come for them. King Varian considers abandoning the city entirely.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Stormwind City"] or 0
+        end,
+    },
+
+    -- IRONFORGE (For Horde)
+    {
+        id = "city_ironforge_50",
+        title = "Ironforge Interloper",
+        description = function(a) return ("Defeat %d players in Ironforge"):format(a.targetValue) end,
+        iconID = 236805,
+        achievementPoints = 25,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've slain %d dwarves and their allies within their mountain fortress. The locals are starting to take notice of the corpses piling up in the Great Forge.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Ironforge"] or 0
+        end,
+    },
+    {
+        id = "city_ironforge_100",
+        title = "Ironforge Invader",
+        description = function(a) return ("Defeat %d players in Ironforge"):format(a.targetValue) end,
+        iconID = 236805,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Ironforge, the dwarves have started to fortify their positions. The local blacksmiths are working overtime to arm their defenders against your onslaught.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Ironforge"] or 0
+        end,
+    },
+    {
+        id = "city_ironforge_250",
+        title = "Ironforge Assaulter",
+        description = function(a) return ("Defeat %d players in Ironforge"):format(a.targetValue) end,
+        iconID = 236805,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d Alliance dead at your hands within the mountain city, King Magni Bronzebeard has declared a state of emergency. The once-bustling markets have fallen silent as citizens barricade themselves in their homes.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Ironforge"] or 0
+        end,
+    },
+    {
+        id = "city_ironforge_1000",
+        title = "The Hammer of Ironforge",
+        description = function(a) return ("Defeat %d players in Ironforge"):format(a.targetValue) end,
+        iconID = 236805,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Ironforge, the dwarves have added your likeness to their ancient tablets of sworn enemies. The city's defenses have been entirely reworked because of you. Your name is cursed in Dwarven taverns across Azeroth.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Ironforge"] or 0
+        end,
+    },
+
+    -- DARNASSUS (For Horde)
+    {
+        id = "city_darnassus_50",
+        title = "Darnassus Despoiler",
+        description = function(a) return ("Defeat %d players in Darnassus"):format(a.targetValue) end,
+        iconID = 236740,
+        achievementPoints = 25,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've slain %d night elves in their sacred city. The Sentinels have begun to increase patrols throughout Teldrassil.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Darnassus"] or 0
+        end,
+    },
+    {
+        id = "city_darnassus_100",
+        title = "Darnassus Destroyer",
+        description = function(a) return ("Defeat %d players in Darnassus"):format(a.targetValue) end,
+        iconID = 236740,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Darnassus, Tyrande Whisperwind has personally blessed the Sentinels with enhanced powers to combat your threat. The druids have begun strengthening the magical defenses of the World Tree.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Darnassus"] or 0
+        end,
+    },
+    {
+        id = "city_darnassus_250",
+        title = "Darnassus Defiler",
+        description = function(a) return ("Defeat %d players in Darnassus"):format(a.targetValue) end,
+        iconID = 236740,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d night elves fallen to your attacks, the Temple of the Moon has become a hospital for your victims. The Cenarion Circle has convened an emergency council to address your continued assault on their sacred grounds.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Darnassus"] or 0
+        end,
+    },
+    {
+        id = "city_darnassus_1000",
+        title = "The Nightmare of Darnassus",
+        description = function(a) return ("Defeat %d players in Darnassus"):format(a.targetValue) end,
+        iconID = 236740,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Darnassus, your name is etched into the bark of Teldrassil itself as a warning to future generations. The night elves now include you in their ancient prophecies of doom. Tyrande herself has sworn to see your end.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Darnassus"] or 0
+        end,
+    },
+
+    -- =====================================================
+    -- CITY ACHIEVEMENTS - ALLIANCE
+    -- =====================================================
+
+    -- ORGRIMMAR (For Alliance)
+    {
+        id = "city_orgrimmar_50",
+        title = "Orgrimmar Operative",
+        description = function(a) return ("Defeat %d players in Orgrimmar"):format(a.targetValue) end,
+        iconID = 135759,
+        achievementPoints = 25,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've slain %d Horde in their capital city. The Kor'kron guards have started taking note of Alliance infiltration.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Orgrimmar"] or 0
+        end,
+    },
+    {
+        id = "city_orgrimmar_100",
+        title = "Orgrimmar Assassin",
+        description = function(a) return ("Defeat %d players in Orgrimmar"):format(a.targetValue) end,
+        iconID = 135759,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Orgrimmar, Thrall has posted additional guards at all city entrances. The warchief has personally put a bounty on your head.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Orgrimmar"] or 0
+        end,
+    },
+    {
+        id = "city_orgrimmar_250",
+        title = "Orgrimmar Saboteur",
+        description = function(a) return ("Defeat %d players in Orgrimmar"):format(a.targetValue) end,
+        iconID = 135759,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d Horde dead at your hands, the streets of Orgrimmar have become eerily quiet. Citizens rush through the Valley of Strength, fearing to linger in open areas. Thrall has consulted with his advisors about magical barriers for the city.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Orgrimmar"] or 0
+        end,
+    },
+    {
+        id = "city_orgrimmar_1000",
+        title = "The Siege of Orgrimmar",
+        description = function(a) return ("Defeat %d players in Orgrimmar"):format(a.targetValue) end,
+        iconID = 135759,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Orgrimmar, your exploits are told in hushed whispers in orcish war camps across Azeroth. The Horde has commissioned special forces specifically trained to counter your tactics. Thrall now mentions you by name in his speeches as the embodiment of Alliance aggression.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Orgrimmar"] or 0
+        end,
+    },
+
+    -- THUNDER BLUFF (For Alliance)
+    {
+        id = "city_thunderbluff_50",
+        title = "Thunder Bluff Trespasser",
+        description = function(a) return ("Defeat %d players in Thunder Bluff"):format(a.targetValue) end,
+        iconID = 135765,
+        achievementPoints = 25,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d Tauren and their allies atop their sacred mesas. The Bluffwatchers have begun to organize more vigilant patrols.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Thunder Bluff"] or 0
+        end,
+    },
+    {
+        id = "city_thunderbluff_100",
+        title = "Thunder Bluff Tormentor",
+        description = function(a) return ("Defeat %d players in Thunder Bluff"):format(a.targetValue) end,
+        iconID = 135765,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Thunder Bluff, Cairne Bloodhoof has called upon the spirits of the ancestors to watch over the city. The elevators are now guarded day and night.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Thunder Bluff"] or 0
+        end,
+    },
+    {
+        id = "city_thunderbluff_250",
+        title = "Thunder Bluff Terminator",
+        description = function(a) return ("Defeat %d players in Thunder Bluff"):format(a.targetValue) end,
+        iconID = 135765,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d Tauren dead by your hand, the peaceful city has become a place of fear. The drums beat day and night as shamans perform rituals to protect the people. Cairne has personally vowed to end your rampage.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Thunder Bluff"] or 0
+        end,
+    },
+    {
+        id = "city_thunderbluff_1000",
+        title = "The Cataclysm of Thunder Bluff",
+        description = function(a) return ("Defeat %d players in Thunder Bluff"):format(a.targetValue) end,
+        iconID = 135765,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Thunder Bluff, the Tauren have added your likeness to their ancestral cave paintings as a dire warning. Mothers scare their calves with stories of [YOUR NAME]. The peace-loving Tauren now have a special exception to their philosophy of harmony - you.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Thunder Bluff"] or 0
+        end,
+    },
+
+    -- UNDERCITY (For Alliance)
+    {
+        id = "city_undercity_50",
+        title = "Undercity Undertaker",
+        description = function(a) return ("Defeat %d players in Undercity"):format(a.targetValue) end,
+        iconID = 135766,
+        achievementPoints = 25,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've slain %d Forsaken in their underground lair. The Deathguards have noted your activity in their logbooks.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Undercity"] or 0
+        end,
+    },
+    {
+        id = "city_undercity_100",
+        title = "Undercity Usurper",
+        description = function(a) return ("Defeat %d players in Undercity"):format(a.targetValue) end,
+        iconID = 135766,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Undercity, Lady Sylvanas has ordered the Royal Apothecary Society to develop special plagues just for you. The sewers are now regularly patrolled by elite Deathstalkers.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Undercity"] or 0
+        end,
+    },
+    {
+        id = "city_undercity_250",
+        title = "Undercity Undertow",
+        description = function(a) return ("Defeat %d players in Undercity"):format(a.targetValue) end,
+        iconID = 135766,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d Forsaken slain again at your hands, the former halls of Lordaeron have become a fortress. Sylvanas has dispatched her Dark Rangers to hunt you specifically. Your blood samples are being studied intensely by the apothecaries.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Undercity"] or 0
+        end,
+    },
+    {
+        id = "city_undercity_1000",
+        title = "The Plague of Undercity",
+        description = function(a) return ("Defeat %d players in Undercity"):format(a.targetValue) end,
+        iconID = 135766,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Undercity, Sylvanas has composed a special banshee's wail just for you. The Forsaken now use your name as a curse. In an ironic twist, your victims hope that someday you'll join them in undeath so they can exact their revenge for eternity.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Undercity"] or 0
         end,
     }
 }

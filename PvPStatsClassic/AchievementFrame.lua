@@ -54,7 +54,7 @@ local function FilterAchievements(achievements, category)
     for _, achievement in ipairs(achievements) do
         local prefix = string.match(achievement.id, "^([^_]+)")
 
-        if prefix == category:lower() then
+        if prefix == category:lower() or (category:lower() == "cities" and prefix == "city") then
             if prefix == "class" then
                 if string.find(achievement.id, "class_mixed_") then
                     table.insert(filtered, achievement)
@@ -88,7 +88,46 @@ local function FilterAchievements(achievements, category)
                 table.insert(filtered, achievement)
 
             elseif prefix == "zone" then
-                if string.find(achievement.id, string.lower(playerFaction)) then
+                -- Show faction-specific zones and contested zones
+                if string.find(achievement.id, string.lower(playerFaction)) or
+                   -- Contested zones (no faction prefix)
+                   string.find(achievement.id, "zone_ashenvale") or
+                   string.find(achievement.id, "zone_hillsbrad") or
+                   string.find(achievement.id, "zone_alterac") or
+                   string.find(achievement.id, "zone_arathi") or
+                   string.find(achievement.id, "zone_desolace") or
+                   string.find(achievement.id, "zone_stranglethorn") or
+                   string.find(achievement.id, "zone_hinterlands") or
+                   string.find(achievement.id, "zone_tanaris") or
+                   string.find(achievement.id, "zone_ungoro") or
+                   string.find(achievement.id, "zone_felwood") or
+                   string.find(achievement.id, "zone_thousand") or
+                   string.find(achievement.id, "zone_dustwallow") or
+                   string.find(achievement.id, "zone_azshara") or
+                   string.find(achievement.id, "zone_redridge") or
+                   string.find(achievement.id, "zone_duskwood") or
+                   string.find(achievement.id, "zone_wetlands") or
+                   string.find(achievement.id, "zone_badlands") or
+                   string.find(achievement.id, "zone_feralas") or
+                   string.find(achievement.id, "zone_searinggorge") or
+                   string.find(achievement.id, "zone_burningsteppes") or
+                   string.find(achievement.id, "zone_westernplaguelands") or
+                   string.find(achievement.id, "zone_easternplaguelands") or
+                   string.find(achievement.id, "zone_winterspring") or
+                   string.find(achievement.id, "zone_silithus") then
+                    table.insert(filtered, achievement)
+                end
+
+            elseif prefix == "city" then
+                if playerFaction == "Horde" and
+                   (string.find(achievement.id, "city_stormwind") or
+                    string.find(achievement.id, "city_ironforge") or
+                    string.find(achievement.id, "city_darnassus")) then
+                    table.insert(filtered, achievement)
+                elseif playerFaction == "Alliance" and
+                       (string.find(achievement.id, "city_orgrimmar") or
+                        string.find(achievement.id, "city_thunderbluff") or
+                        string.find(achievement.id, "city_undercity")) then
                     table.insert(filtered, achievement)
                 end
 
@@ -194,6 +233,25 @@ local function SetTileBorderColor(tile, rarity, achievement)
         tile:SetBackdropBorderColor(1.0, 0.5, 0.0)
     else
         tile:SetBackdropBorderColor(0.7, 0.7, 0.7)
+    end
+end
+
+local function GetRarityTooltipColor(rarity, achievement)
+    -- Check if it's a bonus achievement with 0 points
+    if achievement and (achievement.achievementPoints or 0) == 0 then
+        return 1.0, 0.2, 0.2  -- Red for bonus achievements
+    end
+
+    if rarity == "uncommon" then
+        return 0.1, 1.0, 0.1  -- Bright green
+    elseif rarity == "rare" then
+        return 0.2, 0.6, 1.0  -- Brighter blue for better readability
+    elseif rarity == "epic" then
+        return 0.8, 0.3, 0.9  -- Purple
+    elseif rarity == "legendary" then
+        return 1.0, 0.6, 0.0  -- Brighter orange/gold for legendary
+    else
+        return 1.0, 1.0, 1.0  -- White for common
     end
 end
 
@@ -373,7 +431,9 @@ local function CreateAchievementTile(i, achievement, stats)
         GameTooltip:ClearLines()
 
         local titleText = type(achievement.title) == "function" and achievement.title(achievement) or achievement.title
-        GameTooltip:AddLine(PSC_ReplacePlayerNamePlaceholder(titleText, nil, achievement), 1, 0.82, 0) -- Yellow title
+        local rarity = achievement.rarity or "common"
+        local r, g, b = GetRarityTooltipColor(rarity, achievement)
+        GameTooltip:AddLine(PSC_ReplacePlayerNamePlaceholder(titleText, nil, achievement), r, g, b) -- Rarity-colored title
 
         local descText = type(achievement.description) == "function" and achievement.description(achievement) or achievement.description
         GameTooltip:AddLine(descText, 1, 1, 1, true)
@@ -465,7 +525,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Streaks", "Bonus", "Almost"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Cities", "Streaks", "Bonus", "Almost"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 
