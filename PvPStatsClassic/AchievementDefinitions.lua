@@ -1226,6 +1226,90 @@ AchievementSystem.achievements = {
             return stats.uniqueKills or 0
         end,
     },
+    {
+        id = "kills_honorable_0",
+        title = "Honor System Initiated",
+        description = function(a) return ("Get %d honorable kills"):format(a.targetValue) end,
+        iconID = 135024, -- Spell_holy_restoration
+        achievementPoints = 25,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d honorable kills earned! You've officially joined the honor grind. The gray kills don't count here—this is about quality, not quantity. Spirit healers are starting to recognize your commitment to actual PvP.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local honorableKills, dishonorableKills, highestRank = GetPVPLifetimeStats()
+            return honorableKills or 0
+        end,
+    },
+    {
+        id = "kills_honorable_1",
+        title = "Honor Guard",
+        description = function(a) return ("Get %d honorable kills"):format(a.targetValue) end,
+        iconID = 133440, -- Spell_holy_holyProtection
+        achievementPoints = 50,
+        targetValue = 2500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d honorable kills achieved! You're building a respectable honor rank. No more gray ganking—these kills actually matter for your standing. The PvP system respects your dedication.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local honorableKills, dishonorableKills, highestRank = GetPVPLifetimeStats()
+            return honorableKills or 0
+        end,
+    },
+    {
+        id = "kills_honorable_2",
+        title = "Honorable Executioner",
+        description = function(a) return ("Get %d honorable kills"):format(a.targetValue) end,
+        iconID = 135953, -- Spell_holy_retributionAura
+        achievementPoints = 100,
+        targetValue = 10000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d honorable kills secured! You've mastered the art of meaningful PvP. Every kill contributes to your honor rank progression. The battlegrounds know your name.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local honorableKills, dishonorableKills, highestRank = GetPVPLifetimeStats()
+            return honorableKills or 0
+        end,
+    },
+    {
+        id = "kills_honorable_3",
+        title = "Grand Marshal's Nightmare",
+        description = function(a) return ("Get %d honorable kills"):format(a.targetValue) end,
+        iconID = 135729, -- Spell_holy_weaponMastery
+        achievementPoints = 250,
+        targetValue = 25000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d honorable kills conquered! You've transcended the honor system entirely. Grand Marshals wake up in cold sweats dreaming about your kill count. The honor system wasn't designed for players like you.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            local honorableKills, dishonorableKills, highestRank = GetPVPLifetimeStats()
+            return honorableKills or 0
+        end,
+    },
 
     {
         id = "race_human_0",
@@ -2286,7 +2370,7 @@ AchievementSystem.achievements = {
         title = "Unstoppable Force",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 133050,
-        achievementPoints = 100,
+        achievementPoints = 125,
         targetValue = 175,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -2306,7 +2390,7 @@ AchievementSystem.achievements = {
         title = "Top 0.01%",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 136101,
-        achievementPoints = 100,
+        achievementPoints = 125,
         targetValue = 200,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -5051,6 +5135,311 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsByMonthName("december")
+        end,
+    },
+    -- Streak Achievements
+    {
+        id = "streaks_week_10_7",
+        title = "Weekly Warrior",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(10, 7) end,
+        iconID = 132307,
+        achievementPoints = 75,
+        targetValue = 7,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Seven days of dedication! You've maintained a 10-kill daily quota for an entire week. Your enemies now check the calendar before logging in.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(10) or 0
+        end,
+    },
+    {
+        id = "streaks_week_25_7",
+        title = "Weekly Executioner",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(25, 7) end,
+        iconID = 132349,
+        achievementPoints = 125,
+        targetValue = 7,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("A week of terror! 25 kills daily for seven straight days. You've turned the weekly reset into the weekly massacre.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(25) or 0
+        end,
+    },
+    {
+        id = "streaks_week_50_7",
+        title = "Weekly Annihilator",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(50, 7) end,
+        iconID = 132355,
+        achievementPoints = 250,
+        targetValue = 7,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Fifty kills a day keeps the enemies away! Seven days of absolute domination. You've redefined what 'having a good week' means.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(50) or 0
+        end,
+    },
+    {
+        id = "streaks_week_100_7",
+        title = "Weekly Apocalypse",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(100, 7) end,
+        iconID = 132357,
+        achievementPoints = 500,
+        targetValue = 7,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("One hundred souls per day for a week straight! You've achieved peak efficiency. The weekly server maintenance couldn't even stop your killing spree.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(100) or 0
+        end,
+    },
+    {
+        id = "streaks_biweek_10_14",
+        title = "Fortnightly Finisher",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(10, 14) end,
+        iconID = 132350,
+        achievementPoints = 75,
+        targetValue = 14,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Two weeks of unwavering dedication! Your daily 10-kill routine has become the stuff of legends. Enemy guilds are scheduling around your playtime.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(10) or 0
+        end,
+    },
+    {
+        id = "streaks_biweek_25_14",
+        title = "Biweekly Butcher",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(25, 14) end,
+        iconID = 132352,
+        achievementPoints = 125,
+        targetValue = 14,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Fourteen days of relentless hunting! Twenty-five kills daily without fail. Your name has become synonymous with 'avoid at all costs.'")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(25) or 0
+        end,
+    },
+    {
+        id = "streaks_biweek_50_14",
+        title = "Biweekly Berserker",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(50, 14) end,
+        iconID = 132354,
+        achievementPoints = 250,
+        targetValue = 14,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Two weeks of pure carnage! Fifty daily eliminations without missing a beat. You've turned PvP into a full-time job.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(50) or 0
+        end,
+    },
+    {
+        id = "streaks_biweek_100_14",
+        title = "Biweekly Cataclysm",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(100, 14) end,
+        iconID = 132356,
+        achievementPoints = 500,
+        targetValue = 14,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Fourteen days of absolute destruction! One hundred kills daily for two weeks straight. You've achieved what most consider impossible.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(100) or 0
+        end,
+    },
+    {
+        id = "streaks_month_10_30",
+        title = "Monthly Menace",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(10, 30) end,
+        iconID = 132347,
+        achievementPoints = 75,
+        targetValue = 30,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("A full month of consistent terror! Thirty days of 10+ kills each. You've established a reign of fear that spans an entire month.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(10) or 0
+        end,
+    },
+    {
+        id = "streaks_month_25_30",
+        title = "Monthly Massacre Master",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(25, 30) end,
+        iconID = 132348,
+        achievementPoints = 125,
+        targetValue = 30,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Thirty days of unrelenting violence! Twenty-five kills daily for an entire month. Server populations have noticeably declined in your wake.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(25) or 0
+        end,
+    },
+    {
+        id = "streaks_month_50_30",
+        title = "Monthly Extinction Event",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(50, 30) end,
+        iconID = 132351,
+        achievementPoints = 250,
+        targetValue = 30,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("A month-long killing spree! Fifty eliminations daily for thirty consecutive days. You've single-handedly caused multiple server transfers.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(50) or 0
+        end,
+    },
+    {
+        id = "streaks_month_100_30",
+        title = "Monthly Armageddon",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(100, 30) end,
+        iconID = 132353,
+        achievementPoints = 500,
+        targetValue = 30,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Thirty days of absolute devastation! One hundred kills daily without fail. You've redefined what 'having a bad month' means for everyone else.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(100) or 0
+        end,
+    },
+    {
+        id = "streaks_year_10_365",
+        title = "Annual Assassin",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(10, 365) end,
+        iconID = 132358,
+        achievementPoints = 125,
+        targetValue = 365,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Three hundred sixty-five days of dedication! A full year of 10+ kills daily. You've achieved legendary status that will be remembered forever.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(10) or 0
+        end,
+    },
+    {
+        id = "streaks_year_25_365",
+        title = "Yearly Yield Reaper",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(25, 365) end,
+        iconID = 132359,
+        achievementPoints = 250,
+        targetValue = 365,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("A full year of terror! Twenty-five kills every single day for 365 days. You've become a force of nature, as inevitable as death and taxes.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(25) or 0
+        end,
+    },
+    {
+        id = "streaks_year_50_365",
+        title = "Annual Apocalypse",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(50, 365) end,
+        iconID = 132360,
+        achievementPoints = 500,
+        targetValue = 365,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Three hundred sixty-five days of unmatched brutality! Fifty kills daily for an entire year. You've transcended from player to phenomenon.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(50) or 0
+        end,
+    },
+    {
+        id = "streaks_year_100_365",
+        title = "Eternal Exterminator",
+        description = function(a) return ("Get %d kills per day for %d consecutive days"):format(100, 365) end,
+        iconID = 132361,
+        achievementPoints = 500,
+        targetValue = 365,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The impossible achieved! One hundred kills every day for a full year. You've reached a level of dedication that borders on divine intervention. Legends will speak of this accomplishment for generations.")
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountConsecutiveDaysWithMinKills(100) or 0
         end,
     }
 }

@@ -5,6 +5,7 @@ local function PrintSlashCommandUsage()
     PSC_Print("Usage: /psc history - Show PvP history")
     PSC_Print("Usage: /psc achievements - Show PvP achievements")
     PSC_Print("Usage: /psc settings - Open addon settings")
+    PSC_Print("Usage: /psc registerstreakkill [days] [killsPerDay] [daysAgo] - Generate test streak data")
     -- PSC_Print("Usage: /psc timezonetest - Test timezone detection")
     -- PSC_Print("Usage: /psc status - Show current settings")
     -- PSC_Print("Usage: /psc debug - Show current streak values")
@@ -90,6 +91,13 @@ function PSC_SlashCommandHandler(msg)
             end
         end
         PSC_SimulatePlayerKills(testKillCount)
+    elseif command == "registerstreakkill" then
+        local days, killsPerDay, daysAgo = rest:match("(%d+)%s+(%d+)%s*(%d*)")
+        days = tonumber(days) or 7
+        killsPerDay = tonumber(killsPerDay) or 10
+        daysAgo = tonumber(daysAgo) or nil
+
+        PSC_GenerateStreakTestData(days, killsPerDay, daysAgo)
     elseif command == "bgmode" then
         PSC_DB.ForceBattlegroundMode = not PSC_DB.ForceBattlegroundMode
         PSC_CheckBattlegroundStatus()

@@ -46,6 +46,11 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     if PSC_GetTimeBasedStats then
         PSC_GetTimeBasedStats(true) -- Force refresh
     end
+
+    -- Invalidate streak statistics cache when new kill is recorded
+    if PSC_GetStreakStats then
+        PSC_GetStreakStats(true) -- Force refresh
+    end
 end
 
 local function UpdateMultiKill()

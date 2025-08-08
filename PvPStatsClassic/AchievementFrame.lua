@@ -114,6 +114,9 @@ local function FilterAchievements(achievements, category)
                 elseif string.find(achievement.id, "bonus_unlocked_") then
                     table.insert(filtered, achievement)
                 end
+
+            elseif prefix == "streaks" then
+                table.insert(filtered, achievement)
             end
         end
     end
@@ -462,7 +465,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Bonus", "Almost"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Streaks", "Bonus", "Almost"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 

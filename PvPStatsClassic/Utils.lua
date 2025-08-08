@@ -563,12 +563,6 @@ function PSC_GetTimeBasedStats(forceRefresh)
     return timeStatsCache
 end
 
--- Function to manually clear the cache (useful for debugging, data imports, or addon reloads)
-function PSC_ClearTimeStatsCache()
-    timeStatsCache = nil
-    timeStatsCacheTimestamp = 0
-end
-
 function PSC_CountKillsInTimeRange(startHour, endHour, timezoneOffsetHours)
     local stats = PSC_GetTimeBasedStats()
     local key = startHour .. "_" .. endHour
@@ -1034,4 +1028,211 @@ function PSC_CalculateAchievementCompletion(achievement, stats)
     end
 
     return (currentProgress / achievement.targetValue) * 100
+end
+
+-- Cache for streak stats - cached indefinitely until invalidated by new kills
+local streakStatsCache = nil
+local streakStatsCacheTimestamp = 0
+
+-- Function to calculate all streak statistics in a single pass for improved performance
+function PSC_CalculateAllStreakStats()
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return {}
+    end
+
+    -- Collect all kill timestamps and group them by date
+    local killsByDate = {}
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp then
+                    -- Convert timestamp to date string (YYYY-MM-DD format)
+                    local dateInfo = date("*t", killLocation.timestamp)
+                    if dateInfo then
+                        local dateKey = string.format("%04d-%02d-%02d", dateInfo.year, dateInfo.month, dateInfo.day)
+                        killsByDate[dateKey] = (killsByDate[dateKey] or 0) + 1
+                    end
+                end
+            end
+        end
+    end
+
+    -- Convert to sorted array of all dates with kills
+    local allDates = {}
+    for dateKey, killCount in pairs(killsByDate) do
+        table.insert(allDates, {date = dateKey, kills = killCount})
+    end
+
+    -- Sort dates chronologically
+    table.sort(allDates, function(a, b) return a.date < b.date end)
+
+    -- Helper function to convert date string to timestamp for day comparison
+    local function dateStringToTimestamp(dateStr)
+        local year, month, day = dateStr:match("(%d+)-(%d+)-(%d+)")
+        year, month, day = tonumber(year), tonumber(month), tonumber(day)
+        local dateTable = {year = year, month = month, day = day, hour = 0, min = 0, sec = 0}
+        return time(dateTable)
+    end
+
+    -- Calculate streaks for different kill thresholds
+    local streakResults = {}
+    local killThresholds = {1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100, 125, 150, 200, 250, 300, 500, 1000}
+
+    for _, minKills in ipairs(killThresholds) do
+        -- Get dates that meet this kill threshold
+        local validDates = {}
+        for _, dateData in ipairs(allDates) do
+            if dateData.kills >= minKills then
+                table.insert(validDates, dateData.date)
+            end
+        end
+
+        if #validDates == 0 then
+            streakResults[minKills] = 0
+        else
+            -- Find the longest consecutive streak for this threshold
+            local maxStreak = 1
+            local currentStreak = 1
+
+            for i = 2, #validDates do
+                local prevTimestamp = dateStringToTimestamp(validDates[i - 1])
+                local currTimestamp = dateStringToTimestamp(validDates[i])
+
+                -- Calculate the difference in days (86400 seconds = 1 day)
+                local timeDiff = currTimestamp - prevTimestamp
+                local dayDiff = timeDiff / (24 * 60 * 60)
+
+                if dayDiff >= 0.9 and dayDiff <= 1.1 then  -- Allow small tolerance for consecutive days
+                    currentStreak = currentStreak + 1
+                    if currentStreak > maxStreak then
+                        maxStreak = currentStreak
+                    end
+                else
+                    currentStreak = 1
+                end
+            end
+
+            streakResults[minKills] = maxStreak
+        end
+    end
+
+    return streakResults
+end
+
+-- Function to get cached streak stats with automatic refresh when needed
+function PSC_GetStreakStats(forceRefresh)
+    -- Cache indefinitely, only refresh when forced (on new kills) or if cache doesn't exist
+    if not streakStatsCache or forceRefresh then
+        streakStatsCache = PSC_CalculateAllStreakStats()
+        streakStatsCacheTimestamp = time()
+    end
+
+    return streakStatsCache
+end
+
+-- Function to manually clear the streak cache (called when new kills are registered)
+function PSC_CountConsecutiveDaysWithMinKills(minKills)
+    if not minKills or minKills <= 0 then
+        return 0
+    end
+
+    -- Use cached streak stats for much better performance
+    local streakStats = PSC_GetStreakStats()
+    return streakStats[minKills] or 0
+end
+
+-- Function to generate test streak data for testing PSC_CountConsecutiveDaysWithMinKills
+function PSC_GenerateStreakTestData(days, killsPerDay, daysAgo)
+    -- If daysAgo is not specified, calculate it so the streak ends yesterday (no future timestamps)
+    if not daysAgo then
+        daysAgo = days  -- Start 'days' days ago so the streak ends yesterday
+    end
+
+    local currentTime = time()
+    local startTime = currentTime - (daysAgo * 24 * 60 * 60) -- Start daysAgo days in the past
+    local endTime = startTime + ((days - 1) * 24 * 60 * 60) -- Calculate end time for validation
+
+    PSC_Print(string.format("Generating %d days of test data with %d kills per day, starting %d days ago...",
+        days, killsPerDay, daysAgo))
+
+    -- Show the date range for clarity
+    local startDateStr = date("%Y-%m-%d", startTime)
+    local endDateStr = date("%Y-%m-%d", endTime)
+    PSC_Print(string.format("Date range: %s to %s (streak ends yesterday)", startDateStr, endDateStr))
+
+    local totalKillsAdded = 0
+
+    -- Store original time function
+    local originalTime = time
+
+    for day = 0, days - 1 do
+        local dayTime = startTime + (day * 24 * 60 * 60)
+        local dateStr = date("%Y-%m-%d", dayTime)
+
+        PSC_Print(string.format("Generating %d kills for %s...", killsPerDay, dateStr))
+
+        -- Generate one test player for this entire day
+        local testPlayer = PSC_GetRandomTestPlayer()
+        local dailyVictimName = "StreakTest_Day" .. day .. "_" .. testPlayer.name
+
+        for kill = 1, killsPerDay do
+            -- Create timestamps starting at noon and add one second per kill (ensures all kills stay within the same day)
+            local killTime = dayTime + (12 * 60 * 60) + kill -- Start at noon (12:00) and add one second per kill
+
+            -- Override time() function temporarily for this kill
+            time = function() return killTime end
+
+            -- Use existing zone selection from PSC_SimulatePlayerKills
+            local zones = {
+                "Stormwind City", "Orgrimmar", "Ironforge", "Thunder Bluff", "Darnassus", "Undercity",
+                "Elwynn Forest", "Durotar", "Mulgore", "Teldrassil", "Tirisfal Glades", "Westfall",
+                "Redridge Mountains", "Duskwood", "Stranglethorn Vale", "The Barrens", "Ashenvale",
+                "Alterac Mountains", "Arathi Highlands", "Badlands", "Blasted Lands", "Burning Steppes",
+                "Desolace", "Dustwallow Marsh", "Eastern Plaguelands", "Felwood", "Feralas",
+                "Hillsbrad Foothills", "Tanaris", "The Hinterlands", "Un'Goro Crater", "Western Plaguelands",
+                "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin", "Alterac Valley"
+            }
+
+            -- Temporarily override GetRealZoneText to return a random zone (same for the day)
+            local randomZone = zones[math.random(#zones)]
+            local originalGetRealZoneText = GetRealZoneText
+            GetRealZoneText = function() return randomZone end
+
+            -- Generate random coordinates like PSC_SimulatePlayerKills does
+            local randomX = 10.0 + (90.0 - 10.0) * math.random()
+            local randomY = 10.0 + (90.0 - 10.0) * math.random()
+
+            -- Override C_Map.GetPlayerMapPosition for this simulation
+            local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
+            C_Map.GetPlayerMapPosition = function(mapID, unit)
+                return { x = randomX / 100, y = randomY / 100 }
+            end
+
+            -- Store player info in cache using our daily victim name
+            PSC_StorePlayerInfo(dailyVictimName, testPlayer.level, testPlayer.class,
+                testPlayer.race, testPlayer.gender, testPlayer.guildName,
+                testPlayer.rank)
+            PSC_RegisterPlayerKill(dailyVictimName)
+
+            -- Restore the original functions immediately
+            C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
+            GetRealZoneText = originalGetRealZoneText
+
+            totalKillsAdded = totalKillsAdded + 1
+        end
+
+        PSC_Print(string.format("  -> Killed %s %d times on %s", dailyVictimName, killsPerDay, dateStr))
+    end
+
+    -- Restore original time function
+    time = originalTime
+
+    PSC_Print(string.format("Test data generation complete! Total kills added: %d", totalKillsAdded))
+    PSC_Print("You can now test the streak function with various commands:")
+    PSC_Print("- View achievements to see current streaks")
+    PSC_Print("- Use '/psc debug' to see total kill counts")
 end
