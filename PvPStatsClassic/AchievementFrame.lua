@@ -359,16 +359,16 @@ local function CreateProgressBar(tile, targetValue, currentProgress, achievement
     progressText:SetPoint("CENTER", progressBar, "CENTER", 0, 0)
 
     if achievement.unlocked then
-        progressBar:SetMinMaxValues(0, targetValue)
-        progressBar:SetValue(targetValue)
-        progressText:SetText(targetValue.."/"..targetValue)
+        progressBar:SetMinMaxValues(0, math.max(targetValue, currentProgress))
+        progressBar:SetValue(currentProgress)
+        progressText:SetText(currentProgress.."/"..targetValue)
     else
         if currentProgress >= targetValue and targetValue > 0 then
             achievement.unlocked = true
             achievement.completedDate = date("%d/%m/%Y %H:%M")
-            progressBar:SetMinMaxValues(0, targetValue)
-            progressBar:SetValue(targetValue)
-            progressText:SetText(targetValue.."/"..targetValue)
+            progressBar:SetMinMaxValues(0, math.max(targetValue, currentProgress))
+            progressBar:SetValue(currentProgress)
+            progressText:SetText(currentProgress.."/"..targetValue)
             icon:SetDesaturated(false)
             title:SetTextColor(1, 0.82, 0)
         else
