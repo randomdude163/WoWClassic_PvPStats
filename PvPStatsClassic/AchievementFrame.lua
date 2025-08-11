@@ -525,7 +525,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Cities", "Streaks", "Bonus", "Almost"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Cities", "Streaks", "Almost", "Bonus"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 
