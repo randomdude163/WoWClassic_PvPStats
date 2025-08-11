@@ -7788,5 +7788,233 @@ AchievementSystem.achievements = {
         progress = function(achievement, stats)
             return stats.zoneData["Undercity"] or 0
         end,
+    },
+    {
+        id = "bg_arathi_250",
+        title = "Basin Blade",
+        description = function(a) return ("Defeat %d players in Arathi Basin"):format(a.targetValue) end,
+        iconID = 236385,
+        achievementPoints = 25,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills, blood stains every resource node. The Basin remembers your first taste of slaughter."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Arathi Basin"] or 0
+        end,
+    },
+    {
+        id = "bg_arathi_500",
+        title = "Resource Hunter",
+        description = function(a) return ("Defeat %d players in Arathi Basin"):format(a.targetValue) end,
+        iconID = 236385,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d corpses scattered across the Basin, the highlands weep crimson tears. Your reputation spreads like wildfire among both factions."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Arathi Basin"] or 0
+        end,
+    },
+    {
+        id = "bg_arathi_750",
+        title = "Death's Herald",
+        description = function(a) return ("Defeat %d players in Arathi Basin"):format(a.targetValue) end,
+        iconID = 236385,
+        achievementPoints = 100,
+        targetValue = 750,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d souls have made you death's herald in these cursed highlands. The ancient stones whisper your name in dread."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Arathi Basin"] or 0
+        end,
+    },
+    {
+        id = "bg_arathi_1000",
+        title = "The Shadow King",
+        description = function(a) return ("Defeat %d players in Arathi Basin"):format(a.targetValue) end,
+        iconID = 236385,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("One thousand victims have crowned you the shadow that haunts every flag capture. Both armies flee at your approach."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Arathi Basin"] or 0
+        end,
+    },
+    {
+        id = "bg_wsg_250",
+        title = "Canyon Reaper",
+        description = function(a) return ("Defeat %d players in Warsong Gulch"):format(a.targetValue) end,
+        iconID = 236396,
+        achievementPoints = 25,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d screams now echo through the twisted canyon forever. The rocks themselves remember your brutality."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Warsong Gulch"] or 0
+        end,
+    },
+    {
+        id = "bg_wsg_500",
+        title = "The Flag Slayer",
+        description = function(a) return ("Defeat %d players in Warsong Gulch"):format(a.targetValue) end,
+        iconID = 236396,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d fallen flag bearers, no one escapes the Reaper's embrace. The banners themselves drip with terror."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Warsong Gulch"] or 0
+        end,
+    },
+    {
+        id = "bg_wsg_750",
+        title = "Forest's Bane",
+        description = function(a) return ("Defeat %d players in Warsong Gulch"):format(a.targetValue) end,
+        iconID = 236396,
+        achievementPoints = 100,
+        targetValue = 750,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Your %d victims have silenced even the ancient forest spirits. They dare not whisper your cursed name."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Warsong Gulch"] or 0
+        end,
+    },
+    {
+        id = "bg_wsg_1000",
+        title = "Eternal Nightmare",
+        description = function(a) return ("Defeat %d players in Warsong Gulch"):format(a.targetValue) end,
+        iconID = 236396,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("One thousand souls have birthed a legend that transcends death itself. You are Warsong's eternal nightmare."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Warsong Gulch"] or 0
+        end,
+    },
+    {
+        id = "bg_av_250",
+        title = "Winter's Edge",
+        description = function(a) return ("Defeat %d players in Alterac Valley"):format(a.targetValue) end,
+        iconID = 236388,
+        achievementPoints = 25,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d frozen corpses mark your bloodied path through the snow. The valley knows a new predator stalks its peaks."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Alterac Valley"] or 0
+        end,
+    },
+    {
+        id = "bg_av_500",
+        title = "Blood on Snow",
+        description = function(a) return ("Defeat %d players in Alterac Valley"):format(a.targetValue) end,
+        iconID = 236388,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d fallen warriors, the white snow drinks deep of crimson blood. Your legend grows with every frozen battlefield."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Alterac Valley"] or 0
+        end,
+    },
+    {
+        id = "bg_av_750",
+        title = "The Frozen Throne",
+        description = function(a) return ("Defeat %d players in Alterac Valley"):format(a.targetValue) end,
+        iconID = 236388,
+        achievementPoints = 100,
+        targetValue = 750,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d souls have built your throne of ice and death. Winter itself now bows to a colder, darker master."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Alterac Valley"] or 0
+        end,
+    },
+    {
+        id = "bg_av_1000",
+        title = "Soul of Winter",
+        description = function(a) return ("Defeat %d players in Alterac Valley"):format(a.targetValue) end,
+        iconID = 236388,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("One thousand souls have made you the endless winter that devours hope. You are Alterac's eternal frost, consuming all warmth and life."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.zoneData["Alterac Valley"] or 0
+        end,
     }
 }
