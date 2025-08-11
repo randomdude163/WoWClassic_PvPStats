@@ -31,6 +31,13 @@ AlmostCompletedLabel:SetJustifyH("CENTER")
 AlmostCompletedLabel:SetText("Your 16 almost completed achievements")
 AlmostCompletedLabel:Hide()
 
+local LastCompletedLabel = contentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+LastCompletedLabel:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 15)
+LastCompletedLabel:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 0, 15)
+LastCompletedLabel:SetJustifyH("CENTER")
+LastCompletedLabel:SetText("Shows you last completed achievements sorted by date and time")
+LastCompletedLabel:Hide()
+
 local scrollContent = CreateFrame("Frame", "PVPSCAchievementContent", scrollFrame)
 scrollContent:SetSize(scrollFrame:GetWidth(), 1) -- Height will be adjusted dynamically
 scrollFrame:SetScrollChild(scrollContent)
@@ -477,14 +484,27 @@ local function CreateAchievementTile(i, achievement, stats)
 end
 
 
+local function ParseDateString(dateStr)
+    if not dateStr then return 0 end
+    local day, month, year, hour, minute = dateStr:match("(%d+)/(%d+)/(%d+) (%d+):(%d+)")
+    if not day then return 0 end
+    return tonumber(year) * 100000000 + tonumber(month) * 1000000 + tonumber(day) * 10000 + tonumber(hour) * 100 + tonumber(minute)
+end
+
 local function UpdateAchievementLayout()
     ClearAchievementTiles()
 
     if currentCategory == "Almost" then
         AlmostCompletedLabel:Show()
+        LastCompletedLabel:Hide()
+        scrollFrame:SetPoint("TOPLEFT", 0, -20)
+    elseif currentCategory == "Last" then
+        AlmostCompletedLabel:Hide()
+        LastCompletedLabel:Show()
         scrollFrame:SetPoint("TOPLEFT", 0, -20)
     else
         AlmostCompletedLabel:Hide()
+        LastCompletedLabel:Hide()
         scrollFrame:SetPoint("TOPLEFT", 0, 0)
     end
 
@@ -513,6 +533,20 @@ local function UpdateAchievementLayout()
         while #achievements > 16 do
             table.remove(achievements)
         end
+    elseif currentCategory == "Last" then
+        achievements = {}
+        local allAchievements = PVPSC.AchievementSystem.achievements
+        for _, achievement in ipairs(allAchievements) do
+            if achievement.unlocked then
+                table.insert(achievements, achievement)
+            end
+        end
+
+        table.sort(achievements, function(a, b)
+            local timeA = ParseDateString(a.completedDate)
+            local timeB = ParseDateString(b.completedDate)
+            return timeA > timeB
+        end)
     else
         achievements = FilterAchievements(PVPSC.AchievementSystem.achievements, currentCategory)
     end
@@ -525,7 +559,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Cities", "Streaks", "Bonus", "Almost"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "Zone", "Cities", "Streaks", "Bonus", "Almost", "Last"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 
@@ -627,3 +661,4 @@ function PSC_ToggleAchievementFrame()
         PSC_FrameManager:ShowFrame("Achievements")
     end
 end
+
