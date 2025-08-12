@@ -35,11 +35,11 @@ local LastCompletedLabel = contentFrame:CreateFontString(nil, "OVERLAY", "GameFo
 LastCompletedLabel:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 15)
 LastCompletedLabel:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 0, 15)
 LastCompletedLabel:SetJustifyH("CENTER")
-LastCompletedLabel:SetText("Shows you last completed achievements sorted by date and time")
+LastCompletedLabel:SetText("Shows you your last unlocked achievements sorted by unlock date")
 LastCompletedLabel:Hide()
 
 local scrollContent = CreateFrame("Frame", "PVPSCAchievementContent", scrollFrame)
-scrollContent:SetSize(scrollFrame:GetWidth(), 1) -- Height will be adjusted dynamically
+scrollContent:SetSize(scrollFrame:GetWidth(), 1)
 scrollFrame:SetScrollChild(scrollContent)
 
 
@@ -501,7 +501,7 @@ local function UpdateAchievementLayout()
         AlmostCompletedLabel:Show()
         LastCompletedLabel:Hide()
         scrollFrame:SetPoint("TOPLEFT", 0, -20)
-    elseif currentCategory == "Last" then
+    elseif currentCategory == "Latest" then
         AlmostCompletedLabel:Hide()
         LastCompletedLabel:Show()
         scrollFrame:SetPoint("TOPLEFT", 0, -20)
@@ -536,7 +536,7 @@ local function UpdateAchievementLayout()
         while #achievements > 16 do
             table.remove(achievements)
         end
-    elseif currentCategory == "Last" then
+    elseif currentCategory == "Latest" then
         achievements = {}
         local allAchievements = PVPSC.AchievementSystem.achievements
         for _, achievement in ipairs(allAchievements) do
@@ -562,7 +562,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "BG", "Zone", "Cities", "Streaks", "Bonus", "Almost", "Last"}
+    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "BG", "Zone", "Cities", "Streaks", "Bonus", "Almost", "Latest"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 
