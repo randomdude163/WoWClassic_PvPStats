@@ -3073,6 +3073,25 @@ AchievementSystem.achievements = {
         end,
     },
     {
+        id = "kills_grey_level_2",
+        title = "Teach them even younger",
+        description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
+        iconID = 134436,
+        achievementPoints = 250,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a) return ("The playground bully graduated to world PvP. Your dedication to mentoring newbies through respawn timers is truly inspiring!"):format(a.targetValue) end,
+        progress = function(achievement, stats)
+            local characterKey = PSC_GetCharacterKey()
+            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+            return characterData.GrayKillsCount or 0
+        end,
+    },
+    {
         id = "bonus_big_game_1",
         title = "High Level, High Cope",
         description = function(a) return ("Eliminate %d level ?? players"):format(a.targetValue) end,
