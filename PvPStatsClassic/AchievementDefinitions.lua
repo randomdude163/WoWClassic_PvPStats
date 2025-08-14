@@ -2345,7 +2345,7 @@ AchievementSystem.achievements = {
     --     end,
     -- },
     {-- Kill Streak Achievements
-        id = "kills_streak_25",
+        id = "streaks_kills_25",
         title = "Serial Killer",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 133728,
@@ -2365,7 +2365,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_50",
+        id = "streaks_kills_50",
         title = "Crime Scene",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236566,
@@ -2385,7 +2385,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_75",
+        id = "streaks_kills_75",
         title = "Mass Extinction",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236358,
@@ -2405,7 +2405,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_100",
+        id = "streaks_kills_100",
         title = "TRIPLE D!!!",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236682,
@@ -2425,7 +2425,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_125",
+        id = "streaks_kills_125",
         title = "PvP Plague",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 136123,
@@ -2445,7 +2445,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_150",
+        id = "streaks_kills_150",
         title = "Fine Wine",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 132789,
@@ -2465,7 +2465,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_175",
+        id = "streaks_kills_175",
         title = "Unstoppable Force",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 133050,
@@ -2485,7 +2485,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_200",
+        id = "streaks_kills_200",
         title = "Top 0.01%",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 136101,
@@ -2505,7 +2505,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_225",
+        id = "streaks_kills_225",
         title = "/flex",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236370,
@@ -2525,7 +2525,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_250",
+        id = "streaks_kills_250",
         title = "Thumbs up!",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236375,
@@ -2545,7 +2545,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_275",
+        id = "streaks_kills_275",
         title = "Faction Change Approved",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 1126583,
@@ -2565,7 +2565,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_300",
+        id = "streaks_kills_300",
         title = "Main Character Syndrome",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 1126585,
@@ -2585,7 +2585,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_325",
+        id = "streaks_kills_325",
         title = "Delete or Be Deleted",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 442272,
@@ -2605,7 +2605,7 @@ AchievementSystem.achievements = {
         end,
     },
     {
-        id = "kills_streak_350",
+        id = "streaks_kills_350",
         title = "Unsubbed and Unloved",
         description = function(a) return ("Achieve a %d-player kill streak"):format(a.targetValue) end,
         iconID = 236671,

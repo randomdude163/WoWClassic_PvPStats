@@ -198,6 +198,8 @@ end
 function AchievementSystem:LoadAchievementCompletedData()
     local characterKey = PSC_GetCharacterKey()
 
+    self:CleanupObsoleteAchievements()
+
     if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[characterKey] then
         for achievementID, achievementData in pairs(PSC_DB.CharacterAchievements[characterKey]) do
             for i, achievement in ipairs(self.achievements) do
@@ -240,4 +242,63 @@ function PSC_ShareAchievementInChat(achievement)
         ChatFrame1EditBox:SetCursorPosition(string.len(shareText))
         ChatFrame1EditBox:SetFocus()
     end
+end
+
+-- Generic function to clean up unlocked achievements that no longer exist in current definitions
+function AchievementSystem:CleanupObsoleteAchievements()
+    local characterKey = PSC_GetCharacterKey()
+
+    -- Check both possible data structures for achievement storage
+    local removedCount = 0
+
+    -- Clean up PSC_DB.CharacterAchievements (the main one being used)
+    if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[characterKey] then
+        -- Create a lookup table of all current achievement IDs for fast checking
+        local currentAchievementIDs = {}
+        for _, achievement in ipairs(self.achievements) do
+            currentAchievementIDs[achievement.id] = true
+        end
+
+        local characterAchievements = PSC_DB.CharacterAchievements[characterKey]
+
+        for achievementId, _ in pairs(characterAchievements) do
+            if not currentAchievementIDs[achievementId] then
+                -- This achievement ID no longer exists in current definitions
+                characterAchievements[achievementId] = nil
+                removedCount = removedCount + 1
+                if PSC_Debug then
+                    PSC_Print("Removed obsolete achievement from CharacterAchievements: " .. achievementId)
+                end
+            end
+        end
+    end
+
+    -- Also clean up PSC_DB.PlayerAchievements if it exists (legacy/alternative storage)
+    if PSC_DB.PlayerAchievements and PSC_DB.PlayerAchievements[characterKey] then
+        -- Create a lookup table of all current achievement IDs for fast checking
+        local currentAchievementIDs = {}
+        for _, achievement in ipairs(self.achievements) do
+            currentAchievementIDs[achievement.id] = true
+        end
+
+        local playerAchievements = PSC_DB.PlayerAchievements[characterKey]
+
+        for achievementId, _ in pairs(playerAchievements) do
+            if not currentAchievementIDs[achievementId] then
+                -- This achievement ID no longer exists in current definitions
+                playerAchievements[achievementId] = nil
+                removedCount = removedCount + 1
+                PSC_Print("Removed obsolete achievement: " .. achievementId)
+            end
+        end
+    end
+
+    if removedCount > 0 then
+        PSC_Print("Cleaned up " .. removedCount .. " obsolete achievement(s) from your progress.")
+
+        -- Recalculate achievement points after cleanup
+        self:SaveAchievementPoints()
+    end
+
+    return removedCount
 end
