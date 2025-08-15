@@ -2,13 +2,13 @@ PSC_KillsListFrame = nil
 
 PSC_SortKillsListBy = "lastKill"
 PSC_SortKillsListAscending = false
-local KILLS_FRAME_WIDTH = 1055
+local KILLS_FRAME_WIDTH = 1080
 local KILLS_FRAME_HEIGHT = 550
 
 PSC_KillsListFrameInitialSetup = true
 
 local colWidths = {
-    name = 95,
+    name = 100,
     class = 68,
     race = 65,
     gender = 80,
@@ -167,10 +167,34 @@ local function CreateDeathsCell(content, anchorTo, deaths, width)
     return deathsText
 end
 
+-- Helper function to check if a player is from a different realm (GLOBAL)
+function PSC_IsPlayerFromDifferentRealm(playerName)
+    if not playerName then return false end
+
+    -- Check if player name contains realm information
+    local name, realm = playerName:match("^(.+)%-(.+)$")
+    if realm and realm ~= PSC_RealmName then
+        return true, name, realm
+    end
+    return false, playerName, PSC_RealmName
+end
+
+-- Helper function to format player name for display with cross-realm indicator
+local function FormatPlayerNameForDisplay(playerName)
+    local isFromDifferentRealm, cleanName, realm = PSC_IsPlayerFromDifferentRealm(playerName)
+    if isFromDifferentRealm then
+        return cleanName .. "*", playerName -- Return display name and full name for tooltip
+    else
+        return cleanName or playerName, playerName
+    end
+end
+
 local function CreateNameCell(content, xPos, yPos, name, width)
+    local displayName, fullPlayerName = FormatPlayerNameForDisplay(name)
+
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     nameText:SetPoint("LEFT", content, "LEFT", 4, 0)
-    nameText:SetText(name)
+    nameText:SetText(displayName)
     nameText:SetWidth(width)
     nameText:SetJustifyH("LEFT")
     return nameText
@@ -616,7 +640,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     end
 
     rowContainer:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
         GameTooltip:SetText(entry.name)
 
         if hasIncompleteInfo then

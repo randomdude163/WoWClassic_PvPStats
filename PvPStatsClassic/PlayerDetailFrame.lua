@@ -479,7 +479,9 @@ end
 local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     yOffset = CreateSection(content, "Player Information", yOffset)
 
-    local playerName = playerDetail.name
+    local isFromDifferentRealm, cleanPlayerName, playerRealm = PSC_IsPlayerFromDifferentRealm(playerDetail.name)
+    local displayPlayerName = cleanPlayerName -- Show name without realm
+
     local playerClass = playerDetail.class
     local playerRace = playerDetail.race
     local playerGender = playerDetail.gender
@@ -493,7 +495,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     playerLabel:SetTextColor(1, 1, 1)
 
     local infoText = string.format("%s - Level %s %s %s%s",
-        playerName, playerLevel, playerRace, playerGender ~= "Unknown" and (playerGender == "Male" and "Male" or "Female") .. " " or "", playerClass)
+        displayPlayerName, playerLevel, playerRace, playerGender ~= "Unknown" and (playerGender == "Male" and "Male" or "Female") .. " " or "", playerClass)
 
     local playerInfoLabel = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     playerInfoLabel:SetPoint("TOPLEFT", 120, yOffset)
@@ -546,6 +548,12 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     end
 
     yOffset = yOffset - 20
+
+    -- Add realm row if player is from a different realm
+    if isFromDifferentRealm then
+        yOffset = CreateDetailRow(content, "Realm:", playerRealm, yOffset)
+    end
+
     yOffset = CreateDetailRow(content, "Rank:", playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0", yOffset)
 
     local killsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -598,7 +606,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
 
     local noteEditBoxHeight = 25
     local noteEditBoxWidth = (content:GetWidth()) - 120 - 25 - 5
-    local noteEditBox = CreateFrame("EditBox", playerName .. "NoteEditBox", content, "InputBoxTemplate")
+    local noteEditBox = CreateFrame("EditBox", displayPlayerName .. "NoteEditBox", content, "InputBoxTemplate")
     noteEditBox:SetPoint("TOPLEFT", 123, yOffset)
     noteEditBox:SetSize(noteEditBoxWidth, noteEditBoxHeight)
     noteEditBox:SetMultiLine(false)
@@ -614,7 +622,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         PSC_PlayerDetailFrame.activeNoteEditBox = noteEditBox
     end
 
-    local infoKey = PSC_GetInfoKeyFromName(playerName)
+    local infoKey = PSC_GetInfoKeyFromName(playerDetail.name)
     if not PSC_DB then PSC_DB = {} end
     if not PSC_DB.PlayerInfoCache then PSC_DB.PlayerInfoCache = {} end
     if not PSC_DB.PlayerInfoCache[infoKey] then
