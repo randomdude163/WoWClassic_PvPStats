@@ -40,7 +40,12 @@ local function GetPlayerInfoFromUnit(unit)
     local rank = nil
 
     if UnitIsPlayer(unit) then
-        name = UnitName(unit)
+        local playername, realm = UnitName(unit)  -- Changed from UnitName(unit) to get name with realm
+        if realm then
+            name = playername .. "-" .. realm
+        else
+            name = playername
+        end
         level = UnitLevel(unit)
         class, _ = UnitClass(unit)
         class = class:sub(1, 1):upper() .. class:sub(2):lower()
@@ -158,7 +163,7 @@ function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
     PSC_DB.PlayerInfoCache[infoKey].rank = rank
 
     -- if PSC_Debug then
-    --     print("Stored player info: " .. name .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
+    --     print("Stored player info: " .. infoKey .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
     -- end
 end
 

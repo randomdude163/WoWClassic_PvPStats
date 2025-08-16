@@ -146,6 +146,10 @@ end
 function PSC_GetPlayerCoordinates()
     local mapID = C_Map.GetBestMapForUnit("player")
     local position = C_Map.GetPlayerMapPosition(mapID, "player")
+    if not position then
+        return nil, nil
+    end
+
     local x = position.x * 100
     local y = position.y * 100
     return x, y
