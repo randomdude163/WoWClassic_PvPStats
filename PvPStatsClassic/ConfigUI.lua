@@ -163,6 +163,41 @@ local function CreateButton(parent, text, width, height, onClickFunc)
     return button
 end
 
+local function CreateDropdown(parent, labelText, options, initialValue, onSelectionChangedFunc)
+    local container = CreateFrame("Frame", nil, parent)
+    container:SetSize(200, 40)
+
+    local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -5)
+    label:SetText(labelText)
+
+    local dropdownName = "PSC_Dropdown_" .. tostring(math.random(1000000, 9999999))
+    local dropdown = CreateFrame("Frame", dropdownName, container, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("TOPLEFT", label, "BOTTOMLEFT", -15, -5)
+    UIDropDownMenu_SetWidth(dropdown, 150)
+
+    local function InitializeDropdown(self, level)
+        for i, option in ipairs(options) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = option.text
+            info.value = option.value
+            info.func = function()
+                UIDropDownMenu_SetSelectedValue(dropdown, option.value)
+                if onSelectionChangedFunc then
+                    onSelectionChangedFunc(option.value)
+                end
+            end
+            info.checked = (option.value == UIDropDownMenu_GetSelectedValue(dropdown))
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+
+    UIDropDownMenu_Initialize(dropdown, InitializeDropdown)
+    UIDropDownMenu_SetSelectedValue(dropdown, initialValue)
+
+    return container, dropdown
+end
+
 local function CreateAnnouncementSection(parent, yOffset)
     local announcementSettingsHeader = CreateSectionHeader(parent, "Party Chat Announcements", 20, yOffset)
 
@@ -459,28 +494,11 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -460)
 
-    local enableMultiKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
-        PSC_DB.EnableMultiKillSounds, function(checked)
-            PSC_DB.EnableMultiKillSounds = checked
-        end)
-    enableMultiKillSoundsCheckbox:SetPoint("TOPLEFT", generalSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
-    parent.enableKillSoundsCheckbox = enableMultiKillSoundsCheckbox
-
-    enableMultiKillSoundsCheckbox:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Enable multi-kill sound effects")
-        GameTooltip:AddLine("Play Leage of Legends multi-kill sounds when you achieve a multi-kill.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    enableMultiKillSoundsCheckbox:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-
     local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show kills in mouseover tooltips",
         PSC_DB.ShowScoreInPlayerTooltip, function(checked)
             PSC_DB.ShowScoreInPlayerTooltip = checked
         end)
-    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "TOPLEFT", 300, 0)
+    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", generalSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
     parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
 
     tooltipKillInfoCheckbox:SetScript("OnEnter", function(self)
@@ -514,7 +532,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.ShowAccountWideStats, function(checked)
             PSC_DB.ShowAccountWideStats = checked
         end)
-    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipExtendedInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.showAccountWideStatsCheckbox = showAccountWideStatsCheckbox
     showAccountWideStatsCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -526,6 +544,109 @@ local function CreateAnnouncementSection(parent, yOffset)
     showAccountWideStatsCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
+
+    return 320
+end
+
+local function CreateSoundsSection(parent, yOffset)
+    local soundsHeader = CreateSectionHeader(parent, "Multi-Kill Sounds", 20, yOffset)
+
+    local enableMultiKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
+        PSC_DB.EnableMultiKillSounds, function(checked)
+            PSC_DB.EnableMultiKillSounds = checked
+            if parent.soundPackDropdown and parent.soundPackDropdown:GetName() then
+                if checked then
+                    UIDropDownMenu_EnableDropDown(parent.soundPackDropdown)
+                else
+                    UIDropDownMenu_DisableDropDown(parent.soundPackDropdown)
+                end
+            end
+        end)
+    enableMultiKillSoundsCheckbox:SetPoint("TOPLEFT", soundsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.enableMultiKillSoundsCheckbox = enableMultiKillSoundsCheckbox
+
+    enableMultiKillSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enable multi-kill sound effects")
+        GameTooltip:AddLine("Play sound effects when you achieve a multi-kill.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableMultiKillSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local soundPackOptions = {
+        {text = "League of Legends", value = "LoL"},
+        {text = "Unreal Tournament", value = "UT"}
+    }
+
+    local soundPackContainer, soundPackDropdown = CreateDropdown(parent, "Sound Pack:", soundPackOptions,
+        PSC_DB.SoundPack or "LoL", function(selectedValue)
+            PSC_DB.SoundPack = selectedValue
+        end)
+    soundPackContainer:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 40, -20)
+    parent.soundPackDropdown = soundPackDropdown
+
+    if not PSC_DB.EnableMultiKillSounds and soundPackDropdown:GetName() then
+        UIDropDownMenu_DisableDropDown(soundPackDropdown)
+    end
+
+    local testSoundButton = CreateButton(parent, "Preview Sound Effect", 140, 22, function()
+        local soundPack = PSC_DB.SoundPack or "LoL"
+        local soundFile
+        if soundPack == "LoL" then
+            local lolSounds = {"double_kill.mp3", "triple_kill.mp3", "quadra_kill.mp3", "penta_kill.mp3"}
+            local randomIndex = math.random(1, #lolSounds)
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\" .. lolSounds[randomIndex]
+        else
+            local utSounds = {"first-blood.mp3", "head-hunter.mp3", "dominating.mp3", "double-kill.mp3", "combowhore.mp3", "triple-kill.mp3", "holy-shit.mp3", "unreal.mp3", "ultra-kill.mp3", "mega-kill.mp3", "ludicrous-kill.mp3", "monster-kill.mp3"}
+            local randomIndex = math.random(1, #utSounds)
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\UT\\" .. utSounds[randomIndex]
+        end
+        PlaySoundFile(soundFile, "Master")
+    end)
+    testSoundButton:SetPoint("TOPLEFT", soundPackContainer, "BOTTOMLEFT", 0, -10)
+    parent.testSoundButton = testSoundButton
+
+    local enableDeathSoundsCheckbox, _ = CreateCheckbox(parent, "Play death sound effects",
+        PSC_DB.EnableDeathSounds, function(checked)
+            PSC_DB.EnableDeathSounds = checked
+        end)
+    enableDeathSoundsCheckbox:SetPoint("TOPLEFT", testSoundButton, "BOTTOMLEFT", 0, -20)
+    parent.enableDeathSoundsCheckbox = enableDeathSoundsCheckbox
+
+    enableDeathSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play death sound effects")
+        GameTooltip:AddLine("Play a sound effect when you die.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableDeathSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local enableSingleKillSoundsCheckbox, _ = CreateCheckbox(parent, "Play single kill sound effects",
+        PSC_DB.EnableSingleKillSounds, function(checked)
+            PSC_DB.EnableSingleKillSounds = checked
+        end)
+    enableSingleKillSoundsCheckbox:SetPoint("TOPLEFT", enableDeathSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.enableSingleKillSoundsCheckbox = enableSingleKillSoundsCheckbox
+
+    enableSingleKillSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play single kill sound effects")
+        GameTooltip:AddLine("Play a sound effect when you get a kill (not part of a multi-kill).", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableSingleKillSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local descriptionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    descriptionText:SetPoint("TOPLEFT", enableSingleKillSoundsCheckbox, "BOTTOMLEFT", 0, -20)
+    descriptionText:SetText("League of Legends sounds are classic multi-kill announcements.\nUnreal Tournament sounds offer more variety with different announcements for each kill count.")
+    descriptionText:SetJustifyH("LEFT")
+    descriptionText:SetWidth(450)
 
     return 320
 end
@@ -674,10 +795,30 @@ function PSC_UpdateConfigUI()
     configFrame.enableKillAnnounceCheckbox:SetChecked(PSC_DB.EnableKillAnnounceMessages)
     configFrame.enableRecordAnnounceCheckbox:SetChecked(PSC_DB.EnableRecordAnnounceMessages)
     configFrame.enableMultiKillAnnounceCheckbox:SetChecked(PSC_DB.EnableMultiKillAnnounceMessages)
-    configFrame.enableKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
     configFrame.showAccountWideStatsCheckbox:SetChecked(PSC_DB.ShowAccountWideStats)
     configFrame.trackBGKillsCheckbox:SetChecked(PSC_DB.CountKillsInBattlegrounds)
     configFrame.trackBGDeathsCheckbox:SetChecked(PSC_DB.CountDeathsInBattlegrounds)
+
+    if configFrame.enableMultiKillSoundsCheckbox then
+        configFrame.enableMultiKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
+    end
+
+    if configFrame.enableDeathSoundsCheckbox then
+        configFrame.enableDeathSoundsCheckbox:SetChecked(PSC_DB.EnableDeathSounds)
+    end
+
+    if configFrame.enableSingleKillSoundsCheckbox then
+        configFrame.enableSingleKillSoundsCheckbox:SetChecked(PSC_DB.EnableSingleKillSounds)
+    end
+
+    if configFrame.soundPackDropdown and configFrame.soundPackDropdown:GetName() then
+        UIDropDownMenu_SetSelectedValue(configFrame.soundPackDropdown, PSC_DB.SoundPack or "LoL")
+        if PSC_DB.EnableMultiKillSounds then
+            UIDropDownMenu_EnableDropDown(configFrame.soundPackDropdown)
+        else
+            UIDropDownMenu_DisableDropDown(configFrame.soundPackDropdown)
+        end
+    end
 
     if configFrame.multiKillSlider and configFrame.multiKillSlider:GetName() then
         configFrame.multiKillSlider:SetValue(PSC_DB.MultiKillThreshold or 3)
@@ -713,7 +854,7 @@ local function CreateTabSystem(parent)
     tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
     tabContainer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -7, 7)
 
-    local tabNames = {"General", "Messages", "Reset", "About"}
+    local tabNames = {"General", "Messages", "Sounds", "Reset", "About"}
     for i, name in ipairs(tabNames) do
         local tab = CreateFrame("Button", parent:GetName() .. "Tab" .. i, parent, "CharacterFrameTabButtonTemplate")
         tab:SetText(name)
@@ -923,7 +1064,6 @@ function PSC_CreateConfigFrame()
     configFrame.enableKillAnnounceCheckbox = tabFrames[1].enableKillAnnounceCheckbox
     configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
     configFrame.enableMultiKillAnnounceCheckbox = tabFrames[1].enableMultiKillAnnounceCheckbox
-    configFrame.enableKillSoundsCheckbox = tabFrames[1].enableKillSoundsCheckbox
     configFrame.showAccountWideStatsCheckbox = tabFrames[1].showAccountWideStatsCheckbox
     configFrame.trackBGKillsCheckbox = tabFrames[1].trackBGKillsCheckbox
     configFrame.trackBGDeathsCheckbox = tabFrames[1].trackBGDeathsCheckbox
@@ -934,12 +1074,16 @@ function PSC_CreateConfigFrame()
 
     configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
 
-    local resetButtons = CreateActionButtons(tabFrames[3])
+    CreateSoundsSection(tabFrames[3], -10)
+    configFrame.enableMultiKillSoundsCheckbox = tabFrames[3].enableMultiKillSoundsCheckbox
+    configFrame.enableDeathSoundsCheckbox = tabFrames[3].enableDeathSoundsCheckbox
+    configFrame.enableSingleKillSoundsCheckbox = tabFrames[3].enableSingleKillSoundsCheckbox
+    configFrame.soundPackDropdown = tabFrames[3].soundPackDropdown
+
+    local resetButtons = CreateActionButtons(tabFrames[4])
     configFrame.resetButtons = resetButtons
 
-    -- local testAchievementButton = CreateTestAchievementButton(tabFrames[3])
-
-    CreateAboutTab(tabFrames[4])
+    CreateAboutTab(tabFrames[5])
 
     PanelTemplates_SetTab(configFrame, 1)
     tabFrames[1]:Show()

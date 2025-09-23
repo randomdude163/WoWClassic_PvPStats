@@ -359,6 +359,9 @@ function PSC_LoadDefaultSettings()
     }
 
     PSC_DB.EnableMultiKillSounds = true
+    PSC_DB.SoundPack = "LoL"
+    PSC_DB.EnableDeathSounds = false
+    PSC_DB.EnableSingleKillSounds = false
     PSC_DB.ShowScoreInPlayerTooltip = true
     PSC_DB.ShowExtendedTooltipInfo = true
     PSC_DB.ShowAccountWideStats = true

@@ -110,6 +110,20 @@ function HandlePlayerDeath()
     PSC_MultiKillCount = 0
     PSC_InCombat = false
 
+    -- Play death sound if enabled
+    if PSC_DB.EnableDeathSounds then
+        local soundPack = PSC_DB.SoundPack or "LoL"
+        local soundFile
+        if soundPack == "LoL" then
+            local lolDeathSounds = {"you_have_been_slain.mp3", "defeat.mp3"}
+            local randomIndex = math.random(1, #lolDeathSounds)
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\" .. lolDeathSounds[randomIndex]
+        else
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\UT\\you-have-failed-to-proceed.mp3"
+        end
+        PlaySoundFile(soundFile, "Master")
+    end
+
     print("[PvPStats]: You died, kill streak reset.")
 
     if PSC_CurrentlyInBattleground and not PSC_DB.CountDeathsInBattlegrounds then
