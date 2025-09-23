@@ -644,7 +644,7 @@ local function CreateSoundsSection(parent, yOffset)
 
     local descriptionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     descriptionText:SetPoint("TOPLEFT", enableSingleKillSoundsCheckbox, "BOTTOMLEFT", 0, -20)
-    descriptionText:SetText("League of Legends sounds are classic multi-kill announcements.\nUnreal Tournament sounds offer more variety with different announcements for each kill count.")
+    descriptionText:SetText("League of Legends: Classic structured announcements (Double Kill, Triple Kill, Quadra Kill, Penta Kill, Hexa Kill, Legendary Kill) with iconic LoL sounds for single kills and deaths.\n\nUnreal Tournament: Chaotic variety with multiple random sound options per kill count, offering unpredictable and diverse audio experiences.")
     descriptionText:SetJustifyH("LEFT")
     descriptionText:SetWidth(450)
 
