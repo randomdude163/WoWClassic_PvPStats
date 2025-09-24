@@ -18,7 +18,7 @@ local CLASS_COLORS = {
 
 local function CreatePopupFrame()
     local frame = CreateFrame("Frame", "PSC_KillStreakPopupFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(300, 200) -- Smaller, narrower window
+    frame:SetSize(250, 200) -- Reduced width from 300 to 250
 
     -- Set position from saved settings or default to center
     local pos = PSC_DB.KillStreakPopupPosition or {point = "CENTER", relativePoint = "CENTER", xOfs = 0, yOfs = 0}
@@ -55,7 +55,7 @@ local function CreatePopupFrame()
     scrollFrame:SetPoint("BOTTOMRIGHT", -30, 12)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(250, 400)
+    content:SetSize(200, 400) -- Reduced width from 250 to 200
     scrollFrame:SetScrollChild(content)
 
     frame.scrollFrame = scrollFrame
@@ -90,29 +90,29 @@ local function CreatePlayerRow(parent, playerData, yOffset, isAlternate)
     -- Add hover highlight
     local highlight = CreateGoldHighlight(rowButton, rowHeight)
 
-    -- Player name with class color (further reduced width)
+    -- Player name with class color (reduced width for narrower popup)
     local nameText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     nameText:SetPoint("TOPLEFT", 5, -2)
     nameText:SetText(playerData.name)
-    nameText:SetWidth(110) -- Reduced from 130 to 110
+    nameText:SetWidth(85) -- Reduced from 110 to 85
     nameText:SetJustifyH("LEFT")
 
     local classColor = CLASS_COLORS[playerData.class:upper()] or CLASS_COLORS.UNKNOWN
     nameText:SetTextColor(classColor[1], classColor[2], classColor[3])
 
-    -- Level (adjusted position and increased width)
+    -- Level (moved closer to name column)
     local levelText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    levelText:SetPoint("TOPLEFT", 125, -2) -- Moved left from 145 to 125
+    levelText:SetPoint("TOPLEFT", 100, -2) -- Moved left from 125 to 100
     levelText:SetText(playerData.level == -1 and "??" or tostring(playerData.level))
-    levelText:SetWidth(50) -- Increased from 35 to 50
+    levelText:SetWidth(35) -- Reduced from 50 to 35
     levelText:SetJustifyH("CENTER")
     levelText:SetTextColor(1, 1, 1)
 
-    -- Class (adjusted position)
+    -- Class (adjusted position for narrower popup)
     local classText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    classText:SetPoint("TOPLEFT", 185, -2) -- Same position as before
+    classText:SetPoint("TOPLEFT", 145, -2) -- Moved left from 185 to 145
     classText:SetText(playerData.class ~= "UNKNOWN" and playerData.class or "Unknown")
-    classText:SetWidth(60)
+    classText:SetWidth(50) -- Reduced from 60 to 50
     classText:SetJustifyH("LEFT")
     classText:SetTextColor(classColor[1], classColor[2], classColor[3])
 
@@ -194,12 +194,12 @@ local function PopulateKillStreakList()
     nameHeader:SetTextColor(1, 1, 1)
 
     local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    levelHeader:SetPoint("TOPLEFT", 125, -7) -- Updated to match row position
+    levelHeader:SetPoint("TOPLEFT", 100, -7) -- Updated to match new row position
     levelHeader:SetText("Level")
     levelHeader:SetTextColor(1, 1, 1)
 
     local classHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    classHeader:SetPoint("TOPLEFT", 185, -7) -- Same position as before
+    classHeader:SetPoint("TOPLEFT", 145, -7) -- Updated to match new row position
     classHeader:SetText("Class")
     classHeader:SetTextColor(1, 1, 1)
 
