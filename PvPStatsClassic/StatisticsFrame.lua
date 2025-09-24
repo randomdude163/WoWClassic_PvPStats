@@ -1077,8 +1077,54 @@ local function createSummaryStats(parent, x, y, width, height)
         "Average level difference between you and the players you have killed.")
 
 
-    statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - spacing_between_sections,
-        "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.", true)
+    -- Current kill streak with button (similar to achievements)
+    local killStreakY = statY - spacing_between_sections
+
+    local killStreakLabelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    killStreakLabelText:SetPoint("TOPLEFT", 0, killStreakY)
+    killStreakLabelText:SetText("Current kill streak:")
+
+    local killStreakValueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    killStreakValueText:SetPoint("TOPLEFT", 150, killStreakY)
+    killStreakValueText:SetText(tostring(stats.currentKillStreak))
+    killStreakValueText:SetTextColor(0.6, 0.8, 1.0) -- Light blue color
+
+    -- Add tooltip for kill streak text (label and value)
+    local killStreakTooltipFrame = CreateFrame("Frame", nil, container)
+    killStreakTooltipFrame:SetPoint("TOPLEFT", killStreakLabelText, "TOPLEFT", 0, 0)
+    killStreakTooltipFrame:SetPoint("BOTTOMRIGHT", killStreakValueText, "BOTTOMRIGHT", 0, 0)
+
+    -- Make the kill streak text clickable (like the original implementation)
+    local killStreakClickButton = CreateFrame("Button", nil, killStreakTooltipFrame)
+    killStreakClickButton:SetAllPoints(killStreakTooltipFrame)
+
+    -- Add gold highlight for hover effect
+    CreateGoldHighlight(killStreakClickButton, 20)
+
+    -- Add tooltip to the click button
+    killStreakClickButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+        GameTooltip:AddLine("Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+
+    killStreakClickButton:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+
+    killStreakClickButton:SetScript("OnMouseUp", function()
+        PSC_CreateKillStreakPopup()
+    end)
+
+    local openKillStreakButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    openKillStreakButton:SetSize(110, 22)
+    openKillStreakButton:SetPoint("LEFT", killStreakValueText, "RIGHT", 10, 0)
+    openKillStreakButton:SetText("Open Kill Streak")
+    openKillStreakButton:SetScript("OnClick", function()
+        PSC_CreateKillStreakPopup()
+    end)
+
+    statY = killStreakY - 20
 
     local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
     local highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat across all characters."
