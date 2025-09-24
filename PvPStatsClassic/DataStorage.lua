@@ -388,8 +388,14 @@ function PSC_InitializePlayerKillCounts()
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
             HighestMultiKill = 0,
-            GrayKillsCount = nil -- We'll set this to nil initially to detect first run
+            GrayKillsCount = nil, -- We'll set this to nil initially to detect first run
+            CurrentKillStreakPlayers = {} -- Track players killed in current streak
         }
+    end
+
+    -- Initialize CurrentKillStreakPlayers if it doesn't exist (for existing saves)
+    if PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreakPlayers == nil then
+        PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreakPlayers = {}
     end
 end
 

@@ -107,8 +107,14 @@ function HandlePlayerDeath()
     end
 
     characterData.CurrentKillStreak = 0
+    characterData.CurrentKillStreakPlayers = {} -- Clear kill streak players list
     PSC_MultiKillCount = 0
     PSC_InCombat = false
+
+    -- Update kill streak popup if it's open
+    if PSC_UpdateKillStreakPopup then
+        PSC_UpdateKillStreakPopup()
+    end
 
     -- Play death sound if enabled
     if PSC_DB.EnableDeathSounds then

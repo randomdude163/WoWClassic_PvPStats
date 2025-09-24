@@ -725,7 +725,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
-local function addSummaryStatLine(container, label, value, yPosition, tooltipText)
+local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak)
     local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", 0, yPosition)
     labelText:SetText(label)
@@ -733,6 +733,11 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueText:SetPoint("TOPLEFT", 150, yPosition)
     valueText:SetText(tostring(value))
+
+    -- Make kill streak value text light blue
+    if isKillStreak then
+        valueText:SetTextColor(0.6, 0.8, 1.0) -- Light blue color
+    end
 
     if tooltipText then
         local tooltipFrame = CreateFrame("Frame", nil, container)
@@ -765,6 +770,16 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
                         PSC_FrameManager:BringToFront("KillsList")
                     end)
                 end
+            end)
+        elseif isKillStreak then
+            local button = CreateFrame("Button", nil, tooltipFrame)
+            ---@diagnostic disable-next-line: param-type-mismatch
+            button:SetAllPoints(true)
+
+            CreateGoldHighlight(button, 20)
+
+            button:SetScript("OnMouseUp", function()
+                PSC_CreateKillStreakPopup()
             end)
         end
     end
@@ -1052,7 +1067,7 @@ local function createSummaryStats(parent, x, y, width, height)
 
 
     statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - spacing_between_sections,
-        "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.")
+        "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.", true)
 
     local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
     local highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat across all characters."
