@@ -18,7 +18,7 @@ local CLASS_COLORS = {
 
 local function CreatePopupFrame()
     local frame = CreateFrame("Frame", "PSC_KillStreakPopupFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(250, 200) -- Reduced width from 300 to 250
+    frame:SetSize(250, 180) -- Reduced height from 200 to 180
 
     -- Set position from saved settings or default to center
     local pos = PSC_DB.KillStreakPopupPosition or {point = "CENTER", relativePoint = "CENTER", xOfs = 0, yOfs = 0}
@@ -44,14 +44,14 @@ local function CreatePopupFrame()
     frame.TitleText:SetText("Current Kill Streak")
 
     -- Create kill streak count text above everything
-    local streakCountText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local streakCountText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     streakCountText:SetPoint("TOP", 0, -30)
     streakCountText:SetTextColor(0.6, 0.8, 1.0) -- Light blue
     frame.streakCountText = streakCountText
 
-    -- Create scroll frame with space for the streak count text
+    -- Create scroll frame with reduced space for the streak count text
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 12, -55) -- More space from top for streak count
+    scrollFrame:SetPoint("TOPLEFT", 12, -45) -- Reduced from -55 to -45
     scrollFrame:SetPoint("BOTTOMRIGHT", -30, 12)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
@@ -73,7 +73,7 @@ local function CreateGoldHighlight(button, height)
 end
 
 local function CreatePlayerRow(parent, playerData, yOffset, isAlternate)
-    local rowHeight = 20
+    local rowHeight = 16 -- Reduced from 20 to 16 to match smaller text
 
     -- Create clickable button for the entire row
     local rowButton = CreateFrame("Button", nil, parent)
@@ -91,7 +91,7 @@ local function CreatePlayerRow(parent, playerData, yOffset, isAlternate)
     local highlight = CreateGoldHighlight(rowButton, rowHeight)
 
     -- Player name with class color (reduced width for narrower popup)
-    local nameText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local nameText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     nameText:SetPoint("TOPLEFT", 5, -2)
     nameText:SetText(playerData.name)
     nameText:SetWidth(85) -- Reduced from 110 to 85
@@ -101,7 +101,7 @@ local function CreatePlayerRow(parent, playerData, yOffset, isAlternate)
     nameText:SetTextColor(classColor[1], classColor[2], classColor[3])
 
     -- Level (moved closer to name column)
-    local levelText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local levelText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     levelText:SetPoint("TOPLEFT", 100, -2) -- Moved left from 125 to 100
     levelText:SetText(playerData.level == -1 and "??" or tostring(playerData.level))
     levelText:SetWidth(35) -- Reduced from 50 to 35
@@ -109,7 +109,7 @@ local function CreatePlayerRow(parent, playerData, yOffset, isAlternate)
     levelText:SetTextColor(1, 1, 1)
 
     -- Class (adjusted position for narrower popup)
-    local classText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local classText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     classText:SetPoint("TOPLEFT", 145, -2) -- Moved left from 185 to 145
     classText:SetText(playerData.class ~= "UNKNOWN" and playerData.class or "Unknown")
     classText:SetWidth(50) -- Reduced from 60 to 50
@@ -121,17 +121,6 @@ local function CreatePlayerRow(parent, playerData, yOffset, isAlternate)
         if button == "LeftButton" then
             PSC_ShowPlayerDetailFrame(playerData.name)
         end
-    end)
-
-    -- Add tooltip
-    rowButton:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-        GameTooltip:AddLine("Click to view detailed history for " .. playerData.name)
-        GameTooltip:Show()
-    end)
-
-    rowButton:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
     end)
 
     -- Register for left clicks
@@ -173,7 +162,7 @@ local function PopulateKillStreakList()
     end
 
     if not characterData or not characterData.CurrentKillStreakPlayers or #characterData.CurrentKillStreakPlayers == 0 then
-        local noDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local noDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         noDataText:SetPoint("TOP", 0, -10)
         noDataText:SetText("No players in current kill streak")
         noDataText:SetTextColor(0.7, 0.7, 0.7)
@@ -185,25 +174,25 @@ local function PopulateKillStreakList()
     local headerBg = content:CreateTexture(nil, "BACKGROUND")
     headerBg:SetPoint("TOPLEFT", 0, -5)
     headerBg:SetPoint("TOPRIGHT", content, "TOPRIGHT", 0, -5)
-    headerBg:SetHeight(22)
+    headerBg:SetHeight(18) -- Reduced from 22 to 18 to match smaller header text
     headerBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
 
-    local nameHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local nameHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     nameHeader:SetPoint("TOPLEFT", 5, -7)
     nameHeader:SetText("Name")
     nameHeader:SetTextColor(1, 1, 1)
 
-    local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     levelHeader:SetPoint("TOPLEFT", 100, -7) -- Updated to match new row position
     levelHeader:SetText("Level")
     levelHeader:SetTextColor(1, 1, 1)
 
-    local classHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local classHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     classHeader:SetPoint("TOPLEFT", 145, -7) -- Updated to match new row position
     classHeader:SetText("Class")
     classHeader:SetTextColor(1, 1, 1)
 
-    local yOffset = -30
+    local yOffset = -25 -- Reduced from -30 to -25
 
     -- Create rows for each player (reversed order - newest first)
     local players = characterData.CurrentKillStreakPlayers
