@@ -19,12 +19,26 @@ local CLASS_COLORS = {
 local function CreatePopupFrame()
     local frame = CreateFrame("Frame", "PSC_KillStreakPopupFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(300, 200) -- Smaller, narrower window
-    frame:SetPoint("CENTER")
+
+    -- Set position from saved settings or default to center
+    local pos = PSC_DB.KillStreakPopupPosition or {point = "CENTER", relativePoint = "CENTER", xOfs = 0, yOfs = 0}
+    frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.xOfs, pos.yOfs)
+
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        -- Save position when dragging stops
+        local point, _, relativePoint, xOfs, yOfs = self:GetPoint()
+        PSC_DB.KillStreakPopupPosition = {
+            point = point,
+            relativePoint = relativePoint,
+            xOfs = xOfs,
+            yOfs = yOfs
+        }
+    end)
 
     table.insert(UISpecialFrames, "PSC_KillStreakPopupFrame")
     frame.TitleText:SetText("Current Kill Streak")
@@ -176,7 +190,7 @@ local function PopulateKillStreakList()
 
     local nameHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     nameHeader:SetPoint("TOPLEFT", 5, -7)
-    nameHeader:SetText("Player Name")
+    nameHeader:SetText("Name")
     nameHeader:SetTextColor(1, 1, 1)
 
     local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -191,9 +205,12 @@ local function PopulateKillStreakList()
 
     local yOffset = -30
 
-    -- Create rows for each player
-    for i, playerData in ipairs(characterData.CurrentKillStreakPlayers) do
-        yOffset = CreatePlayerRow(content, playerData, yOffset, i % 2 == 0)
+    -- Create rows for each player (reversed order - newest first)
+    local players = characterData.CurrentKillStreakPlayers
+    for i = #players, 1, -1 do
+        local playerData = players[i]
+        local rowIndex = #players - i + 1 -- For alternating row colors
+        yOffset = CreatePlayerRow(content, playerData, yOffset, rowIndex % 2 == 0)
     end
 
     -- Set content height

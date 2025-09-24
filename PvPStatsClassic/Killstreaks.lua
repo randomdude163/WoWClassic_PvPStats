@@ -18,9 +18,14 @@ function UpdateKillStreak(playerName, level, class)
         timestamp = time()
     })
 
-    -- Update kill streak popup if it's open
+    -- Update kill streak popup if it's open, or auto-open if setting is enabled
     if PSC_UpdateKillStreakPopup then
         PSC_UpdateKillStreakPopup()
+    end
+
+    -- Auto-open kill streak popup if setting is enabled
+    if PSC_DB.AutoOpenKillStreakPopup and PSC_CreateKillStreakPopup then
+        PSC_CreateKillStreakPopup()
     end
 
     if characterData.CurrentKillStreak > characterData.HighestKillStreak then

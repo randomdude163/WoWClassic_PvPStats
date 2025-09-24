@@ -373,6 +373,15 @@ function PSC_LoadDefaultSettings()
 
     PSC_DB.MinimapButtonPosition = 195
 
+    -- Kill Streak Popup Settings
+    PSC_DB.AutoOpenKillStreakPopup = false
+    PSC_DB.KillStreakPopupPosition = {
+        point = "CENTER",
+        relativePoint = "CENTER",
+        xOfs = 0,
+        yOfs = 0
+    }
+
     PSC_InitializeAchievementDataStructure()
 end
 
@@ -396,6 +405,19 @@ function PSC_InitializePlayerKillCounts()
     -- Initialize CurrentKillStreakPlayers if it doesn't exist (for existing saves)
     if PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreakPlayers == nil then
         PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreakPlayers = {}
+    end
+
+    -- Initialize new kill streak popup settings if they don't exist (backward compatibility)
+    if PSC_DB.AutoOpenKillStreakPopup == nil then
+        PSC_DB.AutoOpenKillStreakPopup = false
+    end
+    if PSC_DB.KillStreakPopupPosition == nil then
+        PSC_DB.KillStreakPopupPosition = {
+            point = "CENTER",
+            relativePoint = "CENTER",
+            xOfs = 0,
+            yOfs = 0
+        }
     end
 end
 

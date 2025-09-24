@@ -781,6 +781,17 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             button:SetScript("OnMouseUp", function()
                 PSC_CreateKillStreakPopup()
             end)
+
+            -- Add tooltip to the button itself
+            button:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+                GameTooltip:AddLine(tooltipText, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+
+            button:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
+            end)
         end
     end
 

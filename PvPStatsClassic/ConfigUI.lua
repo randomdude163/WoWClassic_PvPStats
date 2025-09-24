@@ -545,6 +545,22 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
+    local autoOpenKillStreakCheckbox, _ = CreateCheckbox(parent, "Auto-open kill streak window on kill",
+        PSC_DB.AutoOpenKillStreakPopup, function(checked)
+            PSC_DB.AutoOpenKillStreakPopup = checked
+        end)
+    autoOpenKillStreakCheckbox:SetPoint("TOPLEFT", showAccountWideStatsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.autoOpenKillStreakCheckbox = autoOpenKillStreakCheckbox
+    autoOpenKillStreakCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Auto-open kill streak window on kill")
+        GameTooltip:AddLine("When enabled, the kill streak window will automatically open when you kill an enemy player.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    autoOpenKillStreakCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
     return 320
 end
 
@@ -798,6 +814,7 @@ function PSC_UpdateConfigUI()
     configFrame.showAccountWideStatsCheckbox:SetChecked(PSC_DB.ShowAccountWideStats)
     configFrame.trackBGKillsCheckbox:SetChecked(PSC_DB.CountKillsInBattlegrounds)
     configFrame.trackBGDeathsCheckbox:SetChecked(PSC_DB.CountDeathsInBattlegrounds)
+    configFrame.autoOpenKillStreakCheckbox:SetChecked(PSC_DB.AutoOpenKillStreakPopup)
 
     if configFrame.enableMultiKillSoundsCheckbox then
         configFrame.enableMultiKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
@@ -1065,6 +1082,7 @@ function PSC_CreateConfigFrame()
     configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
     configFrame.enableMultiKillAnnounceCheckbox = tabFrames[1].enableMultiKillAnnounceCheckbox
     configFrame.showAccountWideStatsCheckbox = tabFrames[1].showAccountWideStatsCheckbox
+    configFrame.autoOpenKillStreakCheckbox = tabFrames[1].autoOpenKillStreakCheckbox
     configFrame.trackBGKillsCheckbox = tabFrames[1].trackBGKillsCheckbox
     configFrame.trackBGDeathsCheckbox = tabFrames[1].trackBGDeathsCheckbox
     configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
