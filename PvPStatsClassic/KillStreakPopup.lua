@@ -43,6 +43,23 @@ local function CreatePopupFrame()
     table.insert(UISpecialFrames, "PSC_KillStreakPopupFrame")
     frame.TitleText:SetText("Current Kill Streak")
 
+    -- Make sure the close button works
+    if frame.CloseButton then
+        frame.CloseButton:SetScript("OnClick", function()
+            frame:Hide()
+        end)
+    end
+
+    -- Add right-click to close functionality for combat situations
+    frame:SetScript("OnMouseUp", function(self, button)
+        if button == "RightButton" then
+            self:Hide()
+        end
+    end)
+
+    -- ESC handling is done through UISpecialFrames system
+    -- No keyboard handling needed to avoid blocking game controls
+
     -- Create kill streak count text above everything
     local streakCountText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     streakCountText:SetPoint("TOP", 0, -30)
@@ -207,11 +224,18 @@ local function PopulateKillStreakList()
     content:SetHeight(contentHeight)
 end
 
-function PSC_CreateKillStreakPopup()
+function PSC_CreateKillStreakPopup(isAutoOpen)
     if killStreakPopupFrame then
         if killStreakPopupFrame:IsVisible() then
-            killStreakPopupFrame:Hide()
-            return
+            -- If auto-opening and already visible, just update content instead of toggling
+            if isAutoOpen then
+                PopulateKillStreakList()
+                return
+            else
+                -- Manual call - toggle visibility
+                killStreakPopupFrame:Hide()
+                return
+            end
         else
             killStreakPopupFrame:Show()
             PopulateKillStreakList()
@@ -223,7 +247,7 @@ function PSC_CreateKillStreakPopup()
     PopulateKillStreakList()
     killStreakPopupFrame:Show()
 
-    PSC_FrameManager:RegisterFrame(killStreakPopupFrame, "KillStreakPopup")
+    -- Don't register with FrameManager - let UISpecialFrames handle ESC key
 end
 
 -- Function to update the popup if it's open

@@ -25,7 +25,7 @@ function UpdateKillStreak(playerName, level, class)
 
     -- Auto-open kill streak popup if setting is enabled
     if PSC_DB.AutoOpenKillStreakPopup and PSC_CreateKillStreakPopup then
-        PSC_CreateKillStreakPopup()
+        PSC_CreateKillStreakPopup(true) -- Pass true to indicate this is an auto-open call
     end
 
     if characterData.CurrentKillStreak > characterData.HighestKillStreak then
