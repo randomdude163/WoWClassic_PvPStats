@@ -1,10 +1,32 @@
 local killStreakMilestoneFrame = nil
 
-function UpdateKillStreak()
+function UpdateKillStreak(playerName, level, class)
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
     characterData.CurrentKillStreak = characterData.CurrentKillStreak + 1
+
+    -- Add player to current kill streak list
+    if not characterData.CurrentKillStreakPlayers then
+        characterData.CurrentKillStreakPlayers = {}
+    end
+
+    table.insert(characterData.CurrentKillStreakPlayers, {
+        name = playerName,
+        level = level,
+        class = class or "UNKNOWN",
+        timestamp = time()
+    })
+
+    -- Update kill streak popup if it's open, or auto-open if setting is enabled
+    if PSC_UpdateKillStreakPopup then
+        PSC_UpdateKillStreakPopup()
+    end
+
+    -- Auto-open kill streak popup if setting is enabled
+    if PSC_DB.AutoOpenKillStreakPopup and PSC_CreateKillStreakPopup then
+        PSC_CreateKillStreakPopup(true) -- Pass true to indicate this is an auto-open call
+    end
 
     if characterData.CurrentKillStreak > characterData.HighestKillStreak then
         characterData.HighestKillStreak = characterData.CurrentKillStreak

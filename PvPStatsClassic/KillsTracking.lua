@@ -61,16 +61,59 @@ local function UpdateMultiKill()
 
     PSC_MultiKillCount = PSC_MultiKillCount + 1
 
-    if PSC_DB.EnableMultiKillSounds then
+    -- Play single kill sound for first kill if enabled and not playing multi-kill sounds
+    if PSC_MultiKillCount == 1 and PSC_DB.EnableSingleKillSounds then
         local soundFile
-        if PSC_MultiKillCount == 2 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\double_kill.mp3"
-        elseif PSC_MultiKillCount == 3 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\triple_kill.mp3"
-        elseif PSC_MultiKillCount == 4 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\quadra_kill.mp3"
-        elseif PSC_MultiKillCount == 5 then
-            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\penta_kill.mp3"
+        local soundPack = PSC_DB.SoundPack or "LoL"
+
+        if soundPack == "LoL" then
+            local lolSounds = {"an_enemy_has_been_slain.mp3", "first_blood.mp3", "shut-down.mp3", "dominating.mp3"}
+            local randomIndex = math.random(1, #lolSounds)
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\" .. lolSounds[randomIndex]
+        else
+            local utSounds = {"first-blood.mp3", "head-hunter.mp3", "dominating.mp3"}
+            local randomIndex = math.random(1, #utSounds)
+            soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\UT\\" .. utSounds[randomIndex]
+        end
+
+        if soundFile then
+            PlaySoundFile(soundFile, "Master")
+        end
+    elseif PSC_MultiKillCount > 1 and PSC_DB.EnableMultiKillSounds then
+        -- Play multi-kill sounds for 2+ kills
+        local soundFile
+        local soundPack = PSC_DB.SoundPack or "LoL"
+
+        if soundPack == "LoL" then
+            if PSC_MultiKillCount == 2 then
+                soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\double_kill.mp3"
+            elseif PSC_MultiKillCount == 3 then
+                soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\triple_kill.mp3"
+            elseif PSC_MultiKillCount == 4 then
+                soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\quadra_kill.mp3"
+            elseif PSC_MultiKillCount == 5 then
+                soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\penta_kill.mp3"
+            elseif PSC_MultiKillCount == 6 then
+                soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\hexa-kill.mp3"
+            elseif PSC_MultiKillCount == 7 then
+                soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\LoL\\legendary-kill.mp3"
+            end
+        else -- UT sounds
+            local utSounds = {}
+            if PSC_MultiKillCount == 2 then
+                utSounds = {"double-kill.mp3", "multi-kill.mp3", "killing-spree.mp3", "combowhore.mp3", "head-hunter.mp3"}
+            elseif PSC_MultiKillCount == 3 then
+                utSounds = {"triple-kill.mp3", "multi-kill.mp3", "killing-spree.mp3", "unstoppable.mp3", "holy-shit.mp3", "unreal.mp3"}
+            elseif PSC_MultiKillCount == 4 then
+                utSounds = {"ultra-kill.mp3", "mega-kill.mp3", "god-like.mp3"}
+            elseif PSC_MultiKillCount >= 5 then
+                utSounds = {"ludicrous-kill.mp3", "monster-kill.mp3"}
+            end
+
+            if #utSounds > 0 then
+                local randomIndex = math.random(1, #utSounds)
+                soundFile = "Interface\\AddOns\\PvPStatsClassic\\sounds\\UT\\" .. utSounds[randomIndex]
+            end
         end
 
         if soundFile then
@@ -173,7 +216,7 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
         end
     end
 
-    UpdateKillStreak()
+    UpdateKillStreak(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class)
     ShowKillStreakMilestone(PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreak)
     InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
     UpdateKillCountEntry(nameWithLevel, playerLevel)
