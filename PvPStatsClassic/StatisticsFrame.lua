@@ -734,9 +734,9 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     valueText:SetPoint("TOPLEFT", 150, yPosition)
     valueText:SetText(tostring(value))
 
-    -- Make kill streak value text light blue
+    -- Make kill streak value text gold
     if isKillStreak then
-        valueText:SetTextColor(0.6, 0.8, 1.0) -- Light blue color
+        valueText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
     end
 
     if tooltipText then
@@ -1087,7 +1087,7 @@ local function createSummaryStats(parent, x, y, width, height)
     local killStreakValueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     killStreakValueText:SetPoint("TOPLEFT", 150, killStreakY)
     killStreakValueText:SetText(tostring(stats.currentKillStreak))
-    killStreakValueText:SetTextColor(0.6, 0.8, 1.0) -- Light blue color
+    killStreakValueText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
 
     -- Add tooltip for kill streak text (label and value)
     local killStreakTooltipFrame = CreateFrame("Frame", nil, container)

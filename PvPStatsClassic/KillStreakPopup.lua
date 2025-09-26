@@ -58,7 +58,7 @@ local function CreatePopupFrame()
     -- Create kill streak count text above everything
     local streakCountText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     streakCountText:SetPoint("TOP", 0, -30)
-    streakCountText:SetTextColor(0.6, 0.8, 1.0) -- Light blue
+    streakCountText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
     frame.streakCountText = streakCountText
 
     -- Create scroll frame with reduced space for the streak count text
