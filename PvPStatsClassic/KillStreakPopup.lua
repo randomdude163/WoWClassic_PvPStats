@@ -18,10 +18,10 @@ local CLASS_COLORS = {
 
 local function CreatePopupFrame()
     local frame = CreateFrame("Frame", "PSC_KillStreakPopupFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(250, 180) -- Reduced height from 200 to 180
+    frame:SetSize(220, 140)
 
-    -- Set position from saved settings or default to center
-    local pos = PSC_DB.KillStreakPopupPosition or {point = "CENTER", relativePoint = "CENTER", xOfs = 0, yOfs = 0}
+    -- Set position from saved settings or default to bottom right
+    local pos = PSC_DB.KillStreakPopupPosition or {point = "BOTTOMRIGHT", relativePoint = "BOTTOMRIGHT", xOfs = -50, yOfs = 150}
     frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.xOfs, pos.yOfs)
 
     frame:SetMovable(true)
@@ -43,22 +43,17 @@ local function CreatePopupFrame()
     table.insert(UISpecialFrames, "PSC_KillStreakPopupFrame")
     frame.TitleText:SetText("Current Kill Streak")
 
-    -- Make sure the close button works
     if frame.CloseButton then
         frame.CloseButton:SetScript("OnClick", function()
             frame:Hide()
         end)
     end
 
-    -- Add right-click to close functionality for combat situations
     frame:SetScript("OnMouseUp", function(self, button)
         if button == "RightButton" then
             self:Hide()
         end
     end)
-
-    -- ESC handling is done through UISpecialFrames system
-    -- No keyboard handling needed to avoid blocking game controls
 
     -- Create kill streak count text above everything
     local streakCountText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -72,7 +67,7 @@ local function CreatePopupFrame()
     scrollFrame:SetPoint("BOTTOMRIGHT", -30, 12)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(200, 400) -- Reduced width from 250 to 200
+    content:SetSize(170, 300)
     scrollFrame:SetScrollChild(content)
 
     frame.scrollFrame = scrollFrame
@@ -90,50 +85,45 @@ local function CreateGoldHighlight(button, height)
 end
 
 local function CreatePlayerRow(parent, playerData, yOffset, isAlternate)
-    local rowHeight = 16 -- Reduced from 20 to 16 to match smaller text
+    local rowHeight = 16
 
-    -- Create clickable button for the entire row
     local rowButton = CreateFrame("Button", nil, parent)
     rowButton:SetSize(parent:GetWidth() - 10, rowHeight)
     rowButton:SetPoint("TOPLEFT", 0, yOffset)
 
-    -- Create background for alternate rows
     if isAlternate then
         local bg = rowButton:CreateTexture(nil, "BACKGROUND")
         bg:SetAllPoints()
         bg:SetColorTexture(0.1, 0.1, 0.1, 0.3)
     end
 
-    -- Add hover highlight
     local highlight = CreateGoldHighlight(rowButton, rowHeight)
 
-    -- Player name with class color (reduced width for narrower popup)
     local nameText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     nameText:SetPoint("TOPLEFT", 5, -2)
     nameText:SetText(playerData.name)
-    nameText:SetWidth(85) -- Reduced from 110 to 85
+    nameText:SetWidth(80)
     nameText:SetJustifyH("LEFT")
 
     local classColor = CLASS_COLORS[playerData.class:upper()] or CLASS_COLORS.UNKNOWN
     nameText:SetTextColor(classColor[1], classColor[2], classColor[3])
 
-    -- Level (moved closer to name column)
+
     local levelText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    levelText:SetPoint("TOPLEFT", 100, -2) -- Moved left from 125 to 100
+    levelText:SetPoint("TOPLEFT", 90, -2)
     levelText:SetText(playerData.level == -1 and "??" or tostring(playerData.level))
-    levelText:SetWidth(35) -- Reduced from 50 to 35
+    levelText:SetWidth(25) -- Keep width at 25
     levelText:SetJustifyH("CENTER")
     levelText:SetTextColor(1, 1, 1)
 
-    -- Class (adjusted position for narrower popup)
     local classText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    classText:SetPoint("TOPLEFT", 145, -2) -- Moved left from 185 to 145
+    classText:SetPoint("TOPLEFT", 120, -2) -- Moved right from 105 to 120
     classText:SetText(playerData.class ~= "UNKNOWN" and playerData.class or "Unknown")
-    classText:SetWidth(50) -- Reduced from 60 to 50
+    classText:SetWidth(45) -- Increased from 40 to 45
     classText:SetJustifyH("LEFT")
     classText:SetTextColor(classColor[1], classColor[2], classColor[3])
 
-    -- Add click handler to open PlayerDetailFrame
+
     rowButton:SetScript("OnClick", function(self, button)
         if button == "LeftButton" then
             PSC_ShowPlayerDetailFrame(playerData.name)
@@ -200,12 +190,12 @@ local function PopulateKillStreakList()
     nameHeader:SetTextColor(1, 1, 1)
 
     local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    levelHeader:SetPoint("TOPLEFT", 100, -7) -- Updated to match new row position
-    levelHeader:SetText("Level")
+    levelHeader:SetPoint("TOPLEFT", 90, -7) -- Updated to match new row position
+    levelHeader:SetText("Lvl")
     levelHeader:SetTextColor(1, 1, 1)
 
     local classHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    classHeader:SetPoint("TOPLEFT", 145, -7) -- Updated to match new row position
+    classHeader:SetPoint("TOPLEFT", 120, -7) -- Updated to match new row position
     classHeader:SetText("Class")
     classHeader:SetTextColor(1, 1, 1)
 
@@ -227,7 +217,6 @@ end
 function PSC_CreateKillStreakPopup(isAutoOpen)
     if killStreakPopupFrame then
         if killStreakPopupFrame:IsVisible() then
-            -- If auto-opening and already visible, just update content instead of toggling
             if isAutoOpen then
                 PopulateKillStreakList()
                 return
@@ -247,10 +236,8 @@ function PSC_CreateKillStreakPopup(isAutoOpen)
     PopulateKillStreakList()
     killStreakPopupFrame:Show()
 
-    -- Don't register with FrameManager - let UISpecialFrames handle ESC key
 end
 
--- Function to update the popup if it's open
 function PSC_UpdateKillStreakPopup()
     if killStreakPopupFrame and killStreakPopupFrame:IsVisible() then
         PopulateKillStreakList()
