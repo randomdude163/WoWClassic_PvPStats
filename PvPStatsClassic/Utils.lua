@@ -1240,3 +1240,73 @@ function PSC_GenerateStreakTestData(days, killsPerDay, daysAgo)
     PSC_Print("- View achievements to see current streaks")
     PSC_Print("- Use '/psc debug' to see total kill counts")
 end
+
+function PSC_GetKillsToday()
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    local currentTime = time()
+    local today = date("*t", currentTime)
+    -- Calculate seconds since midnight today
+    local secondsSinceMidnight = today.hour * 3600 + today.min * 60 + today.sec
+    local todayStart = currentTime - secondsSinceMidnight
+
+    local killsToday = 0
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp and killLocation.timestamp >= todayStart then
+                    killsToday = killsToday + 1
+                end
+            end
+        end
+    end
+
+    return killsToday
+end
+
+function PSC_GetKillsThisWeek()
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        return 0
+    end
+
+    local currentTime = time()
+    local today = date("*t", currentTime)
+    -- Calculate days from Wednesday (wday: 1=Sunday, 2=Monday, 3=Tuesday, 4=Wednesday, 5=Thursday, 6=Friday, 7=Saturday)
+    -- How the Wednesday calculation works:
+    -- Wednesday (wday=4): (4 + 3) % 7 = 0 days back → Current reset week
+    -- Thursday (wday=5): (5 + 3) % 7 = 1 day back → Go back 1 day to Wednesday
+    -- Friday (wday=6): (6 + 3) % 7 = 2 days back → Go back 2 days to Wednesday
+    -- Saturday (wday=7): (7 + 3) % 7 = 3 days back → Go back 3 days to Wednesday
+    -- Sunday (wday=1): (1 + 3) % 7 = 4 days back → Go back 4 days to Wednesday
+    -- Monday (wday=2): (2 + 3) % 7 = 5 days back → Go back 5 days to Wednesday
+    -- Tuesday (wday=3): (3 + 3) % 7 = 6 days back → Go back 6 days to Wednesday
+    local daysFromWednesday = (today.wday + 3) % 7
+    -- Calculate seconds since midnight today
+    local secondsSinceMidnight = today.hour * 3600 + today.min * 60 + today.sec
+    -- Calculate seconds to go back to Wednesday midnight (WoW weekly reset)
+    local secondsToWednesdayMidnight = daysFromWednesday * 86400 + secondsSinceMidnight
+    local weekStart = currentTime - secondsToWednesdayMidnight
+
+    local killsThisWeek = 0
+
+    for playerKey, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            for _, killLocation in ipairs(playerData.killLocations) do
+                if killLocation.timestamp and killLocation.timestamp >= weekStart then
+                    killsThisWeek = killsThisWeek + 1
+                end
+            end
+        end
+    end
+
+    return killsThisWeek
+end

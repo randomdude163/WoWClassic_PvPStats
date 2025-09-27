@@ -102,7 +102,7 @@ local UI = {
     },
     GUILD_LIST = {
         WIDTH = 375,
-        HEIGHT = 240
+        HEIGHT = 200
     },
     TITLE_SPACING = 3,
     TOP_PADDING = 40,
@@ -1006,6 +1006,10 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     local avgLevelDiff = killsWithLevelData > 0 and (levelDiffSum / killsWithLevelData) or 0
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
+    -- Calculate daily and weekly kills
+    local killsToday = PSC_GetKillsToday()
+    local killsThisWeek = PSC_GetKillsThisWeek()
+
     return {
         totalKills = totalKills,
         uniqueKills = uniqueKills,
@@ -1027,7 +1031,9 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
         busiestHourKills = maxHourlyKills,
         busiestMonth = busiestMonth,
         busiestMonthKills = maxMonthlyKills,
-        avgKillsPerDay = avgKillsPerDay
+        avgKillsPerDay = avgKillsPerDay,
+        killsToday = killsToday,
+        killsThisWeek = killsThisWeek
     }
 end
 
@@ -1144,6 +1150,10 @@ local function createSummaryStats(parent, x, y, width, height)
     end
     statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
+
+    -- Add daily and weekly kill statistics
+    statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday), statY, "Total player kills you achieved today, including all levels and grey players.")
+    statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek), statY, "Total player kills this week (Wednesday to Wednesday, matching WoW's weekly reset). Includes all levels and grey players.")
 
     statY = statY - spacing_between_sections  -- Add some spacing before the achievement section
 
