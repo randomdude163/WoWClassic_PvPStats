@@ -359,6 +359,9 @@ function PSC_LoadDefaultSettings()
     }
 
     PSC_DB.EnableMultiKillSounds = true
+    PSC_DB.SoundPack = "LoL"
+    PSC_DB.EnableDeathSounds = false
+    PSC_DB.EnableSingleKillSounds = false
     PSC_DB.ShowScoreInPlayerTooltip = true
     PSC_DB.ShowExtendedTooltipInfo = true
     PSC_DB.ShowAccountWideStats = true
@@ -369,6 +372,15 @@ function PSC_LoadDefaultSettings()
     PSC_DB.NewMultiKillRecordMessage = "New personal best: MULTIKILLTEXT!"
 
     PSC_DB.MinimapButtonPosition = 195
+
+    -- Kill Streak Popup Settings
+    PSC_DB.AutoOpenKillStreakPopup = false
+    PSC_DB.KillStreakPopupPosition = {
+        point = "CENTER",
+        relativePoint = "CENTER",
+        xOfs = 0,
+        yOfs = 0
+    }
 
     PSC_InitializeAchievementDataStructure()
 end
@@ -385,7 +397,26 @@ function PSC_InitializePlayerKillCounts()
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
             HighestMultiKill = 0,
-            GrayKillsCount = nil -- We'll set this to nil initially to detect first run
+            GrayKillsCount = nil, -- We'll set this to nil initially to detect first run
+            CurrentKillStreakPlayers = {} -- Track players killed in current streak
+        }
+    end
+
+    -- Initialize CurrentKillStreakPlayers if it doesn't exist (for existing saves)
+    if PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreakPlayers == nil then
+        PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreakPlayers = {}
+    end
+
+    -- Initialize new kill streak popup settings if they don't exist (backward compatibility)
+    if PSC_DB.AutoOpenKillStreakPopup == nil then
+        PSC_DB.AutoOpenKillStreakPopup = false
+    end
+    if PSC_DB.KillStreakPopupPosition == nil then
+        PSC_DB.KillStreakPopupPosition = {
+            point = "CENTER",
+            relativePoint = "CENTER",
+            xOfs = 0,
+            yOfs = 0
         }
     end
 end

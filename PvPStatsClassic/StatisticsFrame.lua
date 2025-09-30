@@ -102,7 +102,7 @@ local UI = {
     },
     GUILD_LIST = {
         WIDTH = 375,
-        HEIGHT = 240
+        HEIGHT = 200
     },
     TITLE_SPACING = 3,
     TOP_PADDING = 40,
@@ -725,7 +725,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
-local function addSummaryStatLine(container, label, value, yPosition, tooltipText)
+local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak)
     local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", 0, yPosition)
     labelText:SetText(label)
@@ -733,6 +733,11 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueText:SetPoint("TOPLEFT", 150, yPosition)
     valueText:SetText(tostring(value))
+
+    -- Make kill streak value text gold
+    if isKillStreak then
+        valueText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
+    end
 
     if tooltipText then
         local tooltipFrame = CreateFrame("Frame", nil, container)
@@ -765,6 +770,27 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
                         PSC_FrameManager:BringToFront("KillsList")
                     end)
                 end
+            end)
+        elseif isKillStreak then
+            local button = CreateFrame("Button", nil, tooltipFrame)
+            ---@diagnostic disable-next-line: param-type-mismatch
+            button:SetAllPoints(true)
+
+            CreateGoldHighlight(button, 20)
+
+            button:SetScript("OnMouseUp", function()
+                PSC_CreateKillStreakPopup()
+            end)
+
+            -- Add tooltip to the button itself
+            button:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+                GameTooltip:AddLine(tooltipText, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+
+            button:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
             end)
         end
     end
@@ -980,6 +1006,10 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     local avgLevelDiff = killsWithLevelData > 0 and (levelDiffSum / killsWithLevelData) or 0
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
+    -- Calculate daily and weekly kills
+    local killsToday = PSC_GetKillsToday()
+    local killsThisWeek = PSC_GetKillsThisWeek()
+
     return {
         totalKills = totalKills,
         uniqueKills = uniqueKills,
@@ -1001,7 +1031,9 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
         busiestHourKills = maxHourlyKills,
         busiestMonth = busiestMonth,
         busiestMonthKills = maxMonthlyKills,
-        avgKillsPerDay = avgKillsPerDay
+        avgKillsPerDay = avgKillsPerDay,
+        killsToday = killsToday,
+        killsThisWeek = killsThisWeek
     }
 end
 
@@ -1051,8 +1083,54 @@ local function createSummaryStats(parent, x, y, width, height)
         "Average level difference between you and the players you have killed.")
 
 
-    statY = addSummaryStatLine(container, "Current kill streak:", stats.currentKillStreak, statY - spacing_between_sections,
-        "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.")
+    -- Current kill streak with button (similar to achievements)
+    local killStreakY = statY - spacing_between_sections
+
+    local killStreakLabelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    killStreakLabelText:SetPoint("TOPLEFT", 0, killStreakY)
+    killStreakLabelText:SetText("Current kill streak:")
+
+    local killStreakValueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    killStreakValueText:SetPoint("TOPLEFT", 150, killStreakY)
+    killStreakValueText:SetText(tostring(stats.currentKillStreak))
+    killStreakValueText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
+
+    -- Add tooltip for kill streak text (label and value)
+    local killStreakTooltipFrame = CreateFrame("Frame", nil, container)
+    killStreakTooltipFrame:SetPoint("TOPLEFT", killStreakLabelText, "TOPLEFT", 0, 0)
+    killStreakTooltipFrame:SetPoint("BOTTOMRIGHT", killStreakValueText, "BOTTOMRIGHT", 0, 0)
+
+    -- Make the kill streak text clickable (like the original implementation)
+    local killStreakClickButton = CreateFrame("Button", nil, killStreakTooltipFrame)
+    killStreakClickButton:SetAllPoints(killStreakTooltipFrame)
+
+    -- Add gold highlight for hover effect
+    CreateGoldHighlight(killStreakClickButton, 20)
+
+    -- Add tooltip to the click button
+    killStreakClickButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+        GameTooltip:AddLine("Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+
+    killStreakClickButton:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+
+    killStreakClickButton:SetScript("OnMouseUp", function()
+        PSC_CreateKillStreakPopup()
+    end)
+
+    local openKillStreakButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    openKillStreakButton:SetSize(110, 22)
+    openKillStreakButton:SetPoint("LEFT", killStreakValueText, "RIGHT", 10, 0)
+    openKillStreakButton:SetText("Open Kill Streak")
+    openKillStreakButton:SetScript("OnClick", function()
+        PSC_CreateKillStreakPopup()
+    end)
+
+    statY = killStreakY - 20
 
     local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
     local highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat across all characters."
@@ -1072,6 +1150,10 @@ local function createSummaryStats(parent, x, y, width, height)
     end
     statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
+
+    -- Add daily and weekly kill statistics
+    statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday), statY, "Total player kills you achieved today, including all levels and grey players.")
+    statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek), statY, "Total player kills this week (Wednesday to Wednesday, matching WoW's weekly reset). Includes all levels and grey players.")
 
     statY = statY - spacing_between_sections  -- Add some spacing before the achievement section
 

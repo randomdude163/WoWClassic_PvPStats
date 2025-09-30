@@ -16,6 +16,7 @@ KillsListFrameFilters.lua
 KillsListFrame.lua
 KillsTracking.lua
 Killstreaks.lua
+KillStreakPopup.lua
 MinimapButton.lua
 SlashCommands.lua
 AchievementDefinitions.lua
