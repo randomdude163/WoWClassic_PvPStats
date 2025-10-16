@@ -181,48 +181,83 @@ local function ClearAchievementTiles()
     end
 end
 
-local function CalculateGrayKillsForPlayer(playerName)
-    local grayKills = 0
+-- Debug function to verify gray kill calculation
+local function DiagnoseGrayKillCalculation(charData)
+    local grayKillCount = 0
+    local missingPlayerLevel = 0
+    local totalKillLocations = 0
 
-    local playerDetail = PSC_CreatePlayerDetailInfo(playerName)
-    for _, kill in ipairs(playerDetail.killHistory) do
-        local playerLevel = kill.playerLevel
-        local enemyLevel = kill.level
-        local grayThreshold = PSC_GrayLevelThreshods[playerLevel]
-        if enemyLevel >= 1 and enemyLevel <= grayThreshold then
-            -- print("playerName: " .. playerName .. " " .. "Player Level: " .. playerLevel .. ", Enemy Level: " .. enemyLevel .. ", Threshold: " .. grayThreshold)
-            grayKills = grayKills + 1
+    print("=== Gray Kill Diagnosis ===")
+
+    for nameWithLevel, killData in pairs(charData.Kills or {}) do
+        local enemyLevel = tonumber(string.match(nameWithLevel, ":(%d+)")) or -1
+
+        if enemyLevel >= 1 and killData.killLocations then
+            for _, location in ipairs(killData.killLocations) do
+                totalKillLocations = totalKillLocations + 1
+                local playerLevel = location.playerLevel
+
+                if playerLevel then
+                    local grayThreshold = PSC_GrayLevelThreshods[playerLevel]
+                    if grayThreshold and enemyLevel <= grayThreshold then
+                        grayKillCount = grayKillCount + 1
+                    end
+                else
+                    missingPlayerLevel = missingPlayerLevel + 1
+                end
+            end
         end
     end
 
-    return grayKills
+    print("Total kill locations processed: " .. totalKillLocations)
+    print("Gray kills found: " .. grayKillCount)
+    print("Missing playerLevel in killLocations: " .. missingPlayerLevel)
+    print("======================")
+
+    return grayKillCount
 end
 
 local function CalculateGrayKillsForCharacter(charData)
     local grayKills = 0
-    local alreadyProcessedPlayers = {}
 
-    for nameWithLevel, _ in pairs(charData.Kills or {}) do
-        local playerName = string.match(nameWithLevel, "^(.-):")
-        if not alreadyProcessedPlayers[playerName] then
-            grayKills = grayKills + CalculateGrayKillsForPlayer(playerName)
-            alreadyProcessedPlayers[playerName] = true
+    -- Iterate through kills once, checking each kill location
+    for nameWithLevel, killData in pairs(charData.Kills or {}) do
+        local enemyLevel = tonumber(string.match(nameWithLevel, ":(%d+)")) or -1
+
+        if enemyLevel >= 1 and killData.killLocations then
+            for _, location in ipairs(killData.killLocations) do
+                local playerLevel = location.playerLevel
+
+                if playerLevel then
+                    local grayThreshold = PSC_GrayLevelThreshods[playerLevel]
+                    if grayThreshold and enemyLevel <= grayThreshold then
+                        grayKills = grayKills + 1
+                    end
+                end
+            end
         end
     end
 
     return grayKills
 end
 
-
 function PSC_CalculateGrayKills()
-    local grayKills = 0
-
     local currentCharacterKey = PSC_GetCharacterKey()
-    grayKills = grayKills + CalculateGrayKillsForCharacter(PSC_DB.PlayerKillCounts.Characters[currentCharacterKey])
+    local charData = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+
+    -- Run diagnostics if debug is enabled
+    if PSC_Debug then
+        print("=== Gray Kill Calculation Debug ===")
+        print("Current character: " .. currentCharacterKey)
+        DiagnoseGrayKillCalculation(charData)
+    end
+
+    local grayKills = CalculateGrayKillsForCharacter(charData)
 
     if PSC_Debug then
-        print("Gray kills: " .. grayKills)
+        print("Final gray kills: " .. grayKills)
     end
+
     return grayKills
 end
 
@@ -664,4 +699,3 @@ function PSC_ToggleAchievementFrame()
         PSC_FrameManager:ShowFrame("Achievements")
     end
 end
-
