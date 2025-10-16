@@ -810,65 +810,10 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
     end
 end
 
--- Function to count assists from a player
-local function CountPlayerAssists(playerName, deathDataByPlayer)
-    local assistCount = 0
-
-    for _, deathData in pairs(deathDataByPlayer) do
-        if deathData.deathLocations then
-            for _, location in ipairs(deathData.deathLocations) do
-                if location.assisters then
-                    for _, assister in ipairs(location.assisters) do
-                        if assister.name == playerName then
-                            assistCount = assistCount + 1
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return assistCount
-end
-
 -- Process players who have only assisted in kills but never directly killed you
-local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
-    -- Build a list of players who have assisted in kills
-    local assistPlayerData = {}
-
-    for _, deathData in pairs(deathDataByPlayer) do
-        if deathData.deathLocations then
-            for _, location in ipairs(deathData.deathLocations) do
-                if location.assisters then
-                    for _, assister in ipairs(location.assisters) do
-                        local assisterName = assister.name
-
-                        -- Skip if already processed
-                        if not playerNameMap[assisterName] then
-                            if not assistPlayerData[assisterName] then
-                                assistPlayerData[assisterName] = {
-                                    assists = 0,
-                                    lastAssist = 0,
-                                    zone = "Unknown"
-                                }
-                            end
-
-                            assistPlayerData[assisterName].assists = assistPlayerData[assisterName].assists + 1
-
-                            -- Update latest assist timestamp and zone if more recent
-                            if (location.timestamp or 0) > assistPlayerData[assisterName].lastAssist then
-                                assistPlayerData[assisterName].lastAssist = location.timestamp or 0
-                                assistPlayerData[assisterName].zone = location.zone or "Unknown"
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    -- Create entries for assist-only players
-    for assisterName, assistData in pairs(assistPlayerData) do
+local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assistCounts, lastAssistTimestamp, lastAssistZone)
+    -- Create entries for players who assisted but never killed you directly
+    for assisterName, assistCount in pairs(assistCounts) do
         -- Skip if already added from kills or deaths
         if not playerNameMap[assisterName] then
             local infoKey = PSC_GetInfoKeyFromName(assisterName)
@@ -894,11 +839,11 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deat
                     levelDisplay = playerLevel,
                     rank = playerRank,
                     guild = playerGuild,
-                    zone = assistData.zone,
+                    zone = lastAssistZone[assisterName] or "Unknown",
                     kills = 0,
                     deaths = 0,
-                    assists = assistData.assists,
-                    lastKill = assistData.lastAssist  -- Use assist timestamp for sorting
+                    assists = assistCount,
+                    lastKill = lastAssistTimestamp[assisterName] or 0
                 }
 
                 playerNameMap[assisterName] = entry
@@ -906,6 +851,87 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deat
             end
         end
     end
+end
+
+-- Pre-calculate assist counts for all players in a single pass (O(n) instead of O(n²))
+local function PreCalculateAssistCounts(deathDataByPlayer)
+    local assistCounts = {}
+    local lastAssistTimestamp = {}
+    local lastAssistZone = {}
+
+    for _, deathInfo in pairs(deathDataByPlayer) do
+        if deathInfo.deathLocations then
+            for _, location in ipairs(deathInfo.deathLocations) do
+                if location.assisters then
+                    for _, assister in ipairs(location.assisters) do
+                        local assisterName = assister.name
+
+                        -- Count assists
+                        assistCounts[assisterName] = (assistCounts[assisterName] or 0) + 1
+
+                        -- Track most recent assist
+                        local timestamp = location.timestamp or 0
+                        if not lastAssistTimestamp[assisterName] or timestamp > lastAssistTimestamp[assisterName] then
+                            lastAssistTimestamp[assisterName] = timestamp
+                            lastAssistZone[assisterName] = location.zone
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return assistCounts, lastAssistTimestamp, lastAssistZone
+end
+
+-- Add assist and death data to all player entries
+local function AddAssistAndDeathData(entries, deathDataByPlayer, assistCounts, lastAssistTimestamp, lastAssistZone)
+    for _, entry in ipairs(entries) do
+        local playerName = entry.name
+
+        -- Add death data
+        local deathData = deathDataByPlayer[playerName]
+        entry.deaths = deathData and deathData.deaths or 0
+        entry.deathHistory = deathData and deathData.deathLocations or {}
+
+        -- Find most recent death timestamp
+        local mostRecentDeathTimestamp = 0
+        local mostRecentDeathZone = nil
+
+        if deathData and deathData.deathLocations and #deathData.deathLocations > 0 then
+            -- Get most recent death (assuming already sorted or just iterate once)
+            local mostRecentDeath = deathData.deathLocations[1]
+            for _, location in ipairs(deathData.deathLocations) do
+                if (location.timestamp or 0) > mostRecentDeathTimestamp then
+                    mostRecentDeathTimestamp = location.timestamp or 0
+                    mostRecentDeath = location
+                end
+            end
+
+            mostRecentDeathZone = mostRecentDeath.zone
+
+            -- Update lastKill if the most recent death is more recent
+            if mostRecentDeathTimestamp > (entry.lastKill or 0) then
+                entry.lastKill = mostRecentDeathTimestamp
+                entry.zone = mostRecentDeathZone or entry.zone
+            end
+        end
+
+        -- Add assists data using pre-calculated counts (O(1) lookup instead of O(n) scan)
+        -- Only update if not already set (assist-only players have it set already)
+        if not entry.assists then
+            entry.assists = assistCounts[playerName] or 0
+        end
+
+        -- Update lastKill if the most recent assist is more recent
+        local assistTimestamp = lastAssistTimestamp[playerName]
+        if assistTimestamp and assistTimestamp > (entry.lastKill or 0) then
+            entry.lastKill = assistTimestamp
+            entry.zone = lastAssistZone[playerName] or entry.zone
+        end
+    end
+
+    return entries
 end
 
 -- Sort entries based on current sort settings
@@ -943,72 +969,6 @@ local function SortPlayerEntries(entries)
                 return tostring(aValue or "") > tostring(bValue or "")
             end
         end)
-    end
-
-    return entries
-end
-
--- Add assist and death data to all player entries
-local function AddAssistAndDeathData(entries, deathDataByPlayer)
-    for _, entry in ipairs(entries) do
-        -- Add death data
-        local deathData = deathDataByPlayer[entry.name]
-        entry.deaths = deathData and deathData.deaths or 0
-        entry.deathHistory = deathData and deathData.deathLocations or {}
-
-        -- Find most recent death timestamp
-        local mostRecentDeathTimestamp = 0
-        local mostRecentDeathZone = nil
-
-        -- Check if there is death data for this player
-        if deathData and deathData.deathLocations and #deathData.deathLocations > 0 then
-            -- Sort death locations by timestamp descending (most recent first)
-            table.sort(deathData.deathLocations, function(a, b)
-                return (a.timestamp or 0) > (b.timestamp or 0)
-            end)
-
-            -- Get timestamp and zone from most recent death location
-            mostRecentDeathTimestamp = deathData.deathLocations[1].timestamp or 0
-            mostRecentDeathZone = deathData.deathLocations[1].zone
-
-            -- Update lastKill if the most recent death is more recent
-            if mostRecentDeathTimestamp > (entry.lastKill or 0) then
-                entry.lastKill = mostRecentDeathTimestamp
-                entry.zone = mostRecentDeathZone or entry.zone
-            end
-        end
-
-        -- Add assists data and find most recent assist timestamp
-        entry.assists = 0
-        local mostRecentAssistTimestamp = 0
-        local mostRecentAssistZone = nil
-
-        -- Scan through all death data to find assists by this player
-        for _, deathInfo in pairs(deathDataByPlayer) do
-            if deathInfo.deathLocations then
-                for _, location in ipairs(deathInfo.deathLocations) do
-                    if location.assisters then
-                        for _, assister in ipairs(location.assisters) do
-                            if assister.name == entry.name then
-                                entry.assists = entry.assists + 1
-
-                                -- Track most recent assist timestamp
-                                if (location.timestamp or 0) > mostRecentAssistTimestamp then
-                                    mostRecentAssistTimestamp = location.timestamp or 0
-                                    mostRecentAssistZone = location.zone
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-
-        -- Update lastKill if the most recent assist is more recent
-        if mostRecentAssistTimestamp > (entry.lastKill or 0) then
-            entry.lastKill = mostRecentAssistTimestamp
-            entry.zone = mostRecentAssistZone or entry.zone
-        end
     end
 
     return entries
@@ -1094,22 +1054,25 @@ function PSC_FilterAndSortEntries()
     -- Step 1: Get death data from all relevant characters based on account-wide setting
     local deathDataByPlayer = GetDeathDataFromAllCharacters()
 
-    -- Step 2: Process players you've killed
+    -- Step 2: Pre-calculate ALL assist counts in one pass (O(n) instead of O(n²))
+    local assistCounts, lastAssistTimestamp, lastAssistZone = PreCalculateAssistCounts(deathDataByPlayer)
+
+    -- Step 3: Process players you've killed
     ProcessKilledPlayers(searchText, playerNameMap, entries)
 
-    -- Step 3: Process players who killed you but you haven't killed
+    -- Step 4: Process players who killed you but you haven't killed
     ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
 
-    -- Step 4: Process players who have only assisted in kills but never directly killed you
-    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, deathDataByPlayer)
+    -- Step 5: Process players who have only assisted in kills but never directly killed you
+    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assistCounts, lastAssistTimestamp, lastAssistZone)
 
-    -- Step 5: Add death counts and assists counts to all entries
-    entries = AddAssistAndDeathData(entries, deathDataByPlayer)
+    -- Step 6: Add death counts and assists counts to all entries (using pre-calculated data)
+    entries = AddAssistAndDeathData(entries, deathDataByPlayer, assistCounts, lastAssistTimestamp, lastAssistZone)
 
-    -- Step 6: Apply additional filters
+    -- Step 7: Apply additional filters
     local filteredEntries = ApplyFiltersToEntries(entries)
 
-    -- Step 7: Sort entries
+    -- Step 8: Sort entries
     return SortPlayerEntries(filteredEntries)
 end
 
