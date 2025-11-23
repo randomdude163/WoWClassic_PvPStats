@@ -133,10 +133,11 @@ function GetMultiKillText(count)
         "DOUBLE KILL!",
         "TRIPLE KILL!",
         "QUADRA KILL!",
-        "PENTA KILL!"
+        "PENTA KILL!",
+        "HEXA KILL!"
     }
 
-    if count <= 5 then
+    if count <= 6 then
         return killTexts[count - 1]
     end
 
