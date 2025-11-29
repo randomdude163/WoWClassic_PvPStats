@@ -1,4 +1,4 @@
-## Interface: 11506
+## Interface: 11508
 ## Title: PvP Stats Classic
 ## Author: Severussnipe & Hkfarmer <Redridge Police>
 ## Notes: Tracks PvP history and provides detailed statistics.
