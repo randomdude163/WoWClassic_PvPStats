@@ -484,6 +484,17 @@ local function HandlePlayerEnteringWorld()
         ResetAllStatsToDefault()
     end
 
+    -- Initialize minimap button settings if not present
+    if not PSC_DB.minimapButton then
+        PSC_DB.minimapButton = {
+            hide = false,
+        }
+        -- Migrate old position if it exists
+        if PSC_DB.MinimapButtonPosition then
+            PSC_DB.minimapButton.minimapPos = PSC_DB.MinimapButtonPosition
+        end
+    end
+
     PSC_MigratePlayerInfoCache()
     PSC_InitializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()

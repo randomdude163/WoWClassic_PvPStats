@@ -72,7 +72,8 @@
         "UIDropDownMenu_SetWidth",
         "UIDropDownMenu_SetSelectedValue",
         "UIDropDownMenu_DisableDropDown",
-        "UIDropDownMenu_EnableDropDown"
+        "UIDropDownMenu_EnableDropDown",
+        "AddonCompartmentFrame"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {
