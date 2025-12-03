@@ -31,6 +31,7 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("PvPStatsClassic", {
 })
 
 local icon = LibStub("LibDBIcon-1.0")
+local isRegistered = false
 
 function PSC_UpdateMinimapButtonPosition()
     -- Initialize the minimap button if it hasn't been initialized yet
@@ -45,8 +46,11 @@ function PSC_UpdateMinimapButtonPosition()
         PSC_DB.minimapButton.minimapPos = PSC_DB.MinimapButtonPosition
     end
 
-    -- Register with LibDBIcon
-    icon:Register("PvPStatsClassic", LDB, PSC_DB.minimapButton)
+    -- Only register once
+    if not isRegistered then
+        icon:Register("PvPStatsClassic", LDB, PSC_DB.minimapButton)
+        isRegistered = true
+    end
 
     -- Show or hide based on settings
     if PSC_DB.minimapButton.hide then
