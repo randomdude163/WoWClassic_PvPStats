@@ -7,6 +7,13 @@ PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
 
+PSC_GAME_VERSIONS = {
+    CLASSIC = 1,
+    TBC = 2,
+    WOTLK = 3,
+}
+PSC_GameVersion = nil
+
 RecentPetDamage = {}
 local PET_DAMAGE_WINDOW = 0.05
 
@@ -473,10 +480,37 @@ function PSC_CleanupPendingHunterKills()
     end
 end
 
+local function DetermineGameVersion()
+    -- Example output of GetBuildInfo()
+    -- 1.15.8 64858 Dec  9 2025 11508  Release  11508
+    local versionString = GetBuildInfo()
+    local major, minor, patch = versionString:match("^(%d+)%.(%d+)%.(%d+)")
+
+    major = tonumber(major)
+    minor = tonumber(minor)
+    patch = tonumber(patch)
+    local game_version = nil
+
+    if major == 1 then
+        game_version = PSC_GAME_VERSIONS.CLASSIC
+    elseif major == 2 then
+        game_version =  PSC_GAME_VERSIONS.TBC
+    elseif major == 3 then
+        game_version =  PSC_GAME_VERSIONS.WOTLK
+    end
+
+    if PSC_Debug then
+        print("Detected game version: " .. tostring(game_version))
+    end
+
+    return game_version
+end
+
 local function HandlePlayerEnteringWorld()
     PSC_PlayerGUID = UnitGUID("player")
     PSC_CharacterName = UnitName("player")
     PSC_RealmName = GetRealmName()
+    PSC_GameVersion = DetermineGameVersion()
 
     if not PSC_DB then
         PSC_DB = {}
