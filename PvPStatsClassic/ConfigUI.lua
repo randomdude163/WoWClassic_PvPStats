@@ -1113,7 +1113,7 @@ end
 
 function PSC_CreateConfigUI()
     if configFrame then
-        PSC_FrameManager:ShowFrame("Config")
+        PSC_FrameManager:ShowFrame("ConfigUI")
         return
     end
 

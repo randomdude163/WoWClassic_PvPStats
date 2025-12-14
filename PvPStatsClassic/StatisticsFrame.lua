@@ -102,7 +102,7 @@ local UI = {
     },
     GUILD_LIST = {
         WIDTH = 375,
-        HEIGHT = 200
+        HEIGHT = 150
     },
     TITLE_SPACING = 3,
     TOP_PADDING = 40,
@@ -1122,14 +1122,6 @@ local function createSummaryStats(parent, x, y, width, height)
         PSC_CreateKillStreakPopup()
     end)
 
-    local openKillStreakButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
-    openKillStreakButton:SetSize(110, 22)
-    openKillStreakButton:SetPoint("LEFT", killStreakValueText, "RIGHT", 10, 0)
-    openKillStreakButton:SetText("Open Kill Streak")
-    openKillStreakButton:SetScript("OnClick", function()
-        PSC_CreateKillStreakPopup()
-    end)
-
     statY = killStreakY - 20
 
     local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
@@ -1206,14 +1198,6 @@ local function createSummaryStats(parent, x, y, width, height)
     local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueText:SetPoint("TOPLEFT", 150, statY)
     valueText:SetText(achievementText)
-
-    local openAchievementsButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
-    openAchievementsButton:SetSize(130, 22)
-    openAchievementsButton:SetPoint("LEFT", valueText, "RIGHT", 10, 0)
-    openAchievementsButton:SetText("Open Achievements")
-    openAchievementsButton:SetScript("OnClick", function()
-        PSC_ToggleAchievementFrame()
-    end)
 
     -- Create a clickable button for the achievements line
     local achievementButton = CreateFrame("Button", nil, container)
@@ -1447,7 +1431,7 @@ local function createScrollableLeftPanel(parent)
 
     local containerFrame = CreateFrame("Frame", nil, parent)
     containerFrame:SetPoint("TOPLEFT", UI.LEFT_SCROLL_PADDING, -UI.TOP_PADDING)
-    containerFrame:SetPoint("BOTTOMLEFT", UI.LEFT_SCROLL_PADDING, 20)
+    containerFrame:SetPoint("BOTTOMLEFT", UI.LEFT_SCROLL_PADDING, 70)
     containerFrame:SetWidth(400 - UI.LEFT_SCROLL_PADDING)
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, containerFrame, "UIPanelScrollFrameTemplate")
@@ -1608,6 +1592,11 @@ function PSC_UpdateStatisticsFrame(frame)
         frame.summaryStats = nil
     end
 
+    if frame.buttonContainer then
+        frame.buttonContainer:SetParent(nil)
+        frame.buttonContainer = nil
+    end
+
     if frame:GetHeight() < 400 then
         return
     end
@@ -1692,4 +1681,47 @@ function PSC_UpdateStatisticsFrame(frame)
     frame.guildTable = createGuildTable(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, UI.GUILD_LIST.HEIGHT)
     frame.summaryStats = createSummaryStats(frame, 440, -UI.GUILD_LIST.HEIGHT - UI.TOP_PADDING - 20, summaryStatsWidth,
         250)
+
+    local buttonContainer = CreateFrame("Frame", nil, frame)
+    buttonContainer:SetSize(UI.FRAME.WIDTH - 40, 50)
+    buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 0, 10)
+    frame.buttonContainer = buttonContainer
+
+    local buttonWidth = 150
+    local buttonHeight = 30
+    local buttonSpacing = 10
+    local totalButtonWidth = (buttonWidth * 4) + (buttonSpacing * 3)
+    local startX = (buttonContainer:GetWidth() - totalButtonWidth) / 2
+
+    local settingsButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    settingsButton:SetSize(buttonWidth, buttonHeight)
+    settingsButton:SetPoint("LEFT", buttonContainer, "LEFT", startX, 0)
+    settingsButton:SetText("Open Settings")
+    settingsButton:SetScript("OnClick", function()
+        PSC_CreateConfigUI()
+    end)
+
+    local achievementsButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    achievementsButton:SetSize(buttonWidth, buttonHeight)
+    achievementsButton:SetPoint("LEFT", settingsButton, "RIGHT", buttonSpacing, 0)
+    achievementsButton:SetText("Open Achievements")
+    achievementsButton:SetScript("OnClick", function()
+        PSC_ToggleAchievementFrame()
+    end)
+
+    local killHistoryButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    killHistoryButton:SetSize(buttonWidth, buttonHeight)
+    killHistoryButton:SetPoint("LEFT", achievementsButton, "RIGHT", buttonSpacing, 0)
+    killHistoryButton:SetText("Open Kill History")
+    killHistoryButton:SetScript("OnClick", function()
+        PSC_CreateKillsListFrame()
+    end)
+
+    local killstreakButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    killstreakButton:SetSize(buttonWidth, buttonHeight)
+    killstreakButton:SetPoint("LEFT", killHistoryButton, "RIGHT", buttonSpacing, 0)
+    killstreakButton:SetText("Open Killstreak")
+    killstreakButton:SetScript("OnClick", function()
+        PSC_CreateKillStreakPopup()
+    end)
 end
