@@ -1096,6 +1096,9 @@ function PSC_CalculateAllStreakStats()
             end
         end
 
+        -- Store total count of days meeting the threshold
+        streakResults["total_" .. minKills] = #validDates
+
         if #validDates == 0 then
             streakResults[minKills] = 0
         else
@@ -1148,6 +1151,17 @@ function PSC_CountConsecutiveDaysWithMinKills(minKills)
     -- Use cached streak stats for much better performance
     local streakStats = PSC_GetStreakStats()
     return streakStats[minKills] or 0
+end
+
+-- Function to count total days with at least minKills (non-consecutive)
+function PSC_CountTotalDaysWithMinKills(minKills)
+    if not minKills or minKills <= 0 then
+        return 0
+    end
+
+    -- Use cached streak stats for much better performance
+    local streakStats = PSC_GetStreakStats()
+    return streakStats["total_" .. minKills] or 0
 end
 
 -- Function to generate test streak data for testing PSC_CountConsecutiveDaysWithMinKills

@@ -3096,7 +3096,7 @@ AchievementSystem.achievements = {
         title = "Spawn Camper",
         description = function(a) return "Slay 10 level 1 players in under 1 minute" end,
         iconID = 132090,
-        achievementPoints = 250,
+        achievementPoints = 50,
         targetValue = 10,
         condition = function(achievement, stats)
             -- Performance optimization: Check if we even have enough level 1 kills total
@@ -7367,6 +7367,25 @@ AchievementSystem.achievements = {
         progress = function(achievement, stats)
             return PSC_CountConsecutiveDaysWithMinKills(100) or 0
         end
+    },
+    {
+        id = "streaks_10_kills_on_365_days",
+        title = "A Year of War",
+        description = function(a) return ("Kill at least 10 players on %d different days"):format(a.targetValue) end,
+        iconID = 134067,
+        achievementPoints = 500,
+        targetValue = 365,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Consistency is key. You are a true dedicated PvPer."
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountTotalDaysWithMinKills(10) or 0
+        end,
     },
     -- =====================================================
     -- CITY ACHIEVEMENTS - HORDE
