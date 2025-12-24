@@ -7373,7 +7373,7 @@ AchievementSystem.achievements = {
         title = "A Year of War",
         description = function(a) return ("Kill at least 10 players on %d different days"):format(a.targetValue) end,
         iconID = 134067,
-        achievementPoints = 500,
+        achievementPoints = 125,
         targetValue = 365,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -7385,6 +7385,63 @@ AchievementSystem.achievements = {
         end,
         progress = function(achievement, stats)
             return PSC_CountTotalDaysWithMinKills(10) or 0
+        end,
+    },
+    {
+        id = "streaks_25_kills_on_365_days",
+        title = "Veteran of the Year",
+        description = function(a) return ("Kill at least 25 players on %d different days"):format(a.targetValue) end,
+        iconID = 134067,
+        achievementPoints = 250,
+        targetValue = 365,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "A quarter hundred every day for a year. That's dedication."
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountTotalDaysWithMinKills(25) or 0
+        end,
+    },
+    {
+        id = "streaks_50_kills_on_365_days",
+        title = "Daily Death Dealer",
+        description = function(a) return ("Kill at least 50 players on %d different days"):format(a.targetValue) end,
+        iconID = 134067,
+        achievementPoints = 500,
+        targetValue = 365,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Half a hundred souls, day in and day out. You are a machine."
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountTotalDaysWithMinKills(50) or 0
+        end,
+    },
+    {
+        id = "streaks_100_kills_on_365_days",
+        title = "No Days Off",
+        description = function(a) return ("Kill at least 100 players on %d different days"):format(a.targetValue) end,
+        iconID = 134067,
+        achievementPoints = 500,
+        targetValue = 365,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Rain or shine, holiday or workday, you were there killing."
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountTotalDaysWithMinKills(100) or 0
         end,
     },
     -- =====================================================
