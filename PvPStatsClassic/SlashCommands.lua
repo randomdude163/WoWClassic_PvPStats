@@ -13,6 +13,7 @@ local function PrintSlashCommandUsage()
         PSC_Print("Usage: /psc status - Show current settings")
         PSC_Print("Usage: /psc debug - Show current streak values")
         PSC_Print("Usage: /psc registerkill [number] - Register test kill(s) for testing")
+        PSC_Print("Usage: /psc registerlevel1kill [number] - Register test level 1 kill(s) for testing")
         PSC_Print("Usage: /psc simulatedeath [killers] [assists] - Simulate being killed")
         PSC_Print("Usage: /psc bgmode - Toggle battleground mode manually")
         PSC_Print("Usage: /psc toggledebug - Toggle debug messages")
@@ -100,6 +101,16 @@ function PSC_SlashCommandHandler(msg)
                 end
             end
             PSC_SimulatePlayerKills(testKillCount)
+
+        elseif command == "registerlevel1kill" then
+            local testKillCount = 1
+            if arguments and arguments ~= "" then
+                local count = tonumber(arguments)
+                if count and count > 0 then
+                    testKillCount = count
+                end
+            end
+            PSC_SimulateLevel1Kills(testKillCount)
 
         elseif command == "registerstreakkill" then
             local days, killsPerDay, daysAgo = arguments:match("(%d+)%s+(%d+)%s*(%d*)")
