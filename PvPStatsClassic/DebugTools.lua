@@ -285,6 +285,40 @@ function PSC_SimulatePlayerKills(killCount)
     PSC_Print("Registered " .. killCount .. " random test kill(s).")
 end
 
+function PSC_SimulateLevel1Kills(killCount)
+    for i = 1, killCount do
+        local testPlayer = PSC_GetRandomTestPlayer()
+        testPlayer.level = 1 -- Force level 1
+
+        -- Temporarily override GetRealZoneText to return our random zone
+        local randomZone = zones[math.random(#zones)]
+        local originalGetRealZoneText = GetRealZoneText
+        GetRealZoneText = function() return randomZone end
+
+        local randomX = 10.0 + (90.0 - 10.0) * math.random()
+        local randomY = 10.0 + (90.0 - 10.0) * math.random()
+
+        -- Override C_Map.GetPlayerMapPosition for this simulation
+        local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
+        ---@diagnostic disable-next-line: duplicate-set-field
+        C_Map.GetPlayerMapPosition = function(mapID, unit)
+            return { x = randomX / 100, y = randomY / 100 }
+        end
+
+        -- Register the kill with random data including rank
+        PSC_StorePlayerInfo(testPlayer.name, testPlayer.level, testPlayer.class,
+            testPlayer.race, testPlayer.gender, testPlayer.guildName,
+            testPlayer.rank)
+        PSC_RegisterPlayerKill(testPlayer.name)
+
+        -- Restore the original functions
+        C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
+        GetRealZoneText = originalGetRealZoneText
+    end
+
+    PSC_Print("Registered " .. killCount .. " random level 1 test kill(s).")
+end
+
 function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
     PSC_Print("Simulating death by " .. killerCount .. " enemy player(s) with " .. assistCount .. " assists...")
 
