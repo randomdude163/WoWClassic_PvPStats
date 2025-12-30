@@ -528,10 +528,6 @@ local function HandlePlayerEnteringWorld()
     -- Initialize announce channel setting if not present (migration for existing users)
     if not PSC_DB.AnnounceChannel then
         PSC_DB.AnnounceChannel = "GROUP"
-    elseif PSC_DB.AnnounceChannel == "PARTY" or PSC_DB.AnnounceChannel == "RAID" then
-        PSC_DB.AnnounceChannel = "GROUP"
-    elseif PSC_DB.AnnounceChannel == "BATTLEGROUND" or PSC_DB.AnnounceChannel == "NONE" then
-        PSC_DB.AnnounceChannel = "GROUP"
     end
 
     PSC_MigratePlayerInfoCache()
