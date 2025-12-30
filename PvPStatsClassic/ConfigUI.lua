@@ -279,8 +279,14 @@ local function CreateAnnouncementSection(parent, yOffset)
         announceChannelOptions, PSC_DB.AnnounceChannel or "GROUP", function(selectedValue)
             PSC_DB.AnnounceChannel = selectedValue
         end)
-    announceChannelContainer:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 0, -15)
+    announceChannelContainer:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 29, -8)
     parent.announceChannelDropdown = announceChannelDropdown
+    
+    -- Ensure the dropdown shows the correct initial value
+    if announceChannelDropdown and announceChannelDropdown:GetName() then
+        UIDropDownMenu_SetSelectedValue(announceChannelDropdown, PSC_DB.AnnounceChannel or "GROUP")
+        UIDropDownMenu_SetText(announceChannelDropdown, "Group Chat")
+    end
 
     announceChannelContainer:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -869,7 +875,17 @@ function PSC_UpdateConfigUI()
     end
 
     if configFrame.announceChannelDropdown and configFrame.announceChannelDropdown:GetName() then
-        UIDropDownMenu_SetSelectedValue(configFrame.announceChannelDropdown, PSC_DB.AnnounceChannel or "GROUP")
+        local channelValue = PSC_DB.AnnounceChannel or "GROUP"
+        UIDropDownMenu_SetSelectedValue(configFrame.announceChannelDropdown, channelValue)
+        
+        -- Set the display text based on the value
+        local displayText = "Group Chat"
+        if channelValue == "GUILD" then
+            displayText = "Guild Chat"
+        elseif channelValue == "SELF" then
+            displayText = "Myself"
+        end
+        UIDropDownMenu_SetText(configFrame.announceChannelDropdown, displayText)
     end
 
     if configFrame.milestoneIntervalSlider and configFrame.milestoneIntervalSlider:GetName() then
