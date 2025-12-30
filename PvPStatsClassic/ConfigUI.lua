@@ -173,7 +173,7 @@ local function CreateDropdown(parent, labelText, options, initialValue, onSelect
 
     local dropdownName = "PSC_Dropdown_" .. tostring(math.random(1000000, 9999999))
     local dropdown = CreateFrame("Frame", dropdownName, container, "UIDropDownMenuTemplate")
-    dropdown:SetPoint("TOPLEFT", label, "BOTTOMLEFT", -15, -5)
+    dropdown:SetPoint("TOPLEFT", label, "BOTTOMLEFT", -18, -5)
     UIDropDownMenu_SetWidth(dropdown, 150)
 
     local function InitializeDropdown(self, level)
@@ -279,9 +279,9 @@ local function CreateAnnouncementSection(parent, yOffset)
         announceChannelOptions, PSC_DB.AnnounceChannel or "GROUP", function(selectedValue)
             PSC_DB.AnnounceChannel = selectedValue
         end)
-    announceChannelContainer:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 29, -8)
+    announceChannelContainer:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 5, -CHECKBOX_SPACING)
     parent.announceChannelDropdown = announceChannelDropdown
-    
+
     -- Ensure the dropdown shows the correct initial value
     if announceChannelDropdown and announceChannelDropdown:GetName() then
         UIDropDownMenu_SetSelectedValue(announceChannelDropdown, PSC_DB.AnnounceChannel or "GROUP")
@@ -877,7 +877,7 @@ function PSC_UpdateConfigUI()
     if configFrame.announceChannelDropdown and configFrame.announceChannelDropdown:GetName() then
         local channelValue = PSC_DB.AnnounceChannel or "GROUP"
         UIDropDownMenu_SetSelectedValue(configFrame.announceChannelDropdown, channelValue)
-        
+
         -- Set the display text based on the value
         local displayText = "Group Chat"
         if channelValue == "GUILD" then
