@@ -106,11 +106,7 @@ function HandlePlayerDeath()
 
     if characterData.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages then
         local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", characterData.CurrentKillStreak)
-        if IsInGroup() then
-            SendChatMessage(streakEndedMsg, "PARTY")
-        else
-            print("[PvPStats]: " .. streakEndedMsg)
-        end
+        PSC_SendAnnounceMessage(streakEndedMsg)
     end
 
     characterData.CurrentKillStreak = 0
@@ -527,6 +523,15 @@ local function HandlePlayerEnteringWorld()
         if PSC_DB.MinimapButtonPosition then
             PSC_DB.minimapButton.minimapPos = PSC_DB.MinimapButtonPosition
         end
+    end
+
+    -- Initialize announce channel setting if not present (migration for existing users)
+    if not PSC_DB.AnnounceChannel then
+        PSC_DB.AnnounceChannel = "GROUP"
+    elseif PSC_DB.AnnounceChannel == "PARTY" or PSC_DB.AnnounceChannel == "RAID" then
+        PSC_DB.AnnounceChannel = "GROUP"
+    elseif PSC_DB.AnnounceChannel == "BATTLEGROUND" or PSC_DB.AnnounceChannel == "NONE" then
+        PSC_DB.AnnounceChannel = "GROUP"
     end
 
     PSC_MigratePlayerInfoCache()

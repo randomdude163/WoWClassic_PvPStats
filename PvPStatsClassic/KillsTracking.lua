@@ -129,11 +129,7 @@ local function UpdateMultiKill()
 
         if highestMultiKillAlias >= 3 and PSC_DB.EnableRecordAnnounceMessages then
             local newMultiKillRecordMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(PSC_MultiKillCount))
-            if IsInGroup() then
-                SendChatMessage(newMultiKillRecordMsg, "PARTY")
-            else
-                print("[PvPStats]: " .. newMultiKillRecordMsg)
-            end
+            PSC_SendAnnounceMessage(newMultiKillRecordMsg)
         end
     end
 end
@@ -160,22 +156,15 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
     if characterData.CurrentKillStreak >= 10 and characterData.CurrentKillStreak % 5 == 0 then
         killMessage = killMessage .. " - Kill Streak: " .. characterData.CurrentKillStreak
-        if not IsInGroup() then
-            print("[PvPStats]: " .. killMessage)
-        end
     end
 
-    if IsInGroup() then
-        SendChatMessage(killMessage, "PARTY")
-    end
+    PSC_SendAnnounceMessage(killMessage)
 
 
     if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold then
         local multiKillText = GetMultiKillText(PSC_MultiKillCount)
-        if PSC_DB.EnableMultiKillAnnounceMessages and IsInGroup() then
-            SendChatMessage(multiKillText, "PARTY")
-        else
-            print("[PvPStats]: " .. multiKillText)
+        if PSC_DB.EnableMultiKillAnnounceMessages then
+            PSC_SendAnnounceMessage(multiKillText)
         end
     end
 end

@@ -331,6 +331,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.EnableRecordAnnounceMessages = true
     PSC_DB.EnableMultiKillAnnounceMessages = true
     PSC_DB.MultiKillThreshold = 3
+    PSC_DB.AnnounceChannel = "GROUP"
 
     PSC_DB.AutoBattlegroundMode = true
     PSC_DB.CountAssistsInBattlegrounds = true
