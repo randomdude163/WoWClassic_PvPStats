@@ -530,6 +530,7 @@ local function HandlePlayerEnteringWorld()
     end
 
     PSC_MigratePlayerInfoCache()
+    PSC_MigratePlayerInfoToEnglish()
     PSC_InitializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()
     PSC_UpdateMinimapButtonPosition()
