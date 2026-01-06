@@ -791,6 +791,23 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
                     end)
                 end
             end)
+        elseif label == "Nemesis:" then
+            local button = CreateFrame("Button", nil, tooltipFrame)
+            ---@diagnostic disable-next-line: param-type-mismatch
+            button:SetAllPoints(true)
+
+            CreateGoldHighlight(button, 20)
+
+            button:SetScript("OnMouseUp", function()
+                if value ~= "None (0)" then
+                    local playerName = value:match("([^%(]+)"):trim()
+                    PSC_CreateKillsListFrame()
+                    C_Timer.After(0.05, function()
+                        PSC_SetKillListSearch(playerName, nil, nil, nil, nil, nil, true)
+                        PSC_FrameManager:BringToFront("KillsList")
+                    end)
+                end
+            end)
         elseif isKillStreak then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
@@ -1032,6 +1049,24 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     local killsThisMonth = PSC_GetKillsThisMonth()
     local killsThisYear = PSC_GetKillsThisYear()
 
+    -- Calculate nemesis (player with most kills against the user, assists as tie-breaker)
+    local nemesisName = "None"
+    local nemesisScore = 0
+    local nemesisAssists = 0
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        local deaths = deathData.deaths or 0
+        local assists, _ = PSC_CountPlayerAssists(killerName, deathDataByPlayer)
+
+        -- Primary: Most kills. Secondary: Most assists (tie-breaker)
+        if deaths > nemesisScore or (deaths == nemesisScore and assists > nemesisAssists) then
+            nemesisScore = deaths
+            nemesisAssists = assists
+            nemesisName = killerName
+        end
+    end
+
     return {
         totalKills = totalKills,
         uniqueKills = uniqueKills,
@@ -1057,7 +1092,9 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
         killsToday = killsToday,
         killsThisWeek = killsThisWeek,
         killsThisMonth = killsThisMonth,
-        killsThisYear = killsThisYear
+        killsThisYear = killsThisYear,
+        nemesisName = nemesisName,
+        nemesisScore = nemesisScore
     }
 end
 
@@ -1078,6 +1115,11 @@ local function createSummaryStats(parent, x, y, width, height)
     local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
     statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections,
         "Click to show all kills of this player")
+
+    -- Add nemesis stat (player with most kills + assists against you)
+    local nemesisText = stats.nemesisName .. " (" .. stats.nemesisScore .. ")"
+    statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY,
+        "The player who has killed you the most (kills + assists). Click to view details.")
 
     if stats.mostKilledPlayer ~= "None" then
         local tooltipFrame = container:GetChildren()
