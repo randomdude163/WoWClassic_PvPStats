@@ -173,7 +173,7 @@ local function CreateDropdown(parent, labelText, options, initialValue, onSelect
 
     local dropdownName = "PSC_Dropdown_" .. tostring(math.random(1000000, 9999999))
     local dropdown = CreateFrame("Frame", dropdownName, container, "UIDropDownMenuTemplate")
-    dropdown:SetPoint("TOPLEFT", label, "BOTTOMLEFT", -15, -5)
+    dropdown:SetPoint("TOPLEFT", label, "BOTTOMLEFT", -18, -5)
     UIDropDownMenu_SetWidth(dropdown, 150)
 
     local function InitializeDropdown(self, level)
@@ -269,7 +269,40 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.MultiKillThreshold = value
     end)
 
-    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -140)
+    local announceChannelOptions = {
+        {text = "Group Chat", value = "GROUP"},
+        {text = "Guild Chat", value = "GUILD"},
+        {text = "Myself", value = "SELF"}
+    }
+
+    local announceChannelContainer, announceChannelDropdown = CreateDropdown(parent, "Announce messages to:",
+        announceChannelOptions, PSC_DB.AnnounceChannel or "GROUP", function(selectedValue)
+            PSC_DB.AnnounceChannel = selectedValue
+        end)
+    announceChannelContainer:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 5, -CHECKBOX_SPACING)
+    parent.announceChannelDropdown = announceChannelDropdown
+
+    -- Ensure the dropdown shows the correct initial value
+    if announceChannelDropdown and announceChannelDropdown:GetName() then
+        UIDropDownMenu_SetSelectedValue(announceChannelDropdown, PSC_DB.AnnounceChannel or "GROUP")
+        UIDropDownMenu_SetText(announceChannelDropdown, "Group Chat")
+    end
+
+    announceChannelContainer:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce messages to")
+        GameTooltip:AddLine("Group Chat: Sends to party or raid. If you're not in a group, messages are displayed only to yourself.", 1, 1, 1, true)
+        GameTooltip:AddLine("\n", 1, 1, 1, true)
+        GameTooltip:AddLine("Guild Chat: Sends to guild. If you're not in a guild, messages are displayed only to yourself.", 1, 1, 1, true)
+        GameTooltip:AddLine("\n", 1, 1, 1, true)
+        GameTooltip:AddLine("Myself: Messages appear only in your own chat window, not sent to any channel.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    announceChannelContainer:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -190)
 
     local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode", PSC_DB.AutoBattlegroundMode,
         function(checked)
@@ -360,7 +393,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -295)
+    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -345)
 
     local showKillMilestonesCheckbox, _ = CreateCheckbox(parent, "Show kill milestones", PSC_DB.ShowKillMilestones,
         function(checked)
@@ -492,7 +525,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
 
-    local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -460)
+    local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -510)
 
     local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show kills in mouseover tooltips",
         PSC_DB.ShowScoreInPlayerTooltip, function(checked)
@@ -532,7 +565,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.ShowAccountWideStats, function(checked)
             PSC_DB.ShowAccountWideStats = checked
         end)
-    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipExtendedInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "TOPLEFT", 300, 0)
     parent.showAccountWideStatsCheckbox = showAccountWideStatsCheckbox
     showAccountWideStatsCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -843,6 +876,20 @@ function PSC_UpdateConfigUI()
             "Multi-Kill announce threshold: " .. (PSC_DB.MultiKillThreshold or 3))
     end
 
+    if configFrame.announceChannelDropdown and configFrame.announceChannelDropdown:GetName() then
+        local channelValue = PSC_DB.AnnounceChannel or "GROUP"
+        UIDropDownMenu_SetSelectedValue(configFrame.announceChannelDropdown, channelValue)
+
+        -- Set the display text based on the value
+        local displayText = "Group Chat"
+        if channelValue == "GUILD" then
+            displayText = "Guild Chat"
+        elseif channelValue == "SELF" then
+            displayText = "Myself"
+        end
+        UIDropDownMenu_SetText(configFrame.announceChannelDropdown, displayText)
+    end
+
     if configFrame.milestoneIntervalSlider and configFrame.milestoneIntervalSlider:GetName() then
         configFrame.milestoneIntervalSlider:SetValue(PSC_DB.KillMilestoneInterval or 5)
         getglobal(configFrame.milestoneIntervalSlider:GetName() .. "Text"):SetText(
@@ -1089,6 +1136,7 @@ function PSC_CreateConfigFrame()
     configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
     configFrame.multiKillSlider = tabFrames[1].multiKillSlider
     configFrame.tooltipExtendedInfoCheckbox = tabFrames[1].tooltipExtendedInfoCheckbox
+    configFrame.announceChannelDropdown = tabFrames[1].announceChannelDropdown
 
     configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
 
@@ -1113,7 +1161,7 @@ end
 
 function PSC_CreateConfigUI()
     if configFrame then
-        PSC_FrameManager:ShowFrame("Config")
+        PSC_FrameManager:ShowFrame("ConfigUI")
         return
     end
 

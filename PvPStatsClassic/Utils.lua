@@ -1,3 +1,25 @@
+function PSC_SendAnnounceMessage(message)
+    local channel = PSC_DB.AnnounceChannel or "GROUP"
+    
+    if channel == "SELF" then
+        print("[PvPStats]: " .. message)
+    elseif channel == "GROUP" then
+        if IsInRaid() then
+            SendChatMessage(message, "RAID")
+        elseif IsInGroup() then
+            SendChatMessage(message, "PARTY")
+        else
+            print("[PvPStats]: " .. message)
+        end
+    elseif channel == "GUILD" then
+        if IsInGuild() then
+            SendChatMessage(message, "GUILD")
+        else
+            print("[PvPStats]: " .. message)
+        end
+    end
+end
+
 function IsPetGUID(guid)
     if not guid then return false end
 
