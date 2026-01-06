@@ -1,5 +1,25 @@
 PSC_DB = nil
 
+
+local CLASSES_TO_ENGLISH = {
+    deDE = { ["Druide"]="Druid", ["Druidin"]="Druid", ["Jäger"]="Hunter", ["Jägerin"]="Hunter", ["Magier"]="Mage", ["Magierin"]="Mage", ["Paladin"]="Paladin", ["Priester"]="Priest", ["Priesterin"]="Priest", ["Schurke"]="Rogue", ["Schurkin"]="Rogue", ["Schamane"]="Shaman", ["Schamanin"]="Shaman", ["Hexenmeister"]="Warlock", ["Hexenmeisterin"]="Warlock", ["Krieger"]="Warrior", ["Kriegerin"]="Warrior" },
+    frFR = { ["Druide"]="Druid", ["Druidesse"]="Druid", ["Chasseur"]="Hunter", ["Chasseresse"]="Hunter", ["Mage"]="Mage", ["Paladin"]="Paladin", ["Paladine"]="Paladin", ["Prêtre"]="Priest", ["Prêtresse"]="Priest", ["Voleur"]="Rogue", ["Voleuse"]="Rogue", ["Chaman"]="Shaman", ["Chamane"]="Shaman", ["Démoniste"]="Warlock", ["Guerrier"]="Warrior", ["Guerrière"]="Warrior" },
+    esES = { ["Druida"]="Druid", ["Cazador"]="Hunter", ["Mago"]="Mage", ["Paladín"]="Paladin", ["Sacerdote"]="Priest", ["Pícaro"]="Rogue", ["Chamán"]="Shaman", ["Brujo"]="Warlock", ["Guerrero"]="Warrior" },
+    esMX = { ["Druida"]="Druid", ["Cazador"]="Hunter", ["Cazadora"]="Hunter", ["Mago"]="Mage", ["Maga"]="Mage", ["Paladín"]="Paladin", ["Sacerdote"]="Priest", ["Sacerdotisa"]="Priest", ["Pícaro"]="Rogue", ["Pícara"]="Rogue", ["Chamán"]="Shaman", ["Brujo"]="Warlock", ["Bruja"]="Warlock", ["Guerrero"]="Warrior", ["Guerrera"]="Warrior" },
+    ptBR = { ["Druida"]="Druid", ["Druidesa"]="Druid", ["Caçador"]="Hunter", ["Caçadora"]="Hunter", ["Mago"]="Mage", ["Maga"]="Mage", ["Paladino"]="Paladin", ["Paladina"]="Paladin", ["Sacerdote"]="Priest", ["Sacerdotisa"]="Priest", ["Ladino"]="Rogue", ["Ladina"]="Rogue", ["Xamã"]="Shaman", ["Bruxo"]="Warlock", ["Bruxa"]="Warlock", ["Guerreiro"]="Warrior", ["Guerreira"]="Warrior" },
+}
+
+local RACES_TO_ENGLISH = {
+    deDE = { ["Mensch"]="Human", ["Orc"]="Orc", ["Zwerg"]="Dwarf", ["Nachtelf"]="Night Elf", ["Untoter"]="Undead", ["Tauren"]="Tauren", ["Gnom"]="Gnome", ["Troll"]="Troll", ["Blutelf"]="Blood Elf", ["Draenei"]="Draenei" },
+    frFR = { ["Humain"]="Human", ["Orc"]="Orc", ["Nain"]="Dwarf", ["Elfe de la nuit"]="Night Elf", ["Mort-vivant"]="Undead", ["Tauren"]="Tauren", ["Gnome"]="Gnome", ["Troll"]="Troll", ["Elfe de sang"]="Blood Elf", ["Draeneï"]="Draenei" },
+    esES = { ["Humano"]="Human", ["Orco"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["No-muerto"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Blood Elf", ["Draenei"]="Draenei" },
+    esMX = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Blood Elf", ["Draenei"]="Draenei" },
+    ptBR = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Orquisa"]="Orc", ["Anão"]="Dwarf", ["Elfo Noturno"]="Night Elf", ["Renegado"]="Undead", ["Morto-vivo"]="Undead", ["Morta-viva"]="Undead", ["Tauren"]="Tauren", ["Taurena"]="Tauren", ["Gnomo"]="Gnome", ["Troll"]="Troll", ["Trolesa"]="Troll", ["Elfo Sangrento"]="Blood Elf", ["Draenei"]="Draenei" },
+}
+
+local LOCALE = GetLocale()
+
+
 local function GetHonorRank(unit)
     if not UnitPVPRank then return 0 end
 
@@ -27,7 +47,7 @@ local function ConvertGenderToString(genderCode)
 end
 
 local function GetPlayerInfoFromUnit(unit)
-    if not UnitExists(unit) or UnitIsFriend("player", unit) then
+    if not UnitExists(unit) then
         return
     end
 
@@ -137,6 +157,64 @@ function PSC_MigratePlayerInfoCache()
     end
 end
 
+local function ConvertClassToEnglish(localizedClass)
+    if not localizedClass then return "Unknown" end
+
+    if LOCALE == "enUS" or not CLASSES_TO_ENGLISH[LOCALE] then
+        return localizedClass
+    end
+
+    return CLASSES_TO_ENGLISH[LOCALE][localizedClass] or localizedClass
+end
+
+local function ConvertRaceToEnglish(localizedRace)
+    if not localizedRace then return "Unknown" end
+
+    if LOCALE == "enUS" or not RACES_TO_ENGLISH[LOCALE] then
+        return localizedRace
+    end
+
+    return RACES_TO_ENGLISH[LOCALE][localizedRace] or localizedRace
+end
+
+function PSC_MigratePlayerInfoToEnglish()
+    if not PSC_DB.PlayerInfoEnglishMigrated then
+        for _, data in pairs(PSC_DB.PlayerInfoCache) do
+            if data.class then
+                local englishClass = data.class
+
+                for locale, translations in pairs(CLASSES_TO_ENGLISH) do
+                    if translations[data.class] then
+                        englishClass = translations[data.class]
+                        break
+                    end
+                end
+
+                if englishClass ~= data.class then
+                    data.class = englishClass
+                end
+            end
+
+            if data.race then
+                local englishRace = data.race
+
+                for locale, translations in pairs(RACES_TO_ENGLISH) do
+                    if translations[data.race] then
+                        englishRace = translations[data.race]
+                        break
+                    end
+                end
+
+                if englishRace ~= data.race then
+                    data.race = englishRace
+                end
+            end
+        end
+
+        PSC_DB.PlayerInfoEnglishMigrated = true
+    end
+end
+
 function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
     local playerName, playerRealm = name:match("^(.+)%-(.+)$")
 
@@ -149,18 +227,18 @@ function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
         realm = PSC_RealmName
     end
 
-    local infoKey = PSC_GetPlayerInfoKey(name, realm)
+    local playerNameWithRealm = PSC_GetPlayerInfoKey(name, realm)
 
-    if not PSC_DB.PlayerInfoCache[infoKey] then
-        PSC_DB.PlayerInfoCache[infoKey] = {}
+    if not PSC_DB.PlayerInfoCache[playerNameWithRealm] then
+        PSC_DB.PlayerInfoCache[playerNameWithRealm] = {}
     end
 
-    PSC_DB.PlayerInfoCache[infoKey].level = level
-    PSC_DB.PlayerInfoCache[infoKey].class = class
-    PSC_DB.PlayerInfoCache[infoKey].race = race
-    PSC_DB.PlayerInfoCache[infoKey].gender = gender
-    PSC_DB.PlayerInfoCache[infoKey].guild = guildName
-    PSC_DB.PlayerInfoCache[infoKey].rank = rank
+    PSC_DB.PlayerInfoCache[playerNameWithRealm].level = level
+    PSC_DB.PlayerInfoCache[playerNameWithRealm].class = class
+    PSC_DB.PlayerInfoCache[playerNameWithRealm].race = race
+    PSC_DB.PlayerInfoCache[playerNameWithRealm].gender = gender
+    PSC_DB.PlayerInfoCache[playerNameWithRealm].guild = guildName
+    PSC_DB.PlayerInfoCache[playerNameWithRealm].rank = rank
 
     -- if PSC_Debug then
     --     print("Stored player info: " .. infoKey .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
@@ -178,6 +256,8 @@ function PSC_GetAndStorePlayerInfoFromUnit(unit)
         end
         return
     end
+    class = ConvertClassToEnglish(class)
+    race = ConvertRaceToEnglish(race)
     PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
 end
 
