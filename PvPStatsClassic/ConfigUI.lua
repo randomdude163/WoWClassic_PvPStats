@@ -1031,7 +1031,7 @@ local function CreateAboutTab(parent)
 
     local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     versionText:SetPoint("TOP", header, "BOTTOM", 0, -5)
-    versionText:SetText("Version: 2.5")
+    versionText:SetText("Version: 2.6")
     versionText:SetTextColor(1, 1, 1)
 
     local creditsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
