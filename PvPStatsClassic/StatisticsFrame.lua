@@ -101,8 +101,8 @@ local UI = {
         TEXT_OFFSET = 5
     },
     GUILD_LIST = {
-        WIDTH = 375,
-        HEIGHT = 150
+        WIDTH = 400,
+        HEIGHT = 300
     },
     TITLE_SPACING = 3,
     TOP_PADDING = 40,
@@ -704,12 +704,12 @@ function PSC_CalculateGuildKills()
 end
 
 local function createGuildTable(parent, x, y, width, height)
-    local container = createContainerWithTitle(parent, "Guild Kills", x, y, width, height)
+    local container = createContainerWithTitle(parent, "Kills by Guild", x, y, width, height)
 
     local guildKills = PSC_CalculateGuildKills()
     local sortedGuilds = sortByValue(guildKills, true)
 
-    local totalContentWidth = 200 + 60 + 10
+    local totalContentWidth = 240
     local scrollFrame = createScrollFrame(container, totalContentWidth, height)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
@@ -1683,7 +1683,7 @@ function PSC_UpdateStatisticsFrame(frame)
 
     local summaryStatsWidth = 380
     local summaryStatsHeight = 500
-    
+
     -- Summary Statistics at top right
     frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
 
