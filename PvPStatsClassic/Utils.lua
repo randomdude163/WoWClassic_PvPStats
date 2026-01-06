@@ -1,6 +1,6 @@
 function PSC_SendAnnounceMessage(message)
     local channel = PSC_DB.AnnounceChannel or "GROUP"
-    
+
     if channel == "SELF" then
         print("[PvPStats]: " .. message)
     elseif channel == "GROUP" then
@@ -1186,47 +1186,17 @@ function PSC_CountTotalDaysWithMinKills(minKills)
     return streakStats["total_" .. minKills] or 0
 end
 
-function PSC_GetKillsToday()
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
+-- Helper function to calculate the start timestamps for various time periods
+local function PSC_CalculateTimePeriodBoundaries()
     local currentTime = time()
     local today = date("*t", currentTime)
+
     -- Calculate seconds since midnight today
     local secondsSinceMidnight = today.hour * 3600 + today.min * 60 + today.sec
     local todayStart = currentTime - secondsSinceMidnight
 
-    local killsToday = 0
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        if playerData.killLocations then
-            for _, killLocation in ipairs(playerData.killLocations) do
-                if killLocation.timestamp and killLocation.timestamp >= todayStart then
-                    killsToday = killsToday + 1
-                end
-            end
-        end
-    end
-
-    return killsToday
-end
-
-function PSC_GetKillsThisWeek()
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    local currentTime = time()
-    local today = date("*t", currentTime)
+    -- Calculate week start (Wednesday at midnight - WoW weekly reset)
     -- Calculate days from Wednesday (wday: 1=Sunday, 2=Monday, 3=Tuesday, 4=Wednesday, 5=Thursday, 6=Friday, 7=Saturday)
-    -- How the Wednesday calculation works:
     -- Wednesday (wday=4): (4 + 3) % 7 = 0 days back → Current reset week
     -- Thursday (wday=5): (5 + 3) % 7 = 1 day back → Go back 1 day to Wednesday
     -- Friday (wday=6): (6 + 3) % 7 = 2 days back → Go back 2 days to Wednesday
@@ -1235,23 +1205,105 @@ function PSC_GetKillsThisWeek()
     -- Monday (wday=2): (2 + 3) % 7 = 5 days back → Go back 5 days to Wednesday
     -- Tuesday (wday=3): (3 + 3) % 7 = 6 days back → Go back 6 days to Wednesday
     local daysFromWednesday = (today.wday + 3) % 7
-    -- Calculate seconds since midnight today
-    local secondsSinceMidnight = today.hour * 3600 + today.min * 60 + today.sec
-    -- Calculate seconds to go back to Wednesday midnight (WoW weekly reset)
     local secondsToWednesdayMidnight = daysFromWednesday * 86400 + secondsSinceMidnight
     local weekStart = currentTime - secondsToWednesdayMidnight
 
-    local killsThisWeek = 0
+    -- Calculate month start (1st of current month at midnight)
+    local secondsSinceMonthStart = (today.day - 1) * 86400 + secondsSinceMidnight
+    local monthStart = currentTime - secondsSinceMonthStart
 
-    for playerKey, playerData in pairs(characterData.Kills) do
-        if playerData.killLocations then
-            for _, killLocation in ipairs(playerData.killLocations) do
-                if killLocation.timestamp and killLocation.timestamp >= weekStart then
-                    killsThisWeek = killsThisWeek + 1
+    -- Calculate year start (January 1st at midnight)
+    -- Calculate total days elapsed this year (counting from January 1st)
+    local daysThisYear = today.yday - 1  -- yday is 1-based (1 = Jan 1), so subtract 1
+    local secondsSinceYearStart = daysThisYear * 86400 + secondsSinceMidnight
+    local yearStart = currentTime - secondsSinceYearStart
+
+    return {
+        todayStart = todayStart,
+        weekStart = weekStart,
+        monthStart = monthStart,
+        yearStart = yearStart
+    }
+end
+
+-- Optimized function to calculate all time period kills in a single pass
+local function PSC_CalculateAllTimePeriodKills()
+    -- Get characters to process based on account-wide setting
+    local charactersToProcess = {}
+
+    if PSC_DB.ShowAccountWideStats then
+        -- Process all characters
+        for charKey, charData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+            charactersToProcess[charKey] = charData
+        end
+    else
+        -- Process only the current character
+        local characterKey = PSC_GetCharacterKey()
+        if PSC_DB.PlayerKillCounts.Characters[characterKey] then
+            charactersToProcess[characterKey] = PSC_DB.PlayerKillCounts.Characters[characterKey]
+        end
+    end
+
+    local boundaries = PSC_CalculateTimePeriodBoundaries()
+    local counts = {
+        today = 0,
+        week = 0,
+        month = 0,
+        year = 0
+    }
+
+    -- Single pass through all characters' kills
+    for characterKey, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for playerKey, playerData in pairs(characterData.Kills) do
+                if playerData.killLocations then
+                    for _, killLocation in ipairs(playerData.killLocations) do
+                        if killLocation.timestamp then
+                            local timestamp = killLocation.timestamp
+
+                            -- Check all time periods in order (most restrictive to least)
+                            if timestamp >= boundaries.todayStart then
+                                counts.today = counts.today + 1
+                            end
+
+                            if timestamp >= boundaries.weekStart then
+                                counts.week = counts.week + 1
+                            end
+
+                            if timestamp >= boundaries.monthStart then
+                                counts.month = counts.month + 1
+                            end
+
+                            if timestamp >= boundaries.yearStart then
+                                counts.year = counts.year + 1
+                            end
+                        end
+                    end
                 end
             end
         end
     end
 
-    return killsThisWeek
+    return counts
+end
+
+-- Public API functions that calculate all stats in a single pass
+function PSC_GetKillsToday()
+    local stats = PSC_CalculateAllTimePeriodKills()
+    return stats.today
+end
+
+function PSC_GetKillsThisWeek()
+    local stats = PSC_CalculateAllTimePeriodKills()
+    return stats.week
+end
+
+function PSC_GetKillsThisMonth()
+    local stats = PSC_CalculateAllTimePeriodKills()
+    return stats.month
+end
+
+function PSC_GetKillsThisYear()
+    local stats = PSC_CalculateAllTimePeriodKills()
+    return stats.year
 end

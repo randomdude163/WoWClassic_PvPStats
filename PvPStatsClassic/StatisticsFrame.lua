@@ -372,6 +372,8 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         if month and monthNames[month] then
             displayName = monthNames[month]
         end
+    elseif titleType == "year" then
+        displayName = tostring(entry.key)
     end
 
     local barButton = CreateFrame("Button", nil, container)
@@ -379,7 +381,7 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     barButton:SetPoint("TOPLEFT", 0, barY)
 
     -- Only add highlight and click functionality for clickable chart types
-    local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month"
+    local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month" and titleType ~= "year"
 
     if isClickable then
         local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
@@ -409,6 +411,8 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         elseif titleType == "weekday" then
             GameTooltip:AddLine("Kills on " .. displayName, 1, 1, 1, true)
         elseif titleType == "month" then
+            GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
+        elseif titleType == "year" then
             GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
         elseif titleType == raceColors then
             GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
@@ -498,6 +502,13 @@ local function createBar(container, entry, index, maxValue, total, titleType)
             g = 1.0,
             b = 0.6
         }
+    elseif titleType == "year" then
+        -- Medium green for year charts
+        color = {
+            r = 0.4,
+            g = 0.8,
+            b = 0.4
+        }
     else
         color = titleType and titleType[entry.key] or {
             r = 0.8,
@@ -582,6 +593,13 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
             local bNum = tonumber(b.key) or 0
             return aNum < bNum
         end)
+    elseif (title == "Kills by Year") then
+        -- Sort years chronologically
+        table.sort(filteredData, function(a, b)
+            local aNum = tonumber(a.key) or 0
+            local bNum = tonumber(b.key) or 0
+            return aNum < bNum
+        end)
     end
 
     local titleType
@@ -599,6 +617,8 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         titleType = "weekday"
     elseif title == "Kills by Month" then
         titleType = "month"
+    elseif title == "Kills by Year" then
+        titleType = "year"
     else
         titleType = colorTable
     end
@@ -755,6 +775,23 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
         end)
 
         if label == "Most killed player:" then
+            local button = CreateFrame("Button", nil, tooltipFrame)
+            ---@diagnostic disable-next-line: param-type-mismatch
+            button:SetAllPoints(true)
+
+            CreateGoldHighlight(button, 20)
+
+            button:SetScript("OnMouseUp", function()
+                if value ~= "None (0)" then
+                    local playerName = value:match("([^%(]+)"):trim()
+                    PSC_CreateKillsListFrame()
+                    C_Timer.After(0.05, function()
+                        PSC_SetKillListSearch(playerName, nil, nil, nil, nil, nil, true)
+                        PSC_FrameManager:BringToFront("KillsList")
+                    end)
+                end
+            end)
+        elseif label == "Nemesis:" then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
@@ -1006,9 +1043,29 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     local avgLevelDiff = killsWithLevelData > 0 and (levelDiffSum / killsWithLevelData) or 0
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
-    -- Calculate daily and weekly kills
+    -- Calculate daily, weekly, monthly, and yearly kills
     local killsToday = PSC_GetKillsToday()
     local killsThisWeek = PSC_GetKillsThisWeek()
+    local killsThisMonth = PSC_GetKillsThisMonth()
+    local killsThisYear = PSC_GetKillsThisYear()
+
+    -- Calculate nemesis (player with most kills against the user, assists as tie-breaker)
+    local nemesisName = "None"
+    local nemesisScore = 0
+    local nemesisAssists = 0
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        local deaths = deathData.deaths or 0
+        local assists, _ = PSC_CountPlayerAssists(killerName, deathDataByPlayer)
+
+        -- Primary: Most kills. Secondary: Most assists (tie-breaker)
+        if deaths > nemesisScore or (deaths == nemesisScore and assists > nemesisAssists) then
+            nemesisScore = deaths
+            nemesisAssists = assists
+            nemesisName = killerName
+        end
+    end
 
     return {
         totalKills = totalKills,
@@ -1033,7 +1090,11 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
         busiestMonthKills = maxMonthlyKills,
         avgKillsPerDay = avgKillsPerDay,
         killsToday = killsToday,
-        killsThisWeek = killsThisWeek
+        killsThisWeek = killsThisWeek,
+        killsThisMonth = killsThisMonth,
+        killsThisYear = killsThisYear,
+        nemesisName = nemesisName,
+        nemesisScore = nemesisScore
     }
 end
 
@@ -1054,6 +1115,11 @@ local function createSummaryStats(parent, x, y, width, height)
     local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
     statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections,
         "Click to show all kills of this player")
+
+    -- Add nemesis stat (player with most kills + assists against you)
+    local nemesisText = stats.nemesisName .. " (" .. stats.nemesisScore .. ")"
+    statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY,
+        "The player who has killed you the most (kills + assists). Click to view details.")
 
     if stats.mostKilledPlayer ~= "None" then
         local tooltipFrame = container:GetChildren()
@@ -1143,9 +1209,11 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
     statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
 
-    -- Add daily and weekly kill statistics
+    -- Add daily, weekly, monthly, and yearly kill statistics
     statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday), statY, "Total player kills you achieved today, including all levels and grey players.")
     statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek), statY, "Total player kills this week (Wednesday to Wednesday, matching WoW's weekly reset). Includes all levels and grey players.")
+    statY = addSummaryStatLine(container, "Kills this month:", tostring(stats.killsThisMonth), statY, "Total player kills this month (from the 1st to today). Includes all levels and grey players.")
+    statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear), statY, "Total player kills this year (from January 1st to today). Includes all levels and grey players.")
 
     statY = statY - spacing_between_sections  -- Add some spacing before the achievement section
 
@@ -1423,6 +1491,33 @@ function PSC_CalculateMonthlyStatistics(charactersToProcess)
     return monthlyData
 end
 
+function PSC_CalculateYearlyStatistics(charactersToProcess)
+    local yearlyData = {}
+
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return yearlyData
+    end
+
+    for characterKey, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                if killData.kills and killData.kills > 0 and killData.killLocations then
+                    for _, location in ipairs(killData.killLocations) do
+                        if location.timestamp then
+                            local dateInfo = date("*t", location.timestamp)
+                            if dateInfo and dateInfo.year then
+                                yearlyData[dateInfo.year] = (yearlyData[dateInfo.year] or 0) + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return yearlyData
+end
+
 local function createScrollableLeftPanel(parent)
     local leftPanel = CreateFrame("Frame", nil, parent)
     leftPanel:SetPoint("TOPLEFT", 0, 0)
@@ -1617,6 +1712,7 @@ function PSC_UpdateStatisticsFrame(frame)
     local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
     local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
     local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
+    local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent
@@ -1628,6 +1724,7 @@ function PSC_UpdateStatisticsFrame(frame)
     local hourlyChartHeight = calculateChartHeight(hourlyData)
     local weekdayChartHeight = calculateChartHeight(weekdayData)
     local monthlyChartHeight = calculateChartHeight(monthlyData)
+    local yearlyChartHeight = calculateChartHeight(yearlyData)
     local levelChartHeight = calculateChartHeight(levelData)
     local zoneChartHeight = calculateChartHeight(zoneData)
 
@@ -1669,6 +1766,9 @@ function PSC_UpdateStatisticsFrame(frame)
     createBarChart(leftScrollContent, "Kills by Month", monthlyData, nil, 0, yOffset, UI.CHART.WIDTH, monthlyChartHeight)
 
     yOffset = yOffset - monthlyChartHeight - UI.CHART.PADDING
+    createBarChart(leftScrollContent, "Kills by Year", yearlyData, nil, 0, yOffset, UI.CHART.WIDTH, yearlyChartHeight)
+
+    yOffset = yOffset - yearlyChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
