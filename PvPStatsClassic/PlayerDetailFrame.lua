@@ -41,7 +41,21 @@ local RACE_ICON_IDS = {
     ["GNOME_MALE"] = 236446,
     ["GNOME_FEMALE"] = 236445,
     ["NIGHT ELF_MALE"] = 236450,
-    ["NIGHT ELF_FEMALE"] = 236449
+    ["NIGHT ELF_FEMALE"] = 236449,
+    ["ORC_MALE"] = 236452,
+    ["ORC_FEMALE"] = 236451,
+    ["TAUREN_MALE"] = 236454,
+    ["TAUREN_FEMALE"] = 236453,
+    ["TROLL_MALE"] = 236456,
+    ["TROLL_FEMALE"] = 236455,
+    ["UNDEAD_MALE"] = 236458,
+    ["UNDEAD_FEMALE"] = 236457,
+    ["SCOURGE_MALE"] = 236458,
+    ["SCOURGE_FEMALE"] = 236457,
+    ["BLOOD ELF_MALE"] = 236440,
+    ["BLOOD ELF_FEMALE"] = 236439,
+    ["DRAENEI_MALE"] = 236442,
+    ["DRAENEI_FEMALE"] = 236441
 }
 
 function PSC_FormatTimestamp(timestamp)
