@@ -33,6 +33,17 @@ local PVP_RANK_ICONS = {
     [14] = "Interface\\PvPRankBadges\\PvPRank14"
 }
 
+local RACE_ICON_IDS = {
+    ["HUMAN_MALE"] = 236448,
+    ["HUMAN_FEMALE"] = 236447,
+    ["DWARF_MALE"] = 236444,
+    ["DWARF_FEMALE"] = 236443,
+    ["GNOME_MALE"] = 236446,
+    ["GNOME_FEMALE"] = 236445,
+    ["NIGHT ELF_MALE"] = 236450,
+    ["NIGHT ELF_FEMALE"] = 236449
+}
+
 function PSC_FormatTimestamp(timestamp)
     if not timestamp then return "Unknown" end
 
@@ -532,6 +543,23 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         maskTexture:SetSize(borderSize, borderSize)
         maskTexture:SetPoint("CENTER")
         borderTexture:AddMaskTexture(maskTexture)
+        
+        -- Add race icon to the left of class icon
+        if playerRace and playerRace ~= "Unknown" and playerGender and playerGender ~= "Unknown" then
+            local raceIcon = iconContainer:CreateTexture(nil, "ARTWORK")
+            raceIcon:SetSize(32, 32)
+            raceIcon:SetPoint("RIGHT", classIcon, "LEFT", -5, 0)
+            
+            local raceKey = playerRace:upper() .. "_" .. playerGender:upper()
+            local raceIconID = RACE_ICON_IDS[raceKey]
+            
+            if raceIconID then
+                raceIcon:SetTexture(raceIconID)
+            else
+                raceIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            end
+        end
+        
         if playerDetail.rank and playerDetail.rank > 0 then
             local rankIcon = iconContainer:CreateTexture(nil, "OVERLAY")
             rankIcon:SetSize(32, 32)
@@ -548,6 +576,11 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     end
 
     yOffset = yOffset - 20
+
+    -- Add guild row if player has a guild
+    if playerGuild and playerGuild ~= "" then
+        yOffset = CreateDetailRow(content, "Guild:", playerGuild, yOffset)
+    end
 
     -- Add realm row if player is from a different realm
     if isFromDifferentRealm then
