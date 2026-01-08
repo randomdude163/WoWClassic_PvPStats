@@ -40,8 +40,8 @@ local RACE_ICON_IDS = {
     ["DWARF_FEMALE"] = 236443,
     ["GNOME_MALE"] = 236446,
     ["GNOME_FEMALE"] = 236445,
-    ["NIGHT ELF_MALE"] = 236450,
-    ["NIGHT ELF_FEMALE"] = 236449,
+    ["NIGHTELF_MALE"] = 236450,
+    ["NIGHTELF_FEMALE"] = 236449,
     ["ORC_MALE"] = 236452,
     ["ORC_FEMALE"] = 236451,
     ["TAUREN_MALE"] = 236454,
@@ -52,8 +52,8 @@ local RACE_ICON_IDS = {
     ["UNDEAD_FEMALE"] = 236457,
     ["SCOURGE_MALE"] = 236458,
     ["SCOURGE_FEMALE"] = 236457,
-    ["BLOOD ELF_MALE"] = 236440,
-    ["BLOOD ELF_FEMALE"] = 236439,
+    ["BLOODELF_MALE"] = 236440,
+    ["BLOODELF_FEMALE"] = 236439,
     ["DRAENEI_MALE"] = 236442,
     ["DRAENEI_FEMALE"] = 236441
 }
@@ -564,7 +564,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
             raceIcon:SetSize(32, 32)
             raceIcon:SetPoint("RIGHT", classIcon, "LEFT", -5, 0)
             
-            local raceKey = playerRace:upper() .. "_" .. playerGender:upper()
+            local raceKey = playerRace:gsub(" ", ""):upper() .. "_" .. playerGender:upper()
             local raceIconID = RACE_ICON_IDS[raceKey]
             
             if raceIconID then
