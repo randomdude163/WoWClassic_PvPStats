@@ -3,6 +3,77 @@ local addonName, PVPSC = ...
 PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
+-- Zone name translations (English, German, French, Spanish)
+local ZONE_TRANSLATIONS = {
+    ["Dun Morogh"] = {"Dun Morogh", "Dun Morogh", "Dun Morogh", "Dun Morogh"},
+    ["Elwynn Forest"] = {"Elwynn Forest", "Wald von Elwynn", "Forêt d'Elwynn", "Bosque de Elwynn"},
+    ["Tirisfal Glades"] = {"Tirisfal Glades", "Tirisfal", "Clairières de Tirisfal", "Claros de Tirisfal"},
+    ["Durotar"] = {"Durotar", "Durotar", "Durotar", "Durotar"},
+    ["Westfall"] = {"Westfall", "Westfall", "Marche de l'Ouest", "Páramos de Poniente"},
+    ["Loch Modan"] = {"Loch Modan", "Loch Modan", "Loch Modan", "Loch Modan"},
+    ["Silverpine Forest"] = {"Silverpine Forest", "Silberwald", "Forêt des Pins argentés", "Bosque de Argénteos"},
+    ["Redridge Mountains"] = {"Redridge Mountains", "Rotkammgebirge", "Les Carmines", "Montañas Crestagrana"},
+    ["Duskwood"] = {"Duskwood", "Dämmerwald", "Bois de la Pénombre", "Bosque del Ocaso"},
+    ["Hillsbrad Foothills"] = {"Hillsbrad Foothills", "Vorgebirge des Hügellands", "Contreforts de Hautebrande", "Laderas de Trabalomas"},
+    ["Wetlands"] = {"Wetlands", "Sumpfland", "Les Paluns", "Los Humedales"},
+    ["Alterac Mountains"] = {"Alterac Mountains", "Alteracgebirge", "Montagnes d'Alterac", "Montañas de Alterac"},
+    ["Arathi Highlands"] = {"Arathi Highlands", "Arathihochland", "Hautes-terres d'Arathi", "Tierras Altas de Arathi"},
+    ["Stranglethorn Vale"] = {"Stranglethorn Vale", "Schlingendorntal", "Vallée de Strangleronce", "Vega de Tuercespina"},
+    ["Badlands"] = {"Badlands", "Ödland", "Terres ingrates", "Tierras Inhóspitas"},
+    ["Searing Gorge"] = {"Searing Gorge", "Sengende Schlucht", "Gorge des Vents brûlants", "La Garganta de Fuego"},
+    ["Burning Steppes"] = {"Burning Steppes", "Brennende Steppe", "Steppes ardentes", "Las Estepas Ardientes"},
+    ["Swamp of Sorrows"] = {"Swamp of Sorrows", "Sumpf der Trauer", "Marais des Chagrins", "Pantano de las Penas"},
+    ["Blasted Lands"] = {"Blasted Lands", "Verwüstete Lande", "Terres foudroyées", "Las Tierras Devastadas"},
+    ["Western Plaguelands"] = {"Western Plaguelands", "Westliche Pestländer", "Maleterres de l'Ouest", "Tierras de la Peste del Oeste"},
+    ["Eastern Plaguelands"] = {"Eastern Plaguelands", "Östliche Pestländer", "Maleterres de l'Est", "Tierras de la Peste del Este"},
+    ["Deadwind Pass"] = {"Deadwind Pass", "Gebirgspass der Totenwinde", "Défilé de Deuillevent", "Paso de la Muerte"},
+    ["Stormwind City"] = {"Stormwind City", "Sturmwind", "Hurlevent", "Ventormenta"},
+    ["Mulgore"] = {"Mulgore", "Mulgore", "Mulgore", "Mulgore"},
+    ["Teldrassil"] = {"Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil"},
+    ["Darkshore"] = {"Darkshore", "Dunkelküste", "Sombrivage", "Costa Oscura"},
+    ["The Barrens"] = {"The Barrens", "Brachland", "Les Tarides", "Los Baldíos"},
+    ["Stonetalon Mountains"] = {"Stonetalon Mountains", "Steinkrallengebirge", "Serres-Rocheuses", "Sierra Espolón"},
+    ["Ashenvale"] = {"Ashenvale", "Eschental", "Orneval", "Vallefresno"},
+    ["Thousand Needles"] = {"Thousand Needles", "Tausend Nadeln", "Mille pointes", "Las Mil Agujas"},
+    ["Desolace"] = {"Desolace", "Desolace", "Désolace", "Desolace"},
+    ["Dustwallow Marsh"] = {"Dustwallow Marsh", "Düstermarschen", "Marécage d'Âprefange", "Marjal Revolcafango"},
+    ["Feralas"] = {"Feralas", "Feralas", "Féralas", "Feralas"},
+    ["Tanaris"] = {"Tanaris", "Tanaris", "Tanaris", "Tanaris"},
+    ["Azshara"] = {"Azshara", "Azshara", "Azshara", "Azshara"},
+    ["Felwood"] = {"Felwood", "Teufelswald", "Gangrebois", "Frondavil"},
+    ["Un'Goro Crater"] = {"Un'Goro Crater", "Krater von Un'Goro", "Cratère d'Un'Goro", "Cráter de Un'Goro"},
+    ["Silithus"] = {"Silithus", "Silithus", "Silithus", "Silithus"},
+    ["Winterspring"] = {"Winterspring", "Winterquell", "Berceau-de-l'Hiver", "Cuna del Invierno"},
+    ["Ironforge"] = {"Ironforge", "Eisenschmiede", "Forgefer", "Forjaz"},
+    ["Orgrimmar"] = {"Orgrimmar", "Orgrimmar", "Orgrimmar", "Orgrimmar"},
+    ["Thunder Bluff"] = {"Thunder Bluff", "Donnerfels", "Pitons-du-Tonnerre", "Cima del Trueno"},
+    ["Darnassus"] = {"Darnassus", "Darnassus", "Darnassus", "Darnassus"},
+    ["Undercity"] = {"Undercity", "Unterstadt", "Fossoyeuse", "Entrañas"},
+    ["The Hinterlands"] = {"The Hinterlands", "Hinterland", "Les Hinterlands", "Tierras del Interior"},
+    ["Arathi Basin"] = {"Arathi Basin", "Arathibecken", "Bassin d'Arathi", "Cuenca de Arathi"},
+    ["Warsong Gulch"] = {"Warsong Gulch", "Warsongschlucht", "Goulet des Warsong", "Garganta Grito de Guerra"},
+    ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac"}
+}
+
+-- Helper function to get zone kills across all language variants
+local function GetZoneKills(stats, zoneNameEnglish)
+    if not stats.zoneData then return 0 end
+    
+    local translations = ZONE_TRANSLATIONS[zoneNameEnglish]
+    if not translations then
+        return stats.zoneData[zoneNameEnglish] or 0
+    end
+    
+    for _, zoneName in ipairs(translations) do
+        local kills = stats.zoneData[zoneName]
+        if kills and kills > 0 then
+            return kills
+        end
+    end
+    
+    return 0
+end
+
 AchievementSystem.achievements = {
     {
         id = "class_paladin_0",
@@ -903,7 +974,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Redridge Mountains"] or 0
+            return GetZoneKills(stats, "Redridge Mountains")
         end,
     },
         {
@@ -3207,7 +3278,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Durotar"] or 0
+            return GetZoneKills(stats, "Durotar")
         end,
     },
     {
@@ -3227,7 +3298,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["The Barrens"] or 0
+            return GetZoneKills(stats, "The Barrens")
         end,
     },
     {
@@ -3247,7 +3318,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Tirisfal Glades"] or 0
+            return GetZoneKills(stats, "Tirisfal Glades")
         end,
     },
     {
@@ -3267,7 +3338,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stonetalon Mountains"] or 0
+            return GetZoneKills(stats, "Stonetalon Mountains")
         end,
     },
 
@@ -3293,7 +3364,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Redridge Mountains"] or 0
+            return GetZoneKills(stats, "Redridge Mountains")
         end,
     },
     {
@@ -3313,7 +3384,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Redridge Mountains"] or 0
+            return GetZoneKills(stats, "Redridge Mountains")
         end,
     },
     {
@@ -3333,7 +3404,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Redridge Mountains"] or 0
+            return GetZoneKills(stats, "Redridge Mountains")
         end,
     },
     {
@@ -3353,11 +3424,11 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Redridge Mountains"] or 0
+            return GetZoneKills(stats, "Redridge Mountains")
         end,
     },
 
-    -- STONETALON MOUNTAINS (Alliance) - Adding missing tiers
+    -- STONETALON MOUNTAINS (Alliance)
     {
         id = "zone_alliance_stonetalon_250",
         title = "Stonetalon Executioner",
@@ -3375,7 +3446,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stonetalon Mountains"] or 0
+            return GetZoneKills(stats, "Stonetalon Mountains")
         end,
     },
     {
@@ -3395,7 +3466,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stonetalon Mountains"] or 0
+            return GetZoneKills(stats, "Stonetalon Mountains")
         end,
     },
     {
@@ -3415,7 +3486,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stonetalon Mountains"] or 0
+            return GetZoneKills(stats, "Stonetalon Mountains")
         end,
     },
 
@@ -3437,7 +3508,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Ashenvale"] or 0
+            return GetZoneKills(stats, "Ashenvale")
         end,
     },
     {
@@ -3457,7 +3528,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Ashenvale"] or 0
+            return GetZoneKills(stats, "Ashenvale")
         end,
     },
     {
@@ -3477,7 +3548,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Ashenvale"] or 0
+            return GetZoneKills(stats, "Ashenvale")
         end,
     },
     {
@@ -3497,7 +3568,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Ashenvale"] or 0
+            return GetZoneKills(stats, "Ashenvale")
         end,
     },
 
@@ -3519,7 +3590,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Duskwood"] or 0
+            return GetZoneKills(stats, "Duskwood")
         end,
     },
     {
@@ -3539,7 +3610,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Duskwood"] or 0
+            return GetZoneKills(stats, "Duskwood")
         end,
     },
     {
@@ -3559,7 +3630,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Duskwood"] or 0
+            return GetZoneKills(stats, "Duskwood")
         end,
     },
     {
@@ -3579,7 +3650,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Duskwood"] or 0
+            return GetZoneKills(stats, "Duskwood")
         end,
     },
 
@@ -3601,7 +3672,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Hillsbrad Foothills"] or 0
+            return GetZoneKills(stats, "Hillsbrad Foothills")
         end,
     },
     {
@@ -3621,7 +3692,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Hillsbrad Foothills"] or 0
+            return GetZoneKills(stats, "Hillsbrad Foothills")
         end,
     },
     {
@@ -3641,7 +3712,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Hillsbrad Foothills"] or 0
+            return GetZoneKills(stats, "Hillsbrad Foothills")
         end,
     },
     {
@@ -3661,7 +3732,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Hillsbrad Foothills"] or 0
+            return GetZoneKills(stats, "Hillsbrad Foothills")
         end,
     },
 
@@ -3683,7 +3754,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Thousand Needles"] or 0
+            return GetZoneKills(stats, "Thousand Needles")
         end,
     },
     {
@@ -3703,7 +3774,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Thousand Needles"] or 0
+            return GetZoneKills(stats, "Thousand Needles")
         end,
     },
     {
@@ -3723,7 +3794,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Thousand Needles"] or 0
+            return GetZoneKills(stats, "Thousand Needles")
         end,
     },
     {
@@ -3743,7 +3814,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Thousand Needles"] or 0
+            return GetZoneKills(stats, "Thousand Needles")
         end,
     },
 
@@ -3765,7 +3836,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Alterac Mountains"] or 0
+            return GetZoneKills(stats, "Alterac Mountains")
         end,
     },
     {
@@ -3785,7 +3856,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Alterac Mountains"] or 0
+            return GetZoneKills(stats, "Alterac Mountains")
         end,
     },
     {
@@ -3805,7 +3876,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Alterac Mountains"] or 0
+            return GetZoneKills(stats, "Alterac Mountains")
         end,
     },
     {
@@ -3825,7 +3896,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Alterac Mountains"] or 0
+            return GetZoneKills(stats, "Alterac Mountains")
         end,
     },
 
@@ -3847,7 +3918,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Arathi Highlands"] or 0
+            return GetZoneKills(stats, "Arathi Highlands")
         end,
     },
     {
@@ -3867,7 +3938,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Arathi Highlands"] or 0
+            return GetZoneKills(stats, "Arathi Highlands")
         end,
     },
     {
@@ -3887,7 +3958,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Arathi Highlands"] or 0
+            return GetZoneKills(stats, "Arathi Highlands")
         end,
     },
     {
@@ -3907,7 +3978,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Arathi Highlands"] or 0
+            return GetZoneKills(stats, "Arathi Highlands")
         end,
     },
 
@@ -3929,7 +4000,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Desolace"] or 0
+            return GetZoneKills(stats, "Desolace")
         end,
     },
     {
@@ -3949,7 +4020,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Desolace"] or 0
+            return GetZoneKills(stats, "Desolace")
         end,
     },
     {
@@ -3969,7 +4040,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Desolace"] or 0
+            return GetZoneKills(stats, "Desolace")
         end,
     },
     {
@@ -3989,7 +4060,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Desolace"] or 0
+            return GetZoneKills(stats, "Desolace")
         end,
     },
 
@@ -4011,7 +4082,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stranglethorn Vale"] or 0
+            return GetZoneKills(stats, "Stranglethorn Vale")
         end,
     },
     {
@@ -4031,7 +4102,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stranglethorn Vale"] or 0
+            return GetZoneKills(stats, "Stranglethorn Vale")
         end,
     },
     {
@@ -4051,7 +4122,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stranglethorn Vale"] or 0
+            return GetZoneKills(stats, "Stranglethorn Vale")
         end,
     },
     {
@@ -4071,7 +4142,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stranglethorn Vale"] or 0
+            return GetZoneKills(stats, "Stranglethorn Vale")
         end,
     },
 
@@ -4093,7 +4164,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["The Hinterlands"] or 0
+            return GetZoneKills(stats, "The Hinterlands")
         end,
     },
     {
@@ -4113,7 +4184,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["The Hinterlands"] or 0
+            return GetZoneKills(stats, "The Hinterlands")
         end,
     },
     {
@@ -4133,7 +4204,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["The Hinterlands"] or 0
+            return GetZoneKills(stats, "The Hinterlands")
         end,
     },
     {
@@ -4153,7 +4224,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["The Hinterlands"] or 0
+            return GetZoneKills(stats, "The Hinterlands")
         end,
     },
 
@@ -4175,7 +4246,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Tanaris"] or 0
+            return GetZoneKills(stats, "Tanaris")
         end,
     },
     {
@@ -4195,7 +4266,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Tanaris"] or 0
+            return GetZoneKills(stats, "Tanaris")
         end,
     },
     {
@@ -4215,7 +4286,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Tanaris"] or 0
+            return GetZoneKills(stats, "Tanaris")
         end,
     },
     {
@@ -4235,7 +4306,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Tanaris"] or 0
+            return GetZoneKills(stats, "Tanaris")
         end,
     },
 
@@ -4257,7 +4328,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Un'Goro Crater"] or 0
+            return GetZoneKills(stats, "Un'Goro Crater")
         end,
     },
     {
@@ -4277,7 +4348,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Un'Goro Crater"] or 0
+            return GetZoneKills(stats, "Un'Goro Crater")
         end,
     },
     {
@@ -4297,7 +4368,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Un'Goro Crater"] or 0
+            return GetZoneKills(stats, "Un'Goro Crater")
         end,
     },
     {
@@ -4317,7 +4388,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Un'Goro Crater"] or 0
+            return GetZoneKills(stats, "Un'Goro Crater")
         end,
     },
 
@@ -4339,7 +4410,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Felwood"] or 0
+            return GetZoneKills(stats, "Felwood")
         end,
     },
     {
@@ -4359,7 +4430,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Felwood"] or 0
+            return GetZoneKills(stats, "Felwood")
         end,
     },
     {
@@ -4379,7 +4450,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Felwood"] or 0
+            return GetZoneKills(stats, "Felwood")
         end,
     },
     {
@@ -4399,7 +4470,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Felwood"] or 0
+            return GetZoneKills(stats, "Felwood")
         end,
     },
 
@@ -4421,7 +4492,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Badlands"] or 0
+            return GetZoneKills(stats, "Badlands")
         end,
     },
     {
@@ -4441,7 +4512,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Badlands"] or 0
+            return GetZoneKills(stats, "Badlands")
         end,
     },
     {
@@ -4461,7 +4532,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Badlands"] or 0
+            return GetZoneKills(stats, "Badlands")
         end,
     },
     {
@@ -4481,7 +4552,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Badlands"] or 0
+            return GetZoneKills(stats, "Badlands")
         end,
     },
 
@@ -4503,7 +4574,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Feralas"] or 0
+            return GetZoneKills(stats, "Feralas")
         end,
     },
     {
@@ -4523,7 +4594,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Feralas"] or 0
+            return GetZoneKills(stats, "Feralas")
         end,
     },
     {
@@ -4543,7 +4614,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Feralas"] or 0
+            return GetZoneKills(stats, "Feralas")
         end,
     },
     {
@@ -4563,7 +4634,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Feralas"] or 0
+            return GetZoneKills(stats, "Feralas")
         end,
     },
 
@@ -4585,7 +4656,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Searing Gorge"] or 0
+            return GetZoneKills(stats, "Searing Gorge")
         end,
     },
     {
@@ -4605,7 +4676,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Searing Gorge"] or 0
+            return GetZoneKills(stats, "Searing Gorge")
         end,
     },
     {
@@ -4625,7 +4696,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Searing Gorge"] or 0
+            return GetZoneKills(stats, "Searing Gorge")
         end,
     },
     {
@@ -4645,7 +4716,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Searing Gorge"] or 0
+            return GetZoneKills(stats, "Searing Gorge")
         end,
     },
 
@@ -4667,7 +4738,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Burning Steppes"] or 0
+            return GetZoneKills(stats, "Burning Steppes")
         end,
     },
     {
@@ -4687,7 +4758,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Burning Steppes"] or 0
+            return GetZoneKills(stats, "Burning Steppes")
         end,
     },
     {
@@ -4707,7 +4778,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Burning Steppes"] or 0
+            return GetZoneKills(stats, "Burning Steppes")
         end,
     },
     {
@@ -4727,7 +4798,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Burning Steppes"] or 0
+            return GetZoneKills(stats, "Burning Steppes")
         end,
     },
 
@@ -4749,7 +4820,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Western Plaguelands"] or 0
+            return GetZoneKills(stats, "Western Plaguelands")
         end,
     },
     {
@@ -4769,7 +4840,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Western Plaguelands"] or 0
+            return GetZoneKills(stats, "Western Plaguelands")
         end,
     },
     {
@@ -4789,7 +4860,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Western Plaguelands"] or 0
+            return GetZoneKills(stats, "Western Plaguelands")
         end,
     },
     {
@@ -4809,7 +4880,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Western Plaguelands"] or 0
+            return GetZoneKills(stats, "Western Plaguelands")
         end,
     },
 
@@ -4831,7 +4902,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Eastern Plaguelands"] or 0
+            return GetZoneKills(stats, "Eastern Plaguelands")
         end,
     },
     {
@@ -4851,7 +4922,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Eastern Plaguelands"] or 0
+            return GetZoneKills(stats, "Eastern Plaguelands")
         end,
     },
     {
@@ -4871,7 +4942,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Eastern Plaguelands"] or 0
+            return GetZoneKills(stats, "Eastern Plaguelands")
         end,
     },
     {
@@ -4891,7 +4962,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Eastern Plaguelands"] or 0
+            return GetZoneKills(stats, "Eastern Plaguelands")
         end,
     },
 
@@ -4913,7 +4984,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Winterspring"] or 0
+            return GetZoneKills(stats, "Winterspring")
         end,
     },
     {
@@ -4933,7 +5004,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Winterspring"] or 0
+            return GetZoneKills(stats, "Winterspring")
         end,
     },
     {
@@ -4953,7 +5024,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Winterspring"] or 0
+            return GetZoneKills(stats, "Winterspring")
         end,
     },
     {
@@ -4973,7 +5044,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Winterspring"] or 0
+            return GetZoneKills(stats, "Winterspring")
         end,
     },
 
@@ -4995,7 +5066,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Silithus"] or 0
+            return GetZoneKills(stats, "Silithus")
         end,
     },
     {
@@ -5015,7 +5086,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Silithus"] or 0
+            return GetZoneKills(stats, "Silithus")
         end,
     },
     {
@@ -5035,7 +5106,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Silithus"] or 0
+            return GetZoneKills(stats, "Silithus")
         end,
     },
     {
@@ -5055,7 +5126,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Silithus"] or 0
+            return GetZoneKills(stats, "Silithus")
         end,
     },
 
@@ -5076,7 +5147,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Elwynn Forest"] or 0
+            return GetZoneKills(stats, "Elwynn Forest")
         end,
     },
     {
@@ -5096,7 +5167,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local westfallKills = stats.zoneData["Westfall"]
+            local westfallKills = GetZoneKills(stats, "Westfall")
             if westfallKills == nil then
                 return 0
             end
@@ -7466,7 +7537,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stormwind City"] or 0
+            return GetZoneKills(stats, "Stormwind City")
         end,
     },
     {
@@ -7486,7 +7557,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stormwind City"] or 0
+            return GetZoneKills(stats, "Stormwind City")
         end,
     },
     {
@@ -7506,7 +7577,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stormwind City"] or 0
+            return GetZoneKills(stats, "Stormwind City")
         end,
     },
     {
@@ -7526,7 +7597,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Stormwind City"] or 0
+            return GetZoneKills(stats, "Stormwind City")
         end,
     },
 
@@ -7548,7 +7619,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Ironforge"] or 0
+            return GetZoneKills(stats, "Ironforge")
         end,
     },
     {
@@ -7568,7 +7639,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Ironforge"] or 0
+            return GetZoneKills(stats, "Ironforge")
         end,
     },
     {
@@ -7588,7 +7659,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Ironforge"] or 0
+            return GetZoneKills(stats, "Ironforge")
         end,
     },
     {
@@ -7608,7 +7679,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Ironforge"] or 0
+            return GetZoneKills(stats, "Ironforge")
         end,
     },
 
@@ -7630,7 +7701,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Darnassus"] or 0
+            return GetZoneKills(stats, "Darnassus")
         end,
     },
     {
@@ -7650,7 +7721,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Darnassus"] or 0
+            return GetZoneKills(stats, "Darnassus")
         end,
     },
     {
@@ -7670,7 +7741,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Darnassus"] or 0
+            return GetZoneKills(stats, "Darnassus")
         end,
     },
     {
@@ -7690,7 +7761,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Darnassus"] or 0
+            return GetZoneKills(stats, "Darnassus")
         end,
     },
 
@@ -7716,7 +7787,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Orgrimmar"] or 0
+            return GetZoneKills(stats, "Orgrimmar")
         end,
     },
     {
@@ -7736,7 +7807,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Orgrimmar"] or 0
+            return GetZoneKills(stats, "Orgrimmar")
         end,
     },
     {
@@ -7756,7 +7827,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Orgrimmar"] or 0
+            return GetZoneKills(stats, "Orgrimmar")
         end,
     },
     {
@@ -7776,7 +7847,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Orgrimmar"] or 0
+            return GetZoneKills(stats, "Orgrimmar")
         end,
     },
 
@@ -7798,7 +7869,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Thunder Bluff"] or 0
+            return GetZoneKills(stats, "Thunder Bluff")
         end,
     },
     {
@@ -7818,7 +7889,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Thunder Bluff"] or 0
+            return GetZoneKills(stats, "Thunder Bluff")
         end,
     },
     {
@@ -7838,7 +7909,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Thunder Bluff"] or 0
+            return GetZoneKills(stats, "Thunder Bluff")
         end,
     },
     {
@@ -7858,7 +7929,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Thunder Bluff"] or 0
+            return GetZoneKills(stats, "Thunder Bluff")
         end,
     },
 
@@ -7880,7 +7951,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Undercity"] or 0
+            return GetZoneKills(stats, "Undercity")
         end,
     },
     {
@@ -7900,7 +7971,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Undercity"] or 0
+            return GetZoneKills(stats, "Undercity")
         end,
     },
     {
@@ -7920,7 +7991,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Undercity"] or 0
+            return GetZoneKills(stats, "Undercity")
         end,
     },
     {
@@ -7940,7 +8011,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Undercity"] or 0
+            return GetZoneKills(stats, "Undercity")
         end,
     },
     {
@@ -7959,7 +8030,7 @@ AchievementSystem.achievements = {
             return ("After %d kills, blood stains every resource node. The Basin remembers your first taste of slaughter."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Arathi Basin"] or 0
+            return GetZoneKills(stats, "Arathi Basin")
         end,
     },
     {
@@ -7978,7 +8049,7 @@ AchievementSystem.achievements = {
             return ("With %d corpses scattered across the Basin, the highlands weep crimson tears. Your reputation spreads like wildfire among both factions."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Arathi Basin"] or 0
+            return GetZoneKills(stats, "Arathi Basin")
         end,
     },
     {
@@ -7997,7 +8068,7 @@ AchievementSystem.achievements = {
             return ("%d souls have made you death's herald in these cursed highlands. The ancient stones whisper your name in dread."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Arathi Basin"] or 0
+            return GetZoneKills(stats, "Arathi Basin")
         end,
     },
     {
@@ -8016,7 +8087,7 @@ AchievementSystem.achievements = {
             return ("One thousand victims have crowned you the shadow that haunts every flag capture. Both armies flee at your approach."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Arathi Basin"] or 0
+            return GetZoneKills(stats, "Arathi Basin")
         end,
     },
     {
@@ -8035,7 +8106,7 @@ AchievementSystem.achievements = {
             return ("%d screams now echo through the twisted canyon forever. The rocks themselves remember your brutality."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Warsong Gulch"] or 0
+            return GetZoneKills(stats, "Warsong Gulch")
         end,
     },
     {
@@ -8054,7 +8125,7 @@ AchievementSystem.achievements = {
             return ("With %d fallen flag bearers, no one escapes the Reaper's embrace. The banners themselves drip with terror."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Warsong Gulch"] or 0
+            return GetZoneKills(stats, "Warsong Gulch")
         end,
     },
     {
@@ -8073,7 +8144,7 @@ AchievementSystem.achievements = {
             return ("Your %d victims have silenced even the ancient forest spirits. They dare not whisper your cursed name."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Warsong Gulch"] or 0
+            return GetZoneKills(stats, "Warsong Gulch")
         end,
     },
     {
@@ -8092,7 +8163,7 @@ AchievementSystem.achievements = {
             return ("One thousand souls have birthed a legend that transcends death itself. You are Warsong's eternal nightmare."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Warsong Gulch"] or 0
+            return GetZoneKills(stats, "Warsong Gulch")
         end,
     },
     {
@@ -8111,7 +8182,7 @@ AchievementSystem.achievements = {
             return ("%d frozen corpses mark your bloodied path through the snow. The valley knows a new predator stalks its peaks."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Alterac Valley"] or 0
+            return GetZoneKills(stats, "Alterac Valley")
         end,
     },
     {
@@ -8130,7 +8201,7 @@ AchievementSystem.achievements = {
             return ("With %d fallen warriors, the white snow drinks deep of crimson blood. Your legend grows with every frozen battlefield."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Alterac Valley"] or 0
+            return GetZoneKills(stats, "Alterac Valley")
         end,
     },
     {
@@ -8149,7 +8220,7 @@ AchievementSystem.achievements = {
             return ("%d souls have built your throne of ice and death. Winter itself now bows to a colder, darker master."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Alterac Valley"] or 0
+            return GetZoneKills(stats, "Alterac Valley")
         end,
     },
     {
@@ -8168,7 +8239,7 @@ AchievementSystem.achievements = {
             return ("One thousand souls have made you the endless winter that devours hope. You are Alterac's eternal frost, consuming all warmth and life."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.zoneData["Alterac Valley"] or 0
+            return GetZoneKills(stats, "Alterac Valley")
         end,
     }
 }

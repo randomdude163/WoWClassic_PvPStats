@@ -9,6 +9,7 @@ local minLevelSearch = nil
 local maxLevelSearch = nil
 local minRankSearch = nil
 local maxRankSearch = nil
+local filterOnlyWithNotes = false
 
 
 local function CreateBoxBorder(box)
@@ -1036,6 +1037,14 @@ local function ApplyFiltersToEntries(entries)
             end
         end
 
+        -- Note filter
+        if match and filterOnlyWithNotes then
+            local infoKey = PSC_GetInfoKeyFromName(entry.name)
+            local playerInfo = PSC_DB and PSC_DB.PlayerInfoCache and PSC_DB.PlayerInfoCache[infoKey]
+            local hasNote = playerInfo and playerInfo.note and playerInfo.note ~= ""
+            match = (hasNote == true)
+        end
+
         if match then
             table.insert(filteredEntries, entry)
         end
@@ -1169,6 +1178,34 @@ function PSC_CreateSearchBar(frame)
     zoneSearchBox:SetText("")
     zoneSearchText = ""
 
+    -- Note filter checkbox
+    local noteCheckbox = CreateFrame("CheckButton", nil, searchBg, "UICheckButtonTemplate")
+    noteCheckbox:SetSize(20, 20)
+    noteCheckbox:SetPoint("LEFT", zoneSearchBox, "RIGHT", 15, 0)
+    noteCheckbox:SetChecked(false)
+    filterOnlyWithNotes = false
+    
+    local noteLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    noteLabel:SetPoint("LEFT", noteCheckbox, "RIGHT", 5, 0)
+    noteLabel:SetText("Has Note")
+    noteLabel:SetTextColor(1, 0.82, 0)
+    
+    noteCheckbox:SetScript("OnClick", function(self)
+        filterOnlyWithNotes = self:GetChecked()
+        RefreshKillsListFrame()
+    end)
+    
+    noteCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Note filter")
+        GameTooltip:AddLine("Only show players with notes", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    
+    noteCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
     frame.searchBox = searchBox
     frame.levelSearchBox = levelSearchBox
     frame.classSearchBox = classSearchBox
@@ -1176,6 +1213,7 @@ function PSC_CreateSearchBar(frame)
     frame.genderSearchBox = genderSearchBox
     frame.zoneSearchBox = zoneSearchBox
     frame.rankSearchBox = rankSearchBox
+    frame.noteCheckbox = noteCheckbox
 
     return searchBox
 end
