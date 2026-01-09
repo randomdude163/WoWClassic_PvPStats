@@ -4,6 +4,12 @@ function PSC_SendAnnounceMessage(message)
     if channel == "SELF" then
         print("[PvPStats]: " .. message)
     elseif channel == "GROUP" then
+        if IsInGroup() then
+            SendChatMessage(message, "PARTY")
+        else
+            print("[PvPStats]: " .. message)
+        end
+    elseif channel == "RAID" then
         if IsInRaid() then
             SendChatMessage(message, "RAID")
         elseif IsInGroup() then
