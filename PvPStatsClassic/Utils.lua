@@ -1,3 +1,153 @@
+-- ============================================================================
+-- INCREMENTAL STATISTICS CALCULATION SYSTEM
+-- Spreads expensive calculations over multiple frames to prevent lag
+-- ============================================================================
+
+local statsCacheInvalidated = false
+local achievementCheckQueued = false
+local calculationInProgress = false
+local incrementalFrame = nil
+
+-- Configuration: kills to process per frame (adjust for performance tuning)
+local KILLS_PER_FRAME = 100
+
+-- Invalidate all stats caches without recalculating
+function PSC_InvalidateStatsCaches()
+    statsCacheInvalidated = true
+    timeStatsCache = nil
+    streakStatsCache = nil
+end
+
+-- Queue an achievement check to run after stats are calculated
+function PSC_QueueAchievementCheck()
+    achievementCheckQueued = true
+    PSC_EnsureStatsCalculation()
+end
+
+-- Start incremental calculation if needed
+function PSC_EnsureStatsCalculation()
+    if not statsCacheInvalidated or calculationInProgress then
+        -- Either cache is valid or already calculating
+        if achievementCheckQueued and not calculationInProgress then
+            -- Cache is valid, run achievement check immediately
+            PSC_RunQueuedAchievementCheck()
+        end
+        return
+    end
+
+    -- Start incremental calculation
+    calculationInProgress = true
+    PSC_StartIncrementalCalculation()
+end
+
+-- Run the queued achievement check
+function PSC_RunQueuedAchievementCheck()
+    if not achievementCheckQueued then return end
+
+    achievementCheckQueued = false
+    local PVPSC = _G["PVPSC"]
+    if PVPSC and PVPSC.AchievementSystem then
+        PVPSC.AchievementSystem:CheckAchievements()
+    end
+end
+
+-- Helper function for task queue - represents a delay frame (does nothing)
+local function TaskQueueDelayFrame()
+    -- Empty frame to spread work across multiple frames
+end
+
+-- Incremental calculation that processes stats over multiple frames
+function PSC_StartIncrementalCalculation()
+    -- Get total number of kills to estimate work
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        -- No data to process, mark complete
+        statsCacheInvalidated = false
+        calculationInProgress = false
+        PSC_RunQueuedAchievementCheck()
+        return
+    end
+
+    -- Count total kills
+    local totalKills = 0
+    for _, playerData in pairs(characterData.Kills) do
+        if playerData.killLocations then
+            totalKills = totalKills + #playerData.killLocations
+        end
+    end
+
+    -- If small dataset, just do it immediately (< 500 kills)
+    if totalKills < 500 then
+        PSC_ImmediateCalculation()
+        return
+    end
+
+    -- For larger datasets, spread over multiple frames using C_Timer
+    -- Create a simple task queue for better readability
+    local taskQueue = {
+        TaskQueueDelayFrame,
+        function()
+            if PSC_GetTimeBasedStats then
+                PSC_GetTimeBasedStats(true)
+            end
+        end,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        function()
+            if PSC_GetStreakStats then
+                PSC_GetStreakStats(true)
+            end
+        end,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        function()
+            statsCacheInvalidated = false
+            calculationInProgress = false
+            PSC_RunQueuedAchievementCheck()
+        end
+    }
+
+    -- Execute tasks sequentially, one per frame
+    local currentTask = 1
+    local function runNextTask()
+        if currentTask <= #taskQueue then
+            taskQueue[currentTask]()
+            currentTask = currentTask + 1
+            if currentTask <= #taskQueue then
+                C_Timer.After(0, runNextTask)
+            end
+        end
+    end
+
+    runNextTask()
+end
+
+-- Immediate calculation for small datasets
+function PSC_ImmediateCalculation()
+    if PSC_GetTimeBasedStats then
+        PSC_GetTimeBasedStats(true)
+    end
+    if PSC_GetStreakStats then
+        PSC_GetStreakStats(true)
+    end
+
+    statsCacheInvalidated = false
+    calculationInProgress = false
+    PSC_RunQueuedAchievementCheck()
+end
+
+-- ============================================================================
+-- UTILITY FUNCTIONS
+-- ============================================================================
+
 function PSC_SendAnnounceMessage(message)
     local channel = PSC_DB.AnnounceChannel or "GROUP"
 

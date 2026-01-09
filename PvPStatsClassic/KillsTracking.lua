@@ -42,15 +42,8 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
 
     table.insert(killData.killLocations, newKillLocation)
 
-    -- Invalidate time-based statistics cache when new kill is recorded
-    if PSC_GetTimeBasedStats then
-        PSC_GetTimeBasedStats(true) -- Force refresh
-    end
-
-    -- Invalidate streak statistics cache when new kill is recorded
-    if PSC_GetStreakStats then
-        PSC_GetStreakStats(true) -- Force refresh
-    end
+    -- Mark caches as dirty without immediate recalculation
+    PSC_InvalidateStatsCaches()
 end
 
 local function UpdateMultiKill()
@@ -170,8 +163,9 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
 end
 
 function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
-    local playerLevel = UnitLevel("player")
+    local profileStart = debugprofilestop()
 
+    local playerLevel = UnitLevel("player")
     local infoKey = PSC_GetInfoKeyFromName(playerName)
 
     if not PSC_DB.PlayerInfoCache[infoKey] then
@@ -195,6 +189,8 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
         }
     end
 
+    local t1 = debugprofilestop()
+
     -- Check if this is a gray level kill and increment counter if it is
     if PSC_IsGrayLevelKill(playerLevel, level) then
         PSC_DB.PlayerKillCounts.Characters[characterKey].GrayKillsCount =
@@ -205,22 +201,46 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
         end
     end
 
+    local t2 = debugprofilestop()
+
     UpdateKillStreak(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class)
+    local t3 = debugprofilestop()
+
     ShowKillStreakMilestone(PSC_DB.PlayerKillCounts.Characters[characterKey].CurrentKillStreak)
+    local t4 = debugprofilestop()
+
     InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
+    local t5 = debugprofilestop()
+
     UpdateKillCountEntry(nameWithLevel, playerLevel)
+    local t6 = debugprofilestop()
+
     UpdateMultiKill()
+    local t7 = debugprofilestop()
 
     local playerRank = PSC_DB.PlayerInfoCache[infoKey].rank or 0
 
     AnnounceKill(playerName, level, nameWithLevel, playerLevel)
+    local t8 = debugprofilestop()
 
     local totalKills = PSC_GetTotalsKillsForPlayer(playerName)
     if (totalKills == 1 and PSC_DB.ShowMilestoneForFirstKill) or totalKills >= 2 then
         PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class, playerRank, totalKills)
     end
+    local t9 = debugprofilestop()
 
-    PVPSC.AchievementSystem:CheckAchievements()
+    -- Queue achievement check to run after stats are ready (deferred calculation)
+    PSC_QueueAchievementCheck()
+    local t10 = debugprofilestop()
+
+    -- Output profiling results
+    print(string.format("[PSC Profile] Total: %.2fms", t10 - profileStart))
+    print(string.format("  Setup: %.2fms | Gray Check: %.2fms | UpdateKillStreak: %.2fms",
+        t1 - profileStart, t2 - t1, t3 - t2))
+    print(string.format("  ShowStreakMilestone: %.2fms | InitKillEntry: %.2fms | UpdateKillEntry: %.2fms",
+        t4 - t3, t5 - t4, t6 - t5))
+    print(string.format("  UpdateMultiKill: %.2fms | AnnounceKill: %.2fms | ShowKillMilestone: %.2fms | CheckAchievements: %.2fms",
+        t7 - t6, t8 - t7, t9 - t8, t10 - t9))
 end
 
 function PSC_RecordPetDamage(petGUID, petName, targetGUID, amount)
