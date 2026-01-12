@@ -42,15 +42,8 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
 
     table.insert(killData.killLocations, newKillLocation)
 
-    -- Invalidate time-based statistics cache when new kill is recorded
-    if PSC_GetTimeBasedStats then
-        PSC_GetTimeBasedStats(true) -- Force refresh
-    end
-
-    -- Invalidate streak statistics cache when new kill is recorded
-    if PSC_GetStreakStats then
-        PSC_GetStreakStats(true) -- Force refresh
-    end
+    -- Mark caches as dirty without immediate recalculation
+    PSC_InvalidateStatsCaches()
 end
 
 local function UpdateMultiKill()
@@ -171,7 +164,6 @@ end
 
 function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     local playerLevel = UnitLevel("player")
-
     local infoKey = PSC_GetInfoKeyFromName(playerName)
 
     if not PSC_DB.PlayerInfoCache[infoKey] then
@@ -210,17 +202,15 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
     UpdateKillCountEntry(nameWithLevel, playerLevel)
     UpdateMultiKill()
-
-    local playerRank = PSC_DB.PlayerInfoCache[infoKey].rank or 0
-
     AnnounceKill(playerName, level, nameWithLevel, playerLevel)
 
     local totalKills = PSC_GetTotalsKillsForPlayer(playerName)
+    local playerRank = PSC_DB.PlayerInfoCache[infoKey].rank or 0
     if (totalKills == 1 and PSC_DB.ShowMilestoneForFirstKill) or totalKills >= 2 then
         PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class, playerRank, totalKills)
     end
 
-    PVPSC.AchievementSystem:CheckAchievements()
+    PSC_QueueAchievementCheck()
 end
 
 function PSC_RecordPetDamage(petGUID, petName, targetGUID, amount)

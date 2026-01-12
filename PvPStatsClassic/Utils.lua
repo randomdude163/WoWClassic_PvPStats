@@ -1,3 +1,117 @@
+local statsCacheInvalidated = false
+local achievementCheckQueued = false
+local calculationInProgress = false
+
+local TimeStatsCache = nil
+local streakStatsCache = nil
+
+
+function PSC_InvalidateStatsCaches()
+    statsCacheInvalidated = true
+    TimeStatsCache = nil
+    streakStatsCache = nil
+end
+
+-- Queue an achievement check to run after stats are calculated
+function PSC_QueueAchievementCheck()
+    achievementCheckQueued = true
+    PSC_EnsureStatsCalculation()
+end
+
+-- Start incremental calculation if needed
+function PSC_EnsureStatsCalculation()
+    if not statsCacheInvalidated or calculationInProgress then
+        -- Either cache is valid or already calculating
+        if achievementCheckQueued and not calculationInProgress then
+            -- Cache is valid, run achievement check immediately
+            PSC_RunQueuedAchievementCheck()
+        end
+        return
+    end
+
+    -- Start incremental calculation
+    calculationInProgress = true
+    PSC_StartIncrementalCalculation()
+end
+
+-- Run the queued achievement check
+function PSC_RunQueuedAchievementCheck()
+    if not achievementCheckQueued then return end
+
+    achievementCheckQueued = false
+    local PVPSC = _G["PVPSC"]
+    if PVPSC and PVPSC.AchievementSystem then
+        PVPSC.AchievementSystem:CheckAchievements()
+    end
+end
+
+-- Helper function for task queue - represents a delay frame (does nothing)
+local function TaskQueueDelayFrame()
+    -- Empty frame to spread work across multiple frames
+end
+
+-- Incremental calculation that processes stats over multiple frames
+function PSC_StartIncrementalCalculation()
+    -- Get total number of kills to estimate work
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData or not characterData.Kills then
+        -- No data to process, mark complete
+        statsCacheInvalidated = false
+        calculationInProgress = false
+        PSC_RunQueuedAchievementCheck()
+        return
+    end
+
+    local taskQueue = {
+        TaskQueueDelayFrame,
+        function()
+            if PSC_GetTimeBasedStats then
+                PSC_GetTimeBasedStats(true)
+            end
+        end,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        function()
+            if PSC_GetStreakStats then
+                PSC_GetStreakStats(true)
+            end
+        end,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        TaskQueueDelayFrame,
+        function()
+            statsCacheInvalidated = false
+            calculationInProgress = false
+            PSC_RunQueuedAchievementCheck()
+        end
+    }
+
+    -- Execute tasks sequentially, one per frame
+    local currentTask = 1
+    local function runNextTask()
+        if currentTask <= #taskQueue then
+            taskQueue[currentTask]()
+            currentTask = currentTask + 1
+            if currentTask <= #taskQueue then
+                C_Timer.After(0, runNextTask)
+            end
+        end
+    end
+
+    runNextTask()
+end
+
+-- ============================================================================
+-- UTILITY FUNCTIONS
+-- ============================================================================
+
 function PSC_SendAnnounceMessage(message)
     local channel = PSC_DB.AnnounceChannel or "GROUP"
 
@@ -408,8 +522,6 @@ function PSC_GetLocalTimezoneOffset()
 end
 
 function PSC_CalculateAllTimeBasedStats()
-    -- No timezone parameter needed - date("*t") automatically uses local time
-
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
@@ -572,22 +684,13 @@ function PSC_CalculateAllTimeBasedStats()
     return stats
 end
 
--- Cache for time-based stats - cached indefinitely until invalidated by new kills or timezone changes
-local timeStatsCache = nil
-local timeStatsCacheTimestamp = 0
-local timeStatsCacheTimezone = nil
 
 function PSC_GetTimeBasedStats(forceRefresh)
-    local currentTimezone = PSC_GetLocalTimezoneOffset()
-
-    -- Cache indefinitely, only refresh when forced (on new kills), if cache doesn't exist, or if timezone changed
-    if not timeStatsCache or forceRefresh or timeStatsCacheTimezone ~= currentTimezone then
-        timeStatsCache = PSC_CalculateAllTimeBasedStats() -- Use automatic local timezone detection
-        timeStatsCacheTimestamp = time() -- Update timestamp for debugging/info purposes
-        timeStatsCacheTimezone = currentTimezone -- Remember timezone used for this cache
+    if not TimeStatsCache or forceRefresh then
+        TimeStatsCache = PSC_CalculateAllTimeBasedStats()
     end
 
-    return timeStatsCache
+    return TimeStatsCache
 end
 
 function PSC_CountKillsInTimeRange(startHour, endHour, timezoneOffsetHours)
@@ -1057,10 +1160,6 @@ function PSC_CalculateAchievementCompletion(achievement, stats)
     return (currentProgress / achievement.targetValue) * 100
 end
 
--- Cache for streak stats - cached indefinitely until invalidated by new kills
-local streakStatsCache = nil
-local streakStatsCacheTimestamp = 0
-
 -- Function to calculate all streak statistics in a single pass for improved performance
 function PSC_CalculateAllStreakStats()
     local characterKey = PSC_GetCharacterKey()
@@ -1158,7 +1257,6 @@ function PSC_GetStreakStats(forceRefresh)
     -- Cache indefinitely, only refresh when forced (on new kills) or if cache doesn't exist
     if not streakStatsCache or forceRefresh then
         streakStatsCache = PSC_CalculateAllStreakStats()
-        streakStatsCacheTimestamp = time()
     end
 
     return streakStatsCache
