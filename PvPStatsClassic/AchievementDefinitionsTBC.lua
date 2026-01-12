@@ -1044,7 +1044,7 @@ AchievementSystem.achievementsTbc = {
     -- =====================================================
     {
         id = "race_alliance_mixed_tbc_100",
-        title = "Alliance Diversity Program (TBC)",
+        title = "Alliance Sampler Platter (TBC)",
         description = function(a) return ("Eliminate %d of each Alliance race (500 total)"):format(a.targetValue) end,
         iconID = 236592,
         achievementPoints = 25,
@@ -1064,7 +1064,7 @@ AchievementSystem.achievementsTbc = {
     },
     {
         id = "race_alliance_mixed_tbc_250",
-        title = "Alliance Census Crisis (TBC)",
+        title = "Alliance Census Corrector (TBC)",
         description = function(a) return ("Eliminate %d of each Alliance race (1250 total)"):format(a.targetValue) end,
         iconID = 236592,
         achievementPoints = 50,
@@ -1084,7 +1084,7 @@ AchievementSystem.achievementsTbc = {
     },
     {
         id = "race_alliance_mixed_tbc_500",
-        title = "Alliance Extinction Express (TBC)",
+        title = "Alliance Demographic Disaster (TBC)",
         description = function(a) return ("Eliminate %d of each Alliance race (2500 total)"):format(a.targetValue) end,
         iconID = 236592,
         achievementPoints = 75,
@@ -1104,7 +1104,7 @@ AchievementSystem.achievementsTbc = {
     },
     {
         id = "race_alliance_mixed_tbc_1000",
-        title = "Alliance Apocalypse Protocol (TBC)",
+        title = "Alliance Extinction Protocol (TBC)",
         description = function(a) return ("Eliminate %d of each Alliance race (5000 total)"):format(a.targetValue) end,
         iconID = 236592,
         achievementPoints = 100,
@@ -1128,8 +1128,8 @@ AchievementSystem.achievementsTbc = {
     -- =====================================================
     {
         id = "race_horde_mixed_tbc_100",
-        title = "Horde Sampling Platter (TBC)",
-        description = function(a) return ("Eliminate %d of each Horde race including Blood Elves (500 total)"):format(a.targetValue) end,
+        title = "Horde Variety Pack (TBC)",
+        description = function(a) return ("Eliminate %d of each Horde race incl. Blood Elves (500 total)"):format(a.targetValue) end,
         iconID = 255132,
         achievementPoints = 30,
         targetValue = 100,
@@ -1148,8 +1148,8 @@ AchievementSystem.achievementsTbc = {
     },
     {
         id = "race_horde_mixed_tbc_250",
-        title = "Horde Population Disaster (TBC)",
-        description = function(a) return ("Eliminate %d of each Horde race including Blood Elves (1250 total)"):format(a.targetValue) end,
+        title = "Horde Population Control (TBC)",
+        description = function(a) return ("Eliminate %d of each Horde race incl. Blood Elves (1250 total)"):format(a.targetValue) end,
         iconID = 255132,
         achievementPoints = 60,
         targetValue = 250,
@@ -1168,8 +1168,8 @@ AchievementSystem.achievementsTbc = {
     },
     {
         id = "race_horde_mixed_tbc_500",
-        title = "Horde Demographic Meltdown (TBC)",
-        description = function(a) return ("Eliminate %d of each Horde race including Blood Elves (2500 total)"):format(a.targetValue) end,
+        title = "Horde Demographic Crisis (TBC)",
+        description = function(a) return ("Eliminate %d of each Horde race incl. Blood Elves (2500 total)"):format(a.targetValue) end,
         iconID = 255132,
         achievementPoints = 90,
         targetValue = 500,
@@ -1188,8 +1188,8 @@ AchievementSystem.achievementsTbc = {
     },
     {
         id = "race_horde_mixed_tbc_1000",
-        title = "Horde Extinction Protocol (TBC)",
-        description = function(a) return ("Eliminate %d of each Horde race including Blood Elves (5000 total)"):format(a.targetValue) end,
+        title = "Horde Extinction Event (TBC)",
+        description = function(a) return ("Eliminate %d of each Horde race incl. Blood Elves (5000 total)"):format(a.targetValue) end,
         iconID = 255132,
         achievementPoints = 120,
         targetValue = 1000,
