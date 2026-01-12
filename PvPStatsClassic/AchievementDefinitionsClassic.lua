@@ -3238,6 +3238,26 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
+        id = "zone_alliance_barrens_250",
+        title = "Barrens Chat Moderator",
+        description = function(a) return ("Eliminate %d players in The Barrens"):format(a.targetValue) end,
+        iconID = 236718,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in The Barrens! You've permanently banned more Horde from Barrens chat than any GM ever could. Chuck Norris jokes have been replaced with warnings about you.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "The Barrens")
+        end,
+    },
+    {
         id = "zone_alliance_tirisfal",
         title = "Tirisfal Terror",
         description = function(a) return ("Eliminate %d players in Tirisfal Glades"):format(a.targetValue) end,
