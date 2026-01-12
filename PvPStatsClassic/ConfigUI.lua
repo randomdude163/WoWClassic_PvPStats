@@ -271,6 +271,7 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     local announceChannelOptions = {
         {text = "Group Chat", value = "GROUP"},
+        {text = "Raid Chat", value = "RAID"},
         {text = "Guild Chat", value = "GUILD"},
         {text = "Myself", value = "SELF"}
     }
@@ -291,7 +292,9 @@ local function CreateAnnouncementSection(parent, yOffset)
     announceChannelContainer:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Announce messages to")
-        GameTooltip:AddLine("Group Chat: Sends to party or raid. If you're not in a group, messages are displayed only to yourself.", 1, 1, 1, true)
+        GameTooltip:AddLine("Group Chat: Sends to party chat only. If you're not in a group, messages are displayed only to yourself.", 1, 1, 1, true)
+        GameTooltip:AddLine("\n", 1, 1, 1, true)
+        GameTooltip:AddLine("Raid Chat: Sends to raid chat. If you're not in a raid, messages will be sent to party chat. If not in a group, messages are displayed only to yourself.", 1, 1, 1, true)
         GameTooltip:AddLine("\n", 1, 1, 1, true)
         GameTooltip:AddLine("Guild Chat: Sends to guild. If you're not in a guild, messages are displayed only to yourself.", 1, 1, 1, true)
         GameTooltip:AddLine("\n", 1, 1, 1, true)
@@ -884,6 +887,8 @@ function PSC_UpdateConfigUI()
         local displayText = "Group Chat"
         if channelValue == "GUILD" then
             displayText = "Guild Chat"
+        elseif channelValue == "RAID" then
+            displayText = "Raid Chat"
         elseif channelValue == "SELF" then
             displayText = "Myself"
         end
