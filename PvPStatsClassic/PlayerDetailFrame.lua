@@ -630,7 +630,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     local kdValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     kdValue:SetPoint("TOPLEFT", 120, yOffset)
     local kdRatio = playerDetail.deaths > 0 and playerDetail.kills / playerDetail.deaths or playerDetail.kills
-    kdValue:SetText(string.format("%.2f", kdRatio))
+    kdValue:SetText(string.format("%.1f", kdRatio))
     if kdRatio >= 2.0 then
         kdValue:SetTextColor(1, 0.82, 0)
     end
