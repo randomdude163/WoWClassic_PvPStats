@@ -502,6 +502,8 @@ local function DetermineGameVersion()
     return game_version
 end
 
+local addonWelcomeMessageShown = false
+
 local function HandlePlayerEnteringWorld()
     PSC_PlayerGUID = UnitGUID("player")
     PSC_CharacterName = UnitName("player")
@@ -548,10 +550,12 @@ local function HandlePlayerEnteringWorld()
         print("[PvPStats]: Debug mode enabled.")
     end
 
-    print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
+    if not addonWelcomeMessageShown then
+        addonWelcomeMessageShown = true
+        print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
+    end
 
-    -- Initialize time-based stats cache for achievements
-    PSC_GetTimeBasedStats()
+    PSC_GetTimeBasedStats(true)
 
     C_Timer.After(2, function()
         PVPSC.AchievementSystem:CheckAchievements()
