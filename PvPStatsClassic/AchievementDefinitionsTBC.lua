@@ -654,46 +654,6 @@ AchievementSystem.achievementsTbc = {
             return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eversong Woods")
         end,
     },
-    {
-        id = "zone_alliance_eversong_500",
-        title = "Eternal Autumn",
-        description = function(a) return ("Eliminate %d Blood Elves in Eversong Woods"):format(a.targetValue) end,
-        iconID = 236844,
-        achievementPoints = 100,
-        targetValue = 500,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d Blood Elves learned that addiction to magic isn't their biggest problem—you are. Silvermoon's guards post your wanted poster right next to the Scourge threat warnings.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eversong Woods")
-        end,
-    },
-    {
-        id = "zone_alliance_eversong_1000",
-        title = "Scourge of Silvermoon",
-        description = function(a) return ("Eliminate %d Blood Elves in Eversong Woods"):format(a.targetValue) end,
-        iconID = 236844,
-        achievementPoints = 250,
-        targetValue = 1000,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d kills in Eversong Woods! You've become a legend whispered among Blood Elf children to make them behave. The Sunwell's light dims in your presence. Kael'thas's betrayal is now the SECOND worst thing to happen to Silvermoon.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eversong Woods")
-        end,
-    },
 
     -- =====================================================
     -- GHOSTLANDS (Blood Elf Zone)
@@ -732,46 +692,6 @@ AchievementSystem.achievementsTbc = {
         completedDate = nil,
         subText = function(a)
             return ("With %d corpses in Ghostlands, you're adding to the zone's undead population. Dar'Khan Drathir is taking notes on your killing techniques.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Ghostlands")
-        end,
-    },
-    {
-        id = "zone_alliance_ghostlands_500",
-        title = "Specter of Death",
-        description = function(a) return ("Eliminate %d Blood Elves in Ghostlands"):format(a.targetValue) end,
-        iconID = 236845,
-        achievementPoints = 100,
-        targetValue = 500,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d Blood Elves joined the Ghostlands permanently. The zone's name is now literal thanks to you. Even the actual ghosts are filing complaints about overcrowding.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Ghostlands")
-        end,
-    },
-    {
-        id = "zone_alliance_ghostlands_1000",
-        title = "Wraith of the Ghostlands",
-        description = function(a) return ("Eliminate %d Blood Elves in Ghostlands"):format(a.targetValue) end,
-        iconID = 236845,
-        achievementPoints = 250,
-        targetValue = 1000,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d kills in Ghostlands! You've surpassed the Scourge as the zone's greatest threat. Children's ghost stories about you are scarier than tales of Dar'Khan. The Dead Scar is renamed 'The Dead [YOUR NAME] Was Here'.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
@@ -822,46 +742,6 @@ AchievementSystem.achievementsTbc = {
             return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Azuremyst Isle")
         end,
     },
-    {
-        id = "zone_horde_azuremyst_500",
-        title = "Island Invader",
-        description = function(a) return ("Eliminate %d Draenei in Azuremyst Isle"):format(a.targetValue) end,
-        iconID = 236839,
-        achievementPoints = 100,
-        targetValue = 500,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d Draenei learned that the Light can't save them from you. The Exodar is considering emergency evacuation protocols. Players joke that you're worse than the Burning Legion.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Azuremyst Isle")
-        end,
-    },
-    {
-        id = "zone_horde_azuremyst_1000",
-        title = "Exodar's Nightmare",
-        description = function(a) return ("Eliminate %d Draenei in Azuremyst Isle"):format(a.targetValue) end,
-        iconID = 236839,
-        achievementPoints = 250,
-        targetValue = 1000,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d kills on Azuremyst Isle! You've made the Draenei wish they'd crashed somewhere else. The Burning Legion's pursuit seems merciful compared to your rampage. Prophet Velen has visions of you in his nightmares.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Azuremyst Isle")
-        end,
-    },
 
     -- =====================================================
     -- BLOODMYST ISLE (Draenei Zone)
@@ -900,46 +780,6 @@ AchievementSystem.achievementsTbc = {
         completedDate = nil,
         subText = function(a)
             return ("With %d corpses on Bloodmyst Isle, you're living up to the zone's name better than the pollution. The satyr and naga are taking notes on your efficiency.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Bloodmyst Isle")
-        end,
-    },
-    {
-        id = "zone_horde_bloodmyst_500",
-        title = "Mist of Death",
-        description = function(a) return ("Eliminate %d Draenei in Bloodmyst Isle"):format(a.targetValue) end,
-        iconID = 236840,
-        achievementPoints = 100,
-        targetValue = 500,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d Draenei fell on Bloodmyst Isle. The pollution from the crashed ship is now the second most toxic thing on the island. You've claimed first place.")
-                :format(a.targetValue)
-        end,
-        progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Bloodmyst Isle")
-        end,
-    },
-    {
-        id = "zone_horde_bloodmyst_1000",
-        title = "Prophet of Doom",
-        description = function(a) return ("Eliminate %d Draenei in Bloodmyst Isle"):format(a.targetValue) end,
-        iconID = 236840,
-        achievementPoints = 250,
-        targetValue = 1000,
-        condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
-        end,
-        unlocked = false,
-        completedDate = nil,
-        subText = function(a)
-            return ("%d kills on Bloodmyst Isle! The Draenei fled the Burning Legion across the cosmos, only to find you waiting for them. Velen's prophecies never mentioned THIS. The Blood Watch is considering changing its name to 'Blood and [YOUR NAME] Watch'.")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
