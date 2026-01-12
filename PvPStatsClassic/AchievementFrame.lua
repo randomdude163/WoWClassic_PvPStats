@@ -10,6 +10,13 @@ AchievementFrame:SetScript("OnDragStart", AchievementFrame.StartMoving)
 AchievementFrame:SetScript("OnDragStop", AchievementFrame.StopMovingOrSizing)
 AchievementFrame:Hide()
 
+-- Override close button to work in combat
+if AchievementFrame.CloseButton then
+    AchievementFrame.CloseButton:SetScript("OnClick", function()
+        PSC_FrameManager:HideFrame("Achievements")
+    end)
+end
+
 tinsert(UISpecialFrames, "PVPSCAchievementFrame")
 
 AchievementFrame.TitleText = AchievementFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
