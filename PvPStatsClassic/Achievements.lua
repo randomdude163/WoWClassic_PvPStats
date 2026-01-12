@@ -302,3 +302,23 @@ function AchievementSystem:CleanupObsoleteAchievements()
 
     return removedCount
 end
+
+
+-- Helper function to get zone kills across all language variants
+function PSC_GetZoneKills(stats, zoneTranslations, zoneNameEnglish)
+    if not stats.zoneData then return 0 end
+
+    local translations = zoneTranslations[zoneNameEnglish]
+    if not translations then
+        return stats.zoneData[zoneNameEnglish] or 0
+    end
+
+    for _, zoneName in ipairs(translations) do
+        local kills = stats.zoneData[zoneName]
+        if kills and kills > 0 then
+            return kills
+        end
+    end
+
+    return 0
+end

@@ -4,7 +4,7 @@ PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
 -- Zone name translations (English, German, French, Spanish)
-local ZONE_TRANSLATIONS = {
+local ZONE_TRANSLATIONS_CLASSIC = {
     ["Dun Morogh"] = {"Dun Morogh", "Dun Morogh", "Dun Morogh", "Dun Morogh"},
     ["Elwynn Forest"] = {"Elwynn Forest", "Wald von Elwynn", "Forêt d'Elwynn", "Bosque de Elwynn"},
     ["Tirisfal Glades"] = {"Tirisfal Glades", "Tirisfal", "Clairières de Tirisfal", "Claros de Tirisfal"},
@@ -55,26 +55,7 @@ local ZONE_TRANSLATIONS = {
     ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac"}
 }
 
--- Helper function to get zone kills across all language variants
-local function GetZoneKills(stats, zoneNameEnglish)
-    if not stats.zoneData then return 0 end
-    
-    local translations = ZONE_TRANSLATIONS[zoneNameEnglish]
-    if not translations then
-        return stats.zoneData[zoneNameEnglish] or 0
-    end
-    
-    for _, zoneName in ipairs(translations) do
-        local kills = stats.zoneData[zoneName]
-        if kills and kills > 0 then
-            return kills
-        end
-    end
-    
-    return 0
-end
-
-AchievementSystem.achievements = {
+AchievementSystem.achievementsClassic = {
     {
         id = "class_paladin_0",
         title = "White Knight Down",
@@ -974,7 +955,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Redridge Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Redridge Mountains")
         end,
     },
         {
@@ -3278,7 +3259,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Durotar")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Durotar")
         end,
     },
     {
@@ -3298,7 +3279,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "The Barrens")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "The Barrens")
         end,
     },
     {
@@ -3318,7 +3299,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Tirisfal Glades")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Tirisfal Glades")
         end,
     },
     {
@@ -3338,7 +3319,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stonetalon Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stonetalon Mountains")
         end,
     },
 
@@ -3364,7 +3345,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Redridge Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Redridge Mountains")
         end,
     },
     {
@@ -3384,7 +3365,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Redridge Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Redridge Mountains")
         end,
     },
     {
@@ -3404,7 +3385,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Redridge Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Redridge Mountains")
         end,
     },
     {
@@ -3424,7 +3405,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Redridge Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Redridge Mountains")
         end,
     },
 
@@ -3446,7 +3427,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stonetalon Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stonetalon Mountains")
         end,
     },
     {
@@ -3466,7 +3447,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stonetalon Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stonetalon Mountains")
         end,
     },
     {
@@ -3486,7 +3467,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stonetalon Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stonetalon Mountains")
         end,
     },
 
@@ -3508,7 +3489,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Ashenvale")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Ashenvale")
         end,
     },
     {
@@ -3528,7 +3509,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Ashenvale")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Ashenvale")
         end,
     },
     {
@@ -3548,7 +3529,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Ashenvale")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Ashenvale")
         end,
     },
     {
@@ -3568,7 +3549,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Ashenvale")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Ashenvale")
         end,
     },
 
@@ -3590,7 +3571,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Duskwood")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Duskwood")
         end,
     },
     {
@@ -3610,7 +3591,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Duskwood")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Duskwood")
         end,
     },
     {
@@ -3630,7 +3611,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Duskwood")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Duskwood")
         end,
     },
     {
@@ -3650,7 +3631,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Duskwood")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Duskwood")
         end,
     },
 
@@ -3672,7 +3653,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Hillsbrad Foothills")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Hillsbrad Foothills")
         end,
     },
     {
@@ -3692,7 +3673,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Hillsbrad Foothills")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Hillsbrad Foothills")
         end,
     },
     {
@@ -3712,7 +3693,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Hillsbrad Foothills")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Hillsbrad Foothills")
         end,
     },
     {
@@ -3732,7 +3713,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Hillsbrad Foothills")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Hillsbrad Foothills")
         end,
     },
 
@@ -3754,7 +3735,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Thousand Needles")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Thousand Needles")
         end,
     },
     {
@@ -3774,7 +3755,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Thousand Needles")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Thousand Needles")
         end,
     },
     {
@@ -3794,7 +3775,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Thousand Needles")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Thousand Needles")
         end,
     },
     {
@@ -3814,7 +3795,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Thousand Needles")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Thousand Needles")
         end,
     },
 
@@ -3836,7 +3817,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Alterac Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Mountains")
         end,
     },
     {
@@ -3856,7 +3837,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Alterac Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Mountains")
         end,
     },
     {
@@ -3876,7 +3857,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Alterac Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Mountains")
         end,
     },
     {
@@ -3896,7 +3877,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Alterac Mountains")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Mountains")
         end,
     },
 
@@ -3918,7 +3899,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Arathi Highlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Arathi Highlands")
         end,
     },
     {
@@ -3938,7 +3919,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Arathi Highlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Arathi Highlands")
         end,
     },
     {
@@ -3958,7 +3939,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Arathi Highlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Arathi Highlands")
         end,
     },
     {
@@ -3978,7 +3959,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Arathi Highlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Arathi Highlands")
         end,
     },
 
@@ -4000,7 +3981,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Desolace")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Desolace")
         end,
     },
     {
@@ -4020,7 +4001,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Desolace")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Desolace")
         end,
     },
     {
@@ -4040,7 +4021,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Desolace")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Desolace")
         end,
     },
     {
@@ -4060,7 +4041,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Desolace")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Desolace")
         end,
     },
 
@@ -4082,7 +4063,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stranglethorn Vale")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stranglethorn Vale")
         end,
     },
     {
@@ -4102,7 +4083,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stranglethorn Vale")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stranglethorn Vale")
         end,
     },
     {
@@ -4122,7 +4103,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stranglethorn Vale")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stranglethorn Vale")
         end,
     },
     {
@@ -4142,7 +4123,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stranglethorn Vale")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stranglethorn Vale")
         end,
     },
 
@@ -4164,7 +4145,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "The Hinterlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "The Hinterlands")
         end,
     },
     {
@@ -4184,7 +4165,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "The Hinterlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "The Hinterlands")
         end,
     },
     {
@@ -4204,7 +4185,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "The Hinterlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "The Hinterlands")
         end,
     },
     {
@@ -4224,7 +4205,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "The Hinterlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "The Hinterlands")
         end,
     },
 
@@ -4246,7 +4227,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Tanaris")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Tanaris")
         end,
     },
     {
@@ -4266,7 +4247,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Tanaris")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Tanaris")
         end,
     },
     {
@@ -4286,7 +4267,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Tanaris")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Tanaris")
         end,
     },
     {
@@ -4306,7 +4287,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Tanaris")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Tanaris")
         end,
     },
 
@@ -4328,7 +4309,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Un'Goro Crater")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Un'Goro Crater")
         end,
     },
     {
@@ -4348,7 +4329,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Un'Goro Crater")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Un'Goro Crater")
         end,
     },
     {
@@ -4368,7 +4349,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Un'Goro Crater")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Un'Goro Crater")
         end,
     },
     {
@@ -4388,7 +4369,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Un'Goro Crater")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Un'Goro Crater")
         end,
     },
 
@@ -4410,7 +4391,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Felwood")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Felwood")
         end,
     },
     {
@@ -4430,7 +4411,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Felwood")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Felwood")
         end,
     },
     {
@@ -4450,7 +4431,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Felwood")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Felwood")
         end,
     },
     {
@@ -4470,7 +4451,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Felwood")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Felwood")
         end,
     },
 
@@ -4492,7 +4473,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Badlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Badlands")
         end,
     },
     {
@@ -4512,7 +4493,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Badlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Badlands")
         end,
     },
     {
@@ -4532,7 +4513,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Badlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Badlands")
         end,
     },
     {
@@ -4552,7 +4533,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Badlands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Badlands")
         end,
     },
 
@@ -4574,7 +4555,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Feralas")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Feralas")
         end,
     },
     {
@@ -4594,7 +4575,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Feralas")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Feralas")
         end,
     },
     {
@@ -4614,7 +4595,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Feralas")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Feralas")
         end,
     },
     {
@@ -4634,7 +4615,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Feralas")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Feralas")
         end,
     },
 
@@ -4656,7 +4637,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Searing Gorge")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Searing Gorge")
         end,
     },
     {
@@ -4676,7 +4657,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Searing Gorge")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Searing Gorge")
         end,
     },
     {
@@ -4696,7 +4677,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Searing Gorge")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Searing Gorge")
         end,
     },
     {
@@ -4716,7 +4697,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Searing Gorge")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Searing Gorge")
         end,
     },
 
@@ -4738,7 +4719,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Burning Steppes")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Burning Steppes")
         end,
     },
     {
@@ -4758,7 +4739,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Burning Steppes")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Burning Steppes")
         end,
     },
     {
@@ -4778,7 +4759,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Burning Steppes")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Burning Steppes")
         end,
     },
     {
@@ -4798,7 +4779,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Burning Steppes")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Burning Steppes")
         end,
     },
 
@@ -4820,7 +4801,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Western Plaguelands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Western Plaguelands")
         end,
     },
     {
@@ -4840,7 +4821,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Western Plaguelands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Western Plaguelands")
         end,
     },
     {
@@ -4860,7 +4841,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Western Plaguelands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Western Plaguelands")
         end,
     },
     {
@@ -4880,7 +4861,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Western Plaguelands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Western Plaguelands")
         end,
     },
 
@@ -4902,7 +4883,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Eastern Plaguelands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Eastern Plaguelands")
         end,
     },
     {
@@ -4922,7 +4903,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Eastern Plaguelands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Eastern Plaguelands")
         end,
     },
     {
@@ -4942,7 +4923,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Eastern Plaguelands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Eastern Plaguelands")
         end,
     },
     {
@@ -4962,7 +4943,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Eastern Plaguelands")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Eastern Plaguelands")
         end,
     },
 
@@ -4984,7 +4965,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Winterspring")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Winterspring")
         end,
     },
     {
@@ -5004,7 +4985,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Winterspring")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Winterspring")
         end,
     },
     {
@@ -5024,7 +5005,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Winterspring")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Winterspring")
         end,
     },
     {
@@ -5044,7 +5025,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Winterspring")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Winterspring")
         end,
     },
 
@@ -5066,7 +5047,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Silithus")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Silithus")
         end,
     },
     {
@@ -5086,7 +5067,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Silithus")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Silithus")
         end,
     },
     {
@@ -5106,7 +5087,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Silithus")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Silithus")
         end,
     },
     {
@@ -5126,7 +5107,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Silithus")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Silithus")
         end,
     },
 
@@ -5147,7 +5128,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Elwynn Forest")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Elwynn Forest")
         end,
     },
     {
@@ -7537,7 +7518,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stormwind City")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stormwind City")
         end,
     },
     {
@@ -7557,7 +7538,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stormwind City")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stormwind City")
         end,
     },
     {
@@ -7577,7 +7558,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stormwind City")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stormwind City")
         end,
     },
     {
@@ -7597,7 +7578,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Stormwind City")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Stormwind City")
         end,
     },
 
@@ -7619,7 +7600,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Ironforge")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Ironforge")
         end,
     },
     {
@@ -7639,7 +7620,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Ironforge")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Ironforge")
         end,
     },
     {
@@ -7659,7 +7640,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Ironforge")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Ironforge")
         end,
     },
     {
@@ -7679,7 +7660,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Ironforge")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Ironforge")
         end,
     },
 
@@ -7701,7 +7682,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Darnassus")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Darnassus")
         end,
     },
     {
@@ -7721,7 +7702,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Darnassus")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Darnassus")
         end,
     },
     {
@@ -7741,7 +7722,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Darnassus")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Darnassus")
         end,
     },
     {
@@ -7761,7 +7742,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Darnassus")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Darnassus")
         end,
     },
 
@@ -7787,7 +7768,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Orgrimmar")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Orgrimmar")
         end,
     },
     {
@@ -7807,7 +7788,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Orgrimmar")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Orgrimmar")
         end,
     },
     {
@@ -7827,7 +7808,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Orgrimmar")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Orgrimmar")
         end,
     },
     {
@@ -7847,7 +7828,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Orgrimmar")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Orgrimmar")
         end,
     },
 
@@ -7869,7 +7850,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Thunder Bluff")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Thunder Bluff")
         end,
     },
     {
@@ -7889,7 +7870,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Thunder Bluff")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Thunder Bluff")
         end,
     },
     {
@@ -7909,7 +7890,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Thunder Bluff")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Thunder Bluff")
         end,
     },
     {
@@ -7929,7 +7910,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Thunder Bluff")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Thunder Bluff")
         end,
     },
 
@@ -7951,7 +7932,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Undercity")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Undercity")
         end,
     },
     {
@@ -7971,7 +7952,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Undercity")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Undercity")
         end,
     },
     {
@@ -7991,7 +7972,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Undercity")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Undercity")
         end,
     },
     {
@@ -8011,7 +7992,7 @@ AchievementSystem.achievements = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Undercity")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Undercity")
         end,
     },
     {
@@ -8030,7 +8011,7 @@ AchievementSystem.achievements = {
             return ("After %d kills, blood stains every resource node. The Basin remembers your first taste of slaughter."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Arathi Basin")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Arathi Basin")
         end,
     },
     {
@@ -8049,7 +8030,7 @@ AchievementSystem.achievements = {
             return ("With %d corpses scattered across the Basin, the highlands weep crimson tears. Your reputation spreads like wildfire among both factions."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Arathi Basin")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Arathi Basin")
         end,
     },
     {
@@ -8068,7 +8049,7 @@ AchievementSystem.achievements = {
             return ("%d souls have made you death's herald in these cursed highlands. The ancient stones whisper your name in dread."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Arathi Basin")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Arathi Basin")
         end,
     },
     {
@@ -8087,7 +8068,7 @@ AchievementSystem.achievements = {
             return ("One thousand victims have crowned you the shadow that haunts every flag capture. Both armies flee at your approach."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Arathi Basin")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Arathi Basin")
         end,
     },
     {
@@ -8106,7 +8087,7 @@ AchievementSystem.achievements = {
             return ("%d screams now echo through the twisted canyon forever. The rocks themselves remember your brutality."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Warsong Gulch")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Warsong Gulch")
         end,
     },
     {
@@ -8125,7 +8106,7 @@ AchievementSystem.achievements = {
             return ("With %d fallen flag bearers, no one escapes the Reaper's embrace. The banners themselves drip with terror."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Warsong Gulch")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Warsong Gulch")
         end,
     },
     {
@@ -8144,7 +8125,7 @@ AchievementSystem.achievements = {
             return ("Your %d victims have silenced even the ancient forest spirits. They dare not whisper your cursed name."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Warsong Gulch")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Warsong Gulch")
         end,
     },
     {
@@ -8163,7 +8144,7 @@ AchievementSystem.achievements = {
             return ("One thousand souls have birthed a legend that transcends death itself. You are Warsong's eternal nightmare."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Warsong Gulch")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Warsong Gulch")
         end,
     },
     {
@@ -8182,7 +8163,7 @@ AchievementSystem.achievements = {
             return ("%d frozen corpses mark your bloodied path through the snow. The valley knows a new predator stalks its peaks."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Alterac Valley")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Valley")
         end,
     },
     {
@@ -8201,7 +8182,7 @@ AchievementSystem.achievements = {
             return ("With %d fallen warriors, the white snow drinks deep of crimson blood. Your legend grows with every frozen battlefield."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Alterac Valley")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Valley")
         end,
     },
     {
@@ -8220,7 +8201,7 @@ AchievementSystem.achievements = {
             return ("%d souls have built your throne of ice and death. Winter itself now bows to a colder, darker master."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Alterac Valley")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Valley")
         end,
     },
     {
@@ -8239,7 +8220,7 @@ AchievementSystem.achievements = {
             return ("One thousand souls have made you the endless winter that devours hope. You are Alterac's eternal frost, consuming all warmth and life."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return GetZoneKills(stats, "Alterac Valley")
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Valley")
         end,
     }
 }
