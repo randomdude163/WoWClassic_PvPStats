@@ -5,6 +5,11 @@ local guilds = {
     "Kill on Sight", "No Mercy", "Rogues Do It", "Battlefield Legends", "" -- Empty guild possible
 }
 
+-- Make guildRanks global so it can be accessed from other files like DebugTools
+guildRanks = {
+    "Guild Master", "Officer", "Veteran", "Member", "Initiate", "Recruit", "Alt", ""
+}
+
 local testPlayers = {
     {
         name = "Testplayer",
@@ -361,6 +366,7 @@ function PSC_GetRandomTestPlayer()
         testPlayer.level = -1
     end
     testPlayer.guildName = guilds[math.random(1, #guilds)]
+    testPlayer.guildRankName = guildRanks[math.random(1, #guildRanks)]
     testPlayer.rank = GenerateRandomRank()
 
     return testPlayer

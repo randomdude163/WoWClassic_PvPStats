@@ -91,7 +91,7 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
 
     -- Store killer level in PlayerInfoCache
     PSC_StorePlayerInfo(mainKillerName, mainKillerLevel, mainKillerClass,
-        randomPlayer.race, randomPlayer.gender, randomPlayer.guildName, randomPlayer.rank)
+        randomPlayer.race, randomPlayer.gender, randomPlayer.guildName, randomPlayer.guildRankName, randomPlayer.rank)
 
     local now = GetTime()
 
@@ -108,7 +108,7 @@ function PSC_SimulateCombatLogEvent(killerCount, assistCount, damageType)
 
         -- Store assist player level in PlayerInfoCache
         PSC_StorePlayerInfo(assistName, randomPlayer.level, randomPlayer.class,
-            randomPlayer.race, randomPlayer.gender, randomPlayer.guildName, randomPlayer.rank)
+            randomPlayer.race, randomPlayer.gender, randomPlayer.guildName, randomPlayer.guildRankName, randomPlayer.rank)
 
         local assistGUID = "Player-0-" .. math.random(1000000)
         TrackIncomingPlayerDamage(assistGUID, assistName, 500)
@@ -273,7 +273,7 @@ function PSC_SimulatePlayerKills(killCount)
 
         -- Register the kill with random data including rank
         PSC_StorePlayerInfo(testPlayer.name, testPlayer.level, testPlayer.class,
-            testPlayer.race, testPlayer.gender, testPlayer.guildName,
+            testPlayer.race, testPlayer.gender, testPlayer.guildName, testPlayer.guildRankName,
             testPlayer.rank)
         PSC_RegisterPlayerKill(testPlayer.name)
 
@@ -307,7 +307,7 @@ function PSC_SimulateLevel1Kills(killCount)
 
         -- Register the kill with random data including rank
         PSC_StorePlayerInfo(testPlayer.name, testPlayer.level, testPlayer.class,
-            testPlayer.race, testPlayer.gender, testPlayer.guildName,
+            testPlayer.race, testPlayer.gender, testPlayer.guildName, testPlayer.guildRankName,
             testPlayer.rank)
         PSC_RegisterPlayerKill(testPlayer.name)
 
@@ -346,10 +346,11 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
     local killerRace = killerPlayer.race
     local killerGender = killerPlayer.gender
     local killerGuild = killerPlayer.guildName
+    local killerGuildRank = killerPlayer.guildRankName
     local killerRank = killerPlayer.rank
 
     -- Store killer info in cache
-    PSC_StorePlayerInfo(killerName, killerLevel, killerClass, killerRace, killerGender, killerGuild, killerRank)
+    PSC_StorePlayerInfo(killerName, killerLevel, killerClass, killerRace, killerGender, killerGuild, killerGuildRank, killerRank)
 
     -- Create a simulated killer info structure
     local killerInfo = {
@@ -377,7 +378,7 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
             -- Sometimes don't store assist info because it might happen that we don't mouseover or target a player that assists in a kill
             print("Storing assist info for " .. assistPlayer.name)
             PSC_StorePlayerInfo(assistPlayer.name, assistPlayer.level, assistPlayer.class,
-                            assistPlayer.race, assistPlayer.gender, assistPlayer.guildName, assistPlayer.rank)
+                            assistPlayer.race, assistPlayer.gender, assistPlayer.guildName, assistPlayer.guildRankName, assistPlayer.rank)
         end
         -- Add assist without guid
         table.insert(killerInfo.assists, {
@@ -573,7 +574,8 @@ function PSC_CreateRoleplayer()
             local encounterZone = getZoneForLevel(avgLevel)
 
             -- Update player info for this encounter
-            PSC_StorePlayerInfo(enemyName, currentEnemyLevel, enemyClass, enemyRace, enemyGender, enemyGuild, enemyRank)
+            local enemyGuildRank = enemyGuild == "" and "" or guildRanks[math.random(1, #guildRanks)]
+            PSC_StorePlayerInfo(enemyName, currentEnemyLevel, enemyClass, enemyRace, enemyGender, enemyGuild, enemyGuildRank, enemyRank)
 
             -- Set up time and zone overrides
             GetRealZoneText = function() return encounterZone end
@@ -610,7 +612,7 @@ function PSC_CreateRoleplayer()
                     assistLevel = math.min(60, math.max(1, assistLevel))
 
                     PSC_StorePlayerInfo(otherAssist.name, assistLevel, otherAssist.class,
-                                       otherAssist.race, otherAssist.gender, otherAssist.guildName, otherAssist.rank)
+                                       otherAssist.race, otherAssist.gender, otherAssist.guildName, otherAssist.guildRankName, otherAssist.rank)
 
                     table.insert(killerInfo.assists, {
                         name = otherAssist.name,
@@ -649,7 +651,7 @@ function PSC_CreateRoleplayer()
                 killerLevel = math.min(60, math.max(1, killerLevel))
 
                 PSC_StorePlayerInfo(mainKiller.name, killerLevel, mainKiller.class,
-                                   mainKiller.race, mainKiller.gender, mainKiller.guildName, mainKiller.rank)
+                                   mainKiller.race, mainKiller.gender, mainKiller.guildName, mainKiller.guildRankName, mainKiller.rank)
 
                 -- Create killer info structure with Roleplayer as an assister
                 local killerInfo = {
@@ -675,7 +677,7 @@ function PSC_CreateRoleplayer()
                     assistLevel = math.min(60, math.max(1, assistLevel))
 
                     PSC_StorePlayerInfo(otherAssist.name, assistLevel, otherAssist.class,
-                                       otherAssist.race, otherAssist.gender, otherAssist.guildName, otherAssist.rank)
+                                       otherAssist.race, otherAssist.gender, otherAssist.guildName, otherAssist.guildRankName, otherAssist.rank)
 
                     table.insert(killerInfo.assists, {
                         name = otherAssist.name,
@@ -844,7 +846,7 @@ function PSC_GenerateStreakTestData(days, killsPerDay, daysAgo)
 
             -- Store player info in cache using our daily victim name
             PSC_StorePlayerInfo(dailyVictimName, testPlayer.level, testPlayer.class,
-                testPlayer.race, testPlayer.gender, testPlayer.guildName,
+                testPlayer.race, testPlayer.gender, testPlayer.guildName, testPlayer.guildRankName,
                 testPlayer.rank)
             PSC_RegisterPlayerKill(dailyVictimName)
 

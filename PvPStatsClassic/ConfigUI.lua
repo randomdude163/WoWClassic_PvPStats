@@ -217,11 +217,45 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
+    local includePlayerDetailsCheckbox, _ = CreateCheckbox(parent, "Include player details",
+        PSC_DB.IncludePlayerDetailsInAnnounce,
+        function(checked)
+            PSC_DB.IncludePlayerDetailsInAnnounce = checked
+        end)
+    includePlayerDetailsCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
+    parent.includePlayerDetailsCheckbox = includePlayerDetailsCheckbox
+    includePlayerDetailsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Include player details in kill announcements")
+        GameTooltip:AddLine("Always show level, class, and race of killed enemies in announcements.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    includePlayerDetailsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local includeGuildDetailsCheckbox, _ = CreateCheckbox(parent, "Include guild details",
+        PSC_DB.IncludeGuildDetailsInAnnounce,
+        function(checked)
+            PSC_DB.IncludeGuildDetailsInAnnounce = checked
+        end)
+    includeGuildDetailsCheckbox:SetPoint("TOPLEFT", includePlayerDetailsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
+    parent.includeGuildDetailsCheckbox = includeGuildDetailsCheckbox
+    includeGuildDetailsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Include guild details in kill announcements")
+        GameTooltip:AddLine("Shows guild rank and guild name of killed enemies (e.g. 'Member of <Guild Name>').", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    includeGuildDetailsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
     local enableRecordAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce personal bests",
         PSC_DB.EnableRecordAnnounceMessages, function(checked)
             PSC_DB.EnableRecordAnnounceMessages = checked
         end)
-    enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", includeGuildDetailsCheckbox, "BOTTOMLEFT", -40, -CHECKBOX_SPACING)
     parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
     enableRecordAnnounceCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -252,7 +286,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     local slider = CreateFrame("Slider", "PSC_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
     slider:SetWidth(200)
     slider:SetHeight(16)
-    slider:SetPoint("TOPLEFT", announcementSettingsHeader, "TOPLEFT", 305, -CHECKBOX_SPACING - 78)
+    slider:SetPoint("TOPLEFT", announcementSettingsHeader, "TOPLEFT", 305, -CHECKBOX_SPACING - 74)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(2, 10)
     slider:SetValueStep(1)
@@ -280,7 +314,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         announceChannelOptions, PSC_DB.AnnounceChannel or "GROUP", function(selectedValue)
             PSC_DB.AnnounceChannel = selectedValue
         end)
-    announceChannelContainer:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 5, -CHECKBOX_SPACING)
+    announceChannelContainer:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 303, 44)
     parent.announceChannelDropdown = announceChannelDropdown
 
     -- Ensure the dropdown shows the correct initial value
@@ -305,7 +339,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -190)
+    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -195)
 
     local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode", PSC_DB.AutoBattlegroundMode,
         function(checked)
@@ -396,7 +430,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -345)
+    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -350)
 
     local showKillMilestonesCheckbox, _ = CreateCheckbox(parent, "Show kill milestones", PSC_DB.ShowKillMilestones,
         function(checked)
@@ -845,6 +879,8 @@ function PSC_UpdateConfigUI()
     configFrame.killMilestoneSoundsCheckbox:SetChecked(PSC_DB.EnableKillMilestoneSound)
     configFrame.showMilestoneForFirstKillCheckbox:SetChecked(PSC_DB.ShowMilestoneForFirstKill)
     configFrame.enableKillAnnounceCheckbox:SetChecked(PSC_DB.EnableKillAnnounceMessages)
+    configFrame.includePlayerDetailsCheckbox:SetChecked(PSC_DB.IncludePlayerDetailsInAnnounce)
+    configFrame.includeGuildDetailsCheckbox:SetChecked(PSC_DB.IncludeGuildDetailsInAnnounce)
     configFrame.enableRecordAnnounceCheckbox:SetChecked(PSC_DB.EnableRecordAnnounceMessages)
     configFrame.enableMultiKillAnnounceCheckbox:SetChecked(PSC_DB.EnableMultiKillAnnounceMessages)
     configFrame.showAccountWideStatsCheckbox:SetChecked(PSC_DB.ShowAccountWideStats)
@@ -1131,6 +1167,8 @@ function PSC_CreateConfigFrame()
     configFrame.killMilestoneSoundsCheckbox = tabFrames[1].killMilestoneSoundsCheckbox
     configFrame.showMilestoneForFirstKillCheckbox = tabFrames[1].showMilestoneForFirstKillCheckbox
     configFrame.enableKillAnnounceCheckbox = tabFrames[1].enableKillAnnounceCheckbox
+    configFrame.includePlayerDetailsCheckbox = tabFrames[1].includePlayerDetailsCheckbox
+    configFrame.includeGuildDetailsCheckbox = tabFrames[1].includeGuildDetailsCheckbox
     configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
     configFrame.enableMultiKillAnnounceCheckbox = tabFrames[1].enableMultiKillAnnounceCheckbox
     configFrame.showAccountWideStatsCheckbox = tabFrames[1].showAccountWideStatsCheckbox

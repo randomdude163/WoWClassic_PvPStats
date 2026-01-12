@@ -57,6 +57,7 @@ local function GetPlayerInfoFromUnit(unit)
     local race = nil
     local gender = nil
     local guildName = nil
+    local guildRankName = nil
     local rank = nil
 
     if UnitIsPlayer(unit) then
@@ -71,8 +72,9 @@ local function GetPlayerInfoFromUnit(unit)
         class = class:sub(1, 1):upper() .. class:sub(2):lower()
         race, _ = UnitRace(unit)
         gender = ConvertGenderToString(UnitSex(unit))
-        guildName = GetGuildInfo(unit)
+        guildName, guildRankName, _ = GetGuildInfo(unit)
         if not guildName then guildName = "" end
+        if not guildRankName then guildRankName = "" end
         rank = GetHonorRank(unit)
     elseif not UnitIsPlayer(unit) then
         -- Mob for testing purposes
@@ -82,6 +84,7 @@ local function GetPlayerInfoFromUnit(unit)
         race = "Unknown"
         gender = "Unknown"
         guildName = ""
+        guildRankName = ""
         rank = GetHonorRank(unit)
     end
 
@@ -92,14 +95,15 @@ local function GetPlayerInfoFromUnit(unit)
     --     print("Race: " .. tostring(race))
     --     print("Gender: " .. tostring(gender))
     --     print("Guild: " .. tostring(guildName))
+    --     print("Guild Rank: " .. tostring(guildRankName))
     --     print("Rank: " .. tostring(rank))
     -- end
 
-    if not name or not level or not class or not race or not gender or not guildName or not rank then
-        return nil, nil, nil, nil, nil, nil, nil
+    if not name or not level or not class or not race or not gender or not guildName or not guildRankName or not rank then
+        return nil, nil, nil, nil, nil, nil, nil, nil
     end
 
-    return name, level, class, race, gender, guildName, rank
+    return name, level, class, race, gender, guildName, guildRankName, rank
 end
 
 function PSC_GetPlayerInfoKey(name, realm)
@@ -215,7 +219,7 @@ function PSC_MigratePlayerInfoToEnglish()
     end
 end
 
-function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
+function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, guildRankName, rank)
     local playerName, playerRealm = name:match("^(.+)%-(.+)$")
 
     local realm
@@ -238,6 +242,7 @@ function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
     PSC_DB.PlayerInfoCache[playerNameWithRealm].race = race
     PSC_DB.PlayerInfoCache[playerNameWithRealm].gender = gender
     PSC_DB.PlayerInfoCache[playerNameWithRealm].guild = guildName
+    PSC_DB.PlayerInfoCache[playerNameWithRealm].guildRank = guildRankName
     PSC_DB.PlayerInfoCache[playerNameWithRealm].rank = rank
 
     -- if PSC_Debug then
@@ -249,8 +254,8 @@ function PSC_GetAndStorePlayerInfoFromUnit(unit)
     if not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then
         return
     end
-    local name, level, class, race, gender, guildName, rank = GetPlayerInfoFromUnit(unit)
-    if not name or not level or not class or not race or not gender or not guildName or not rank then
+    local name, level, class, race, gender, guildName, guildRankName, rank = GetPlayerInfoFromUnit(unit)
+    if not name or not level or not class or not race or not gender or not guildName or not guildRankName or not rank then
         if PSC_Debug then
             print("Incomplete player info for unit: " .. unit)
         end
@@ -258,7 +263,7 @@ function PSC_GetAndStorePlayerInfoFromUnit(unit)
     end
     class = ConvertClassToEnglish(class)
     race = ConvertRaceToEnglish(race)
-    PSC_StorePlayerInfo(name, level, class, race, gender, guildName, rank)
+    PSC_StorePlayerInfo(name, level, class, race, gender, guildName, guildRankName, rank)
 end
 
 
@@ -408,6 +413,8 @@ end
 
 function PSC_LoadDefaultSettings()
     PSC_DB.EnableKillAnnounceMessages = true
+    PSC_DB.IncludePlayerDetailsInAnnounce = false
+    PSC_DB.IncludeGuildDetailsInAnnounce = false
     PSC_DB.EnableRecordAnnounceMessages = true
     PSC_DB.EnableMultiKillAnnounceMessages = true
     PSC_DB.MultiKillThreshold = 3
@@ -497,6 +504,12 @@ function PSC_InitializePlayerKillCounts()
             xOfs = 0,
             yOfs = 0
         }
+    end
+    if PSC_DB.IncludePlayerDetailsInAnnounce == nil then
+        PSC_DB.IncludePlayerDetailsInAnnounce = false
+    end
+    if PSC_DB.IncludeGuildDetailsInAnnounce == nil then
+        PSC_DB.IncludeGuildDetailsInAnnounce = false
     end
 end
 

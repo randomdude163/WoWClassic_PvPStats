@@ -354,6 +354,7 @@ function PSC_CreatePlayerDetailInfo(playerName)
         killHistory.gender = playerInfo.gender or "Unknown"
         killHistory.levelDisplay = playerInfo.level or -1
         killHistory.guild = playerInfo.guild or ""
+        killHistory.guildRank = playerInfo.guildRank or ""
         killHistory.rank = playerInfo.rank or 0
     end
 
@@ -557,23 +558,23 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         maskTexture:SetSize(borderSize, borderSize)
         maskTexture:SetPoint("CENTER")
         borderTexture:AddMaskTexture(maskTexture)
-        
+
         -- Add race icon to the left of class icon
         if playerRace and playerRace ~= "Unknown" and playerGender and playerGender ~= "Unknown" then
             local raceIcon = iconContainer:CreateTexture(nil, "ARTWORK")
             raceIcon:SetSize(32, 32)
             raceIcon:SetPoint("RIGHT", classIcon, "LEFT", -5, 0)
-            
+
             local raceKey = playerRace:gsub(" ", ""):upper() .. "_" .. playerGender:upper()
             local raceIconID = RACE_ICON_IDS[raceKey]
-            
+
             if raceIconID then
                 raceIcon:SetTexture(raceIconID)
             else
                 raceIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
             end
         end
-        
+
         if playerDetail.rank and playerDetail.rank > 0 then
             local rankIcon = iconContainer:CreateTexture(nil, "OVERLAY")
             rankIcon:SetSize(32, 32)
@@ -594,6 +595,10 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     -- Add guild row if player has a guild
     if playerGuild and playerGuild ~= "" then
         yOffset = CreateDetailRow(content, "Guild:", playerGuild, yOffset)
+        -- Add guild rank if available
+        if playerDetail.guildRank and playerDetail.guildRank ~= "" then
+            yOffset = CreateDetailRow(content, "Guild Rank:", playerDetail.guildRank, yOffset)
+        end
     end
 
     -- Add realm row if player is from a different realm
@@ -601,7 +606,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         yOffset = CreateDetailRow(content, "Realm:", playerRealm, yOffset)
     end
 
-    yOffset = CreateDetailRow(content, "Rank:", playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0", yOffset)
+    yOffset = CreateDetailRow(content, "PvP Rank:", playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0", yOffset)
 
     local killsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     killsLabel:SetPoint("TOPLEFT", 25, yOffset)
@@ -625,7 +630,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     local kdValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     kdValue:SetPoint("TOPLEFT", 120, yOffset)
     local kdRatio = playerDetail.deaths > 0 and playerDetail.kills / playerDetail.deaths or playerDetail.kills
-    kdValue:SetText(string.format("%.2f", kdRatio))
+    kdValue:SetText(string.format("%.1f", kdRatio))
     if kdRatio >= 2.0 then
         kdValue:SetTextColor(1, 0.82, 0)
     end
