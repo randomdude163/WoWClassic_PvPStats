@@ -25,10 +25,12 @@ Killstreaks.lua
 KillStreakPopup.lua
 MinimapButton.lua
 SlashCommands.lua
+Achievements.lua
+AchievementDefinitionsClassic.lua
+AchievementDefinitionsTBC.lua
 AchievementDefinitions.lua
 AchievementFrame.lua
 AchievementPopup.lua
-Achievements.lua
 StatisticsFrame.lua
 Utils.lua
 TestData.lua

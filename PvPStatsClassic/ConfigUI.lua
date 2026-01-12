@@ -631,6 +631,22 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
+    local capAchievementProgressCheckbox, _ = CreateCheckbox(parent, "Cap achievement progress at target value",
+        PSC_DB.CapAchievementProgress, function(checked)
+            PSC_DB.CapAchievementProgress = checked
+        end)
+    capAchievementProgressCheckbox:SetPoint("TOPLEFT", tooltipExtendedInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.capAchievementProgressCheckbox = capAchievementProgressCheckbox
+    capAchievementProgressCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Cap achievement progress at target value")
+        GameTooltip:AddLine("When enabled, achievement progress will display as '100/100' instead of '125/100' once completed.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    capAchievementProgressCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
     return 320
 end
 
@@ -846,7 +862,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 660)
+    frame:SetSize(600, 690)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -887,6 +903,10 @@ function PSC_UpdateConfigUI()
     configFrame.trackBGKillsCheckbox:SetChecked(PSC_DB.CountKillsInBattlegrounds)
     configFrame.trackBGDeathsCheckbox:SetChecked(PSC_DB.CountDeathsInBattlegrounds)
     configFrame.autoOpenKillStreakCheckbox:SetChecked(PSC_DB.AutoOpenKillStreakPopup)
+
+    if configFrame.capAchievementProgressCheckbox then
+        configFrame.capAchievementProgressCheckbox:SetChecked(PSC_DB.CapAchievementProgress)
+    end
 
     if configFrame.enableMultiKillSoundsCheckbox then
         configFrame.enableMultiKillSoundsCheckbox:SetChecked(PSC_DB.EnableMultiKillSounds)
