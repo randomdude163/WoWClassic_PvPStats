@@ -40,6 +40,13 @@ local function CreatePopupFrame()
         }
     end)
 
+    -- Override close button to work in combat
+    if frame.CloseButton then
+        frame.CloseButton:SetScript("OnClick", function()
+            PSC_FrameManager:HideFrame("PSC_KillStreakPopupFrame")
+        end)
+    end
+
     table.insert(UISpecialFrames, "PSC_KillStreakPopupFrame")
     frame.TitleText:SetText("Current Kill Streak")
 

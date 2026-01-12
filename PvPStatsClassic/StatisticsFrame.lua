@@ -1584,7 +1584,7 @@ local function setupMainFrame()
     end)
 
     frame.CloseButton:SetScript("OnClick", function()
-        frame:Hide()
+        PSC_FrameManager:HideFrame("Statistics")
     end)
 
     frame.TitleText:SetText("PvP Statistics")

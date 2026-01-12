@@ -855,7 +855,7 @@ local function CreateMainFrame()
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
     frame.CloseButton:SetScript("OnClick", function()
-        frame:Hide()
+        PSC_FrameManager:HideFrame("ConfigUI")
     end)
 
     tinsert(UISpecialFrames, "PSC_ConfigFrame")

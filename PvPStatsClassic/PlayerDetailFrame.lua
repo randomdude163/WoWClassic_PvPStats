@@ -476,6 +476,13 @@ local function CreatePlayerDetailFrame()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
+    -- Override close button to work in combat
+    if frame.CloseButton then
+        frame.CloseButton:SetScript("OnClick", function()
+            PSC_FrameManager:HideFrame("PlayerDetail")
+        end)
+    end
+
     frame:SetScript("OnMouseDown", function(self)
         if self.activeNoteEditBox and self.activeNoteEditBox:IsVisible() and self.activeNoteEditBox:HasFocus() then
             local mouseFocus = GetMouseFocus()

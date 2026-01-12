@@ -711,6 +711,13 @@ local function CreateMainFrame()
     local titleText = GetFrameTitleTextWithCharacterText("PvP History")
     frame.TitleText:SetText(titleText)
 
+    -- Override close button to work in combat
+    if frame.CloseButton then
+        frame.CloseButton:SetScript("OnClick", function()
+            PSC_FrameManager:HideFrame("KillsList")
+        end)
+    end
+
     return frame
 end
 
