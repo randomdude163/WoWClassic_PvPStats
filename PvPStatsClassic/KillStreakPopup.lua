@@ -47,7 +47,6 @@ local function CreatePopupFrame()
         end)
     end
 
-    table.insert(UISpecialFrames, "PSC_KillStreakPopupFrame")
     frame.TitleText:SetText("Current Kill Streak")
 
     if frame.CloseButton then
