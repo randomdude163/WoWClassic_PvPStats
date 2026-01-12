@@ -132,7 +132,6 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
 
     local characterKey = PSC_GetCharacterKey()
     local killMessage = string.gsub(PSC_DB.KillAnnounceMessage, "Enemyplayername", killedPlayer)
-    local killData = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills[nameWithLevel]
 
     if string.find(killMessage, "x#") then
         local totalKills = PSC_GetTotalsKillsForPlayer(killedPlayer)
@@ -142,8 +141,40 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     local levelDifference = level - playerLevel
     local levelDisplay = level == -1 and "??" or tostring(level)
 
-    if level == -1 or (level > 0 and levelDifference >= 6) then
-        killMessage = killMessage .. " (Level " .. levelDisplay .. ")"
+    -- Build details string to include player and/or guild information
+    local detailsString = ""
+    local infoKey = PSC_GetInfoKeyFromName(killedPlayer)
+    local playerInfo = PSC_DB.PlayerInfoCache[infoKey]
+
+    -- Include player details if option is enabled
+    if PSC_DB.IncludePlayerDetailsInAnnounce then
+        if playerInfo then
+            local classDisplay = playerInfo.class or "Unknown"
+            local raceDisplay = playerInfo.race or "Unknown"
+            detailsString = "Level " .. levelDisplay .. " " .. raceDisplay .. " " .. classDisplay
+        else
+            detailsString = "Level " .. levelDisplay
+        end
+    elseif level == -1 or (level > 0 and levelDifference >= 6) then
+        detailsString = "Level " .. levelDisplay
+    end
+
+    -- Include guild details if option is enabled
+    if PSC_DB.IncludeGuildDetailsInAnnounce then
+        if playerInfo and playerInfo.guild and playerInfo.guild ~= "" then
+            local guildRankDisplay = playerInfo.guildRank or "Member"
+            local guildString = guildRankDisplay .. " of <" .. playerInfo.guild .. ">"
+            if detailsString ~= "" then
+                detailsString = detailsString .. ", " .. guildString
+            else
+                detailsString = guildString
+            end
+        end
+    end
+
+    -- Add details to message if any details were included
+    if detailsString ~= "" then
+        killMessage = killMessage .. " (" .. detailsString .. ")"
     end
 
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
@@ -152,7 +183,6 @@ local function AnnounceKill(killedPlayer, level, nameWithLevel, playerLevel)
     end
 
     PSC_SendAnnounceMessage(killMessage)
-
 
     if PSC_MultiKillCount >= PSC_DB.MultiKillThreshold then
         local multiKillText = GetMultiKillText(PSC_MultiKillCount)
