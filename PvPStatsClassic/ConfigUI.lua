@@ -635,12 +635,12 @@ local function CreateAnnouncementSection(parent, yOffset)
         PSC_DB.CapAchievementProgress, function(checked)
             PSC_DB.CapAchievementProgress = checked
         end)
-    capAchievementProgressCheckbox:SetPoint("TOPLEFT", autoOpenKillStreakCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    capAchievementProgressCheckbox:SetPoint("TOPLEFT", tooltipExtendedInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
     parent.capAchievementProgressCheckbox = capAchievementProgressCheckbox
     capAchievementProgressCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Cap achievement progress at target value")
-        GameTooltip:AddLine("When enabled, achievement progress will display as '1000/1000' instead of '1500/1000' once completed. Disable to use achievements as extended statistics.", 1, 1, 1, true)
+        GameTooltip:AddLine("When enabled, achievement progress will display as '100/100' instead of '125/100' once completed.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     capAchievementProgressCheckbox:SetScript("OnLeave", function()
@@ -862,7 +862,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "PSC_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 660)
+    frame:SetSize(600, 690)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
