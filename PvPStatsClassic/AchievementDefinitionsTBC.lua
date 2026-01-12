@@ -17,7 +17,8 @@ local ZONE_TRANSLATIONS_TBC = {
     ["Silvermoon City"] = {"Silvermoon City", "Silbermond", "Lune-d'Argent", "Ciudad de Lunargenta"},
     ["Azuremyst Isle"] = {"Azuremyst Isle", "Azurmythosinsel", "Île de Brume-azur", "Isla Bruma Azur"},
     ["Bloodmyst Isle"] = {"Bloodmyst Isle", "Blutmythosinsel", "Île de Brume-sang", "Isla Bruma de Sangre"},
-    ["Exodar"] = {"Exodar", "Exodar", "Exodar", "Exodar"}
+    ["Exodar"] = {"Exodar", "Exodar", "Exodar", "Exodar"},
+    ["Eye of the Storm"] = {"Eye of the Storm", "Auge des Sturms", "L'Œil du cyclone", "Ojo de la Tormenta"}
 }
 
 
@@ -945,4 +946,674 @@ AchievementSystem.achievementsTbc = {
             return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Bloodmyst Isle")
         end,
     },
+
+    -- =====================================================
+    -- TBC ALL CLASSES ACHIEVEMENTS
+    -- =====================================================
+    {
+        id = "class_mixed_all_nine_100_tbc",
+        title = "Class Warfare Initiate (TBC)",
+        description = function(a) return ("Execute %d of each class (incl. Paladin and Shaman)"):format(a.targetValue) end,
+        iconID = 132147,
+        achievementPoints = 75,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Perfect class extermination achieved. %d deaths per class - including both Paladins and Shamans. The Burning Crusade brought class balance... you brought class extinction.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForAchievementWithAllClasses(stats, PSC_GAME_VERSIONS.TBC)
+        end,
+    },
+    {
+        id = "class_mixed_all_nine_250_tbc",
+        title = "Professional Exterminator (TBC)",
+        description = function(a) return ("Execute %d of each class (incl. Paladin and Shaman)"):format(a.targetValue) end,
+        iconID = 132349,
+        achievementPoints = 125,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("All nine classes equally decimated. %d corpses per profession. Your methodical approach covers every class in the game - no exceptions, no mercy.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForAchievementWithAllClasses(stats, PSC_GAME_VERSIONS.TBC)
+        end,
+    },
+    {
+        id = "class_mixed_all_nine_500_tbc",
+        title = "Class Genocide Specialist (TBC)",
+        description = function(a) return ("Execute %d of each class (incl. Paladin and Shaman)"):format(a.targetValue) end,
+        iconID = 135999,
+        achievementPoints = 125,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Systematic class annihilation complete. %d deaths per class. Warriors, Paladins, Shamans, and every other class - all reduced to perfect statistical equality in death.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForAchievementWithAllClasses(stats, PSC_GAME_VERSIONS.TBC)
+        end,
+    },
+    {
+        id = "class_mixed_all_nine_1000_tbc",
+        title = "The Great Leveler (TBC)",
+        description = function(a) return ("Execute %d of each class (incl. Paladin and Shaman)"):format(a.targetValue) end,
+        iconID = 136149,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Ultimate class extinction achieved. %d corpses per class. You've mastered the art of killing all nine classes with equal proficiency. Paladins and Shamans learned they're not special.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForAchievementWithAllClasses(stats, PSC_GAME_VERSIONS.TBC)
+        end,
+    },
+
+    -- =====================================================
+    -- BLOOD ELF RACE ACHIEVEMENTS (For Alliance)
+    -- =====================================================
+    {
+        id = "race_bloodelf_0",
+        title = "Elf Extinction Enthusiast",
+        description = function(a) return ("Eliminate %d Blood Elves"):format(a.targetValue) end,
+        iconID = 236443,
+        achievementPoints = 10,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Blood Elves down! These fashion-obsessed pretty boys joined the Horde thinking it would make them look 'edgy.' Turns out corpses all look the same regardless of how many hours they spent in character creation.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.raceData["Blood Elf"] or 0
+        end,
+    },
+    {
+        id = "race_bloodelf_1",
+        title = "No More Mana Tap",
+        description = function(a) return ("Eliminate %d Blood Elves"):format(a.targetValue) end,
+        iconID = 236443,
+        achievementPoints = 25,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Blood Elves eliminated! Half rolled female characters with names like 'Legolàs' or 'Séphiroth,' the other half were actual females who wanted to play the 'hot race.' Their Mana Tap racial couldn't save them from your beatdown.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.raceData["Blood Elf"] or 0
+        end,
+    },
+    {
+        id = "race_bloodelf_2",
+        title = "Silvermoon Sanitation Service",
+        description = function(a) return ("Eliminate %d Blood Elves"):format(a.targetValue) end,
+        iconID = 236443,
+        achievementPoints = 50,
+        targetValue = 2000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Blood Elves permanently deleted! These addiction-riddled magic junkies thought joining the Horde would help them kick their mana habit. The only thing they kicked was the bucket. Kael'thas would be disappointed, but he's too busy being a raid boss to care.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.raceData["Blood Elf"] or 0
+        end,
+    },
+    {
+        id = "race_bloodelf_3",
+        title = "The Beautiful Corpse Collector",
+        description = function(a) return ("Eliminate %d Blood Elves"):format(a.targetValue) end,
+        iconID = 236443,
+        achievementPoints = 100,
+        targetValue = 4000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Blood Elves sent to the graveyard! These pompous, narcissistic elves spent more time adjusting their hair than their keybinds. They betrayed the Alliance, abandoned their heritage, and became mana-addicted traitors - and you've made them pay for every single mistake. Their perfect cheekbones look a lot less impressive when they're six feet under. The Sunwell burned once - you're the inferno that keeps on giving.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.raceData["Blood Elf"] or 0
+        end,
+    },
+
+    -- =====================================================
+    -- DRAENEI RACE ACHIEVEMENTS (For Horde)
+    -- =====================================================
+    {
+        id = "race_draenei_0",
+        title = "Space Goat Butcher",
+        description = function(a) return ("Eliminate %d Draenei"):format(a.targetValue) end,
+        iconID = 236441,
+        achievementPoints = 10,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Draenei eliminated! These sparkly space goats traveled across dimensions just to die to you. Their Gift of the Naaru couldn't heal them from your righteous beatdown. Prophet Velen saw this coming but didn't warn them.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.raceData["Draenei"] or 0
+        end,
+    },
+    {
+        id = "race_draenei_1",
+        title = "Dimensional Disaster",
+        description = function(a) return ("Eliminate %d Draenei"):format(a.targetValue) end,
+        iconID = 236441,
+        achievementPoints = 25,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Draenei sent back to the nether! These holier-than-thou space hippies joined the Alliance thinking the Light would protect them. Turns out, the Light takes coffee breaks. Their tentacle beards couldn't save them from getting ganked.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.raceData["Draenei"] or 0
+        end,
+    },
+    {
+        id = "race_draenei_2",
+        title = "Prophet's Nightmare",
+        description = function(a) return ("Eliminate %d Draenei"):format(a.targetValue) end,
+        iconID = 236441,
+        achievementPoints = 50,
+        targetValue = 2000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Draenei permanently grounded! They crashed their spaceship on Azeroth, and now you're crashing their hopes and dreams. The Burning Legion chased them across the universe - you finished the job. Velen's visions of the future now exclusively feature your face.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.raceData["Draenei"] or 0
+        end,
+    },
+    {
+        id = "race_draenei_3",
+        title = "Exodar Express to the Graveyard",
+        description = function(a) return ("Eliminate %d Draenei"):format(a.targetValue) end,
+        iconID = 236441,
+        achievementPoints = 100,
+        targetValue = 4000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d Draenei deleted from existence! These interdimensional refugees fled the Burning Legion, survived the destruction of Draenor, crash-landed on Azeroth, and joined the Alliance - only to become your personal farming simulator. Their Gift of the Naaru is now the Gift of the Corpse Run. The Light has abandoned them, the Naaru are in therapy, and Prophet Velen is updating his resume. They should have stayed in the Nether - at least demons kill you quickly.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.raceData["Draenei"] or 0
+        end,
+    },
+
+    -- =====================================================
+    -- TBC ALLIANCE RACE ACHIEVEMENTS (5 races: Human, Gnome, Dwarf, Night Elf, Draenei)
+    -- =====================================================
+    {
+        id = "race_alliance_mixed_tbc_100",
+        title = "Alliance Diversity Program (TBC)",
+        description = function(a) return ("Eliminate %d of each Alliance race (500 total)"):format(a.targetValue) end,
+        iconID = 236592,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Perfect TBC Alliance genocide balance! %d Humans, %d Gnomes, %d Dwarves, %d Night Elves, and %d Draenei - truly equal opportunity slaughter! The Draenei thought fleeing across dimensions would save them. Spoiler: it didn't.")
+                :format(a.targetValue, a.targetValue, a.targetValue, a.targetValue, a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForAllianceRacesTBC(stats)
+        end,
+    },
+    {
+        id = "race_alliance_mixed_tbc_250",
+        title = "Alliance Census Crisis (TBC)",
+        description = function(a) return ("Eliminate %d of each Alliance race (1250 total)"):format(a.targetValue) end,
+        iconID = 236592,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("TBC Alliance extermination ratios perfected! %d kills per race including those sparkly space goats. The Draenei's dimensional ship should have kept flying - Azeroth wasn't ready for them, but you certainly were.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForAllianceRacesTBC(stats)
+        end,
+    },
+    {
+        id = "race_alliance_mixed_tbc_500",
+        title = "Alliance Extinction Express (TBC)",
+        description = function(a) return ("Eliminate %d of each Alliance race (2500 total)"):format(a.targetValue) end,
+        iconID = 236592,
+        achievementPoints = 75,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Complete TBC Alliance demographic collapse! %d deaths per race. The Draenei survived the Legion, Orcs, and interdimensional travel, only to become another statistic in your body count. Prophet Velen should have seen this coming.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForAllianceRacesTBC(stats)
+        end,
+    },
+    {
+        id = "race_alliance_mixed_tbc_1000",
+        title = "Alliance Apocalypse Protocol (TBC)",
+        description = function(a) return ("Eliminate %d of each Alliance race (5000 total)"):format(a.targetValue) end,
+        iconID = 236592,
+        achievementPoints = 100,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("LEGENDARY TBC GENOCIDE! You've eliminated %d of each Alliance race with mathematical precision. The Draenei's gift of the Light to the Alliance means nothing when you're this good at turning off their lights permanently. Five races, perfect balance, absolute devastation.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForAllianceRacesTBC(stats)
+        end,
+    },
+
+    -- =====================================================
+    -- TBC HORDE RACE ACHIEVEMENTS (5 races: Orc, Undead, Troll, Tauren, Blood Elf)
+    -- =====================================================
+    {
+        id = "race_horde_mixed_tbc_100",
+        title = "Horde Sampling Platter (TBC)",
+        description = function(a) return ("Eliminate %d of each Horde race including Blood Elves (500 total)"):format(a.targetValue) end,
+        iconID = 255132,
+        achievementPoints = 30,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d of each TBC Horde race eliminated. Even the pretty boy Blood Elves weren't pretty enough to escape your wrath. Equal opportunity murder across all five savage (and fabulous) races.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForHordeRacesTBC(stats)
+        end,
+    },
+    {
+        id = "race_horde_mixed_tbc_250",
+        title = "Horde Population Disaster (TBC)",
+        description = function(a) return ("Eliminate %d of each Horde race including Blood Elves (1250 total)"):format(a.targetValue) end,
+        iconID = 255132,
+        achievementPoints = 60,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills per TBC Horde race. The Blood Elves joined the Horde for protection - ironic how that worked out. Silvermoon's beauty is now matched by its death toll.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForHordeRacesTBC(stats)
+        end,
+    },
+    {
+        id = "race_horde_mixed_tbc_500",
+        title = "Horde Demographic Meltdown (TBC)",
+        description = function(a) return ("Eliminate %d of each Horde race including Blood Elves (2500 total)"):format(a.targetValue) end,
+        iconID = 255132,
+        achievementPoints = 90,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d deaths per race. Blood Elves, Orcs, Undead, Trolls, and Tauren - all equally dead. The Horde's diversity initiative is now just a diverse collection of corpses. Thrall is reconsidering his recruitment strategy.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForHordeRacesTBC(stats)
+        end,
+    },
+    {
+        id = "race_horde_mixed_tbc_1000",
+        title = "Horde Extinction Protocol (TBC)",
+        description = function(a) return ("Eliminate %d of each Horde race including Blood Elves (5000 total)"):format(a.targetValue) end,
+        iconID = 255132,
+        achievementPoints = 120,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("ULTIMATE TBC HORDE ANNIHILATION! %d of each race, including those magnificent Blood Elves. Kael'thas was merely setback - you're the real catastrophe. Five Horde races, perfect kill ratios, absolute devastation. For the Alliance... or Horde... honestly, you're just in it for the body count at this point.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetProgressForHordeRacesTBC(stats)
+        end,
+    },
+
+    -- =====================================================
+    -- EYE OF THE STORM ACHIEVEMENTS
+    -- =====================================================
+    {
+        id = "bg_eots_250",
+        title = "Storm Chaser",
+        description = function(a) return ("Defeat %d players in Eye of the Storm"):format(a.targetValue) end,
+        iconID = 236390,
+        achievementPoints = 25,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d victims caught in your storm. The floating ruins have tasted their first blood, and the Netherstorm winds carry their screams eternally."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
+        end,
+    },
+    {
+        id = "bg_eots_500",
+        title = "Tempest Incarnate",
+        description = function(a) return ("Defeat %d players in Eye of the Storm"):format(a.targetValue) end,
+        iconID = 236390,
+        achievementPoints = 50,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d souls claimed amidst the ruins, you've become the tempest itself. Flag bearers flee at your approach, knowing the storm has a name: yours."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
+        end,
+    },
+    {
+        id = "bg_eots_750",
+        title = "Maelstrom's Heart",
+        description = function(a) return ("Defeat %d players in Eye of the Storm"):format(a.targetValue) end,
+        iconID = 236390,
+        achievementPoints = 100,
+        targetValue = 750,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d warriors have fallen from the floating platforms, their bodies lost to the Netherstorm below. You stand at the maelstrom's heart, where chaos bends to your will."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
+        end,
+    },
+    {
+        id = "bg_eots_1000",
+        title = "Eye of Annihilation",
+        description = function(a) return ("Defeat %d players in Eye of the Storm"):format(a.targetValue) end,
+        iconID = 236390,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("One thousand souls have been consumed by your endless fury. You are the Eye's true master - where others see opportunity, they now see only death. The storm itself trembles at your name."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
+        end,
+    },
+
+    -- =====================================================
+    -- TBC CITY ACHIEVEMENTS - SILVERMOON CITY (For Alliance)
+    -- =====================================================
+    {
+        id = "city_silvermoon_50",
+        title = "Silvermoon Saboteur",
+        description = function(a) return ("Defeat %d players in Silvermoon City"):format(a.targetValue) end,
+        iconID = 135761,
+        achievementPoints = 25,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d Blood Elves in their pristine capital. The golden streets now have a few red stains the magisters can't seem to clean away.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Silvermoon City")
+        end,
+    },
+    {
+        id = "city_silvermoon_100",
+        title = "Silvermoon Desecrator",
+        description = function(a) return ("Defeat %d players in Silvermoon City"):format(a.targetValue) end,
+        iconID = 135761,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in Silvermoon, Lor'themar Theron has ordered extra guards at every corner. The city's famous beauty is marred by constant bloodshed.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Silvermoon City")
+        end,
+    },
+    {
+        id = "city_silvermoon_250",
+        title = "Silvermoon's Nightmare",
+        description = function(a) return ("Defeat %d players in Silvermoon City"):format(a.targetValue) end,
+        iconID = 135761,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d Blood Elf corpses decorating the Royal Exchange, the city's elegance has turned to paranoia. Citizens whisper that Kael'thas should have stayed in Outland - at least it's safer there.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Silvermoon City")
+        end,
+    },
+    {
+        id = "city_silvermoon_1000",
+        title = "The Sunwell's Shadow",
+        description = function(a) return ("Defeat %d players in Silvermoon City"):format(a.targetValue) end,
+        iconID = 135761,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After massacring %d Blood Elves in their sacred city, you are the shadow that haunts Silvermoon. The Sunwell's restoration means nothing when death walks their golden streets. Lor'themar considers evacuation plans.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Silvermoon City")
+        end,
+    },
+
+    -- =====================================================
+    -- TBC CITY ACHIEVEMENTS - EXODAR (For Horde)
+    -- =====================================================
+    {
+        id = "city_exodar_50",
+        title = "Exodar Invader",
+        description = function(a) return ("Defeat %d players in Exodar"):format(a.targetValue) end,
+        iconID = 135756,
+        achievementPoints = 25,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d Draenei in their crashed ship. Velen's visions didn't warn him about you. The Prophet might want to recalibrate his foresight.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Exodar")
+        end,
+    },
+    {
+        id = "city_exodar_100",
+        title = "Exodar Executioner",
+        description = function(a) return ("Defeat %d players in Exodar"):format(a.targetValue) end,
+        iconID = 135756,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d kills in the Exodar, the Draenei are questioning whether crashing on Azeroth was really the Light's plan. Their dimensional ship survived the Legion, but not you.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Exodar")
+        end,
+    },
+    {
+        id = "city_exodar_250",
+        title = "Dimensional Destroyer",
+        description = function(a) return ("Defeat %d players in Exodar"):format(a.targetValue) end,
+        iconID = 135756,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("With %d Draenei corpses cluttering their crystalline halls, the Exodar's repair efforts have been replaced with funeral services. The Light has grown dim in the face of your darkness.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Exodar")
+        end,
+    },
+    {
+        id = "city_exodar_1000",
+        title = "Exodar Exterminator",
+        description = function(a) return ("Defeat %d players in Exodar"):format(a.targetValue) end,
+        iconID = 135756,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After slaughtering %d Draenei in the Exodar, you've accomplished what the Burning Legion couldn't - making them regret coming to Azeroth. Prophet Velen's visions now show only your face. They fled across dimensions to escape death, only to find it waiting in you.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Exodar")
+        end,
+    },
+
 }
+

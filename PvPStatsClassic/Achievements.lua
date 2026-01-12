@@ -23,6 +23,69 @@ function PSC_GetZoneKills(stats, zoneTranslations, zoneNameEnglish)
     return 0
 end
 
+function PSC_GetProgressForAchievementWithAllClasses(stats, gameVersionForCheck)
+    -- Available for both factions
+    local warrior = stats.classData["Warrior"] or 0
+    local hunter = stats.classData["Hunter"] or 0
+    local rogue = stats.classData["Rogue"] or 0
+    local priest = stats.classData["Priest"] or 0
+    local mage = stats.classData["Mage"] or 0
+    local warlock = stats.classData["Warlock"] or 0
+    local druid = stats.classData["Druid"] or 0
+    -- Faction specific in Classic
+    local paladin = stats.classData["Paladin"] or 0
+    local shaman = stats.classData["Shaman"] or 0
+
+    local playerFaction = UnitFactionGroup("player")
+    if gameVersionForCheck == PSC_GAME_VERSIONS.CLASSIC then
+        if playerFaction == "Horde" then
+            return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
+        else
+            return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
+        end
+    else
+        return math.min(warrior, paladin, shaman, hunter, rogue, priest, mage, warlock, druid)
+    end
+end
+
+-- Helper function to get progress for Alliance race achievements (all 4 Classic races)
+function PSC_GetProgressForAllianceRacesClassic(stats)
+    local humans = stats.raceData["Human"] or 0
+    local gnomes = stats.raceData["Gnome"] or 0
+    local dwarves = stats.raceData["Dwarf"] or 0
+    local nightElves = stats.raceData["Night Elf"] or 0
+    return math.min(humans, gnomes, dwarves, nightElves)
+end
+
+-- Helper function to get progress for Horde race achievements (all 4 Classic races)
+function PSC_GetProgressForHordeRacesClassic(stats)
+    local orcs = stats.raceData["Orc"] or 0
+    local undead = stats.raceData["Undead"] or 0
+    local trolls = stats.raceData["Troll"] or 0
+    local tauren = stats.raceData["Tauren"] or 0
+    return math.min(orcs, undead, trolls, tauren)
+end
+
+-- Helper function to get progress for Alliance race achievements (all 5 TBC races)
+function PSC_GetProgressForAllianceRacesTBC(stats)
+    local humans = stats.raceData["Human"] or 0
+    local gnomes = stats.raceData["Gnome"] or 0
+    local dwarves = stats.raceData["Dwarf"] or 0
+    local nightElves = stats.raceData["Night Elf"] or 0
+    local draenei = stats.raceData["Draenei"] or 0
+    return math.min(humans, gnomes, dwarves, nightElves, draenei)
+end
+
+-- Helper function to get progress for Horde race achievements (all 5 TBC races)
+function PSC_GetProgressForHordeRacesTBC(stats)
+    local orcs = stats.raceData["Orc"] or 0
+    local undead = stats.raceData["Undead"] or 0
+    local trolls = stats.raceData["Troll"] or 0
+    local tauren = stats.raceData["Tauren"] or 0
+    local bloodElves = stats.raceData["Blood Elf"] or 0
+    return math.min(orcs, undead, trolls, tauren, bloodElves)
+end
+
 PSC_GrayLevelThreshods = {
     [1] = 0, [2] = 0, [3] = 0, [4] = 0, [5] = 0, [6] = 0,
     [7] = 1, [8] = 2, [9] = 3, [10] = 4, [11] = 5, [12] = 6,

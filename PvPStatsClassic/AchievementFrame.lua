@@ -72,12 +72,18 @@ local function FilterAchievements(achievements, category)
             if prefix == "class" then
                 if string.find(achievement.id, "class_mixed_") then
                     table.insert(filtered, achievement)
-                elseif string.find(achievement.id, "_paladin_") and playerFaction == "Horde" then
-                    table.insert(filtered, achievement)
-                elseif string.find(achievement.id, "_shaman_") and playerFaction == "Alliance" then
-                    table.insert(filtered, achievement)
-                elseif not string.find(achievement.id, "_paladin_") and
-                       not string.find(achievement.id, "_shaman_") then
+                elseif PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                    -- In Classic, Paladins are Alliance-only, Shamans are Horde-only
+                    if string.find(achievement.id, "_paladin_") and playerFaction == "Horde" then
+                        table.insert(filtered, achievement)
+                    elseif string.find(achievement.id, "_shaman_") and playerFaction == "Alliance" then
+                        table.insert(filtered, achievement)
+                    elseif not string.find(achievement.id, "_paladin_") and
+                           not string.find(achievement.id, "_shaman_") then
+                        table.insert(filtered, achievement)
+                    end
+                else
+                    -- In TBC+, both factions have access to all classes
                     table.insert(filtered, achievement)
                 end
 
@@ -86,14 +92,18 @@ local function FilterAchievements(achievements, category)
                     if string.find(achievement.id, "_human_") or
                        string.find(achievement.id, "_nightelf_") or
                        string.find(achievement.id, "_dwarf_") or
-                       string.find(achievement.id, "_gnome_") then
+                       string.find(achievement.id, "_gnome_") or
+                       string.find(achievement.id, "_draenei_") or
+                       string.find(achievement.id, "race_alliance_mixed") then
                         table.insert(filtered, achievement)
                     end
                 elseif playerFaction == "Alliance" then
                     if string.find(achievement.id, "_orc_") or
                        string.find(achievement.id, "_undead_") or
                        string.find(achievement.id, "_troll_") or
-                       string.find(achievement.id, "_tauren_") then
+                       string.find(achievement.id, "_tauren_") or
+                       string.find(achievement.id, "_bloodelf_") or
+                       string.find(achievement.id, "race_horde_mixed") then
                         table.insert(filtered, achievement)
                     end
                 end
@@ -131,7 +141,19 @@ local function FilterAchievements(achievements, category)
                    string.find(achievement.id, "zone_westernplaguelands") or
                    string.find(achievement.id, "zone_easternplaguelands") or
                    string.find(achievement.id, "zone_winterspring") or
-                   string.find(achievement.id, "zone_silithus") then
+                   string.find(achievement.id, "zone_silithus") or
+                   -- TBC zones (all contested)
+                   string.find(achievement.id, "zone_hellfire") or
+                   string.find(achievement.id, "zone_zangarmarsh") or
+                   string.find(achievement.id, "zone_terokkar") or
+                   string.find(achievement.id, "zone_nagrand") or
+                   string.find(achievement.id, "zone_bladesedge") or
+                   string.find(achievement.id, "zone_netherstorm") or
+                   string.find(achievement.id, "zone_shadowmoon") or
+                   string.find(achievement.id, "zone_eversong") or
+                   string.find(achievement.id, "zone_ghostlands") or
+                   string.find(achievement.id, "zone_azuremyst") or
+                   string.find(achievement.id, "zone_bloodmyst") then
                     table.insert(filtered, achievement)
                 end
 
@@ -139,12 +161,14 @@ local function FilterAchievements(achievements, category)
                 if playerFaction == "Horde" and
                    (string.find(achievement.id, "city_stormwind") or
                     string.find(achievement.id, "city_ironforge") or
-                    string.find(achievement.id, "city_darnassus")) then
+                    string.find(achievement.id, "city_darnassus") or
+                    string.find(achievement.id, "city_exodar")) then
                     table.insert(filtered, achievement)
                 elseif playerFaction == "Alliance" and
                        (string.find(achievement.id, "city_orgrimmar") or
                         string.find(achievement.id, "city_thunderbluff") or
-                        string.find(achievement.id, "city_undercity")) then
+                        string.find(achievement.id, "city_undercity") or
+                        string.find(achievement.id, "city_silvermoon")) then
                     table.insert(filtered, achievement)
                 end
 
@@ -411,16 +435,18 @@ local function CreateProgressBar(tile, targetValue, currentProgress, achievement
     progressText:SetPoint("CENTER", progressBar, "CENTER", 0, 0)
 
     if achievement.unlocked then
+        local displayProgress = PSC_DB.CapAchievementProgress and targetValue or currentProgress
         progressBar:SetMinMaxValues(0, math.max(targetValue, currentProgress))
         progressBar:SetValue(currentProgress)
-        progressText:SetText(currentProgress.."/"..targetValue)
+        progressText:SetText(displayProgress.."/"..targetValue)
     else
         if currentProgress >= targetValue and targetValue > 0 then
             achievement.unlocked = true
             achievement.completedDate = date("%d/%m/%Y %H:%M")
+            local displayProgress = PSC_DB.CapAchievementProgress and targetValue or currentProgress
             progressBar:SetMinMaxValues(0, math.max(targetValue, currentProgress))
             progressBar:SetValue(currentProgress)
-            progressText:SetText(currentProgress.."/"..targetValue)
+            progressText:SetText(displayProgress.."/"..targetValue)
             icon:SetDesaturated(false)
             title:SetTextColor(1, 0.82, 0)
         else

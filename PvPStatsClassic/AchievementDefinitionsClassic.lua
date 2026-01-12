@@ -2019,7 +2019,13 @@ AchievementSystem.achievementsClassic = {
     },
     {
         id = "race_alliance_mixed_human_nightelf_dwarf_gnome_100",
-        title = "Alliance Sampler Platter",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Alliance Sampler Platter"
+            else
+                return "Alliance Sampler Platter (Classic)"
+            end
+        end,
         description = function(a) return ("Eliminate %d of each Alliance race (400 total)"):format(a.targetValue) end,
         iconID = 236592,
         achievementPoints = 25,
@@ -2034,16 +2040,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue, a.targetValue, a.targetValue, a.targetValue)
         end,
         progress = function(achievement, stats)
-            local humans = stats.raceData["Human"] or 0
-            local gnomes = stats.raceData["Gnome"] or 0
-            local dwarves = stats.raceData["Dwarf"] or 0
-            local nightElves = stats.raceData["Night Elf"] or 0
-            return math.min(humans, gnomes, dwarves, nightElves)
+            return PSC_GetProgressForAllianceRacesClassic(stats)
         end,
     },
     {
         id = "race_alliance_mixed_human_nightelf_dwarf_gnome_250",
-        title = "Alliance Census Corrector",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Alliance Census Corrector"
+            else
+                return "Alliance Census Corrector (Classic)"
+            end
+        end,
         description = function(a) return ("Eliminate %d of each Alliance race (1000 total)"):format(a.targetValue) end,
         iconID = 236592,
         achievementPoints = 50,
@@ -2058,16 +2066,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local humans = stats.raceData["Human"] or 0
-            local gnomes = stats.raceData["Gnome"] or 0
-            local dwarves = stats.raceData["Dwarf"] or 0
-            local nightElves = stats.raceData["Night Elf"] or 0
-            return math.min(humans, gnomes, dwarves, nightElves)
+            return PSC_GetProgressForAllianceRacesClassic(stats)
         end,
     },
     {
         id = "race_alliance_mixed_human_nightelf_dwarf_gnome_500",
-        title = "Alliance Demographic Disaster",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Alliance Demographic Disaster"
+            else
+                return "Alliance Demographic Disaster (Classic)"
+            end
+        end,
         description = function(a) return ("Eliminate %d of each Alliance race (2000 total)"):format(a.targetValue) end,
         iconID = 236592,
         achievementPoints = 75,
@@ -2082,16 +2092,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local humans = stats.raceData["Human"] or 0
-            local gnomes = stats.raceData["Gnome"] or 0
-            local dwarves = stats.raceData["Dwarf"] or 0
-            local nightElves = stats.raceData["Night Elf"] or 0
-            return math.min(humans, gnomes, dwarves, nightElves)
+            return PSC_GetProgressForAllianceRacesClassic(stats)
         end,
     },
     {
         id = "race_alliance_mixed_human_nightelf_dwarf_gnome_1000",
-        title = "Alliance Extinction Protocol",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Alliance Extinction Protocol"
+            else
+                return "Alliance Extinction Protocol (Classic)"
+            end
+        end,
         description = function(a) return ("Eliminate %d of each Alliance race (4000 total)"):format(a.targetValue) end,
         iconID = 236592,
         achievementPoints = 100,
@@ -2106,18 +2118,20 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local humans = stats.raceData["Human"] or 0
-            local gnomes = stats.raceData["Gnome"] or 0
-            local dwarves = stats.raceData["Dwarf"] or 0
-            local nightElves = stats.raceData["Night Elf"] or 0
-            return math.min(humans, gnomes, dwarves, nightElves)
+            return PSC_GetProgressForAllianceRacesClassic(stats)
         end,
     },
 
     -- HORDE MIXED RACE ACHIEVEMENTS
     {
         id = "race_horde_mixed_orc_undead_troll_tauren_100",
-        title = "Horde Variety Pack",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Horde Variety Pack"
+            else
+                return "Horde Variety Pack (Classic)"
+            end
+        end,
         description = function(a) return ("Eliminate %d of each Horde race (400 total)"):format(a.targetValue) end,
         iconID = 255132,
         achievementPoints = 25,
@@ -2132,16 +2146,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local orcs = stats.raceData["Orc"] or 0
-            local undead = stats.raceData["Undead"] or 0
-            local trolls = stats.raceData["Troll"] or 0
-            local tauren = stats.raceData["Tauren"] or 0
-            return math.min(orcs, undead, trolls, tauren)
+            return PSC_GetProgressForHordeRacesClassic(stats)
         end,
     },
     {
         id = "race_horde_mixed_orc_undead_troll_tauren_250",
-        title = "Horde Population Control",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Horde Population Control"
+            else
+                return "Horde Population Control (Classic)"
+            end
+        end,
         description = function(a) return ("Eliminate %d of each Horde race (1000 total)"):format(a.targetValue) end,
         iconID = 255132,
         achievementPoints = 50,
@@ -2156,16 +2172,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local orcs = stats.raceData["Orc"] or 0
-            local undead = stats.raceData["Undead"] or 0
-            local trolls = stats.raceData["Troll"] or 0
-            local tauren = stats.raceData["Tauren"] or 0
-            return math.min(orcs, undead, trolls, tauren)
+            return PSC_GetProgressForHordeRacesClassic(stats)
         end,
     },
     {
         id = "race_horde_mixed_orc_undead_troll_tauren_500",
-        title = "Horde Demographic Crisis",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Horde Demographic Crisis"
+            else
+                return "Horde Demographic Crisis (Classic)"
+            end
+        end,
         description = function(a) return ("Eliminate %d of each Horde race (2000 total)"):format(a.targetValue) end,
         iconID = 255132,
         achievementPoints = 75,
@@ -2180,16 +2198,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local orcs = stats.raceData["Orc"] or 0
-            local undead = stats.raceData["Undead"] or 0
-            local trolls = stats.raceData["Troll"] or 0
-            local tauren = stats.raceData["Tauren"] or 0
-            return math.min(orcs, undead, trolls, tauren)
+            return PSC_GetProgressForHordeRacesClassic(stats)
         end,
     },
     {
         id = "race_horde_mixed_orc_undead_troll_tauren_1000",
-        title = "Horde Extinction Event",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Horde Extinction Event"
+            else
+                return "Horde Extinction Event (Classic)"
+            end
+        end,
         description = function(a) return ("Eliminate %d of each Horde race (4000 total)"):format(a.targetValue) end,
         iconID = 255132,
         achievementPoints = 100,
@@ -2204,17 +2224,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local orcs = stats.raceData["Orc"] or 0
-            local undead = stats.raceData["Undead"] or 0
-            local trolls = stats.raceData["Troll"] or 0
-            local tauren = stats.raceData["Tauren"] or 0
-            return math.min(orcs, undead, trolls, tauren)
+            return PSC_GetProgressForHordeRacesClassic(stats)
         end,
     },
-
     {
         id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_100",
-        title = "Class Warfare Initiate",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Class Warfare Initiate"
+            else
+                return "Class Warfare Initiate (Classic)"
+            end
+        end,
         description = function(a) return ("Execute %d of each class"):format(a.targetValue) end,
         iconID = 132147,
         achievementPoints = 75,
@@ -2229,33 +2250,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local playerFaction = UnitFactionGroup("player")
-            if playerFaction == "Horde" then
-                local warrior = stats.classData["Warrior"] or 0
-                local paladin = stats.classData["Paladin"] or 0
-                local hunter = stats.classData["Hunter"] or 0
-                local rogue = stats.classData["Rogue"] or 0
-                local priest = stats.classData["Priest"] or 0
-                local mage = stats.classData["Mage"] or 0
-                local warlock = stats.classData["Warlock"] or 0
-                local druid = stats.classData["Druid"] or 0
-                return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
-            else
-                local warrior = stats.classData["Warrior"] or 0
-                local shaman = stats.classData["Shaman"] or 0
-                local hunter = stats.classData["Hunter"] or 0
-                local rogue = stats.classData["Rogue"] or 0
-                local priest = stats.classData["Priest"] or 0
-                local mage = stats.classData["Mage"] or 0
-                local warlock = stats.classData["Warlock"] or 0
-                local druid = stats.classData["Druid"] or 0
-                return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
-            end
+            return PSC_GetProgressForAchievementWithAllClasses(stats, PSC_GAME_VERSIONS.CLASSIC)
         end,
     },
     {
         id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_250",
-        title = "Professional Exterminator",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Professional Exterminator"
+            else
+                return "Professional Exterminator (Classic)"
+            end
+        end,
         description = function(a) return ("Execute %d of each class"):format(a.targetValue) end,
         iconID = 132349,
         achievementPoints = 125,
@@ -2270,33 +2276,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local playerFaction = UnitFactionGroup("player")
-            if playerFaction == "Horde" then
-                local warrior = stats.classData["Warrior"] or 0
-                local paladin = stats.classData["Paladin"] or 0
-                local hunter = stats.classData["Hunter"] or 0
-                local rogue = stats.classData["Rogue"] or 0
-                local priest = stats.classData["Priest"] or 0
-                local mage = stats.classData["Mage"] or 0
-                local warlock = stats.classData["Warlock"] or 0
-                local druid = stats.classData["Druid"] or 0
-                return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
-            else
-                local warrior = stats.classData["Warrior"] or 0
-                local shaman = stats.classData["Shaman"] or 0
-                local hunter = stats.classData["Hunter"] or 0
-                local rogue = stats.classData["Rogue"] or 0
-                local priest = stats.classData["Priest"] or 0
-                local mage = stats.classData["Mage"] or 0
-                local warlock = stats.classData["Warlock"] or 0
-                local druid = stats.classData["Druid"] or 0
-                return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
-            end
+            return PSC_GetProgressForAchievementWithAllClasses(stats, PSC_GAME_VERSIONS.CLASSIC)
         end,
     },
     {
         id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_500",
-        title = "Class Genocide Specialist",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "Class Genocide Specialist"
+            else
+                return "Class Genocide Specialist (Classic)"
+            end
+        end,
         description = function(a) return ("Execute %d of each class"):format(a.targetValue) end,
         iconID = 135999,
         achievementPoints = 125,
@@ -2311,33 +2302,18 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local playerFaction = UnitFactionGroup("player")
-            if playerFaction == "Horde" then
-                local warrior = stats.classData["Warrior"] or 0
-                local paladin = stats.classData["Paladin"] or 0
-                local hunter = stats.classData["Hunter"] or 0
-                local rogue = stats.classData["Rogue"] or 0
-                local priest = stats.classData["Priest"] or 0
-                local mage = stats.classData["Mage"] or 0
-                local warlock = stats.classData["Warlock"] or 0
-                local druid = stats.classData["Druid"] or 0
-                return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
-            else
-                local warrior = stats.classData["Warrior"] or 0
-                local shaman = stats.classData["Shaman"] or 0
-                local hunter = stats.classData["Hunter"] or 0
-                local rogue = stats.classData["Rogue"] or 0
-                local priest = stats.classData["Priest"] or 0
-                local mage = stats.classData["Mage"] or 0
-                local warlock = stats.classData["Warlock"] or 0
-                local druid = stats.classData["Druid"] or 0
-                return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
-            end
+            return PSC_GetProgressForAchievementWithAllClasses(stats, PSC_GAME_VERSIONS.CLASSIC)
         end,
     },
     {
         id = "class_mixed_warrior_paladin_hunter_rogue_priest_shaman_mage_warlock_druid_1000",
-        title = "The Great Leveler",
+        title = function(a)
+            if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+                return "The Great Leveler"
+            else
+                return "The Great Leveler (Classic)"
+            end
+        end,
         description = function(a) return ("Execute %d of each class"):format(a.targetValue) end,
         iconID = 136149,
         achievementPoints = 250,
@@ -2352,28 +2328,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local playerFaction = UnitFactionGroup("player")
-            if playerFaction == "Horde" then
-                local warrior = stats.classData["Warrior"] or 0
-                local paladin = stats.classData["Paladin"] or 0
-                local hunter = stats.classData["Hunter"] or 0
-                local rogue = stats.classData["Rogue"] or 0
-                local priest = stats.classData["Priest"] or 0
-                local mage = stats.classData["Mage"] or 0
-                local warlock = stats.classData["Warlock"] or 0
-                local druid = stats.classData["Druid"] or 0
-                return math.min(warrior, paladin, hunter, rogue, priest, mage, warlock, druid)
-            else
-                local warrior = stats.classData["Warrior"] or 0
-                local shaman = stats.classData["Shaman"] or 0
-                local hunter = stats.classData["Hunter"] or 0
-                local rogue = stats.classData["Rogue"] or 0
-                local priest = stats.classData["Priest"] or 0
-                local mage = stats.classData["Mage"] or 0
-                local warlock = stats.classData["Warlock"] or 0
-                local druid = stats.classData["Druid"] or 0
-                return math.min(warrior, shaman, hunter, rogue, priest, mage, warlock, druid)
-            end
+            return PSC_GetProgressForAchievementWithAllClasses(stats, PSC_GAME_VERSIONS.CLASSIC)
         end,
     },
     -- {
@@ -5132,6 +5087,26 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
+        id = "zone_horde_elwynn_250",
+        title = "Elwynn Forest Nightmare",
+        description = function(a) return ("Eliminate %d players in Elwynn Forest"):format(a.targetValue) end,
+        iconID = 236761,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("After %d massacres in Elwynn, Stormwind has declared the forest a restricted zone. New players are being spawned directly in Westfall to avoid you. The local wildlife has organized a support group for trauma survivors. Even the kobolds are saying 'You no take our candle... please, just leave us alone!'")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Elwynn Forest")
+        end,
+    },
+    {
         id = "zone_horde_westfall",
         title = "[YOUR NAME] x Defias Traitor",
         description = function(a) return ("Eliminate %d players in Westfall"):format(a.targetValue) end,
@@ -5145,6 +5120,26 @@ AchievementSystem.achievementsClassic = {
         completedDate = nil,
         subText = function(a)
             return ("[YOUR NAME] x Defias Traitor vs. Westfall - the crossover nobody wanted, but %d players paid the price anyway, making Westfall unplayable.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Westfall")
+        end,
+    },
+    {
+        id = "zone_horde_westfall_250",
+        title = "[YOUR NAME] x Defias Brotherhood - The Sequel",
+        description = function(a) return ("Eliminate %d players in Westfall"):format(a.targetValue) end,
+        iconID = 236852,
+        achievementPoints = 100,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The crossover event continues! After %d kills, even the Defias Brotherhood is impressed by your work. VanCleef is offering you a job interview. The Deadmines tour guides now include your name in the 'Local Dangers' section. Farmers have stopped growing crops and started growing gravestones instead - business is booming!")
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
