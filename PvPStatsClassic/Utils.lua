@@ -1,20 +1,14 @@
--- ============================================================================
--- INCREMENTAL STATISTICS CALCULATION SYSTEM
--- Spreads expensive calculations over multiple frames to prevent lag
--- ============================================================================
-
 local statsCacheInvalidated = false
 local achievementCheckQueued = false
 local calculationInProgress = false
-local incrementalFrame = nil
 
--- Configuration: kills to process per frame (adjust for performance tuning)
-local KILLS_PER_FRAME = 100
+local TimeStatsCache = nil
+local streakStatsCache = nil
 
--- Invalidate all stats caches without recalculating
+
 function PSC_InvalidateStatsCaches()
     statsCacheInvalidated = true
-    timeStatsCache = nil
+    TimeStatsCache = nil
     streakStatsCache = nil
 end
 
@@ -70,22 +64,6 @@ function PSC_StartIncrementalCalculation()
         return
     end
 
-    -- Count total kills
-    local totalKills = 0
-    for _, playerData in pairs(characterData.Kills) do
-        if playerData.killLocations then
-            totalKills = totalKills + #playerData.killLocations
-        end
-    end
-
-    -- If small dataset, just do it immediately (< 500 kills)
-    if totalKills < 500 then
-        PSC_ImmediateCalculation()
-        return
-    end
-
-    -- For larger datasets, spread over multiple frames using C_Timer
-    -- Create a simple task queue for better readability
     local taskQueue = {
         TaskQueueDelayFrame,
         function()
@@ -128,20 +106,6 @@ function PSC_StartIncrementalCalculation()
     end
 
     runNextTask()
-end
-
--- Immediate calculation for small datasets
-function PSC_ImmediateCalculation()
-    if PSC_GetTimeBasedStats then
-        PSC_GetTimeBasedStats(true)
-    end
-    if PSC_GetStreakStats then
-        PSC_GetStreakStats(true)
-    end
-
-    statsCacheInvalidated = false
-    calculationInProgress = false
-    PSC_RunQueuedAchievementCheck()
 end
 
 -- ============================================================================
@@ -558,8 +522,6 @@ function PSC_GetLocalTimezoneOffset()
 end
 
 function PSC_CalculateAllTimeBasedStats()
-    -- No timezone parameter needed - date("*t") automatically uses local time
-
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
@@ -722,22 +684,13 @@ function PSC_CalculateAllTimeBasedStats()
     return stats
 end
 
--- Cache for time-based stats - cached indefinitely until invalidated by new kills or timezone changes
-local timeStatsCache = nil
-local timeStatsCacheTimestamp = 0
-local timeStatsCacheTimezone = nil
 
 function PSC_GetTimeBasedStats(forceRefresh)
-    local currentTimezone = PSC_GetLocalTimezoneOffset()
-
-    -- Cache indefinitely, only refresh when forced (on new kills), if cache doesn't exist, or if timezone changed
-    if not timeStatsCache or forceRefresh or timeStatsCacheTimezone ~= currentTimezone then
-        timeStatsCache = PSC_CalculateAllTimeBasedStats() -- Use automatic local timezone detection
-        timeStatsCacheTimestamp = time() -- Update timestamp for debugging/info purposes
-        timeStatsCacheTimezone = currentTimezone -- Remember timezone used for this cache
+    if not TimeStatsCache or forceRefresh then
+        TimeStatsCache = PSC_CalculateAllTimeBasedStats()
     end
 
-    return timeStatsCache
+    return TimeStatsCache
 end
 
 function PSC_CountKillsInTimeRange(startHour, endHour, timezoneOffsetHours)
@@ -1207,10 +1160,6 @@ function PSC_CalculateAchievementCompletion(achievement, stats)
     return (currentProgress / achievement.targetValue) * 100
 end
 
--- Cache for streak stats - cached indefinitely until invalidated by new kills
-local streakStatsCache = nil
-local streakStatsCacheTimestamp = 0
-
 -- Function to calculate all streak statistics in a single pass for improved performance
 function PSC_CalculateAllStreakStats()
     local characterKey = PSC_GetCharacterKey()
@@ -1308,7 +1257,6 @@ function PSC_GetStreakStats(forceRefresh)
     -- Cache indefinitely, only refresh when forced (on new kills) or if cache doesn't exist
     if not streakStatsCache or forceRefresh then
         streakStatsCache = PSC_CalculateAllStreakStats()
-        streakStatsCacheTimestamp = time()
     end
 
     return streakStatsCache
