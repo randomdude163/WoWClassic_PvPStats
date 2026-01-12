@@ -25,6 +25,8 @@ Killstreaks.lua
 KillStreakPopup.lua
 MinimapButton.lua
 SlashCommands.lua
+AchievementDefinitionsClassic.lua
+AchievementDefinitionsTBC.lua
 AchievementDefinitions.lua
 AchievementFrame.lua
 AchievementPopup.lua

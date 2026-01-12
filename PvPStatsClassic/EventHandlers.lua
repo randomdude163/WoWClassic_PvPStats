@@ -510,6 +510,11 @@ local function HandlePlayerEnteringWorld()
     PSC_RealmName = GetRealmName()
     PSC_GameVersion = DetermineGameVersion()
 
+    -- Initialize achievements after game version is determined
+    if PVPSC and PVPSC.AchievementSystem then
+        PVPSC.AchievementSystem:InitializeAchievements()
+    end
+
     if not PSC_DB then
         PSC_DB = {}
         PSC_LoadDefaultSettings()

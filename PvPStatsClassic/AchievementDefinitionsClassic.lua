@@ -5148,11 +5148,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local westfallKills = GetZoneKills(stats, "Westfall")
-            if westfallKills == nil then
-                return 0
-            end
-            return westfallKills
+            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Westfall")
         end,
     },
     {

@@ -3,6 +3,25 @@ local addonName, PVPSC = ...
 PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
+-- Helper function to get zone kills across all language variants
+-- This needs to be defined early since achievement definitions use it
+function PSC_GetZoneKills(stats, zoneTranslations, zoneNameEnglish)
+    if not stats.zoneData then return 0 end
+
+    local translations = zoneTranslations[zoneNameEnglish]
+    if not translations then
+        return stats.zoneData[zoneNameEnglish] or 0
+    end
+
+    for _, zoneName in ipairs(translations) do
+        local kills = stats.zoneData[zoneName]
+        if kills and kills > 0 then
+            return kills
+        end
+    end
+
+    return 0
+end
 
 PSC_GrayLevelThreshods = {
     [1] = 0, [2] = 0, [3] = 0, [4] = 0, [5] = 0, [6] = 0,
@@ -150,9 +169,14 @@ local function GetRarityFromPoints(points)
     end
 end
 
-for _, achievement in ipairs(AchievementSystem.achievements) do
-    if not achievement.rarity then
-        achievement.rarity = GetRarityFromPoints(achievement.achievementPoints)
+-- Helper function to assign rarity to achievements
+function AchievementSystem:AssignRarityToAchievements()
+    if not self.achievements then return end
+
+    for _, achievement in ipairs(self.achievements) do
+        if not achievement.rarity then
+            achievement.rarity = GetRarityFromPoints(achievement.achievementPoints)
+        end
     end
 end
 
@@ -301,24 +325,4 @@ function AchievementSystem:CleanupObsoleteAchievements()
     end
 
     return removedCount
-end
-
-
--- Helper function to get zone kills across all language variants
-function PSC_GetZoneKills(stats, zoneTranslations, zoneNameEnglish)
-    if not stats.zoneData then return 0 end
-
-    local translations = zoneTranslations[zoneNameEnglish]
-    if not translations then
-        return stats.zoneData[zoneNameEnglish] or 0
-    end
-
-    for _, zoneName in ipairs(translations) do
-        local kills = stats.zoneData[zoneName]
-        if kills and kills > 0 then
-            return kills
-        end
-    end
-
-    return 0
 end
