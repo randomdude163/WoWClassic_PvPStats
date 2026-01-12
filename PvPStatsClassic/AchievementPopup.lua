@@ -7,7 +7,7 @@ PVPSC.AchievementPopup = {}
 local AchievementPopup = PVPSC.AchievementPopup
 
 -- Settings
-local POPUP_DISPLAY_TIME = 5
+local POPUP_DISPLAY_TIME = 9
 local POPUP_FADE_TIME = 1 -- Fade out over 1 second
 
 
@@ -46,7 +46,7 @@ local function CreateAchievementPopupFrame()
 
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", frame, "TOP", 0, -10)
+    title:SetPoint("TOP", frame, "TOP", 0, -14)
     title:SetText("Achievement Unlocked!")
     title:SetTextColor(1, 0.82, 0) -- Gold text
     title:SetJustifyH("CENTER")
