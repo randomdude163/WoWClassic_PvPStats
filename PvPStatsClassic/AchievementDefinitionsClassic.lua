@@ -939,6 +939,28 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
+        id = "gender_gender_equality",
+        title = "Gender Equality",
+        description = "Complete both 'Wife Beater' and 'Professional Man-Slayer' achievements",
+        iconID = 237446,
+        achievementPoints = 50,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return PSC_IsAchievementUnlocked("gender_gender_female_4") and
+                   PSC_IsAchievementUnlocked("gender_gender_male_4")
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "You've achieved true equality—10,000 kills, perfectly balanced. Thanos would be proud, but probably also a little concerned about your hobbies."
+        end,
+        progress = function(achievement, stats)
+            local female = PSC_IsAchievementUnlocked("gender_gender_female_4") and 1 or 0
+            local male = PSC_IsAchievementUnlocked("gender_gender_male_4") and 1 or 0
+            return female + male
+        end,
+    },
+    {
         id = "bonus_horde",
         title = "Redridge Renovation",
         description = function(a) return ("Eliminate %d players in Redridge Mountains"):format(a.targetValue) end,

@@ -86,6 +86,22 @@ function PSC_GetProgressForHordeRacesTBC(stats)
     return math.min(orcs, undead, trolls, tauren, bloodElves)
 end
 
+-- Helper function to check if specific achievements are unlocked
+function PSC_IsAchievementUnlocked(achievementId)
+    local characterKey = PSC_GetCharacterKey()
+
+    if not PSC_DB or not PSC_DB.CharacterAchievements then
+        return false
+    end
+
+    if not PSC_DB.CharacterAchievements[characterKey] then
+        return false
+    end
+
+    local achievementData = PSC_DB.CharacterAchievements[characterKey][achievementId]
+    return achievementData and achievementData.unlocked or false
+end
+
 PSC_GrayLevelThreshods = {
     [1] = 0, [2] = 0, [3] = 0, [4] = 0, [5] = 0, [6] = 0,
     [7] = 1, [8] = 2, [9] = 3, [10] = 4, [11] = 5, [12] = 6,
