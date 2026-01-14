@@ -1,10 +1,12 @@
-rm PvPStatsClassic.zip
+addon_name="PvPStatsClassic"
+
+rm ${addon_name}.zip
 mkdir _zip
-cp -r PvPStatsClassic _zip
+cp -r ${addon_name} _zip
 cd _zip
-rm -r PvPStatsClassic/img/Screenshots
+rm -r ${addon_name}/img/Screenshots
 find . -name "*.DS_Store" -type f -delete
-zip -r PvPStatsClassic.zip PvPStatsClassic
-mv PvPStatsClassic.zip ..
+zip -r ${addon_name}.zip ${addon_name}
+mv ${addon_name}.zip ..
 cd ..
 rm -r _zip
