@@ -1,0 +1,8 @@
+v3.0:
+- Added 68 new achievements for TBC!
+- Perfomance improvements when killing a player
+- Added option to include Player details (Level, Class, Race, Guild Rank, Guild Name) in announce messages
+- Fixed addon frames not closing in combat using the X button
+- Layout tweaks for the Player Detail Frame
+- Added new option to cap achievement progress values at the required value (for example 100/100 instead of 125/100)
+- Added option to select which channel (group, raid, guild, own chat window) should be used for the announce messages
