@@ -1,49 +1,8 @@
-local statsCacheInvalidated = false
-local achievementCheckQueued = false
-local calculationInProgress = false
+local addonName, PVPSC = ...
 
 local TimeStatsCache = nil
 local streakStatsCache = nil
 
-
-function PSC_InvalidateStatsCaches()
-    statsCacheInvalidated = true
-    TimeStatsCache = nil
-    streakStatsCache = nil
-end
-
--- Queue an achievement check to run after stats are calculated
-function PSC_QueueAchievementCheck()
-    achievementCheckQueued = true
-    PSC_EnsureStatsCalculation()
-end
-
--- Start incremental calculation if needed
-function PSC_EnsureStatsCalculation()
-    if not statsCacheInvalidated or calculationInProgress then
-        -- Either cache is valid or already calculating
-        if achievementCheckQueued and not calculationInProgress then
-            -- Cache is valid, run achievement check immediately
-            PSC_RunQueuedAchievementCheck()
-        end
-        return
-    end
-
-    -- Start incremental calculation
-    calculationInProgress = true
-    PSC_StartIncrementalCalculation()
-end
-
--- Run the queued achievement check
-function PSC_RunQueuedAchievementCheck()
-    if not achievementCheckQueued then return end
-
-    achievementCheckQueued = false
-    local PVPSC = _G["PVPSC"]
-    if PVPSC and PVPSC.AchievementSystem then
-        PVPSC.AchievementSystem:CheckAchievements()
-    end
-end
 
 -- Helper function for task queue - represents a delay frame (does nothing)
 local function TaskQueueDelayFrame()
@@ -51,19 +10,7 @@ local function TaskQueueDelayFrame()
 end
 
 -- Incremental calculation that processes stats over multiple frames
-function PSC_StartIncrementalCalculation()
-    -- Get total number of kills to estimate work
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        -- No data to process, mark complete
-        statsCacheInvalidated = false
-        calculationInProgress = false
-        PSC_RunQueuedAchievementCheck()
-        return
-    end
-
+function PSC_StartIncrementalAchievementsCalculation()
     local taskQueue = {
         TaskQueueDelayFrame,
         function()
@@ -87,9 +34,7 @@ function PSC_StartIncrementalCalculation()
         TaskQueueDelayFrame,
         TaskQueueDelayFrame,
         function()
-            statsCacheInvalidated = false
-            calculationInProgress = false
-            PSC_RunQueuedAchievementCheck()
+            PVPSC.AchievementSystem:CheckAchievements()
         end
     }
 
@@ -97,7 +42,13 @@ function PSC_StartIncrementalCalculation()
     local currentTask = 1
     local function runNextTask()
         if currentTask <= #taskQueue then
-            taskQueue[currentTask]()
+            -- Wrap task execution in pcall for error handling
+            local success, err = pcall(taskQueue[currentTask])
+            if not success then
+                -- Log error and continue to prevent getting stuck
+                print("[PvPStats] Error in incremental calculation task " .. currentTask .. ": " .. tostring(err))
+            end
+
             currentTask = currentTask + 1
             if currentTask <= #taskQueue then
                 C_Timer.After(0, runNextTask)

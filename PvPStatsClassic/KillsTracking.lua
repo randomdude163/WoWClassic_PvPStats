@@ -41,9 +41,6 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     newKillLocation.x, newKillLocation.y = PSC_GetPlayerCoordinates()
 
     table.insert(killData.killLocations, newKillLocation)
-
-    -- Mark caches as dirty without immediate recalculation
-    PSC_InvalidateStatsCaches()
 end
 
 local function UpdateMultiKill()
@@ -240,7 +237,7 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
         PSC_ShowKillMilestone(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class, playerRank, totalKills)
     end
 
-    PSC_QueueAchievementCheck()
+    PSC_StartIncrementalAchievementsCalculation()
 end
 
 function PSC_RecordPetDamage(petGUID, petName, targetGUID, amount)
