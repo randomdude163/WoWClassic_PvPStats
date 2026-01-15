@@ -2,6 +2,7 @@ local addonName, PVPSC = ...
 
 local TimeStatsCache = nil
 local streakStatsCache = nil
+local nameStatsCache = nil
 
 
 -- Helper function for task queue - returns a task that delays N frames.
@@ -112,6 +113,13 @@ function PSC_StartIncrementalAchievementsCalculation()
             PSC_GetStreakStats(true)
             local t2 = debugprofilestop()
             print("[PvPStats] Streak stats calculation took " .. (t2 - t1) .. " ms")
+        end,
+        TaskQueueDelayFrame(5),
+        function()
+            local t1 = debugprofilestop()
+            PSC_GetNameBasedStats(true)
+            local t2 = debugprofilestop()
+            print("[PvPStats] Name-based stats calculation took " .. (t2 - t1) .. " ms")
         end,
         TaskQueueDelayFrame(5),
         function()
@@ -1340,116 +1348,68 @@ function PSC_CountKillsInMonth(month, timezoneOffsetHours)
     return count
 end
 
-function PSC_CountKillsStartingWithLetter(letter)
-    local count = 0
+-- Calculate all name-based statistics in a single pass for performance
+function PSC_CalculateAllNameBasedStats()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
     if not characterData or not characterData.Kills then
-        return 0
+        return {}
     end
 
-    letter = string.upper(letter)
+    local stats = {
+        byFirstLetter = {},
+        byNameLength = {}
+    }
 
+    -- Single pass through all kills
+    -- Dynamically build letter and length buckets to support any UTF-8 characters
     for playerKey, playerData in pairs(characterData.Kills) do
         local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName and string.upper(string.sub(playerName, 1, 1)) == letter then
-            count = count + (playerData.killCount or #playerData.killLocations)
+        if playerName and #playerName > 0 then
+            local killCount = playerData.kills or #(playerData.killLocations or {})
+
+            -- Count by first letter (supports any UTF-8 character)
+            local firstLetter = string.upper(string.sub(playerName, 1, 1))
+            stats.byFirstLetter[firstLetter] = (stats.byFirstLetter[firstLetter] or 0) + killCount
+
+            -- Count by name length (supports any length)
+            local nameLen = #playerName
+            stats.byNameLength[nameLen] = (stats.byNameLength[nameLen] or 0) + killCount
         end
     end
 
-    return count
+    return stats
+end
+
+-- Get cached name-based stats
+function PSC_GetNameBasedStats(forceRefresh)
+    if not nameStatsCache or forceRefresh then
+        nameStatsCache = PSC_CalculateAllNameBasedStats()
+    end
+    return nameStatsCache
+end
+
+function PSC_CountKillsStartingWithLetter(letter)
+    local stats = PSC_GetNameBasedStats()
+    letter = string.upper(letter)
+    return stats.byFirstLetter[letter] or 0
 end
 
 function PSC_CountKillsByLength(length)
-    local count = 0
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName and #playerName == length then
-            count = count + (playerData.killCount or #playerData.killLocations)
-        end
-    end
-
-    return count
-end
-
-function PSC_CountKillsWithAnyClassNameInName()
-    local count = 0
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    local classNames = {"warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid"}
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName then
-            local lowerPlayerName = string.lower(playerName)
-
-            for _, className in ipairs(classNames) do
-                if string.find(lowerPlayerName, className) then
-                    count = count + (playerData.killCount or #playerData.killLocations)
-                    break
-                end
-            end
-        end
-    end
-
-    return count
+    local stats = PSC_GetNameBasedStats()
+    return stats.byNameLength[length] or 0
 end
 
 function PSC_CountKillsWithNameStartingWith(letter)
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    local count = 0
+    local stats = PSC_GetNameBasedStats()
     letter = string.upper(letter)
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName and string.len(playerName) > 0 then
-            local firstLetter = string.upper(string.sub(playerName, 1, 1))
-            if firstLetter == letter then
-                count = count + (playerData.killCount or #playerData.killLocations)
-            end
-        end
-    end
-
-    return count
+    return stats.byFirstLetter[letter] or 0
 end
 
 function PSC_CountKillsWithNameLength(length)
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    local count = 0
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName and string.len(playerName) == length then
-            count = count + (playerData.killCount or #playerData.killLocations)
-        end
-    end
-
-    return count
+    local stats = PSC_GetNameBasedStats()
+    return stats.byNameLength[length] or 0
 end
 
 function PSC_GetCurrentAchievementPoints()
