@@ -1055,6 +1055,12 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     local nemesisAssists = 0
     local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
 
+    -- Total deaths across the same character scope as nemesis calculation
+    local totalDeaths = 0
+    for _, deathData in pairs(deathDataByPlayer) do
+        totalDeaths = totalDeaths + (deathData.deaths or 0)
+    end
+
     for killerName, deathData in pairs(deathDataByPlayer) do
         local deaths = deathData.deaths or 0
         local assists, _ = PSC_CountPlayerAssists(killerName, deathDataByPlayer)
@@ -1067,10 +1073,19 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
         end
     end
 
+    local kdRatio = 0
+    if totalDeaths > 0 then
+        kdRatio = totalKills / totalDeaths
+    elseif totalKills > 0 then
+        kdRatio = math.huge
+    end
+
     return {
         totalKills = totalKills,
         uniqueKills = uniqueKills,
         unknownLevelKills = unknownLevelKills,
+        totalDeaths = totalDeaths,
+        kdRatio = kdRatio,
         avgLevel = avgUniqueLevel, -- Using the improved unique player average
         avgLevelDiff = avgLevelDiff,
         avgKillsPerPlayer = avgKillsPerPlayer,
@@ -1108,10 +1123,29 @@ local function createSummaryStats(parent, x, y, width, height)
 
     statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
         "Total number of players you have killed.")
+
     statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills, statY,
         "Total number of unique players you have killed. Mlitple kills of the same player are counted only once.")
+
+    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY,
+        "Total number of times you have died to players.")
+
+    local kdText
+    if stats.totalDeaths and stats.totalDeaths > 0 then
+        kdText = string.format("%.2f", stats.kdRatio) .. " (" .. stats.totalKills .. "/" .. stats.totalDeaths .. ")"
+    else
+        if stats.totalKills and stats.totalKills > 0 then
+            kdText = "∞ (" .. stats.totalKills .. "/0)"
+        else
+            kdText = "0.00 (0/0)"
+        end
+    end
+
+    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY,
+        "Overall kill/death ratio (total player kills divided by total PvP deaths).")
     statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills, statY,
         "Total number of times you have killed a level ?? player.")
+
     local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
     statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections,
         "Click to show all kills of this player")
