@@ -561,9 +561,7 @@ local function HandlePlayerEnteringWorld()
         print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
     end
 
-    C_Timer.After(1, function()
-        PSC_StartIncrementalAchievementsCalculation()
-    end)
+    PSC_StartIncrementalAchievementsCalculation()
 end
 
 local function HandlePlayerRegenEnabled()
