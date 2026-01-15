@@ -80,10 +80,6 @@ function PSC_StartIncrementalAchievementsCalculation()
     local summaryStats = nil
     local achievementStats = nil
 
-    local profiledTimeStatsSlice = false
-    local profiledSummarySlice = false
-
-
     local taskQueue = {
         function()
             local characterData = charactersToProcess[currentCharacterKey]
@@ -96,35 +92,18 @@ function PSC_StartIncrementalAchievementsCalculation()
             if not job._timeStatsTask then
                 return true
             end
-
-            if not profiledTimeStatsSlice then
-                profiledTimeStatsSlice = true
-                local t1 = debugprofilestop()
-                local result = job._timeStatsTask()
-                local t2 = debugprofilestop()
-                print("[PvPStats] Time-based stats slice took " .. (t2 - t1) .. " ms (sliceBudget=" .. tostring(killLocationsPerSlice) .. ")")
-                return result
-            end
-
             return job._timeStatsTask()
         end,
         TaskQueueDelayFrame(1),
         function()
-            local t1 = debugprofilestop()
             PSC_GetStreakStats(true)
-            local t2 = debugprofilestop()
-            print("[PvPStats] Streak stats calculation took " .. (t2 - t1) .. " ms")
         end,
         TaskQueueDelayFrame(1),
         function()
-            local t1 = debugprofilestop()
             PSC_GetNameBasedStats(true)
-            local t2 = debugprofilestop()
-            print("[PvPStats] Name-based stats calculation took " .. (t2 - t1) .. " ms")
         end,
         TaskQueueDelayFrame(1),
         function()
-            local t1 = debugprofilestop()
             classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
                 PSC_CalculateBarChartStatistics(charactersToProcess)
             -- Cache bar chart stats
@@ -138,8 +117,6 @@ function PSC_StartIncrementalAchievementsCalculation()
                 guildStatusData = guildStatusData,
                 guildData = guildData
             }
-            local t2 = debugprofilestop()
-            print("[PvPStats] Bar chart statistics calculation took " .. (t2 - t1) .. " ms")
         end,
         TaskQueueDelayFrame(1),
         function()
@@ -153,15 +130,6 @@ function PSC_StartIncrementalAchievementsCalculation()
             if not job._summaryTask then
                 return true
             end
-            if not profiledSummarySlice then
-                profiledSummarySlice = true
-                local t1 = debugprofilestop()
-                local result = job._summaryTask()
-                local t2 = debugprofilestop()
-                print("[PvPStats] Summary stats slice took " .. (t2 - t1) .. " ms (sliceBudget=" .. tostring(killLocationsPerSlice) .. ")")
-                return result
-            end
-
             return job._summaryTask()
         end,
         function()
