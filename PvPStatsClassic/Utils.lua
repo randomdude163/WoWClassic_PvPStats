@@ -9,8 +9,69 @@ local function TaskQueueDelayFrame()
     -- Empty frame to spread work across multiple frames
 end
 
+local function PSC_RunTaskQueue(taskQueue, onDone)
+    local currentTask = 1
+
+    local function runNextTask()
+        if currentTask > #taskQueue then
+            if onDone then
+                onDone()
+            end
+            return
+        end
+
+        local success, result = pcall(taskQueue[currentTask])
+        if not success then
+            print("[PvPStats] Error in incremental calculation task " .. currentTask .. ": " .. tostring(result))
+            result = true
+        end
+
+        if result == nil or result == true then
+            currentTask = currentTask + 1
+        end
+
+        if currentTask <= #taskQueue then
+            C_Timer.After(0, runNextTask)
+        else
+            if onDone then
+                onDone()
+            end
+        end
+    end
+
+    runNextTask()
+end
+
 -- Incremental calculation that processes stats over multiple frames
-function PSC_StartIncrementalAchievementsCalculation()
+function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
+    PVPSC._activeIncrementalAchievementsJob = PVPSC._activeIncrementalAchievementsJob or nil
+
+    if PVPSC._activeIncrementalAchievementsJob then
+        PVPSC._activeIncrementalAchievementsJob.dirty = true
+        return
+    end
+
+    local achievementsPerSlice = tonumber(maxAchievementsPerFrame) or 0
+    achievementsPerSlice = math.floor(achievementsPerSlice)
+    if achievementsPerSlice < 25 then
+        achievementsPerSlice = 25
+    end
+
+    local killLocationsPerSlice = 500
+
+    local job = {
+        dirty = false
+    }
+    PVPSC._activeIncrementalAchievementsJob = job
+
+    local currentCharacterKey = PSC_GetCharacterKey()
+    local charactersToProcess = {}
+    charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
+    local summaryStats = nil
+    local achievementStats = nil
+
     local taskQueue = {
         TaskQueueDelayFrame,
         function()
@@ -18,45 +79,76 @@ function PSC_StartIncrementalAchievementsCalculation()
                 PSC_GetTimeBasedStats(true)
             end
         end,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
         function()
             if PSC_GetStreakStats then
                 PSC_GetStreakStats(true)
             end
         end,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
         function()
-            PVPSC.AchievementSystem:CheckAchievementsIncrementally(4)
+            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
+                PSC_CalculateBarChartStatistics(charactersToProcess)
+        end,
+        function()
+---@diagnostic disable-next-line: undefined-global
+            local task = PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, killLocationsPerSlice, function(result)
+                summaryStats = result
+            end)
+            job._summaryTask = task
+            return true
+        end,
+        function()
+            if not job._summaryTask then
+                return true
+            end
+            return job._summaryTask()
+        end,
+        function()
+            if not summaryStats then
+                return false
+            end
+
+            achievementStats = {
+                classData = classData,
+                raceData = raceData,
+                genderData = genderData,
+                unknownLevelClassData = unknownLevelClassData,
+                zoneData = zoneData,
+                levelData = levelData,
+                guildStatusData = guildStatusData,
+                guildData = guildData,
+                totalKills = summaryStats.totalKills,
+                uniqueKills = summaryStats.uniqueKills,
+                highestKillStreak = summaryStats.highestKillStreak,
+                highestMultiKill = summaryStats.highestMultiKill,
+                mostKilledPlayer = summaryStats.mostKilledPlayer,
+                mostKilledCount = summaryStats.mostKilledCount,
+                totalAchievementPoints = PSC_GetCurrentAchievementPoints(),
+                unlockedAchievements = PSC_GetUnlockedAchievementCount()
+            }
+
+            return true
+        end,
+        function()
+            if not PVPSC.AchievementSystem or type(PVPSC.AchievementSystem.CreateIncrementalAchievementCheckTask) ~= "function" then
+                return true
+            end
+
+            if not job._achievementTask then
+                job._achievementTask = PVPSC.AchievementSystem:CreateIncrementalAchievementCheckTask(achievementStats, achievementsPerSlice)
+            end
+
+            return job._achievementTask()
         end
     }
 
-    -- Execute tasks sequentially, one per frame
-    local currentTask = 1
-    local function runNextTask()
-        if currentTask <= #taskQueue then
-            -- Wrap task execution in pcall for error handling
-            local success, err = pcall(taskQueue[currentTask])
-            if not success then
-                -- Log error and continue to prevent getting stuck
-                print("[PvPStats] Error in incremental calculation task " .. currentTask .. ": " .. tostring(err))
-            end
-
-            currentTask = currentTask + 1
-            if currentTask <= #taskQueue then
-                C_Timer.After(0, runNextTask)
-            end
+    PSC_RunTaskQueue(taskQueue, function()
+        PVPSC._activeIncrementalAchievementsJob = nil
+        if job.dirty then
+            C_Timer.After(0, function()
+                PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
+            end)
         end
-    end
-
-    runNextTask()
+    end)
 end
 
 -- ============================================================================
@@ -1242,7 +1334,7 @@ function PSC_CountTotalDaysWithMinKills(minKills)
 end
 
 -- Helper function to calculate the start timestamps for various time periods
-local function PSC_CalculateTimePeriodBoundaries()
+function PSC_CalculateTimePeriodBoundaries()
     local currentTime = time()
     local today = date("*t", currentTime)
 
@@ -1279,86 +1371,4 @@ local function PSC_CalculateTimePeriodBoundaries()
         monthStart = monthStart,
         yearStart = yearStart
     }
-end
-
--- Optimized function to calculate all time period kills in a single pass
-local function PSC_CalculateAllTimePeriodKills()
-    -- Get characters to process based on account-wide setting
-    local charactersToProcess = {}
-
-    if PSC_DB.ShowAccountWideStats then
-        -- Process all characters
-        for charKey, charData in pairs(PSC_DB.PlayerKillCounts.Characters) do
-            charactersToProcess[charKey] = charData
-        end
-    else
-        -- Process only the current character
-        local characterKey = PSC_GetCharacterKey()
-        if PSC_DB.PlayerKillCounts.Characters[characterKey] then
-            charactersToProcess[characterKey] = PSC_DB.PlayerKillCounts.Characters[characterKey]
-        end
-    end
-
-    local boundaries = PSC_CalculateTimePeriodBoundaries()
-    local counts = {
-        today = 0,
-        week = 0,
-        month = 0,
-        year = 0
-    }
-
-    -- Single pass through all characters' kills
-    for characterKey, characterData in pairs(charactersToProcess) do
-        if characterData.Kills then
-            for playerKey, playerData in pairs(characterData.Kills) do
-                if playerData.killLocations then
-                    for _, killLocation in ipairs(playerData.killLocations) do
-                        if killLocation.timestamp then
-                            local timestamp = killLocation.timestamp
-
-                            -- Check all time periods in order (most restrictive to least)
-                            if timestamp >= boundaries.todayStart then
-                                counts.today = counts.today + 1
-                            end
-
-                            if timestamp >= boundaries.weekStart then
-                                counts.week = counts.week + 1
-                            end
-
-                            if timestamp >= boundaries.monthStart then
-                                counts.month = counts.month + 1
-                            end
-
-                            if timestamp >= boundaries.yearStart then
-                                counts.year = counts.year + 1
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return counts
-end
-
--- Public API functions that calculate all stats in a single pass
-function PSC_GetKillsToday()
-    local stats = PSC_CalculateAllTimePeriodKills()
-    return stats.today
-end
-
-function PSC_GetKillsThisWeek()
-    local stats = PSC_CalculateAllTimePeriodKills()
-    return stats.week
-end
-
-function PSC_GetKillsThisMonth()
-    local stats = PSC_CalculateAllTimePeriodKills()
-    return stats.month
-end
-
-function PSC_GetKillsThisYear()
-    local stats = PSC_CalculateAllTimePeriodKills()
-    return stats.year
 end

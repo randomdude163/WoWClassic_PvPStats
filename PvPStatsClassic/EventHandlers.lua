@@ -563,7 +563,7 @@ local function HandlePlayerEnteringWorld()
     PSC_GetTimeBasedStats(true)
 
     C_Timer.After(2, function()
-        PVPSC.AchievementSystem:CheckAchievementsIncrementally(4)
+        PSC_StartIncrementalAchievementsCalculation(25)
     end)
 end
 

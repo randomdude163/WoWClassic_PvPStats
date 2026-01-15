@@ -182,7 +182,6 @@ function PSC_GetStatsForAchievements()
     return stats
 end
 
-
 local function PSC_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
     if achievementsUnlocked <= 0 then
         return
@@ -233,75 +232,63 @@ end
 
 
 function AchievementSystem:CheckAchievementsIncrementally(timeBudgetMs)
-    -- If a job is already running, mark it dirty and let it finish.
-    if self._activeAchievementCheckJob then
-        self._activeAchievementCheckJob.dirty = true
-        return
-    end
-
     local maxAchievementsPerSlice = tonumber(timeBudgetMs) or 0
     maxAchievementsPerSlice = math.floor(maxAchievementsPerSlice)
     if maxAchievementsPerSlice < 25 then
         maxAchievementsPerSlice = 25
     end
 
-    local stats = PSC_GetStatsForAchievements()
+---@diagnostic disable-next-line: undefined-global
+    if PSC_StartIncrementalAchievementsCalculation then
+        PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerSlice)
+        return
+    end
 
-    local job = {
-        startIndex = 1,
-        maxAchievementsPerSlice = maxAchievementsPerSlice,
-        playerName = UnitName("player"),
-        stats = stats,
-        unlockedList = {},
-        achievementsUnlocked = 0,
-        dirty = false
-    }
+    -- Fallback: if task-queue is unavailable for some reason
+    self:CheckAchievements()
+end
 
-    self._activeAchievementCheckJob = job
+function AchievementSystem:CreateIncrementalAchievementCheckTask(stats, maxAchievementsPerFrame)
+    local maxAchievementsPerSlice = tonumber(maxAchievementsPerFrame) or 0
+    maxAchievementsPerSlice = math.floor(maxAchievementsPerSlice)
+    if maxAchievementsPerSlice < 25 then
+        maxAchievementsPerSlice = 25
+    end
 
-    local function runSlice()
-        if self._activeAchievementCheckJob ~= job then
-            return
-        end
+    local achievements = self.achievements or {}
+    local playerName = UnitName("player")
+    local unlockedList = {}
+    local achievementsUnlocked = 0
+    local startIndex = 1
 
-        local achievements = self.achievements or {}
-        local i = job.startIndex
+    return function()
+        local i = startIndex
         local processed = 0
 
         while i <= #achievements do
             local achievement = achievements[i]
-            if achievement and PSC_ProcessSingleAchievement(achievement, job.stats, job.playerName, job.unlockedList) then
-                job.achievementsUnlocked = job.achievementsUnlocked + 1
+            if achievement and PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList) then
+                achievementsUnlocked = achievementsUnlocked + 1
             end
 
             i = i + 1
             processed = processed + 1
 
-            if processed >= job.maxAchievementsPerSlice then
+            if processed >= maxAchievementsPerSlice then
                 break
             end
         end
 
-        job.startIndex = i
+        startIndex = i
 
-        if job.startIndex <= #achievements then
-            C_Timer.After(0, runSlice)
-            return
+        if startIndex <= #achievements then
+            return false
         end
-
-        self._activeAchievementCheckJob = nil
 
         self:SaveAchievementPoints()
-        PSC_ShowUnlockedAchievements(job.achievementsUnlocked, job.unlockedList)
-
-        if job.dirty then
-            C_Timer.After(0, function()
-                self:CheckAchievementsIncrementally(timeBudgetMs)
-            end)
-        end
+        PSC_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
+        return true
     end
-
-    C_Timer.After(0, runSlice)
 end
 
 

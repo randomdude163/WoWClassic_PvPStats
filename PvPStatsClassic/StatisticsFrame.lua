@@ -723,6 +723,335 @@ function PSC_CalculateGuildKills()
     return guildKills
 end
 
+local function PSC_SummaryStats_CreateState(charactersToProcess)
+    local state = {
+        totalKills = 0,
+        uniqueKills = 0,
+        totalLevels = 0,
+        totalPlayerLevelSum = 0,
+        killsWithLevelData = 0,
+        levelDiffSum = 0,
+        unknownLevelKills = 0,
+        uniquePlayerLevels = {},
+        killsPerPlayer = {},
+        mostKilledPlayer = nil,
+        mostKilledCount = 0,
+        highestKillStreak = 0,
+        highestKillStreakCharacter = "",
+        currentKillStreak = 0,
+        highestMultiKill = 0,
+        highestMultiKillCharacter = "",
+        weekdayKills = {0, 0, 0, 0, 0, 0, 0},
+        hourlyKills = {},
+        monthlyKills = {},
+        firstKillTimestamp = nil,
+        lastKillTimestamp = nil,
+        timeBoundaries = nil,
+        killsToday = 0,
+        killsThisWeek = 0,
+        killsThisMonth = 0,
+        killsThisYear = 0,
+        busiestWeekday = "None",
+        busiestWeekdayKills = 0,
+        busiestHour = "None",
+        busiestHourKills = 0,
+        busiestMonth = "None",
+        busiestMonthKills = 0,
+        avgKillsPerDay = 0,
+        nemesisName = "None",
+        nemesisScore = 0,
+        totalDeaths = 0,
+        kdRatio = 0,
+        charactersToProcess = charactersToProcess
+    }
+
+    for i = 0, 23 do
+        state.hourlyKills[i] = 0
+    end
+    for i = 1, 12 do
+        state.monthlyKills[i] = 0
+    end
+
+---@diagnostic disable-next-line: undefined-global
+    state.timeBoundaries = PSC_CalculateTimePeriodBoundaries()
+
+    return state
+end
+
+local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, characterData)
+    if characterKey == PSC_GetCharacterKey() then
+        state.currentKillStreak = characterData.CurrentKillStreak
+    end
+
+    if PSC_DB.ShowAccountWideStats then
+        if characterData.HighestKillStreak > state.highestKillStreak then
+            state.highestKillStreak = characterData.HighestKillStreak
+            state.highestKillStreakCharacter = characterKey
+        end
+
+        if characterData.HighestMultiKill > state.highestMultiKill then
+            state.highestMultiKill = characterData.HighestMultiKill
+            state.highestMultiKillCharacter = characterKey
+        end
+    else
+        state.highestMultiKill = characterData.HighestMultiKill
+        state.highestKillStreak = characterData.HighestKillStreak
+    end
+end
+
+local function PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killData)
+    local kills = killData.kills or 0
+    local playerName = nameWithLevel:match("([^:]+)")
+
+    state.killsPerPlayer[playerName] = (state.killsPerPlayer[playerName] or 0) + kills
+
+    state.uniqueKills = state.uniqueKills + 1
+    state.totalKills = state.totalKills + kills
+
+    local level = nameWithLevel:match(":(%S+)")
+    local levelNum = tonumber(level or "0") or 0
+
+    if levelNum > 0 then
+        if not state.uniquePlayerLevels[playerName] then
+            state.uniquePlayerLevels[playerName] = {
+                sum = 0,
+                count = 0
+            }
+        end
+
+        state.uniquePlayerLevels[playerName].sum = state.uniquePlayerLevels[playerName].sum + levelNum
+        state.uniquePlayerLevels[playerName].count = state.uniquePlayerLevels[playerName].count + 1
+    end
+
+    if levelNum == -1 then
+        state.unknownLevelKills = state.unknownLevelKills + kills
+    end
+
+    if levelNum > 0 then
+        state.totalLevels = state.totalLevels + levelNum * kills
+    end
+
+    return kills, playerName, levelNum
+end
+
+local function PSC_SummaryStats_ProcessKillLocation(state, location, levelNum)
+    local targetLevel = levelNum
+    local playerLevel = location.playerLevel or 0
+    local timestamp = location.timestamp
+
+    if timestamp then
+        if not state.firstKillTimestamp or timestamp < state.firstKillTimestamp then
+            state.firstKillTimestamp = timestamp
+        end
+        if not state.lastKillTimestamp or timestamp > state.lastKillTimestamp then
+            state.lastKillTimestamp = timestamp
+        end
+
+        if state.timeBoundaries then
+            if timestamp >= state.timeBoundaries.todayStart then
+                state.killsToday = state.killsToday + 1
+            end
+            if timestamp >= state.timeBoundaries.weekStart then
+                state.killsThisWeek = state.killsThisWeek + 1
+            end
+            if timestamp >= state.timeBoundaries.monthStart then
+                state.killsThisMonth = state.killsThisMonth + 1
+            end
+            if timestamp >= state.timeBoundaries.yearStart then
+                state.killsThisYear = state.killsThisYear + 1
+            end
+        end
+
+        local wday0 = tonumber(date("%w", timestamp))
+        if wday0 then
+            state.weekdayKills[wday0 + 1] = state.weekdayKills[wday0 + 1] + 1
+        end
+
+        local hour = tonumber(date("%H", timestamp))
+        if hour then
+            state.hourlyKills[hour] = state.hourlyKills[hour] + 1
+        end
+
+        local month = tonumber(date("%m", timestamp))
+        if month then
+            state.monthlyKills[month] = state.monthlyKills[month] + 1
+        end
+    end
+
+    if targetLevel > 0 and playerLevel > 0 then
+        state.levelDiffSum = state.levelDiffSum + (playerLevel - targetLevel)
+        state.killsWithLevelData = state.killsWithLevelData + 1
+    end
+
+    if playerLevel > 0 then
+        state.totalPlayerLevelSum = state.totalPlayerLevelSum + playerLevel
+    end
+end
+
+local function PSC_SummaryStats_ProcessKillEntryFallback(state, killData, kills, levelNum)
+    if levelNum > 0 and killData.playerLevel and killData.playerLevel > 0 then
+        state.levelDiffSum = state.levelDiffSum + (killData.playerLevel - levelNum) * kills
+        state.killsWithLevelData = state.killsWithLevelData + kills
+    end
+
+    if killData.playerLevel and killData.playerLevel > 0 then
+        state.totalPlayerLevelSum = state.totalPlayerLevelSum + killData.playerLevel * kills
+    end
+end
+
+local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
+    for playerName, kills in pairs(state.killsPerPlayer) do
+        if kills > state.mostKilledCount then
+            state.mostKilledPlayer = playerName
+            state.mostKilledCount = kills
+        end
+    end
+
+    local uniqueLevelSum = 0
+    local uniquePlayersWithLevel = 0
+
+    for _, playerLevelData in pairs(state.uniquePlayerLevels) do
+        if playerLevelData.count > 0 then
+            uniqueLevelSum = uniqueLevelSum + (playerLevelData.sum / playerLevelData.count)
+            uniquePlayersWithLevel = uniquePlayersWithLevel + 1
+        end
+    end
+
+    local weekdayNames = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+    state.busiestWeekday = "None"
+    state.busiestWeekdayKills = 0
+    for i, kills in ipairs(state.weekdayKills) do
+        if kills > state.busiestWeekdayKills then
+            state.busiestWeekdayKills = kills
+            state.busiestWeekday = weekdayNames[i]
+        end
+    end
+
+    state.busiestHour = "None"
+    state.busiestHourKills = 0
+    for hour, kills in pairs(state.hourlyKills) do
+        if kills > state.busiestHourKills then
+            state.busiestHourKills = kills
+            state.busiestHour = string.format("%02d:00 - %02d:00", hour, (hour + 1) % 24)
+        end
+    end
+
+    local monthNames = {"January", "February", "March", "April", "May", "June",
+                       "July", "August", "September", "October", "November", "December"}
+    state.busiestMonth = "None"
+    state.busiestMonthKills = 0
+    for i, kills in ipairs(state.monthlyKills) do
+        if kills > state.busiestMonthKills then
+            state.busiestMonthKills = kills
+            state.busiestMonth = monthNames[i]
+        end
+    end
+
+    state.avgKillsPerDay = 0
+    if state.firstKillTimestamp and state.lastKillTimestamp then
+        local activitySpanDays = math.floor((state.lastKillTimestamp - state.firstKillTimestamp) / 86400) + 1
+        if activitySpanDays > 0 then
+            state.avgKillsPerDay = state.totalKills / activitySpanDays
+        end
+    end
+
+    local knownLevelKills = state.totalKills - state.unknownLevelKills
+    local avgUniqueLevel = uniquePlayersWithLevel > 0 and (uniqueLevelSum / uniquePlayersWithLevel) or 0
+    state.avgLevel = avgUniqueLevel
+    state.avgPlayerLevel = state.totalKills > 0 and (state.totalPlayerLevelSum / state.totalKills) or 0
+    state.avgLevelDiff = state.killsWithLevelData > 0 and (state.levelDiffSum / state.killsWithLevelData) or 0
+    state.avgKillsPerPlayer = state.uniqueKills > 0 and (state.totalKills / state.uniqueKills) or 0
+
+    if knownLevelKills <= 0 then
+        state._unusedAvgLevel = 0
+    else
+        state._unusedAvgLevel = state.totalLevels / knownLevelKills
+    end
+end
+
+local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+    local nemesisName = "None"
+    local nemesisScore = 0
+    local nemesisAssists = 0
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+
+    local assistsByPlayer = {}
+    for _, deathData in pairs(deathDataByPlayer) do
+        if deathData.deathLocations then
+            for _, location in ipairs(deathData.deathLocations) do
+                if location.assisters then
+                    for _, assister in ipairs(location.assisters) do
+                        if assister and assister.name then
+                            assistsByPlayer[assister.name] = (assistsByPlayer[assister.name] or 0) + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    local totalDeaths = 0
+    for _, deathData in pairs(deathDataByPlayer) do
+        totalDeaths = totalDeaths + (deathData.deaths or 0)
+    end
+
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        local deaths = deathData.deaths or 0
+        local assists = assistsByPlayer[killerName] or 0
+
+        if deaths > nemesisScore or (deaths == nemesisScore and assists > nemesisAssists) then
+            nemesisScore = deaths
+            nemesisAssists = assists
+            nemesisName = killerName
+        end
+    end
+
+    state.nemesisName = nemesisName
+    state.nemesisScore = nemesisScore
+    state.totalDeaths = totalDeaths
+
+    if totalDeaths > 0 then
+        state.kdRatio = state.totalKills / totalDeaths
+    elseif state.totalKills > 0 then
+        state.kdRatio = math.huge
+    else
+        state.kdRatio = 0
+    end
+end
+
+local function PSC_SummaryStats_BuildResult(state)
+    return {
+        totalKills = state.totalKills,
+        uniqueKills = state.uniqueKills,
+        unknownLevelKills = state.unknownLevelKills,
+        totalDeaths = state.totalDeaths,
+        kdRatio = state.kdRatio,
+        avgLevel = state.avgLevel,
+        avgLevelDiff = state.avgLevelDiff,
+        avgKillsPerPlayer = state.avgKillsPerPlayer,
+        mostKilledPlayer = state.mostKilledPlayer or "None",
+        mostKilledCount = state.mostKilledCount,
+        currentKillStreak = state.currentKillStreak,
+        highestKillStreak = state.highestKillStreak,
+        highestMultiKill = state.highestMultiKill,
+        highestKillStreakCharacter = state.highestKillStreakCharacter,
+        highestMultiKillCharacter = state.highestMultiKillCharacter,
+        busiestWeekday = state.busiestWeekday,
+        busiestWeekdayKills = state.busiestWeekdayKills,
+        busiestHour = state.busiestHour,
+        busiestHourKills = state.busiestHourKills,
+        busiestMonth = state.busiestMonth,
+        busiestMonthKills = state.busiestMonthKills,
+        avgKillsPerDay = state.avgKillsPerDay,
+        killsToday = state.killsToday,
+        killsThisWeek = state.killsThisWeek,
+        killsThisMonth = state.killsThisMonth,
+        killsThisYear = state.killsThisYear,
+        nemesisName = state.nemesisName,
+        nemesisScore = state.nemesisScore
+    }
+end
+
 local function createGuildTable(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Kills by Guild", x, y, width, height)
 
@@ -836,322 +1165,161 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
 end
 
 function PSC_CalculateSummaryStatistics(charactersToProcess)
-    local totalKills = 0
-    local uniqueKills = 0
-    local totalLevels = 0  -- Target levels
-    local totalPlayerLevelSum = 0  -- Sum of player levels at time of kills
-    local killsWithLevelData = 0
-    local levelDiffSum = 0  -- For direct level difference calculation
-    local unknownLevelKills = 0
-
-    -- For improved unique player level calculation
-    local uniquePlayerLevels = {}
-
-    local mostKilledPlayer = nil
-    local mostKilledCount = 0
-    local highestKillStreak = 0
-    local highestKillStreakCharacter = ""
-    local currentKillStreak = 0
-    local highestMultiKill = 0
-    local highestMultiKillCharacter = ""
-
-    local killsPerPlayer = {}
-
-    -- New statistics tracking
-    local weekdayKills = {0, 0, 0, 0, 0, 0, 0} -- Sunday=1, Monday=2, etc.
-    local hourlyKills = {}
-    for i = 0, 23 do
-        hourlyKills[i] = 0
-    end
-    local monthlyKills = {}
-    for i = 1, 12 do
-        monthlyKills[i] = 0
-    end
-    local firstKillTimestamp = nil
-    local lastKillTimestamp = nil
-
-    -- Track today/week/month/year kills while we're already iterating killLocations.
-    -- This avoids additional full-database scans via PSC_GetKillsToday/ThisWeek/ThisMonth/ThisYear.
----@diagnostic disable-next-line: undefined-global
-    local timeBoundaries = PSC_CalculateTimePeriodBoundaries and PSC_CalculateTimePeriodBoundaries() or nil
-    local killsToday = 0
-    local killsThisWeek = 0
-    local killsThisMonth = 0
-    local killsThisYear = 0
+    local state = PSC_SummaryStats_CreateState(charactersToProcess)
 
     for characterKey, characterData in pairs(charactersToProcess) do
-        if characterKey == PSC_GetCharacterKey() then
-            currentKillStreak = characterData.CurrentKillStreak
-        end
-
-        if PSC_DB.ShowAccountWideStats then
-            if characterData.HighestKillStreak > highestKillStreak then
-                highestKillStreak = characterData.HighestKillStreak
-                highestKillStreakCharacter = characterKey
-            end
-
-            if characterData.HighestMultiKill > highestMultiKill then
-                highestMultiKill = characterData.HighestMultiKill
-                highestMultiKillCharacter = characterKey
-            end
-        else
-            highestMultiKill = characterData.HighestMultiKill
-            highestKillStreak = characterData.HighestKillStreak
-        end
+        PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, characterData)
 
         if characterData.Kills then
             for nameWithLevel, killData in pairs(characterData.Kills) do
-                local kills = killData.kills or 0
-                local playerName = nameWithLevel:match("([^:]+)")
+                local kills, _, levelNum = PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killData)
 
-                killsPerPlayer[playerName] = (killsPerPlayer[playerName] or 0) + kills
-
-                uniqueKills = uniqueKills + 1
-                totalKills = totalKills + kills
-
-                local level = nameWithLevel:match(":(%S+)")
-                local levelNum = tonumber(level or "0") or 0
-
-                if levelNum > 0 then
-                    if not uniquePlayerLevels[playerName] then
-                        uniquePlayerLevels[playerName] = {
-                            sum = 0,
-                            count = 0
-                        }
-                    end
-
-                    -- Add this level instance to the player's running total
-                    uniquePlayerLevels[playerName].sum = uniquePlayerLevels[playerName].sum + levelNum
-                    uniquePlayerLevels[playerName].count = uniquePlayerLevels[playerName].count + 1
-                end
-
-                -- Count unknown level kills
-                if levelNum == -1 then
-                    unknownLevelKills = unknownLevelKills + kills
-                end
-
-                -- Process kill locations for more accurate level difference data
                 if killData.killLocations and #killData.killLocations > 0 then
                     for _, location in ipairs(killData.killLocations) do
-                        local targetLevel = levelNum
-                        local playerLevel = location.playerLevel or 0
-                        local timestamp = location.timestamp
-
-                        -- Track timestamps for time-based statistics
-                        if timestamp then
-                            if not firstKillTimestamp or timestamp < firstKillTimestamp then
-                                firstKillTimestamp = timestamp
-                            end
-                            if not lastKillTimestamp or timestamp > lastKillTimestamp then
-                                lastKillTimestamp = timestamp
-                            end
-
-                            if timeBoundaries then
-                                if timestamp >= timeBoundaries.todayStart then
-                                    killsToday = killsToday + 1
-                                end
-                                if timestamp >= timeBoundaries.weekStart then
-                                    killsThisWeek = killsThisWeek + 1
-                                end
-                                if timestamp >= timeBoundaries.monthStart then
-                                    killsThisMonth = killsThisMonth + 1
-                                end
-                                if timestamp >= timeBoundaries.yearStart then
-                                    killsThisYear = killsThisYear + 1
-                                end
-                            end
-
-                            -- Calculate weekday, hour, and month statistics
-                            -- Avoid allocating a full date table for every killLocation.
-                            local wday0 = tonumber(date("%w", timestamp))
-                            if wday0 then
-                                weekdayKills[wday0 + 1] = weekdayKills[wday0 + 1] + 1
-                            end
-                            local hour = tonumber(date("%H", timestamp))
-                            if hour then
-                                hourlyKills[hour] = hourlyKills[hour] + 1
-                            end
-                            local month = tonumber(date("%m", timestamp))
-                            if month then
-                                monthlyKills[month] = monthlyKills[month] + 1
-                            end
-                        end
-
-                        if targetLevel > 0 and playerLevel > 0 then
-                            levelDiffSum = levelDiffSum + (playerLevel - targetLevel)
-                            killsWithLevelData = killsWithLevelData + 1
-                        end
-
-                        if playerLevel > 0 then
-                            totalPlayerLevelSum = totalPlayerLevelSum + playerLevel
-                        end
+                        PSC_SummaryStats_ProcessKillLocation(state, location, levelNum)
                     end
                 else
-                    -- Fall back to the old method if no detailed locations
-                    if levelNum > 0 and killData.playerLevel and killData.playerLevel > 0 then
-                        levelDiffSum = levelDiffSum + (killData.playerLevel - levelNum) * kills
-                        killsWithLevelData = killsWithLevelData + kills
-                    end
-
-                    if killData.playerLevel and killData.playerLevel > 0 then
-                        totalPlayerLevelSum = totalPlayerLevelSum + killData.playerLevel * kills
-                    end
-                end
-
-                -- Calculate target level sum for average
-                if levelNum > 0 then
-                    totalLevels = totalLevels + levelNum * kills
+                    PSC_SummaryStats_ProcessKillEntryFallback(state, killData, kills, levelNum)
                 end
             end
         end
     end
 
-    for playerName, kills in pairs(killsPerPlayer) do
-        if kills > mostKilledCount then
-            mostKilledPlayer = playerName
-            mostKilledCount = kills
+    PSC_SummaryStats_FinalizeKillDerivedFields(state)
+    PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+    return PSC_SummaryStats_BuildResult(state)
+end
+
+function PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, maxKillLocationsPerFrame, onComplete)
+    if type(onComplete) ~= "function" then
+        return function()
+            return true
         end
     end
 
-    -- Calculate average of unique victim levels (first average each player's levels, then average those)
-    local uniqueLevelSum = 0
-    local uniquePlayersWithLevel = 0
-
-    for _, playerLevelData in pairs(uniquePlayerLevels) do
-        if playerLevelData.count > 0 then
-            -- Add this player's average level to the sum
-            uniqueLevelSum = uniqueLevelSum + (playerLevelData.sum / playerLevelData.count)
-            uniquePlayersWithLevel = uniquePlayersWithLevel + 1
-        end
+    local sliceBudget = tonumber(maxKillLocationsPerFrame) or 0
+    sliceBudget = math.floor(sliceBudget)
+    if sliceBudget < 50 then
+        sliceBudget = 50
     end
 
-    -- Find busiest weekday
-    local busiestWeekday = "None"
-    local maxWeekdayKills = 0
-    local weekdayNames = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
-    for i, kills in ipairs(weekdayKills) do
-        if kills > maxWeekdayKills then
-            maxWeekdayKills = kills
-            busiestWeekday = weekdayNames[i]
-        end
+    local state = PSC_SummaryStats_CreateState(charactersToProcess)
+
+    local characterKeys = {}
+    for characterKey in pairs(charactersToProcess) do
+        table.insert(characterKeys, characterKey)
     end
 
-    -- Find busiest hour
-    local busiestHour = "None"
-    local maxHourlyKills = 0
-    for hour, kills in pairs(hourlyKills) do
-        if kills > maxHourlyKills then
-            maxHourlyKills = kills
-            busiestHour = string.format("%02d:00 - %02d:00", hour, (hour + 1) % 24)
-        end
+    local characterIndex = 1
+    local killKeys = nil
+    local killIndex = 1
+    local locationIndex = 1
+    local currentKillData = nil
+    local currentKillLevelNum = 0
+    local currentKillKills = 0
+    local characterHeaderDone = false
+    local finished = false
+
+    local function advanceToNextKill()
+        currentKillData = nil
+        locationIndex = 1
+        killIndex = killIndex + 1
     end
 
-    -- Find busiest month
-    local busiestMonth = "None"
-    local maxMonthlyKills = 0
-    local monthNames = {"January", "February", "March", "April", "May", "June",
-                       "July", "August", "September", "October", "November", "December"}
-    for i, kills in ipairs(monthlyKills) do
-        if kills > maxMonthlyKills then
-            maxMonthlyKills = kills
-            busiestMonth = monthNames[i]
+    return function()
+        if finished then
+            return true
         end
-    end
 
-    -- Calculate average kills per day
-    local avgKillsPerDay = 0
-    if firstKillTimestamp and lastKillTimestamp then
-        local activitySpanDays = math.floor((lastKillTimestamp - firstKillTimestamp) / 86400) + 1
-        if activitySpanDays > 0 then
-            avgKillsPerDay = totalKills / activitySpanDays
-        end
-    end
+        local processed = 0
+        while processed < sliceBudget do
+            if characterIndex > #characterKeys then
+                PSC_SummaryStats_FinalizeKillDerivedFields(state)
+                PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+                finished = true
+                onComplete(PSC_SummaryStats_BuildResult(state))
+                return true
+            end
 
-    local knownLevelKills = totalKills - unknownLevelKills
-    local avgLevel = knownLevelKills > 0 and (totalLevels / knownLevelKills) or 0
-    local avgUniqueLevel = uniquePlayersWithLevel > 0 and (uniqueLevelSum / uniquePlayersWithLevel) or 0
-    local avgPlayerLevel = totalKills > 0 and (totalPlayerLevelSum / totalKills) or 0
-    local avgLevelDiff = killsWithLevelData > 0 and (levelDiffSum / killsWithLevelData) or 0
-    local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
+            local characterKey = characterKeys[characterIndex]
+            local characterData = charactersToProcess[characterKey]
+            if not characterData then
+                characterIndex = characterIndex + 1
+                killKeys = nil
+                killIndex = 1
+                locationIndex = 1
+                currentKillData = nil
+                characterHeaderDone = false
+            else
+                if not characterHeaderDone then
+                    PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, characterData)
+                    characterHeaderDone = true
+                end
 
-    -- Calculate nemesis (player with most kills against the user, assists as tie-breaker)
-    local nemesisName = "None"
-    local nemesisScore = 0
-    local nemesisAssists = 0
-    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+                if not characterData.Kills then
+                    characterIndex = characterIndex + 1
+                    killKeys = nil
+                    killIndex = 1
+                    locationIndex = 1
+                    currentKillData = nil
+                    characterHeaderDone = false
+                else
+                    if not killKeys then
+                        killKeys = {}
+                        for nameWithLevel in pairs(characterData.Kills) do
+                            table.insert(killKeys, nameWithLevel)
+                        end
+                        killIndex = 1
+                        locationIndex = 1
+                        currentKillData = nil
+                    end
 
-    -- Precompute assist counts per player once (PSC_CountPlayerAssists is O(n) per player).
-    local assistsByPlayer = {}
-    for _, deathData in pairs(deathDataByPlayer) do
-        if deathData.deathLocations then
-            for _, location in ipairs(deathData.deathLocations) do
-                if location.assisters then
-                    for _, assister in ipairs(location.assisters) do
-                        if assister and assister.name then
-                            assistsByPlayer[assister.name] = (assistsByPlayer[assister.name] or 0) + 1
+                    if killIndex > #killKeys then
+                        characterIndex = characterIndex + 1
+                        killKeys = nil
+                        killIndex = 1
+                        locationIndex = 1
+                        currentKillData = nil
+                        characterHeaderDone = false
+                    else
+                        local nameWithLevel = killKeys[killIndex]
+                        local killData = characterData.Kills[nameWithLevel]
+                        if not killData then
+                            advanceToNextKill()
+                        else
+                            if not currentKillData then
+                                currentKillData = killData
+                                local kills, _, levelNum = PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killData)
+                                currentKillLevelNum = levelNum
+                                currentKillKills = kills
+                                locationIndex = 1
+                            end
+
+                            if currentKillData.killLocations and #currentKillData.killLocations > 0 then
+                                local locations = currentKillData.killLocations
+                                if locationIndex > #locations then
+                                    advanceToNextKill()
+                                else
+                                    local location = locations[locationIndex]
+                                    if location then
+                                        PSC_SummaryStats_ProcessKillLocation(state, location, currentKillLevelNum)
+                                    end
+                                    locationIndex = locationIndex + 1
+                                    processed = processed + 1
+                                end
+                            else
+                                PSC_SummaryStats_ProcessKillEntryFallback(state, currentKillData, currentKillKills, currentKillLevelNum)
+                                advanceToNextKill()
+                                processed = processed + 1
+                            end
                         end
                     end
                 end
             end
         end
+
+        return false
     end
-
-    -- Total deaths across the same character scope as nemesis calculation
-    local totalDeaths = 0
-    for _, deathData in pairs(deathDataByPlayer) do
-        totalDeaths = totalDeaths + (deathData.deaths or 0)
-    end
-
-    for killerName, deathData in pairs(deathDataByPlayer) do
-        local deaths = deathData.deaths or 0
-        local assists = assistsByPlayer[killerName] or 0
-
-        -- Primary: Most kills. Secondary: Most assists (tie-breaker)
-        if deaths > nemesisScore or (deaths == nemesisScore and assists > nemesisAssists) then
-            nemesisScore = deaths
-            nemesisAssists = assists
-            nemesisName = killerName
-        end
-    end
-
-    local kdRatio = 0
-    if totalDeaths > 0 then
-        kdRatio = totalKills / totalDeaths
-    elseif totalKills > 0 then
-        kdRatio = math.huge
-    end
-
-    return {
-        totalKills = totalKills,
-        uniqueKills = uniqueKills,
-        unknownLevelKills = unknownLevelKills,
-        totalDeaths = totalDeaths,
-        kdRatio = kdRatio,
-        avgLevel = avgUniqueLevel, -- Using the improved unique player average
-        avgLevelDiff = avgLevelDiff,
-        avgKillsPerPlayer = avgKillsPerPlayer,
-        mostKilledPlayer = mostKilledPlayer or "None",
-        mostKilledCount = mostKilledCount,
-        currentKillStreak = currentKillStreak,
-        highestKillStreak = highestKillStreak,
-        highestMultiKill = highestMultiKill,
-        highestKillStreakCharacter = highestKillStreakCharacter,
-        highestMultiKillCharacter = highestMultiKillCharacter,
-        -- Only the 4 requested time-based statistics
-        busiestWeekday = busiestWeekday,
-        busiestWeekdayKills = maxWeekdayKills,
-        busiestHour = busiestHour,
-        busiestHourKills = maxHourlyKills,
-        busiestMonth = busiestMonth,
-        busiestMonthKills = maxMonthlyKills,
-        avgKillsPerDay = avgKillsPerDay,
-        killsToday = killsToday,
-        killsThisWeek = killsThisWeek,
-        killsThisMonth = killsThisMonth,
-        killsThisYear = killsThisYear,
-        nemesisName = nemesisName,
-        nemesisScore = nemesisScore
-    }
 end
 
 local function createSummaryStats(parent, x, y, width, height)
