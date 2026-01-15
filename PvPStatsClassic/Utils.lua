@@ -1558,7 +1558,6 @@ end
 
 -- Function to get cached streak stats with automatic refresh when needed
 function PSC_GetStreakStats(forceRefresh)
-    -- Cache indefinitely, only refresh when forced (on new kills) or if cache doesn't exist
     if not streakStatsCache or forceRefresh then
         streakStatsCache = PSC_CalculateAllStreakStats()
     end
@@ -1568,11 +1567,6 @@ end
 
 -- Function to manually clear the streak cache (called when new kills are registered)
 function PSC_CountConsecutiveDaysWithMinKills(minKills)
-    if not minKills or minKills <= 0 then
-        return 0
-    end
-
-    -- Use cached streak stats for much better performance
     local streakStats = PSC_GetStreakStats()
     return streakStats[minKills] or 0
 end
