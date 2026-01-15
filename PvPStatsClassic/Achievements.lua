@@ -329,7 +329,7 @@ function AchievementSystem:CreateIncrementalAchievementCheckTask(stats)
     local achievementsUnlocked = 0
     local startIndex = 1
 
-    local achievementsPerSlice = 50
+    local achievementsPerSlice = 500
 
     return function()
         local i = startIndex

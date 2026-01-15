@@ -63,7 +63,7 @@ function PSC_StartIncrementalAchievementsCalculation()
         return
     end
 
-    local killLocationsPerSlice = 2000
+    local killLocationsPerSlice = 5000
 
     local job = {
         dirty = false
@@ -83,10 +83,9 @@ function PSC_StartIncrementalAchievementsCalculation()
 
 
     local taskQueue = {
-        TaskQueueDelayFrame(5),
         function()
             local characterData = charactersToProcess[currentCharacterKey]
-            job._timeStatsTask = PSC_CreateIncrementalTimeBasedStatsTask(characterData, killLocationsPerSlice * 2, function(result)
+            job._timeStatsTask = PSC_CreateIncrementalTimeBasedStatsTask(characterData, killLocationsPerSlice, function(result)
                 TimeStatsCache = result
             end)
             return true
@@ -107,21 +106,21 @@ function PSC_StartIncrementalAchievementsCalculation()
 
             return job._timeStatsTask()
         end,
-        TaskQueueDelayFrame(5),
+        TaskQueueDelayFrame(1),
         function()
             local t1 = debugprofilestop()
             PSC_GetStreakStats(true)
             local t2 = debugprofilestop()
             print("[PvPStats] Streak stats calculation took " .. (t2 - t1) .. " ms")
         end,
-        TaskQueueDelayFrame(5),
+        TaskQueueDelayFrame(1),
         function()
             local t1 = debugprofilestop()
             PSC_GetNameBasedStats(true)
             local t2 = debugprofilestop()
             print("[PvPStats] Name-based stats calculation took " .. (t2 - t1) .. " ms")
         end,
-        TaskQueueDelayFrame(5),
+        TaskQueueDelayFrame(1),
         function()
             local t1 = debugprofilestop()
             classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
@@ -129,7 +128,7 @@ function PSC_StartIncrementalAchievementsCalculation()
             local t2 = debugprofilestop()
             print("[PvPStats] Bar chart statistics calculation took " .. (t2 - t1) .. " ms")
         end,
-        TaskQueueDelayFrame(5),
+        TaskQueueDelayFrame(1),
         function()
             local task = PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, killLocationsPerSlice, function(result)
                 summaryStats = result
