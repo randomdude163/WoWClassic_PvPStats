@@ -63,7 +63,7 @@ function PSC_StartIncrementalAchievementsCalculation()
         return
     end
 
-    local killLocationsPerSlice = 1000
+    local killLocationsPerSlice = 2000
 
     local job = {
         dirty = false
