@@ -547,6 +547,123 @@ local TimeBasedAchievementConfig = {
     }
 }
 
+local TimeBasedAchievementLookup = (function()
+    local lookup = {}
+
+    local ipairs = ipairs
+    local tinsert = table.insert
+
+    lookup.timeRangesByHour = {}
+    for hour = 0, 23 do
+        lookup.timeRangesByHour[hour] = {}
+    end
+
+    lookup.weekdayNameByNumber = {}
+    lookup.weekdayGroupsByNumber = {}
+    lookup.combosByWeekday = {}
+    for wday = 1, 7 do
+        lookup.weekdayGroupsByNumber[wday] = {}
+        lookup.combosByWeekday[wday] = {}
+    end
+
+    lookup.monthNameByNumber = {}
+    lookup.specialDatesByMonthDay = {}
+    for month = 1, 12 do
+        lookup.specialDatesByMonthDay[month] = {}
+    end
+
+    lookup.initKeys = {
+        timeRanges = {},
+        weekdays = {},
+        weekdayGroups = {},
+        months = {},
+        specialDates = {},
+        combinations = {},
+        specialConditions = {}
+    }
+
+    -- Compile time ranges into per-hour lists
+    for _, range in ipairs(TimeBasedAchievementConfig.timeRanges) do
+        local startHour, endHour, optionalName = range[1], range[2], range[3]
+        local rangeKey = startHour .. "_" .. endHour
+
+        tinsert(lookup.initKeys.timeRanges, rangeKey)
+        if optionalName then
+            tinsert(lookup.initKeys.timeRanges, optionalName)
+        end
+
+        for hour = 0, 23 do
+            local inRange
+            if startHour > endHour then
+                inRange = hour >= startHour or hour < endHour
+            else
+                inRange = hour >= startHour and hour < endHour
+            end
+            if inRange then
+                tinsert(lookup.timeRangesByHour[hour], rangeKey)
+                if optionalName then
+                    tinsert(lookup.timeRangesByHour[hour], optionalName)
+                end
+            end
+        end
+    end
+
+    -- Weekdays: map number -> name
+    for _, weekday in ipairs(TimeBasedAchievementConfig.weekdays) do
+        lookup.weekdayNameByNumber[weekday[1]] = weekday[2]
+        tinsert(lookup.initKeys.weekdays, weekday[2])
+    end
+
+    -- Weekday groups: map weekday number -> group names
+    for _, group in ipairs(TimeBasedAchievementConfig.weekdayGroups) do
+        local groupName, weekdayNumbers = group[1], group[2]
+        tinsert(lookup.initKeys.weekdayGroups, groupName)
+        for _, wday in ipairs(weekdayNumbers) do
+            tinsert(lookup.weekdayGroupsByNumber[wday], groupName)
+        end
+    end
+
+    -- Months: map number -> name, and prepare init keys for both
+    for _, month in ipairs(TimeBasedAchievementConfig.months) do
+        lookup.monthNameByNumber[month[1]] = month[2]
+        tinsert(lookup.initKeys.months, month[1])
+        tinsert(lookup.initKeys.months, month[2])
+    end
+
+    -- Special dates: map month/day -> keys to increment
+    for _, special in ipairs(TimeBasedAchievementConfig.specialDates) do
+        local day, month, name = special[1], special[2], special[3]
+        local key = day .. "_" .. month
+
+        tinsert(lookup.initKeys.specialDates, key)
+        tinsert(lookup.initKeys.specialDates, name)
+
+        local monthBucket = lookup.specialDatesByMonthDay[month]
+        if not monthBucket[day] then
+            monthBucket[day] = {}
+        end
+        tinsert(monthBucket[day], key)
+        tinsert(monthBucket[day], name)
+    end
+
+    -- Combinations: map weekday -> combos to check
+    for _, combo in ipairs(TimeBasedAchievementConfig.combinations) do
+        local startHour, endHour, weekdays, name = combo[1], combo[2], combo[3], combo[4]
+        tinsert(lookup.initKeys.combinations, name)
+        for _, wday in ipairs(weekdays) do
+            tinsert(lookup.combosByWeekday[wday], {startHour = startHour, endHour = endHour, name = name})
+        end
+    end
+
+    -- Special conditions: preserve as-is, but precompute init keys
+    lookup.specialConditions = TimeBasedAchievementConfig.specialConditions
+    for _, condition in ipairs(TimeBasedAchievementConfig.specialConditions) do
+        tinsert(lookup.initKeys.specialConditions, condition.name)
+    end
+
+    return lookup
+end)()
+
 -- Optimized function to calculate ALL time-based statistics in a single pass
 -- Function to get the local timezone offset in hours
 -- This ensures that time-based achievements always use the player's local time
@@ -571,6 +688,12 @@ function PSC_GetLocalTimezoneOffset()
 end
 
 function PSC_CalculateAllTimeBasedStats()
+    local PSC_DB = PSC_DB
+    local PSC_GetCharacterKey = PSC_GetCharacterKey
+    local pairs = pairs
+    local ipairs = ipairs
+    local date = date
+
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
@@ -578,54 +701,35 @@ function PSC_CalculateAllTimeBasedStats()
         return {}
     end
 
+    local function initCounterTable(keys)
+        local t = {}
+        for i = 1, #keys do
+            t[keys[i]] = 0
+        end
+        return t
+    end
+
+    local initKeys = TimeBasedAchievementLookup.initKeys
     local stats = {
-        timeRanges = {},
-        weekdays = {},
-        weekdayGroups = {},
-        months = {},
-        specialDates = {},
-        combinations = {},
-        specialConditions = {}
+        timeRanges = initCounterTable(initKeys.timeRanges),
+        weekdays = initCounterTable(initKeys.weekdays),
+        weekdayGroups = initCounterTable(initKeys.weekdayGroups),
+        months = initCounterTable(initKeys.months),
+        specialDates = initCounterTable(initKeys.specialDates),
+        combinations = initCounterTable(initKeys.combinations),
+        specialConditions = initCounterTable(initKeys.specialConditions)
     }
 
-    -- Initialize all counters based on configuration
-    for _, range in ipairs(TimeBasedAchievementConfig.timeRanges) do
-        local key = range[1] .. "_" .. range[2]
-        stats.timeRanges[key] = 0
-        if range[3] then
-            stats.timeRanges[range[3]] = 0
-        end
-    end
-
-    for _, weekday in ipairs(TimeBasedAchievementConfig.weekdays) do
-        stats.weekdays[weekday[2]] = 0
-    end
-
-    for _, group in ipairs(TimeBasedAchievementConfig.weekdayGroups) do
-        stats.weekdayGroups[group[1]] = 0
-    end
-
-    for _, month in ipairs(TimeBasedAchievementConfig.months) do
-        stats.months[month[1]] = 0
-        stats.months[month[2]] = 0
-    end
-
-    for _, date in ipairs(TimeBasedAchievementConfig.specialDates) do
-        local key = date[1] .. "_" .. date[2]
-        stats.specialDates[key] = 0
-        stats.specialDates[date[3]] = 0
-    end
-
-    for _, combo in ipairs(TimeBasedAchievementConfig.combinations) do
-        stats.combinations[combo[4]] = 0
-    end
-
-    for _, condition in ipairs(TimeBasedAchievementConfig.specialConditions) do
-        stats.specialConditions[condition.name] = 0
-    end
+    local timeRangesByHour = TimeBasedAchievementLookup.timeRangesByHour
+    local weekdayNameByNumber = TimeBasedAchievementLookup.weekdayNameByNumber
+    local weekdayGroupsByNumber = TimeBasedAchievementLookup.weekdayGroupsByNumber
+    local monthNameByNumber = TimeBasedAchievementLookup.monthNameByNumber
+    local specialDatesByMonthDay = TimeBasedAchievementLookup.specialDatesByMonthDay
+    local combosByWeekday = TimeBasedAchievementLookup.combosByWeekday
+    local specialConditions = TimeBasedAchievementLookup.specialConditions
 
     -- Single pass through all kills
-    for playerKey, playerData in pairs(characterData.Kills) do
+    for _, playerData in pairs(characterData.Kills) do
         if playerData.killLocations then
             for _, killLocation in ipairs(playerData.killLocations) do
                 if killLocation.timestamp then
@@ -638,88 +742,64 @@ function PSC_CalculateAllTimeBasedStats()
                         local month = dateInfo.month
                         local day = dateInfo.day
 
-                        -- Count time ranges
-                        for _, range in ipairs(TimeBasedAchievementConfig.timeRanges) do
-                            local startHour, endHour = range[1], range[2]
-                            local inRange = false
-
-                            if startHour > endHour then
-                                inRange = hour >= startHour or hour < endHour
-                            else
-                                inRange = hour >= startHour and hour < endHour
-                            end
-
-                            if inRange then
-                                local key = startHour .. "_" .. endHour
-                                stats.timeRanges[key] = stats.timeRanges[key] + 1
-                                if range[3] then
-                                    stats.timeRanges[range[3]] = stats.timeRanges[range[3]] + 1
-                                end
-                            end
+                        -- Count time ranges (precompiled by hour)
+                        local rangeKeys = timeRangesByHour[hour]
+                        for i = 1, #rangeKeys do
+                            local key = rangeKeys[i]
+                            stats.timeRanges[key] = stats.timeRanges[key] + 1
                         end
 
-                        -- Count individual weekdays
-                        for _, wd in ipairs(TimeBasedAchievementConfig.weekdays) do
-                            if weekday == wd[1] then
-                                stats.weekdays[wd[2]] = stats.weekdays[wd[2]] + 1
-                            end
+                        -- Count individual weekday
+                        local weekdayName = weekdayNameByNumber[weekday]
+                        if weekdayName then
+                            stats.weekdays[weekdayName] = stats.weekdays[weekdayName] + 1
                         end
 
                         -- Count weekday groups
-                        for _, group in ipairs(TimeBasedAchievementConfig.weekdayGroups) do
-                            for _, targetDay in ipairs(group[2]) do
-                                if weekday == targetDay then
-                                    stats.weekdayGroups[group[1]] = stats.weekdayGroups[group[1]] + 1
-                                    break
-                                end
-                            end
+                        local groupNames = weekdayGroupsByNumber[weekday]
+                        for i = 1, #groupNames do
+                            local groupName = groupNames[i]
+                            stats.weekdayGroups[groupName] = stats.weekdayGroups[groupName] + 1
                         end
 
                         -- Count months
-                        for _, m in ipairs(TimeBasedAchievementConfig.months) do
-                            if month == m[1] then
-                                stats.months[m[1]] = stats.months[m[1]] + 1
-                                stats.months[m[2]] = stats.months[m[2]] + 1
-                            end
+                        stats.months[month] = stats.months[month] + 1
+                        local monthName = monthNameByNumber[month]
+                        if monthName then
+                            stats.months[monthName] = stats.months[monthName] + 1
                         end
 
                         -- Count special dates
-                        for _, date in ipairs(TimeBasedAchievementConfig.specialDates) do
-                            if day == date[1] and month == date[2] then
-                                local key = date[1] .. "_" .. date[2]
+                        local monthBucket = specialDatesByMonthDay[month]
+                        local specialKeys = monthBucket and monthBucket[day]
+                        if specialKeys then
+                            for i = 1, #specialKeys do
+                                local key = specialKeys[i]
                                 stats.specialDates[key] = stats.specialDates[key] + 1
-                                stats.specialDates[date[3]] = stats.specialDates[date[3]] + 1
                             end
                         end
 
-                        -- Count combinations
-                        for _, combo in ipairs(TimeBasedAchievementConfig.combinations) do
-                            local startHour, endHour, weekdays, name = combo[1], combo[2], combo[3], combo[4]
+                        -- Count combinations (precompiled per weekday)
+                        local combos = combosByWeekday[weekday]
+                        for i = 1, #combos do
+                            local combo = combos[i]
+                            local startHour, endHour = combo.startHour, combo.endHour
 
-                            -- Check if time is in range
-                            local inTimeRange = false
+                            local inTimeRange
                             if startHour > endHour then
                                 inTimeRange = hour >= startHour or hour < endHour
                             else
                                 inTimeRange = hour >= startHour and hour < endHour
                             end
 
-                            -- Check if weekday matches
-                            local inWeekdayRange = false
-                            for _, targetDay in ipairs(weekdays) do
-                                if weekday == targetDay then
-                                    inWeekdayRange = true
-                                    break
-                                end
-                            end
-
-                            if inTimeRange and inWeekdayRange then
-                                stats.combinations[name] = stats.combinations[name] + 1
+                            if inTimeRange then
+                                stats.combinations[combo.name] = stats.combinations[combo.name] + 1
                             end
                         end
 
                         -- Count special conditions
-                        for _, condition in ipairs(TimeBasedAchievementConfig.specialConditions) do
+                        for i = 1, #specialConditions do
+                            local condition = specialConditions[i]
                             if condition.check(dateInfo) then
                                 stats.specialConditions[condition.name] = stats.specialConditions[condition.name] + 1
                             end
