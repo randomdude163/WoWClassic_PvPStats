@@ -510,16 +510,15 @@ local function HandlePlayerEnteringWorld()
     PSC_RealmName = GetRealmName()
     PSC_GameVersion = DetermineGameVersion()
 
-    -- Initialize achievements after game version is determined
-    if PVPSC and PVPSC.AchievementSystem then
-        PVPSC.AchievementSystem:InitializeAchievements()
-    end
+    PVPSC.AchievementSystem:InitializeAchievements()
 
     if not PSC_DB then
         PSC_DB = {}
         PSC_LoadDefaultSettings()
         ResetAllStatsToDefault()
     end
+
+    PVPSC.AchievementSystem:LoadAchievementCompletedData()
 
     -- Initialize minimap button settings if not present
     if not PSC_DB.minimapButton then
@@ -546,6 +545,7 @@ local function HandlePlayerEnteringWorld()
     PSC_InCombat = UnitAffectingCombat("player")
     PSC_CheckBattlegroundStatus()
     PSC_InitializeGrayKillsCounter()
+    PSC_InitializeSpawnCamperCounter()
 
     if UnitIsDeadOrGhost("player") then
         HandlePlayerDeath()
@@ -560,11 +560,7 @@ local function HandlePlayerEnteringWorld()
         print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
     end
 
-    PSC_GetTimeBasedStats(true)
-
-    C_Timer.After(2, function()
-        PVPSC.AchievementSystem:CheckAchievements()
-    end)
+    PSC_StartIncrementalAchievementsCalculation()
 end
 
 local function HandlePlayerRegenEnabled()

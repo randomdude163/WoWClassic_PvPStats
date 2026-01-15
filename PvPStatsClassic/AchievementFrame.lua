@@ -440,23 +440,12 @@ local function CreateProgressBar(tile, targetValue, currentProgress, achievement
         progressBar:SetValue(currentProgress)
         progressText:SetText(displayProgress.."/"..targetValue)
     else
-        if currentProgress >= targetValue and targetValue > 0 then
-            achievement.unlocked = true
-            achievement.completedDate = date("%d/%m/%Y %H:%M")
-            local displayProgress = PSC_DB.CapAchievementProgress and targetValue or currentProgress
-            progressBar:SetMinMaxValues(0, math.max(targetValue, currentProgress))
-            progressBar:SetValue(currentProgress)
-            progressText:SetText(displayProgress.."/"..targetValue)
-            icon:SetDesaturated(false)
-            title:SetTextColor(1, 0.82, 0)
+        progressBar:SetMinMaxValues(0, targetValue)
+        progressBar:SetValue(currentProgress)
+        if currentCategory == "Almost" and achievement.completion then
+            progressText:SetText(string.format("%d/%d (%d%%)", currentProgress, targetValue, achievement.completion))
         else
-            progressBar:SetMinMaxValues(0, targetValue)
-            progressBar:SetValue(currentProgress)
-            if currentCategory == "Almost" and achievement.completion then
-                progressText:SetText(string.format("%d/%d (%d%%)", currentProgress, targetValue, achievement.completion))
-            else
-                progressText:SetText(currentProgress.."/"..targetValue)
-            end
+            progressText:SetText(currentProgress.."/"..targetValue)
         end
     end
 
@@ -473,7 +462,7 @@ local function AddLockedOverlay(tile, achievement)
 end
 
 
-local function CreateAchievementTile(i, achievement, stats)
+local function CreateAchievementTile(i, achievement, savedAchievements)
     local column = (i - 1) % ACHIEVEMENTS_PER_ROW
     local row = math.floor((i - 1) / ACHIEVEMENTS_PER_ROW)
     local xPos = column * (ACHIEVEMENT_WIDTH + ACHIEVEMENT_SPACING_H)
@@ -501,7 +490,8 @@ local function CreateAchievementTile(i, achievement, stats)
     local title, desc = CreateTitleAndDescription(tile, icon, pointsImage, achievement)
 
     local targetValue = achievement.targetValue
-    local currentProgress = achievement.progress(achievement, stats)
+    local savedData = savedAchievements and savedAchievements[achievement.id]
+    local currentProgress = (savedData and savedData.progress) or 0
     CreateProgressBar(tile, targetValue, currentProgress, achievement, icon, title)
 
     tile:SetScript("OnEnter", function(self)
@@ -580,19 +570,26 @@ local function UpdateAchievementLayout()
     end
 
     local achievements
-    local stats = PSC_GetStatsForAchievements()
+    local characterKey = PSC_GetCharacterKey()
+    local savedAchievements = PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[characterKey] or {}
 
     if currentCategory == "Almost" then
         achievements = {}
         local allAchievements = PVPSC.AchievementSystem.achievements
         for _, achievement in ipairs(allAchievements) do
             if not achievement.unlocked then
-                local completion = PSC_CalculateAchievementCompletion(achievement, stats)
-                if completion > 0 then
-                    local achievementCopy = {}
-                    for k, v in pairs(achievement) do achievementCopy[k] = v end
-                    achievementCopy.completion = completion
-                    table.insert(achievements, achievementCopy)
+                local savedData = savedAchievements and savedAchievements[achievement.id]
+                local progressValue = savedData and savedData.progress
+                local targetValue = achievement.targetValue
+                if progressValue and targetValue and targetValue > 0 then
+                    local completion = (progressValue / targetValue) * 100
+                    completion = math.floor(completion)
+                    if completion > 0 then
+                        local achievementCopy = {}
+                        for k, v in pairs(achievement) do achievementCopy[k] = v end
+                        achievementCopy.completion = completion
+                        table.insert(achievements, achievementCopy)
+                    end
                 end
             end
         end
@@ -625,7 +622,7 @@ local function UpdateAchievementLayout()
     if #achievements == 0 then return end
 
     for i, achievement in ipairs(achievements) do
-        CreateAchievementTile(i, achievement, stats)
+        CreateAchievementTile(i, achievement, savedAchievements)
     end
 end
 

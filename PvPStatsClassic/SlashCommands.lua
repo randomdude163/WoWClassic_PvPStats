@@ -22,6 +22,7 @@ local function PrintSlashCommandUsage()
         PSC_Print("Usage: /psc simulatedeath [killers] [assists] - Simulate being killed")
         PSC_Print("Usage: /psc simcombatlog [killers] [assists] [damage] - Simulate combat log entries for death")
         PSC_Print("Usage: /psc deathstats - Show death statistics")
+        PSC_Print("Usage: /psc snapshot [label] - Save stats + achievement progress snapshot to SavedVariables")
     end
 
 
@@ -135,6 +136,9 @@ function PSC_SlashCommandHandler(msg)
 
         elseif command == "roleplayer" then
             PSC_CreateRoleplayer()
+
+        elseif command == "snapshot" then
+            PSC_CreateDebugSnapshot(arguments ~= "" and arguments or nil)
 
         else
             PrintSlashCommandUsage()

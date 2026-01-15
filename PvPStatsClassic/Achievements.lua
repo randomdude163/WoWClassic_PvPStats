@@ -127,6 +127,64 @@ function PSC_InitializeGrayKillsCounter()
     end
 end
 
+function PSC_InitializeSpawnCamperCounter()
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    -- Calculate once using the spawn camper logic
+    characterData.SpawnCamperMaxKills = PSC_CalculateSpawnCamperMaxKills() or 0
+
+    if PSC_Debug then
+        print("[PvPStats]: Initialized spawn camper counter with " .. characterData.SpawnCamperMaxKills .. " max kills in 60s window")
+    end
+end
+
+function PSC_CalculateSpawnCamperMaxKills()
+    local characterKey = PSC_GetCharacterKey()
+    if not characterKey or not PSC_DB.PlayerKillCounts.Characters[characterKey] then return 0 end
+
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    -- Only build the timestamp list if it hasn't been initialized yet (first-time setup)
+    if not characterData.Level1KillTimestamps or #characterData.Level1KillTimestamps == 0 then
+        local timestamps = {}
+
+        -- One-time historical data collection
+        for nameWithLevel, data in pairs(characterData.Kills) do
+            if string.match(nameWithLevel, ":1$") then
+                for _, loc in ipairs(data.killLocations) do
+                    table.insert(timestamps, loc.timestamp)
+                end
+            end
+        end
+
+        if #timestamps == 0 then
+            characterData.Level1KillTimestamps = {}
+            return 0
+        end
+
+        table.sort(timestamps)
+        characterData.Level1KillTimestamps = timestamps
+    end
+
+    -- Calculate max from the cached list
+    local timestamps = characterData.Level1KillTimestamps
+    local maxKillsInWindow = 0
+    local left = 1
+
+    for right = 1, #timestamps do
+        while timestamps[right] - timestamps[left] > 60 do
+            left = left + 1
+        end
+        local count = right - left + 1
+        if count > maxKillsInWindow then
+            maxKillsInWindow = count
+        end
+    end
+
+    return maxKillsInWindow
+end
+
 -- Helper function to check if a kill is a gray level kill
 function PSC_IsGrayLevelKill(playerLevel, targetLevel)
     if not playerLevel or not targetLevel or targetLevel == -1 then
@@ -158,9 +216,21 @@ function PSC_GetStatsForAchievements()
     local charactersToProcess = {}
     local currentCharacterKey = PSC_GetCharacterKey()
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData = PSC_CalculateBarChartStatistics(charactersToProcess)
     local summaryStats = PSC_CalculateSummaryStatistics(charactersToProcess)
+
+    -- Calculate guild achievement stats once per cycle
+    local maxSameGuildKills = 0
+    local uniqueGuildsKilled = 0
+    if guildData then
+        for guildName, count in pairs(guildData) do
+            if count > maxSameGuildKills then
+                maxSameGuildKills = count
+            end
+            uniqueGuildsKilled = uniqueGuildsKilled + 1
+        end
+    end
+
     local stats = {
         classData = classData,
         raceData = raceData,
@@ -170,6 +240,8 @@ function PSC_GetStatsForAchievements()
         levelData = levelData,
         guildStatusData = guildStatusData,
         guildData = guildData,
+        maxSameGuildKills = maxSameGuildKills,
+        uniqueGuildsKilled = uniqueGuildsKilled,
         totalKills = summaryStats.totalKills,
         uniqueKills = summaryStats.uniqueKills,
         highestKillStreak = summaryStats.highestKillStreak,
@@ -183,42 +255,12 @@ function PSC_GetStatsForAchievements()
     return stats
 end
 
-
-function AchievementSystem:CheckAchievements()
-    local playerName = UnitName("player")
-    local achievementsUnlocked = 0
-    local stats = PSC_GetStatsForAchievements()
-    local characterKey = PSC_GetCharacterKey()
-    local unlockedList = {}
-
-    for _, achievement in ipairs(self.achievements) do
-        if not achievement.unlocked and achievement.condition(achievement, stats) then
-            achievement.unlocked = true
-            achievement.completedDate = date("%d/%m/%Y %H:%M")
-
-            PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
-
-            local personalizedDescription = PSC_ReplacePlayerNamePlaceholder(achievement.description, playerName, achievement)
-            local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(achievement.title, playerName, achievement)
-            local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(achievement.subText, playerName, achievement)
-
-            table.insert(unlockedList, {
-                icon = achievement.iconID,
-                title = personalizedTitle,
-                description = personalizedDescription,
-                subText = personalizedSubText,
-                rarity = achievement.rarity
-            })
-
-            achievementsUnlocked = achievementsUnlocked + 1
-        end
+local function PSC_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
+    if achievementsUnlocked <= 0 then
+        return
     end
 
-    self:SaveAchievementPoints()
-
-    -- Show popups
     if achievementsUnlocked > 3 then
-        -- Print achievements in chat
         print("|cffffffff[PvPStats]|r You have unlocked |cffffff00" .. achievementsUnlocked .. "|r new achievements:")
         for _, achievement in ipairs(unlockedList) do
             print("|cffffff00" .. achievement.title .. "|r: |cffffffff" .. achievement.description .. "|r")
@@ -230,6 +272,125 @@ function AchievementSystem:CheckAchievements()
             PVPSC.AchievementPopup:ShowPopup(popupData)
         end
     end
+end
+
+local function PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList)
+    if achievement.unlocked then
+        return false
+    end
+
+    if not achievement.condition(achievement, stats) then
+        return false
+    end
+
+    achievement.unlocked = true
+    achievement.completedDate = date("%d/%m/%Y %H:%M")
+
+    PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
+
+    local personalizedDescription = PSC_ReplacePlayerNamePlaceholder(achievement.description, playerName, achievement)
+    local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(achievement.title, playerName, achievement)
+    local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(achievement.subText, playerName, achievement)
+
+    table.insert(unlockedList, {
+        icon = achievement.iconID,
+        title = personalizedTitle,
+        description = personalizedDescription,
+        subText = personalizedSubText,
+        rarity = achievement.rarity
+    })
+
+    return true
+end
+
+local function PSC_SaveAchievementProgressValue(achievementID, progressValue)
+    if not achievementID then
+        return
+    end
+
+    if not PSC_DB or not PSC_DB.CharacterAchievements then
+        if PSC_InitializeAchievementDataStructure then
+            PSC_InitializeAchievementDataStructure()
+        end
+    end
+
+    local characterKey = PSC_GetCharacterKey()
+    PSC_DB.CharacterAchievements = PSC_DB.CharacterAchievements or {}
+    PSC_DB.CharacterAchievements[characterKey] = PSC_DB.CharacterAchievements[characterKey] or {}
+    PSC_DB.CharacterAchievements[characterKey][achievementID] = PSC_DB.CharacterAchievements[characterKey][achievementID] or {}
+
+    PSC_DB.CharacterAchievements[characterKey][achievementID].progress = progressValue
+end
+
+function AchievementSystem:CreateIncrementalAchievementCheckTask(stats)
+    local achievements = self.achievements or {}
+    local playerName = UnitName("player")
+    local unlockedList = {}
+    local achievementsUnlocked = 0
+    local startIndex = 1
+
+    local achievementsPerSlice = 500
+
+    return function()
+        local i = startIndex
+        local processed = 0
+
+        while i <= #achievements do
+            local achievement = achievements[i]
+            if achievement and type(achievement.progress) == "function" then
+                local ok, value = pcall(achievement.progress, achievement, stats)
+                if ok then
+                    PSC_SaveAchievementProgressValue(achievement.id, value)
+                end
+            end
+            if achievement and PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList) then
+                achievementsUnlocked = achievementsUnlocked + 1
+            end
+
+            i = i + 1
+            processed = processed + 1
+
+            if processed >= achievementsPerSlice then
+                break
+            end
+        end
+
+        startIndex = i
+
+        if startIndex <= #achievements then
+            return false
+        end
+
+        self:SaveAchievementPoints()
+        PSC_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
+        return true
+    end
+end
+
+
+function AchievementSystem:CheckAchievements()
+    local playerName = UnitName("player")
+    local achievementsUnlocked = 0
+
+    local stats = PSC_GetStatsForAchievements()
+
+    local unlockedList = {}
+
+    for _, achievement in ipairs(self.achievements) do
+        if achievement and type(achievement.progress) == "function" then
+            local ok, value = pcall(achievement.progress, achievement, stats)
+            if ok then
+                PSC_SaveAchievementProgressValue(achievement.id, value)
+            end
+        end
+        if achievement and PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList) then
+            achievementsUnlocked = achievementsUnlocked + 1
+        end
+    end
+
+    self:SaveAchievementPoints()
+
+    PSC_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
 
     return achievementsUnlocked
 end
@@ -316,12 +477,6 @@ function AchievementSystem:LoadAchievementCompletedData()
 
     self:SaveAchievementPoints()
 end
-
-C_Timer.After(1, function()
-    if PVPSC and PVPSC.AchievementSystem then
-        PVPSC.AchievementSystem:LoadAchievementCompletedData()
-    end
-end)
 
 function PSC_ShareAchievementInChat(achievement)
     if not achievement or not achievement.unlocked then

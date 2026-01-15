@@ -485,8 +485,15 @@ function PSC_InitializePlayerKillCounts()
             HighestKillStreak = 0,
             HighestMultiKill = 0,
             GrayKillsCount = nil, -- We'll set this to nil initially to detect first run
+            SpawnCamperMaxKills = nil, -- Pre-calculated spawn camper achievement value
+            Level1KillTimestamps = {}, -- Cached list of all level 1 kill timestamps for efficient sliding window
             CurrentKillStreakPlayers = {} -- Track players killed in current streak
         }
+    end
+
+    -- Initialize Level1KillTimestamps if it doesn't exist (backward compatibility)
+    if PSC_DB.PlayerKillCounts.Characters[characterKey].Level1KillTimestamps == nil then
+        PSC_DB.PlayerKillCounts.Characters[characterKey].Level1KillTimestamps = {}
     end
 
     -- Initialize CurrentKillStreakPlayers if it doesn't exist (for existing saves)

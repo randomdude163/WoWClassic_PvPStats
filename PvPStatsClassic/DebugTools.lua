@@ -1,3 +1,7 @@
+---@diagnostic disable: duplicate-set-field
+
+local addonName, PVPSC = ...
+
 function PSC_DebugPetKills()
     print("Enabling pet kill debugging for 120 seconds...")
 
@@ -283,6 +287,183 @@ function PSC_SimulatePlayerKills(killCount)
     end
 
     PSC_Print("Registered " .. killCount .. " random test kill(s).")
+end
+
+
+local function PSC_DebugSnapshotNowKey(label)
+    local ts = time and time() or 0
+    local safeLabel = tostring(label or "")
+    safeLabel = safeLabel:gsub("[^%w_%-%s]", "")
+    safeLabel = safeLabel:gsub("%s+", " ")
+    safeLabel = safeLabel:match("^%s*(.-)%s*$")
+
+    local prefix = date and date("%Y-%m-%d_%H-%M-%S", ts) or tostring(ts)
+    if safeLabel ~= "" then
+        return prefix .. "__" .. safeLabel
+    end
+    return prefix
+end
+
+local function PSC_SnapshotKeySort(a, b)
+    local ta, tb = type(a), type(b)
+    if ta ~= tb then
+        return ta < tb
+    end
+    if ta == "number" then
+        return a < b
+    end
+    return tostring(a) < tostring(b)
+end
+
+local function PSC_SerializeSnapshotValue(value, indent, visited)
+    local t = type(value)
+    if t == "nil" then
+        return "nil"
+    elseif t == "number" or t == "boolean" then
+        return tostring(value)
+    elseif t == "string" then
+        return string.format("%q", value)
+    elseif t == "function" then
+        return "<function>"
+    elseif t == "userdata" then
+        return "<userdata>"
+    elseif t == "thread" then
+        return "<thread>"
+    elseif t ~= "table" then
+        return "<" .. t .. ">"
+    end
+
+    if visited[value] then
+        return "<cycle>"
+    end
+    visited[value] = true
+
+    indent = indent or ""
+    local nextIndent = indent .. "  "
+
+    local keys = {}
+    for k in pairs(value) do
+        keys[#keys + 1] = k
+    end
+    table.sort(keys, PSC_SnapshotKeySort)
+
+    local out = {"{"}
+    for _, k in ipairs(keys) do
+        local v = value[k]
+        local keyRepr
+        if type(k) == "string" and k:match("^[%a_][%w_]*$") then
+            keyRepr = k
+        else
+            keyRepr = "[" .. PSC_SerializeSnapshotValue(k, nextIndent, visited) .. "]"
+        end
+        out[#out + 1] = "\n" .. nextIndent .. keyRepr .. " = " .. PSC_SerializeSnapshotValue(v, nextIndent, visited) .. ","
+    end
+    out[#out + 1] = "\n" .. indent .. "}"
+
+    visited[value] = nil
+    return table.concat(out)
+end
+
+local function PSC_BuildAchievementProgressSnapshot(stats)
+    local system = PVPSC and PVPSC.AchievementSystem or nil
+    local achievements = system and system.achievements or nil
+    if type(achievements) ~= "table" then
+        return {}
+    end
+
+    local playerName = UnitName and UnitName("player") or nil
+
+    local entries = {}
+    for _, achievement in ipairs(achievements) do
+        if achievement then
+            local progressValue = nil
+            if type(achievement.progress) == "function" then
+                local ok, result = pcall(achievement.progress, achievement, stats)
+                if ok then
+                    progressValue = result
+                else
+                    progressValue = "<error>"
+                end
+            end
+
+            local title = achievement.title
+            if type(title) == "function" then
+                local ok, result = pcall(title, achievement)
+                title = ok and result or "<error>"
+            end
+            if type(title) == "string" and PSC_ReplacePlayerNamePlaceholder then
+                title = PSC_ReplacePlayerNamePlaceholder(title, playerName, achievement)
+            end
+
+            entries[#entries + 1] = {
+                id = achievement.id,
+                title = title,
+                unlocked = achievement.unlocked or false,
+                completedDate = achievement.completedDate or "",
+                points = achievement.achievementPoints or 0,
+                targetValue = achievement.targetValue,
+                progress = progressValue,
+                rarity = achievement.rarity,
+            }
+        end
+    end
+
+    table.sort(entries, function(a, b)
+        return (a.id or 0) < (b.id or 0)
+    end)
+
+    return entries
+end
+
+function PSC_CreateDebugSnapshot(label)
+    if not PSC_DB then
+        PSC_Print("ERROR: PSC_DB not initialized")
+        return nil
+    end
+
+    PSC_DB.DebugSnapshots = PSC_DB.DebugSnapshots or {}
+
+    local charactersToProcess = PSC_GetCharactersToProcessForStatistics and PSC_GetCharactersToProcessForStatistics() or nil
+    if not charactersToProcess then
+        local key = PSC_GetCharacterKey and PSC_GetCharacterKey() or nil
+        charactersToProcess = {}
+        if key and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[key] then
+            charactersToProcess[key] = PSC_DB.PlayerKillCounts.Characters[key]
+        end
+    end
+
+    local summaryStats = PSC_CalculateSummaryStatistics and PSC_CalculateSummaryStatistics(charactersToProcess) or nil
+    local achievementStats = nil
+    if PSC_GetStatsForAchievements then
+        achievementStats = select(1, PSC_GetStatsForAchievements())
+    end
+
+    local snapshot = {
+        meta = {
+            addon = "PvPStatsClassic",
+---@diagnostic disable-next-line: undefined-global
+            version = (GetAddOnMetadata and GetAddOnMetadata("PvPStatsClassic", "Version")) or nil,
+            characterKey = PSC_GetCharacterKey and PSC_GetCharacterKey() or nil,
+            accountWide = PSC_DB.ShowAccountWideStats or false,
+            realm = (GetRealmName and GetRealmName()) or nil,
+            player = (UnitName and UnitName("player")) or nil,
+        },
+        summaryStats = summaryStats,
+        achievementStats = achievementStats,
+        achievements = achievementStats and PSC_BuildAchievementProgressSnapshot(achievementStats) or {},
+    }
+
+    local serialized = PSC_SerializeSnapshotValue(snapshot, "", {})
+    local lines = {"-- PvPStatsClassic snapshot"}
+    for line in tostring(serialized):gmatch("[^\n]+") do
+        lines[#lines + 1] = line
+    end
+    local key = PSC_DebugSnapshotNowKey(label)
+    PSC_DB.DebugSnapshots[key] = lines
+
+    PSC_Print("Snapshot saved: PSC_DB.DebugSnapshots['" .. key .. "'] (" .. tostring(#lines) .. " lines)")
+
+    return key, lines
 end
 
 function PSC_SimulateLevel1Kills(killCount)

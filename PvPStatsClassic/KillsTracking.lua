@@ -8,6 +8,59 @@ PSC_KILL_TRACKING_WINDOW = 1.0
 
 PSC_MultiKillCount = 0
 
+-- Helper function to update spawn camper max kills after a new level 1 kill
+local function UpdateSpawnCamperCounter(newKillTimestamp)
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    -- Add the new timestamp to the cached list
+    table.insert(characterData.Level1KillTimestamps, newKillTimestamp)
+
+    -- Get the timestamp list (already sorted by insertion order since timestamps are chronological)
+    local timestamps = characterData.Level1KillTimestamps
+    local numTimestamps = #timestamps
+
+    if numTimestamps == 0 then return end
+
+    -- Optimization: Only check the sliding window around recent timestamps
+    -- Start from the end and work backwards since the new kill is most likely to create a new max
+    local maxKillsInWindow = characterData.SpawnCamperMaxKills or 0
+    local windowStart = math.max(1, numTimestamps - 100) -- Only check last 100 kills for efficiency
+
+    local left = windowStart
+    for right = windowStart, numTimestamps do
+        -- Move left pointer forward while window exceeds 60 seconds
+        while left < right and timestamps[right] - timestamps[left] > 60 do
+            left = left + 1
+        end
+        local count = right - left + 1
+        if count > maxKillsInWindow then
+            maxKillsInWindow = count
+        end
+    end
+
+    characterData.SpawnCamperMaxKills = maxKillsInWindow
+
+    -- Cleanup: Remove very old timestamps (older than 1 hour) to prevent unbounded growth
+    local cutoffTime = newKillTimestamp - 3600
+    local firstValidIndex = 1
+    for i = 1, numTimestamps do
+        if timestamps[i] >= cutoffTime then
+            firstValidIndex = i
+            break
+        end
+    end
+
+    -- If we found old timestamps to remove, create a new array without them
+    if firstValidIndex > 1 then
+        local newTimestamps = {}
+        for i = firstValidIndex, numTimestamps do
+            table.insert(newTimestamps, timestamps[i])
+        end
+        characterData.Level1KillTimestamps = newTimestamps
+    end
+end
+
 local function InitializeKillCountEntryForPlayer(nameWithLevel, playerLevel)
     local characterKey = PSC_GetCharacterKey()
 
@@ -222,6 +275,11 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
         if PSC_Debug then
             print("[PvPStats]: Gray kill registered against " .. playerName .. " (Level " .. level .. ")")
         end
+    end
+
+    -- Update spawn camper counter if this is a level 1 kill
+    if level == 1 then
+        UpdateSpawnCamperCounter(time())
     end
 
     UpdateKillStreak(playerName, level, PSC_DB.PlayerInfoCache[infoKey].class)

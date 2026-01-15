@@ -2,56 +2,53 @@ local addonName, PVPSC = ...
 
 local TimeStatsCache = nil
 local streakStatsCache = nil
+local nameStatsCache = nil
+local barChartStatsCache = nil
+local summaryStatsCache = nil
 
 
--- Helper function for task queue - represents a delay frame (does nothing)
-local function TaskQueueDelayFrame()
-    -- Empty frame to spread work across multiple frames
+-- Helper function for task queue - returns a task that delays N frames.
+-- numberOfFrames=1 preserves the previous behavior (one frame delay before the next task).
+local function TaskQueueDelayFrame(numberOfFrames)
+    -- Each completed task schedules the next task on the next frame already.
+    -- To wait N frames total, we need to "hold" for N-1 additional frames.
+    local remaining = numberOfFrames - 1
+
+    return function()
+        if remaining > 0 then
+            remaining = remaining - 1
+            return false
+        end
+        return true
+    end
 end
 
--- Incremental calculation that processes stats over multiple frames
-function PSC_StartIncrementalAchievementsCalculation()
-    local taskQueue = {
-        TaskQueueDelayFrame,
-        function()
-            if PSC_GetTimeBasedStats then
-                PSC_GetTimeBasedStats(true)
-            end
-        end,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        function()
-            if PSC_GetStreakStats then
-                PSC_GetStreakStats(true)
-            end
-        end,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        TaskQueueDelayFrame,
-        function()
-            PVPSC.AchievementSystem:CheckAchievements()
-        end
-    }
-
-    -- Execute tasks sequentially, one per frame
+local function PSC_RunTaskQueue(taskQueue, onDone)
     local currentTask = 1
-    local function runNextTask()
-        if currentTask <= #taskQueue then
-            -- Wrap task execution in pcall for error handling
-            local success, err = pcall(taskQueue[currentTask])
-            if not success then
-                -- Log error and continue to prevent getting stuck
-                print("[PvPStats] Error in incremental calculation task " .. currentTask .. ": " .. tostring(err))
-            end
 
+    local function runNextTask()
+        if currentTask > #taskQueue then
+            if onDone then
+                onDone()
+            end
+            return
+        end
+
+        local success, result = pcall(taskQueue[currentTask])
+        if not success then
+            print("[PvPStats] Error in incremental calculation task " .. currentTask .. ": " .. tostring(result))
+            result = true
+        end
+
+        if result == nil or result == true then
             currentTask = currentTask + 1
-            if currentTask <= #taskQueue then
-                C_Timer.After(0, runNextTask)
+        end
+
+        if currentTask <= #taskQueue then
+            C_Timer.After(0, runNextTask)
+        else
+            if onDone then
+                onDone()
             end
         end
     end
@@ -59,9 +56,141 @@ function PSC_StartIncrementalAchievementsCalculation()
     runNextTask()
 end
 
+-- Incremental calculation that processes stats over multiple frames
+function PSC_StartIncrementalAchievementsCalculation()
+    PVPSC._activeIncrementalAchievementsJob = PVPSC._activeIncrementalAchievementsJob or nil
+
+    if PVPSC._activeIncrementalAchievementsJob then
+        PVPSC._activeIncrementalAchievementsJob.dirty = true
+        return
+    end
+
+    local killLocationsPerSlice = 5000
+
+    local job = {
+        dirty = false
+    }
+    PVPSC._activeIncrementalAchievementsJob = job
+
+    local currentCharacterKey = PSC_GetCharacterKey()
+    local charactersToProcess = {}
+    charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
+    local summaryStats = nil
+    local achievementStats = nil
+
+    local taskQueue = {
+        function()
+            local characterData = charactersToProcess[currentCharacterKey]
+            job._timeStatsTask = PSC_CreateIncrementalTimeBasedStatsTask(characterData, killLocationsPerSlice, function(result)
+                TimeStatsCache = result
+            end)
+            return true
+        end,
+        function()
+            if not job._timeStatsTask then
+                return true
+            end
+            return job._timeStatsTask()
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            PSC_GetStreakStats(true)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            PSC_GetNameBasedStats(true)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
+                PSC_CalculateBarChartStatistics(charactersToProcess)
+            -- Cache bar chart stats
+            barChartStatsCache = {
+                classData = classData,
+                raceData = raceData,
+                genderData = genderData,
+                unknownLevelClassData = unknownLevelClassData,
+                zoneData = zoneData,
+                levelData = levelData,
+                guildStatusData = guildStatusData,
+                guildData = guildData
+            }
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            local task = PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, killLocationsPerSlice, function(result)
+                summaryStats = result
+            end)
+            job._summaryTask = task
+            return true
+        end,
+        function()
+            if not job._summaryTask then
+                return true
+            end
+            return job._summaryTask()
+        end,
+        function()
+            if not summaryStats then
+                return false
+            end
+
+            -- Cache summary stats
+            summaryStatsCache = summaryStats
+
+            achievementStats = {
+                classData = classData,
+                raceData = raceData,
+                genderData = genderData,
+                unknownLevelClassData = unknownLevelClassData,
+                zoneData = zoneData,
+                levelData = levelData,
+                guildStatusData = guildStatusData,
+                guildData = guildData,
+                totalKills = summaryStats.totalKills,
+                uniqueKills = summaryStats.uniqueKills,
+                highestKillStreak = summaryStats.highestKillStreak,
+                highestMultiKill = summaryStats.highestMultiKill,
+                mostKilledPlayer = summaryStats.mostKilledPlayer,
+                mostKilledCount = summaryStats.mostKilledCount,
+                totalAchievementPoints = PSC_GetCurrentAchievementPoints(),
+                unlockedAchievements = PSC_GetUnlockedAchievementCount()
+            }
+
+            return true
+        end,
+        function()
+            if not job._achievementTask then
+                job._achievementTask = PVPSC.AchievementSystem:CreateIncrementalAchievementCheckTask(achievementStats)
+            end
+
+            return job._achievementTask()
+        end
+    }
+
+    PSC_RunTaskQueue(taskQueue, function()
+        PVPSC._activeIncrementalAchievementsJob = nil
+        if job.dirty then
+            C_Timer.After(0, function()
+                PSC_StartIncrementalAchievementsCalculation()
+            end)
+        end
+    end)
+end
+
 -- ============================================================================
 -- UTILITY FUNCTIONS
 -- ============================================================================
+
+function PSC_GetCachedBarChartStats()
+    return barChartStatsCache
+end
+
+function PSC_GetCachedSummaryStats()
+    return summaryStatsCache
+end
 
 function PSC_SendAnnounceMessage(message)
     local channel = PSC_DB.AnnounceChannel or "GROUP"
@@ -455,6 +584,123 @@ local TimeBasedAchievementConfig = {
     }
 }
 
+local TimeBasedAchievementLookup = (function()
+    local lookup = {}
+
+    local ipairs = ipairs
+    local tinsert = table.insert
+
+    lookup.timeRangesByHour = {}
+    for hour = 0, 23 do
+        lookup.timeRangesByHour[hour] = {}
+    end
+
+    lookup.weekdayNameByNumber = {}
+    lookup.weekdayGroupsByNumber = {}
+    lookup.combosByWeekday = {}
+    for wday = 1, 7 do
+        lookup.weekdayGroupsByNumber[wday] = {}
+        lookup.combosByWeekday[wday] = {}
+    end
+
+    lookup.monthNameByNumber = {}
+    lookup.specialDatesByMonthDay = {}
+    for month = 1, 12 do
+        lookup.specialDatesByMonthDay[month] = {}
+    end
+
+    lookup.initKeys = {
+        timeRanges = {},
+        weekdays = {},
+        weekdayGroups = {},
+        months = {},
+        specialDates = {},
+        combinations = {},
+        specialConditions = {}
+    }
+
+    -- Compile time ranges into per-hour lists
+    for _, range in ipairs(TimeBasedAchievementConfig.timeRanges) do
+        local startHour, endHour, optionalName = range[1], range[2], range[3]
+        local rangeKey = startHour .. "_" .. endHour
+
+        tinsert(lookup.initKeys.timeRanges, rangeKey)
+        if optionalName then
+            tinsert(lookup.initKeys.timeRanges, optionalName)
+        end
+
+        for hour = 0, 23 do
+            local inRange
+            if startHour > endHour then
+                inRange = hour >= startHour or hour < endHour
+            else
+                inRange = hour >= startHour and hour < endHour
+            end
+            if inRange then
+                tinsert(lookup.timeRangesByHour[hour], rangeKey)
+                if optionalName then
+                    tinsert(lookup.timeRangesByHour[hour], optionalName)
+                end
+            end
+        end
+    end
+
+    -- Weekdays: map number -> name
+    for _, weekday in ipairs(TimeBasedAchievementConfig.weekdays) do
+        lookup.weekdayNameByNumber[weekday[1]] = weekday[2]
+        tinsert(lookup.initKeys.weekdays, weekday[2])
+    end
+
+    -- Weekday groups: map weekday number -> group names
+    for _, group in ipairs(TimeBasedAchievementConfig.weekdayGroups) do
+        local groupName, weekdayNumbers = group[1], group[2]
+        tinsert(lookup.initKeys.weekdayGroups, groupName)
+        for _, wday in ipairs(weekdayNumbers) do
+            tinsert(lookup.weekdayGroupsByNumber[wday], groupName)
+        end
+    end
+
+    -- Months: map number -> name, and prepare init keys for both
+    for _, month in ipairs(TimeBasedAchievementConfig.months) do
+        lookup.monthNameByNumber[month[1]] = month[2]
+        tinsert(lookup.initKeys.months, month[1])
+        tinsert(lookup.initKeys.months, month[2])
+    end
+
+    -- Special dates: map month/day -> keys to increment
+    for _, special in ipairs(TimeBasedAchievementConfig.specialDates) do
+        local day, month, name = special[1], special[2], special[3]
+        local key = day .. "_" .. month
+
+        tinsert(lookup.initKeys.specialDates, key)
+        tinsert(lookup.initKeys.specialDates, name)
+
+        local monthBucket = lookup.specialDatesByMonthDay[month]
+        if not monthBucket[day] then
+            monthBucket[day] = {}
+        end
+        tinsert(monthBucket[day], key)
+        tinsert(monthBucket[day], name)
+    end
+
+    -- Combinations: map weekday -> combos to check
+    for _, combo in ipairs(TimeBasedAchievementConfig.combinations) do
+        local startHour, endHour, weekdays, name = combo[1], combo[2], combo[3], combo[4]
+        tinsert(lookup.initKeys.combinations, name)
+        for _, wday in ipairs(weekdays) do
+            tinsert(lookup.combosByWeekday[wday], {startHour = startHour, endHour = endHour, name = name})
+        end
+    end
+
+    -- Special conditions: preserve as-is, but precompute init keys
+    lookup.specialConditions = TimeBasedAchievementConfig.specialConditions
+    for _, condition in ipairs(TimeBasedAchievementConfig.specialConditions) do
+        tinsert(lookup.initKeys.specialConditions, condition.name)
+    end
+
+    return lookup
+end)()
+
 -- Optimized function to calculate ALL time-based statistics in a single pass
 -- Function to get the local timezone offset in hours
 -- This ensures that time-based achievements always use the player's local time
@@ -479,6 +725,12 @@ function PSC_GetLocalTimezoneOffset()
 end
 
 function PSC_CalculateAllTimeBasedStats()
+    local PSC_DB = PSC_DB
+    local PSC_GetCharacterKey = PSC_GetCharacterKey
+    local pairs = pairs
+    local ipairs = ipairs
+    local date = date
+
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
@@ -486,54 +738,35 @@ function PSC_CalculateAllTimeBasedStats()
         return {}
     end
 
+    local function initCounterTable(keys)
+        local t = {}
+        for i = 1, #keys do
+            t[keys[i]] = 0
+        end
+        return t
+    end
+
+    local initKeys = TimeBasedAchievementLookup.initKeys
     local stats = {
-        timeRanges = {},
-        weekdays = {},
-        weekdayGroups = {},
-        months = {},
-        specialDates = {},
-        combinations = {},
-        specialConditions = {}
+        timeRanges = initCounterTable(initKeys.timeRanges),
+        weekdays = initCounterTable(initKeys.weekdays),
+        weekdayGroups = initCounterTable(initKeys.weekdayGroups),
+        months = initCounterTable(initKeys.months),
+        specialDates = initCounterTable(initKeys.specialDates),
+        combinations = initCounterTable(initKeys.combinations),
+        specialConditions = initCounterTable(initKeys.specialConditions)
     }
 
-    -- Initialize all counters based on configuration
-    for _, range in ipairs(TimeBasedAchievementConfig.timeRanges) do
-        local key = range[1] .. "_" .. range[2]
-        stats.timeRanges[key] = 0
-        if range[3] then
-            stats.timeRanges[range[3]] = 0
-        end
-    end
-
-    for _, weekday in ipairs(TimeBasedAchievementConfig.weekdays) do
-        stats.weekdays[weekday[2]] = 0
-    end
-
-    for _, group in ipairs(TimeBasedAchievementConfig.weekdayGroups) do
-        stats.weekdayGroups[group[1]] = 0
-    end
-
-    for _, month in ipairs(TimeBasedAchievementConfig.months) do
-        stats.months[month[1]] = 0
-        stats.months[month[2]] = 0
-    end
-
-    for _, date in ipairs(TimeBasedAchievementConfig.specialDates) do
-        local key = date[1] .. "_" .. date[2]
-        stats.specialDates[key] = 0
-        stats.specialDates[date[3]] = 0
-    end
-
-    for _, combo in ipairs(TimeBasedAchievementConfig.combinations) do
-        stats.combinations[combo[4]] = 0
-    end
-
-    for _, condition in ipairs(TimeBasedAchievementConfig.specialConditions) do
-        stats.specialConditions[condition.name] = 0
-    end
+    local timeRangesByHour = TimeBasedAchievementLookup.timeRangesByHour
+    local weekdayNameByNumber = TimeBasedAchievementLookup.weekdayNameByNumber
+    local weekdayGroupsByNumber = TimeBasedAchievementLookup.weekdayGroupsByNumber
+    local monthNameByNumber = TimeBasedAchievementLookup.monthNameByNumber
+    local specialDatesByMonthDay = TimeBasedAchievementLookup.specialDatesByMonthDay
+    local combosByWeekday = TimeBasedAchievementLookup.combosByWeekday
+    local specialConditions = TimeBasedAchievementLookup.specialConditions
 
     -- Single pass through all kills
-    for playerKey, playerData in pairs(characterData.Kills) do
+    for _, playerData in pairs(characterData.Kills) do
         if playerData.killLocations then
             for _, killLocation in ipairs(playerData.killLocations) do
                 if killLocation.timestamp then
@@ -546,88 +779,64 @@ function PSC_CalculateAllTimeBasedStats()
                         local month = dateInfo.month
                         local day = dateInfo.day
 
-                        -- Count time ranges
-                        for _, range in ipairs(TimeBasedAchievementConfig.timeRanges) do
-                            local startHour, endHour = range[1], range[2]
-                            local inRange = false
-
-                            if startHour > endHour then
-                                inRange = hour >= startHour or hour < endHour
-                            else
-                                inRange = hour >= startHour and hour < endHour
-                            end
-
-                            if inRange then
-                                local key = startHour .. "_" .. endHour
-                                stats.timeRanges[key] = stats.timeRanges[key] + 1
-                                if range[3] then
-                                    stats.timeRanges[range[3]] = stats.timeRanges[range[3]] + 1
-                                end
-                            end
+                        -- Count time ranges (precompiled by hour)
+                        local rangeKeys = timeRangesByHour[hour]
+                        for i = 1, #rangeKeys do
+                            local key = rangeKeys[i]
+                            stats.timeRanges[key] = stats.timeRanges[key] + 1
                         end
 
-                        -- Count individual weekdays
-                        for _, wd in ipairs(TimeBasedAchievementConfig.weekdays) do
-                            if weekday == wd[1] then
-                                stats.weekdays[wd[2]] = stats.weekdays[wd[2]] + 1
-                            end
+                        -- Count individual weekday
+                        local weekdayName = weekdayNameByNumber[weekday]
+                        if weekdayName then
+                            stats.weekdays[weekdayName] = stats.weekdays[weekdayName] + 1
                         end
 
                         -- Count weekday groups
-                        for _, group in ipairs(TimeBasedAchievementConfig.weekdayGroups) do
-                            for _, targetDay in ipairs(group[2]) do
-                                if weekday == targetDay then
-                                    stats.weekdayGroups[group[1]] = stats.weekdayGroups[group[1]] + 1
-                                    break
-                                end
-                            end
+                        local groupNames = weekdayGroupsByNumber[weekday]
+                        for i = 1, #groupNames do
+                            local groupName = groupNames[i]
+                            stats.weekdayGroups[groupName] = stats.weekdayGroups[groupName] + 1
                         end
 
                         -- Count months
-                        for _, m in ipairs(TimeBasedAchievementConfig.months) do
-                            if month == m[1] then
-                                stats.months[m[1]] = stats.months[m[1]] + 1
-                                stats.months[m[2]] = stats.months[m[2]] + 1
-                            end
+                        stats.months[month] = stats.months[month] + 1
+                        local monthName = monthNameByNumber[month]
+                        if monthName then
+                            stats.months[monthName] = stats.months[monthName] + 1
                         end
 
                         -- Count special dates
-                        for _, date in ipairs(TimeBasedAchievementConfig.specialDates) do
-                            if day == date[1] and month == date[2] then
-                                local key = date[1] .. "_" .. date[2]
+                        local monthBucket = specialDatesByMonthDay[month]
+                        local specialKeys = monthBucket and monthBucket[day]
+                        if specialKeys then
+                            for i = 1, #specialKeys do
+                                local key = specialKeys[i]
                                 stats.specialDates[key] = stats.specialDates[key] + 1
-                                stats.specialDates[date[3]] = stats.specialDates[date[3]] + 1
                             end
                         end
 
-                        -- Count combinations
-                        for _, combo in ipairs(TimeBasedAchievementConfig.combinations) do
-                            local startHour, endHour, weekdays, name = combo[1], combo[2], combo[3], combo[4]
+                        -- Count combinations (precompiled per weekday)
+                        local combos = combosByWeekday[weekday]
+                        for i = 1, #combos do
+                            local combo = combos[i]
+                            local startHour, endHour = combo.startHour, combo.endHour
 
-                            -- Check if time is in range
-                            local inTimeRange = false
+                            local inTimeRange
                             if startHour > endHour then
                                 inTimeRange = hour >= startHour or hour < endHour
                             else
                                 inTimeRange = hour >= startHour and hour < endHour
                             end
 
-                            -- Check if weekday matches
-                            local inWeekdayRange = false
-                            for _, targetDay in ipairs(weekdays) do
-                                if weekday == targetDay then
-                                    inWeekdayRange = true
-                                    break
-                                end
-                            end
-
-                            if inTimeRange and inWeekdayRange then
-                                stats.combinations[name] = stats.combinations[name] + 1
+                            if inTimeRange then
+                                stats.combinations[combo.name] = stats.combinations[combo.name] + 1
                             end
                         end
 
                         -- Count special conditions
-                        for _, condition in ipairs(TimeBasedAchievementConfig.specialConditions) do
+                        for i = 1, #specialConditions do
+                            local condition = specialConditions[i]
                             if condition.check(dateInfo) then
                                 stats.specialConditions[condition.name] = stats.specialConditions[condition.name] + 1
                             end
@@ -641,9 +850,185 @@ function PSC_CalculateAllTimeBasedStats()
     return stats
 end
 
+function PSC_CreateIncrementalTimeBasedStatsTask(characterData, maxKillLocationsPerFrame, onComplete)
+    if type(onComplete) ~= "function" then
+        return function()
+            return true
+        end
+    end
 
-function PSC_GetTimeBasedStats(forceRefresh)
-    if not TimeStatsCache or forceRefresh then
+    if not characterData or not characterData.Kills then
+        local done = false
+        return function()
+            if not done then
+                done = true
+                onComplete({})
+            end
+            return true
+        end
+    end
+
+    local sliceBudget = tonumber(maxKillLocationsPerFrame) or 0
+    sliceBudget = math.floor(sliceBudget)
+    if sliceBudget < 50 then
+        sliceBudget = 50
+    end
+
+    local pairs = pairs
+    local date = date
+    local ipairs = ipairs
+    local tinsert = table.insert
+
+    local function initCounterTable(keys)
+        local t = {}
+        for i = 1, #keys do
+            t[keys[i]] = 0
+        end
+        return t
+    end
+
+    local initKeys = TimeBasedAchievementLookup.initKeys
+    local stats = {
+        timeRanges = initCounterTable(initKeys.timeRanges),
+        weekdays = initCounterTable(initKeys.weekdays),
+        weekdayGroups = initCounterTable(initKeys.weekdayGroups),
+        months = initCounterTable(initKeys.months),
+        specialDates = initCounterTable(initKeys.specialDates),
+        combinations = initCounterTable(initKeys.combinations),
+        specialConditions = initCounterTable(initKeys.specialConditions)
+    }
+
+    local timeRangesByHour = TimeBasedAchievementLookup.timeRangesByHour
+    local weekdayNameByNumber = TimeBasedAchievementLookup.weekdayNameByNumber
+    local weekdayGroupsByNumber = TimeBasedAchievementLookup.weekdayGroupsByNumber
+    local monthNameByNumber = TimeBasedAchievementLookup.monthNameByNumber
+    local specialDatesByMonthDay = TimeBasedAchievementLookup.specialDatesByMonthDay
+    local combosByWeekday = TimeBasedAchievementLookup.combosByWeekday
+    local specialConditions = TimeBasedAchievementLookup.specialConditions
+
+    local players = {}
+    for _, playerData in pairs(characterData.Kills) do
+        tinsert(players, playerData)
+    end
+
+    local playerIndex = 1
+    local locationIndex = 1
+    local finished = false
+
+    return function()
+        if finished then
+            return true
+        end
+
+        local processed = 0
+        while processed < sliceBudget do
+            if playerIndex > #players then
+                finished = true
+                onComplete(stats)
+                return true
+            end
+
+            local playerData = players[playerIndex]
+            local locations = playerData and playerData.killLocations
+
+            if not locations or #locations == 0 then
+                playerIndex = playerIndex + 1
+                locationIndex = 1
+            else
+                if locationIndex > #locations then
+                    playerIndex = playerIndex + 1
+                    locationIndex = 1
+                else
+                    local killLocation = locations[locationIndex]
+                    locationIndex = locationIndex + 1
+                    processed = processed + 1
+
+                    local timestamp = killLocation and killLocation.timestamp
+                    if timestamp then
+                        -- Keep the same per-kill logic as PSC_CalculateAllTimeBasedStats(),
+                        -- just spread across frames.
+                        local dateInfo = date("*t", timestamp)
+                        if dateInfo then
+                            local hour = dateInfo.hour
+                            local weekday = dateInfo.wday
+                            local month = dateInfo.month
+                            local day = dateInfo.day
+
+                            -- Count time ranges (precompiled by hour)
+                            local rangeKeys = timeRangesByHour[hour]
+                            for i = 1, #rangeKeys do
+                                local key = rangeKeys[i]
+                                stats.timeRanges[key] = stats.timeRanges[key] + 1
+                            end
+
+                            -- Count individual weekday
+                            local weekdayName = weekdayNameByNumber[weekday]
+                            if weekdayName then
+                                stats.weekdays[weekdayName] = stats.weekdays[weekdayName] + 1
+                            end
+
+                            -- Count weekday groups
+                            local groupNames = weekdayGroupsByNumber[weekday]
+                            for i = 1, #groupNames do
+                                local groupName = groupNames[i]
+                                stats.weekdayGroups[groupName] = stats.weekdayGroups[groupName] + 1
+                            end
+
+                            -- Count months
+                            stats.months[month] = stats.months[month] + 1
+                            local monthName = monthNameByNumber[month]
+                            if monthName then
+                                stats.months[monthName] = stats.months[monthName] + 1
+                            end
+
+                            -- Count special dates
+                            local monthBucket = specialDatesByMonthDay[month]
+                            local specialKeys = monthBucket and monthBucket[day]
+                            if specialKeys then
+                                for i = 1, #specialKeys do
+                                    local key = specialKeys[i]
+                                    stats.specialDates[key] = stats.specialDates[key] + 1
+                                end
+                            end
+
+                            -- Count combinations (precompiled per weekday)
+                            local combos = combosByWeekday[weekday]
+                            for i = 1, #combos do
+                                local combo = combos[i]
+                                local startHour, endHour = combo.startHour, combo.endHour
+
+                                local inTimeRange
+                                if startHour > endHour then
+                                    inTimeRange = hour >= startHour or hour < endHour
+                                else
+                                    inTimeRange = hour >= startHour and hour < endHour
+                                end
+
+                                if inTimeRange then
+                                    stats.combinations[combo.name] = stats.combinations[combo.name] + 1
+                                end
+                            end
+
+                            -- Count special conditions
+                            for i = 1, #specialConditions do
+                                local condition = specialConditions[i]
+                                if condition.check(dateInfo) then
+                                    stats.specialConditions[condition.name] = stats.specialConditions[condition.name] + 1
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        return false
+    end
+end
+
+
+function PSC_GetTimeBasedStats()
+    if not TimeStatsCache then
         TimeStatsCache = PSC_CalculateAllTimeBasedStats()
     end
 
@@ -716,24 +1101,6 @@ function PSC_CountKillsInTimeRangeOnWeekdays(startHour, endHour, weekdays, timez
 
     return count
 end
-
-function PSC_CountKillsOnDate(day, month, timezoneOffsetHours)
-    local stats = PSC_GetTimeBasedStats()
-    local key = day .. "_" .. month
-    return stats.specialDates[key] or 0
-end
-
-function PSC_CountKillsOnFridayThe13th(timezoneOffsetHours)
-    local stats = PSC_GetTimeBasedStats()
-    return stats.specialConditions.friday13th or 0
-end
-
-function PSC_CountKillsInMonth(month, timezoneOffsetHours)
-    local stats = PSC_GetTimeBasedStats()
-    return stats.months[month] or 0
-end
-
--- New helper functions for easy access to time-based stats
 
 -- Get kills by time range name (from config)
 function PSC_CountKillsByTimeRangeName(rangeName)
@@ -972,116 +1339,68 @@ function PSC_CountKillsInMonth(month, timezoneOffsetHours)
     return count
 end
 
-function PSC_CountKillsStartingWithLetter(letter)
-    local count = 0
+-- Calculate all name-based statistics in a single pass for performance
+function PSC_CalculateAllNameBasedStats()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
     if not characterData or not characterData.Kills then
-        return 0
+        return {}
     end
 
-    letter = string.upper(letter)
+    local stats = {
+        byFirstLetter = {},
+        byNameLength = {}
+    }
 
+    -- Single pass through all kills
+    -- Dynamically build letter and length buckets to support any UTF-8 characters
     for playerKey, playerData in pairs(characterData.Kills) do
         local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName and string.upper(string.sub(playerName, 1, 1)) == letter then
-            count = count + (playerData.killCount or #playerData.killLocations)
+        if playerName and #playerName > 0 then
+            local killCount = playerData.kills or #(playerData.killLocations or {})
+
+            -- Count by first letter (supports any UTF-8 character)
+            local firstLetter = string.upper(string.sub(playerName, 1, 1))
+            stats.byFirstLetter[firstLetter] = (stats.byFirstLetter[firstLetter] or 0) + killCount
+
+            -- Count by name length (supports any length)
+            local nameLen = #playerName
+            stats.byNameLength[nameLen] = (stats.byNameLength[nameLen] or 0) + killCount
         end
     end
 
-    return count
+    return stats
+end
+
+-- Get cached name-based stats
+function PSC_GetNameBasedStats(forceRefresh)
+    if not nameStatsCache or forceRefresh then
+        nameStatsCache = PSC_CalculateAllNameBasedStats()
+    end
+    return nameStatsCache
+end
+
+function PSC_CountKillsStartingWithLetter(letter)
+    local stats = PSC_GetNameBasedStats()
+    letter = string.upper(letter)
+    return stats.byFirstLetter[letter] or 0
 end
 
 function PSC_CountKillsByLength(length)
-    local count = 0
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName and #playerName == length then
-            count = count + (playerData.killCount or #playerData.killLocations)
-        end
-    end
-
-    return count
-end
-
-function PSC_CountKillsWithAnyClassNameInName()
-    local count = 0
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    local classNames = {"warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid"}
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName then
-            local lowerPlayerName = string.lower(playerName)
-
-            for _, className in ipairs(classNames) do
-                if string.find(lowerPlayerName, className) then
-                    count = count + (playerData.killCount or #playerData.killLocations)
-                    break
-                end
-            end
-        end
-    end
-
-    return count
+    local stats = PSC_GetNameBasedStats()
+    return stats.byNameLength[length] or 0
 end
 
 function PSC_CountKillsWithNameStartingWith(letter)
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    local count = 0
+    local stats = PSC_GetNameBasedStats()
     letter = string.upper(letter)
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName and string.len(playerName) > 0 then
-            local firstLetter = string.upper(string.sub(playerName, 1, 1))
-            if firstLetter == letter then
-                count = count + (playerData.killCount or #playerData.killLocations)
-            end
-        end
-    end
-
-    return count
+    return stats.byFirstLetter[letter] or 0
 end
 
 function PSC_CountKillsWithNameLength(length)
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return 0
-    end
-
-    local count = 0
-
-    for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
-        if playerName and string.len(playerName) == length then
-            count = count + (playerData.killCount or #playerData.killLocations)
-        end
-    end
-
-    return count
+    local stats = PSC_GetNameBasedStats()
+    return stats.byNameLength[length] or 0
 end
 
 function PSC_GetCurrentAchievementPoints()
@@ -1119,6 +1438,32 @@ end
 
 -- Function to calculate all streak statistics in a single pass for improved performance
 function PSC_CalculateAllStreakStats()
+    local PSC_DB = PSC_DB
+    local PSC_GetCharacterKey = PSC_GetCharacterKey
+    local pairs = pairs
+    local ipairs = ipairs
+    local date = date
+    local tonumber = tonumber
+    local strmatch = string.match
+    local tinsert = table.insert
+    local tsort = table.sort
+    local floor = math.floor
+
+    -- Convert a calendar date (Y-M-D) into a monotonically increasing day number.
+    -- This avoids DST issues that happen when comparing midnight timestamps.
+    local function ymdToDayNumber(year, month, day)
+        if month <= 2 then
+            year = year - 1
+            month = month + 12
+        end
+
+        local era = floor(year / 400)
+        local yoe = year - era * 400
+        local doy = floor((153 * (month - 3) + 2) / 5) + day - 1
+        local doe = yoe * 365 + floor(yoe / 4) - floor(yoe / 100) + doy
+        return era * 146097 + doe
+    end
+
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
@@ -1129,14 +1474,14 @@ function PSC_CalculateAllStreakStats()
     -- Collect all kill timestamps and group them by date
     local killsByDate = {}
 
-    for playerKey, playerData in pairs(characterData.Kills) do
+    for _, playerData in pairs(characterData.Kills) do
         if playerData.killLocations then
             for _, killLocation in ipairs(playerData.killLocations) do
                 if killLocation.timestamp then
                     -- Convert timestamp to date string (YYYY-MM-DD format)
-                    local dateInfo = date("*t", killLocation.timestamp)
-                    if dateInfo then
-                        local dateKey = string.format("%04d-%02d-%02d", dateInfo.year, dateInfo.month, dateInfo.day)
+                    -- Using date('%Y-%m-%d') avoids allocating a '*t' table for every killLocation.
+                    local dateKey = date("%Y-%m-%d", killLocation.timestamp)
+                    if dateKey and dateKey ~= "" then
                         killsByDate[dateKey] = (killsByDate[dateKey] or 0) + 1
                     end
                 end
@@ -1147,18 +1492,23 @@ function PSC_CalculateAllStreakStats()
     -- Convert to sorted array of all dates with kills
     local allDates = {}
     for dateKey, killCount in pairs(killsByDate) do
-        table.insert(allDates, {date = dateKey, kills = killCount})
+        tinsert(allDates, {date = dateKey, kills = killCount})
     end
 
     -- Sort dates chronologically
-    table.sort(allDates, function(a, b) return a.date < b.date end)
+    tsort(allDates, function(a, b)
+        return a.date < b.date
+    end)
 
-    -- Helper function to convert date string to timestamp for day comparison
-    local function dateStringToTimestamp(dateStr)
-        local year, month, day = dateStr:match("(%d+)-(%d+)-(%d+)")
+    -- Precompute a dayNumber for each unique date string once.
+    for _, dateData in ipairs(allDates) do
+        local year, month, day = strmatch(dateData.date, "(%d+)%-(%d+)%-(%d+)")
         year, month, day = tonumber(year), tonumber(month), tonumber(day)
-        local dateTable = {year = year, month = month, day = day, hour = 0, min = 0, sec = 0}
-        return time(dateTable)
+        if year and month and day then
+            dateData.dayNumber = ymdToDayNumber(year, month, day)
+        else
+            dateData.dayNumber = nil
+        end
     end
 
     -- Calculate streaks for different kill thresholds
@@ -1166,44 +1516,32 @@ function PSC_CalculateAllStreakStats()
     local killThresholds = {1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100, 125, 150, 200, 250, 300, 500, 1000}
 
     for _, minKills in ipairs(killThresholds) do
-        -- Get dates that meet this kill threshold
-        local validDates = {}
+        local totalDays = 0
+        local maxStreak = 0
+        local currentStreak = 0
+        local prevValidDayNumber = nil
+
         for _, dateData in ipairs(allDates) do
             if dateData.kills >= minKills then
-                table.insert(validDates, dateData.date)
-            end
-        end
+                totalDays = totalDays + 1
 
-        -- Store total count of days meeting the threshold
-        streakResults["total_" .. minKills] = #validDates
-
-        if #validDates == 0 then
-            streakResults[minKills] = 0
-        else
-            -- Find the longest consecutive streak for this threshold
-            local maxStreak = 1
-            local currentStreak = 1
-
-            for i = 2, #validDates do
-                local prevTimestamp = dateStringToTimestamp(validDates[i - 1])
-                local currTimestamp = dateStringToTimestamp(validDates[i])
-
-                -- Calculate the difference in days (86400 seconds = 1 day)
-                local timeDiff = currTimestamp - prevTimestamp
-                local dayDiff = timeDiff / (24 * 60 * 60)
-
-                if dayDiff >= 0.9 and dayDiff <= 1.1 then  -- Allow small tolerance for consecutive days
+                local dayNumber = dateData.dayNumber
+                if dayNumber and prevValidDayNumber and dayNumber == (prevValidDayNumber + 1) then
                     currentStreak = currentStreak + 1
-                    if currentStreak > maxStreak then
-                        maxStreak = currentStreak
-                    end
                 else
                     currentStreak = 1
                 end
-            end
 
-            streakResults[minKills] = maxStreak
+                if currentStreak > maxStreak then
+                    maxStreak = currentStreak
+                end
+
+                prevValidDayNumber = dayNumber
+            end
         end
+
+        streakResults["total_" .. minKills] = totalDays
+        streakResults[minKills] = maxStreak
     end
 
     return streakResults
@@ -1211,7 +1549,6 @@ end
 
 -- Function to get cached streak stats with automatic refresh when needed
 function PSC_GetStreakStats(forceRefresh)
-    -- Cache indefinitely, only refresh when forced (on new kills) or if cache doesn't exist
     if not streakStatsCache or forceRefresh then
         streakStatsCache = PSC_CalculateAllStreakStats()
     end
@@ -1221,11 +1558,6 @@ end
 
 -- Function to manually clear the streak cache (called when new kills are registered)
 function PSC_CountConsecutiveDaysWithMinKills(minKills)
-    if not minKills or minKills <= 0 then
-        return 0
-    end
-
-    -- Use cached streak stats for much better performance
     local streakStats = PSC_GetStreakStats()
     return streakStats[minKills] or 0
 end
@@ -1242,7 +1574,7 @@ function PSC_CountTotalDaysWithMinKills(minKills)
 end
 
 -- Helper function to calculate the start timestamps for various time periods
-local function PSC_CalculateTimePeriodBoundaries()
+function PSC_CalculateTimePeriodBoundaries()
     local currentTime = time()
     local today = date("*t", currentTime)
 
@@ -1279,86 +1611,4 @@ local function PSC_CalculateTimePeriodBoundaries()
         monthStart = monthStart,
         yearStart = yearStart
     }
-end
-
--- Optimized function to calculate all time period kills in a single pass
-local function PSC_CalculateAllTimePeriodKills()
-    -- Get characters to process based on account-wide setting
-    local charactersToProcess = {}
-
-    if PSC_DB.ShowAccountWideStats then
-        -- Process all characters
-        for charKey, charData in pairs(PSC_DB.PlayerKillCounts.Characters) do
-            charactersToProcess[charKey] = charData
-        end
-    else
-        -- Process only the current character
-        local characterKey = PSC_GetCharacterKey()
-        if PSC_DB.PlayerKillCounts.Characters[characterKey] then
-            charactersToProcess[characterKey] = PSC_DB.PlayerKillCounts.Characters[characterKey]
-        end
-    end
-
-    local boundaries = PSC_CalculateTimePeriodBoundaries()
-    local counts = {
-        today = 0,
-        week = 0,
-        month = 0,
-        year = 0
-    }
-
-    -- Single pass through all characters' kills
-    for characterKey, characterData in pairs(charactersToProcess) do
-        if characterData.Kills then
-            for playerKey, playerData in pairs(characterData.Kills) do
-                if playerData.killLocations then
-                    for _, killLocation in ipairs(playerData.killLocations) do
-                        if killLocation.timestamp then
-                            local timestamp = killLocation.timestamp
-
-                            -- Check all time periods in order (most restrictive to least)
-                            if timestamp >= boundaries.todayStart then
-                                counts.today = counts.today + 1
-                            end
-
-                            if timestamp >= boundaries.weekStart then
-                                counts.week = counts.week + 1
-                            end
-
-                            if timestamp >= boundaries.monthStart then
-                                counts.month = counts.month + 1
-                            end
-
-                            if timestamp >= boundaries.yearStart then
-                                counts.year = counts.year + 1
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return counts
-end
-
--- Public API functions that calculate all stats in a single pass
-function PSC_GetKillsToday()
-    local stats = PSC_CalculateAllTimePeriodKills()
-    return stats.today
-end
-
-function PSC_GetKillsThisWeek()
-    local stats = PSC_CalculateAllTimePeriodKills()
-    return stats.week
-end
-
-function PSC_GetKillsThisMonth()
-    local stats = PSC_CalculateAllTimePeriodKills()
-    return stats.month
-end
-
-function PSC_GetKillsThisYear()
-    local stats = PSC_CalculateAllTimePeriodKills()
-    return stats.year
 end
