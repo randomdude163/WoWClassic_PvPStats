@@ -1520,11 +1520,26 @@ function PSC_CalculateAllStreakStats()
     local pairs = pairs
     local ipairs = ipairs
     local date = date
-    local time = time
     local tonumber = tonumber
     local strmatch = string.match
     local tinsert = table.insert
     local tsort = table.sort
+    local floor = math.floor
+
+    -- Convert a calendar date (Y-M-D) into a monotonically increasing day number.
+    -- This avoids DST issues that happen when comparing midnight timestamps.
+    local function ymdToDayNumber(year, month, day)
+        if month <= 2 then
+            year = year - 1
+            month = month + 12
+        end
+
+        local era = floor(year / 400)
+        local yoe = year - era * 400
+        local doy = floor((153 * (month - 3) + 2) / 5) + day - 1
+        local doe = yoe * 365 + floor(yoe / 4) - floor(yoe / 100) + doy
+        return era * 146097 + doe
+    end
 
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
@@ -1562,14 +1577,14 @@ function PSC_CalculateAllStreakStats()
         return a.date < b.date
     end)
 
-    -- Precompute a midnight timestamp for each unique date string once.
+    -- Precompute a dayNumber for each unique date string once.
     for _, dateData in ipairs(allDates) do
         local year, month, day = strmatch(dateData.date, "(%d+)%-(%d+)%-(%d+)")
         year, month, day = tonumber(year), tonumber(month), tonumber(day)
         if year and month and day then
-            dateData.dayStamp = time({year = year, month = month, day = day, hour = 0, min = 0, sec = 0})
+            dateData.dayNumber = ymdToDayNumber(year, month, day)
         else
-            dateData.dayStamp = nil
+            dateData.dayNumber = nil
         end
     end
 
@@ -1581,14 +1596,14 @@ function PSC_CalculateAllStreakStats()
         local totalDays = 0
         local maxStreak = 0
         local currentStreak = 0
-        local prevValidDayStamp = nil
+        local prevValidDayNumber = nil
 
         for _, dateData in ipairs(allDates) do
             if dateData.kills >= minKills then
                 totalDays = totalDays + 1
 
-                local dayStamp = dateData.dayStamp
-                if dayStamp and prevValidDayStamp and (dayStamp - prevValidDayStamp) == 86400 then
+                local dayNumber = dateData.dayNumber
+                if dayNumber and prevValidDayNumber and dayNumber == (prevValidDayNumber + 1) then
                     currentStreak = currentStreak + 1
                 else
                     currentStreak = 1
@@ -1598,7 +1613,7 @@ function PSC_CalculateAllStreakStats()
                     maxStreak = currentStreak
                 end
 
-                prevValidDayStamp = dayStamp
+                prevValidDayNumber = dayNumber
             end
         end
 
