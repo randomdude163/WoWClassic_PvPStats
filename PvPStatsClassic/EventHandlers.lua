@@ -510,17 +510,15 @@ local function HandlePlayerEnteringWorld()
     PSC_RealmName = GetRealmName()
     PSC_GameVersion = DetermineGameVersion()
 
-    -- Initialize achievements after game version is determined
-    if PVPSC and PVPSC.AchievementSystem then
-        PVPSC.AchievementSystem:InitializeAchievements()
-        PVPSC.AchievementSystem:LoadAchievementCompletedData()
-    end
+    PVPSC.AchievementSystem:InitializeAchievements()
 
     if not PSC_DB then
         PSC_DB = {}
         PSC_LoadDefaultSettings()
         ResetAllStatsToDefault()
     end
+
+    PVPSC.AchievementSystem:LoadAchievementCompletedData()
 
     -- Initialize minimap button settings if not present
     if not PSC_DB.minimapButton then
