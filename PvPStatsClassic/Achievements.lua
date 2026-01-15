@@ -478,12 +478,6 @@ function AchievementSystem:LoadAchievementCompletedData()
     self:SaveAchievementPoints()
 end
 
-C_Timer.After(1, function()
-    if PVPSC and PVPSC.AchievementSystem then
-        PVPSC.AchievementSystem:LoadAchievementCompletedData()
-    end
-end)
-
 function PSC_ShareAchievementInChat(achievement)
     if not achievement or not achievement.unlocked then
         return

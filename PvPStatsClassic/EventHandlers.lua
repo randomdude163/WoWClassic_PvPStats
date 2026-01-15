@@ -513,6 +513,7 @@ local function HandlePlayerEnteringWorld()
     -- Initialize achievements after game version is determined
     if PVPSC and PVPSC.AchievementSystem then
         PVPSC.AchievementSystem:InitializeAchievements()
+        PVPSC.AchievementSystem:LoadAchievementCompletedData()
     end
 
     if not PSC_DB then
