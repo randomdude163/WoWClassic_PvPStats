@@ -68,7 +68,7 @@ function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
         achievementsPerSlice = 25
     end
 
-    local killLocationsPerSlice = 5000
+    local killLocationsPerSlice = 1000
 
     local job = {
         dirty = false
@@ -83,16 +83,34 @@ function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
     local summaryStats = nil
     local achievementStats = nil
 
+    local profiledTimeStatsSlice = false
     local profiledSummarySlice = false
 
 
     local taskQueue = {
-        TaskQueueDelayFrame(1),
+        TaskQueueDelayFrame(10),
         function()
-            local t1 = debugprofilestop()
-            PSC_GetTimeBasedStats(true)
-            local t2 = debugprofilestop()
-            print("[PvPStats] Time-based stats calculation took " .. (t2 - t1) .. " ms")
+            local characterData = charactersToProcess[currentCharacterKey]
+            job._timeStatsTask = PSC_CreateIncrementalTimeBasedStatsTask(characterData, killLocationsPerSlice * 2, function(result)
+                TimeStatsCache = result
+            end)
+            return true
+        end,
+        function()
+            if not job._timeStatsTask then
+                return true
+            end
+
+            if not profiledTimeStatsSlice then
+                profiledTimeStatsSlice = true
+                local t1 = debugprofilestop()
+                local result = job._timeStatsTask()
+                local t2 = debugprofilestop()
+                print("[PvPStats] Time-based stats slice took " .. (t2 - t1) .. " ms (sliceBudget=" .. tostring(killLocationsPerSlice) .. ")")
+                return result
+            end
+
+            return job._timeStatsTask()
         end,
         TaskQueueDelayFrame(10),
         function()
@@ -841,6 +859,182 @@ function PSC_CalculateAllTimeBasedStats()
     end
 
     return stats
+end
+
+function PSC_CreateIncrementalTimeBasedStatsTask(characterData, maxKillLocationsPerFrame, onComplete)
+    if type(onComplete) ~= "function" then
+        return function()
+            return true
+        end
+    end
+
+    if not characterData or not characterData.Kills then
+        local done = false
+        return function()
+            if not done then
+                done = true
+                onComplete({})
+            end
+            return true
+        end
+    end
+
+    local sliceBudget = tonumber(maxKillLocationsPerFrame) or 0
+    sliceBudget = math.floor(sliceBudget)
+    if sliceBudget < 50 then
+        sliceBudget = 50
+    end
+
+    local pairs = pairs
+    local date = date
+    local ipairs = ipairs
+    local tinsert = table.insert
+
+    local function initCounterTable(keys)
+        local t = {}
+        for i = 1, #keys do
+            t[keys[i]] = 0
+        end
+        return t
+    end
+
+    local initKeys = TimeBasedAchievementLookup.initKeys
+    local stats = {
+        timeRanges = initCounterTable(initKeys.timeRanges),
+        weekdays = initCounterTable(initKeys.weekdays),
+        weekdayGroups = initCounterTable(initKeys.weekdayGroups),
+        months = initCounterTable(initKeys.months),
+        specialDates = initCounterTable(initKeys.specialDates),
+        combinations = initCounterTable(initKeys.combinations),
+        specialConditions = initCounterTable(initKeys.specialConditions)
+    }
+
+    local timeRangesByHour = TimeBasedAchievementLookup.timeRangesByHour
+    local weekdayNameByNumber = TimeBasedAchievementLookup.weekdayNameByNumber
+    local weekdayGroupsByNumber = TimeBasedAchievementLookup.weekdayGroupsByNumber
+    local monthNameByNumber = TimeBasedAchievementLookup.monthNameByNumber
+    local specialDatesByMonthDay = TimeBasedAchievementLookup.specialDatesByMonthDay
+    local combosByWeekday = TimeBasedAchievementLookup.combosByWeekday
+    local specialConditions = TimeBasedAchievementLookup.specialConditions
+
+    local players = {}
+    for _, playerData in pairs(characterData.Kills) do
+        tinsert(players, playerData)
+    end
+
+    local playerIndex = 1
+    local locationIndex = 1
+    local finished = false
+
+    return function()
+        if finished then
+            return true
+        end
+
+        local processed = 0
+        while processed < sliceBudget do
+            if playerIndex > #players then
+                finished = true
+                onComplete(stats)
+                return true
+            end
+
+            local playerData = players[playerIndex]
+            local locations = playerData and playerData.killLocations
+
+            if not locations or #locations == 0 then
+                playerIndex = playerIndex + 1
+                locationIndex = 1
+            else
+                if locationIndex > #locations then
+                    playerIndex = playerIndex + 1
+                    locationIndex = 1
+                else
+                    local killLocation = locations[locationIndex]
+                    locationIndex = locationIndex + 1
+                    processed = processed + 1
+
+                    local timestamp = killLocation and killLocation.timestamp
+                    if timestamp then
+                        -- Keep the same per-kill logic as PSC_CalculateAllTimeBasedStats(),
+                        -- just spread across frames.
+                        local dateInfo = date("*t", timestamp)
+                        if dateInfo then
+                            local hour = dateInfo.hour
+                            local weekday = dateInfo.wday
+                            local month = dateInfo.month
+                            local day = dateInfo.day
+
+                            -- Count time ranges (precompiled by hour)
+                            local rangeKeys = timeRangesByHour[hour]
+                            for i = 1, #rangeKeys do
+                                local key = rangeKeys[i]
+                                stats.timeRanges[key] = stats.timeRanges[key] + 1
+                            end
+
+                            -- Count individual weekday
+                            local weekdayName = weekdayNameByNumber[weekday]
+                            if weekdayName then
+                                stats.weekdays[weekdayName] = stats.weekdays[weekdayName] + 1
+                            end
+
+                            -- Count weekday groups
+                            local groupNames = weekdayGroupsByNumber[weekday]
+                            for i = 1, #groupNames do
+                                local groupName = groupNames[i]
+                                stats.weekdayGroups[groupName] = stats.weekdayGroups[groupName] + 1
+                            end
+
+                            -- Count months
+                            stats.months[month] = stats.months[month] + 1
+                            local monthName = monthNameByNumber[month]
+                            if monthName then
+                                stats.months[monthName] = stats.months[monthName] + 1
+                            end
+
+                            -- Count special dates
+                            local monthBucket = specialDatesByMonthDay[month]
+                            local specialKeys = monthBucket and monthBucket[day]
+                            if specialKeys then
+                                for i = 1, #specialKeys do
+                                    local key = specialKeys[i]
+                                    stats.specialDates[key] = stats.specialDates[key] + 1
+                                end
+                            end
+
+                            -- Count combinations (precompiled per weekday)
+                            local combos = combosByWeekday[weekday]
+                            for i = 1, #combos do
+                                local combo = combos[i]
+                                local startHour, endHour = combo.startHour, combo.endHour
+
+                                local inTimeRange
+                                if startHour > endHour then
+                                    inTimeRange = hour >= startHour or hour < endHour
+                                else
+                                    inTimeRange = hour >= startHour and hour < endHour
+                                end
+
+                                if inTimeRange then
+                                    stats.combinations[combo.name] = stats.combinations[combo.name] + 1
+                                end
+                            end
+
+                            -- Count special conditions
+                            for i = 1, #specialConditions do
+                                local condition = specialConditions[i]
+                                if condition.check(dateInfo) then
+                                    stats.specialConditions[condition.name] = stats.specialConditions[condition.name] + 1
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        return false
+    end
 end
 
 
