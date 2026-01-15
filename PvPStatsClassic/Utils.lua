@@ -1211,6 +1211,17 @@ end
 
 -- Function to calculate all streak statistics in a single pass for improved performance
 function PSC_CalculateAllStreakStats()
+    local PSC_DB = PSC_DB
+    local PSC_GetCharacterKey = PSC_GetCharacterKey
+    local pairs = pairs
+    local ipairs = ipairs
+    local date = date
+    local time = time
+    local tonumber = tonumber
+    local strmatch = string.match
+    local tinsert = table.insert
+    local tsort = table.sort
+
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
@@ -1221,14 +1232,14 @@ function PSC_CalculateAllStreakStats()
     -- Collect all kill timestamps and group them by date
     local killsByDate = {}
 
-    for playerKey, playerData in pairs(characterData.Kills) do
+    for _, playerData in pairs(characterData.Kills) do
         if playerData.killLocations then
             for _, killLocation in ipairs(playerData.killLocations) do
                 if killLocation.timestamp then
                     -- Convert timestamp to date string (YYYY-MM-DD format)
-                    local dateInfo = date("*t", killLocation.timestamp)
-                    if dateInfo then
-                        local dateKey = string.format("%04d-%02d-%02d", dateInfo.year, dateInfo.month, dateInfo.day)
+                    -- Using date('%Y-%m-%d') avoids allocating a '*t' table for every killLocation.
+                    local dateKey = date("%Y-%m-%d", killLocation.timestamp)
+                    if dateKey and dateKey ~= "" then
                         killsByDate[dateKey] = (killsByDate[dateKey] or 0) + 1
                     end
                 end
@@ -1239,18 +1250,23 @@ function PSC_CalculateAllStreakStats()
     -- Convert to sorted array of all dates with kills
     local allDates = {}
     for dateKey, killCount in pairs(killsByDate) do
-        table.insert(allDates, {date = dateKey, kills = killCount})
+        tinsert(allDates, {date = dateKey, kills = killCount})
     end
 
     -- Sort dates chronologically
-    table.sort(allDates, function(a, b) return a.date < b.date end)
+    tsort(allDates, function(a, b)
+        return a.date < b.date
+    end)
 
-    -- Helper function to convert date string to timestamp for day comparison
-    local function dateStringToTimestamp(dateStr)
-        local year, month, day = dateStr:match("(%d+)-(%d+)-(%d+)")
+    -- Precompute a midnight timestamp for each unique date string once.
+    for _, dateData in ipairs(allDates) do
+        local year, month, day = strmatch(dateData.date, "(%d+)%-(%d+)%-(%d+)")
         year, month, day = tonumber(year), tonumber(month), tonumber(day)
-        local dateTable = {year = year, month = month, day = day, hour = 0, min = 0, sec = 0}
-        return time(dateTable)
+        if year and month and day then
+            dateData.dayStamp = time({year = year, month = month, day = day, hour = 0, min = 0, sec = 0})
+        else
+            dateData.dayStamp = nil
+        end
     end
 
     -- Calculate streaks for different kill thresholds
@@ -1258,44 +1274,32 @@ function PSC_CalculateAllStreakStats()
     local killThresholds = {1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100, 125, 150, 200, 250, 300, 500, 1000}
 
     for _, minKills in ipairs(killThresholds) do
-        -- Get dates that meet this kill threshold
-        local validDates = {}
+        local totalDays = 0
+        local maxStreak = 0
+        local currentStreak = 0
+        local prevValidDayStamp = nil
+
         for _, dateData in ipairs(allDates) do
             if dateData.kills >= minKills then
-                table.insert(validDates, dateData.date)
-            end
-        end
+                totalDays = totalDays + 1
 
-        -- Store total count of days meeting the threshold
-        streakResults["total_" .. minKills] = #validDates
-
-        if #validDates == 0 then
-            streakResults[minKills] = 0
-        else
-            -- Find the longest consecutive streak for this threshold
-            local maxStreak = 1
-            local currentStreak = 1
-
-            for i = 2, #validDates do
-                local prevTimestamp = dateStringToTimestamp(validDates[i - 1])
-                local currTimestamp = dateStringToTimestamp(validDates[i])
-
-                -- Calculate the difference in days (86400 seconds = 1 day)
-                local timeDiff = currTimestamp - prevTimestamp
-                local dayDiff = timeDiff / (24 * 60 * 60)
-
-                if dayDiff >= 0.9 and dayDiff <= 1.1 then  -- Allow small tolerance for consecutive days
+                local dayStamp = dateData.dayStamp
+                if dayStamp and prevValidDayStamp and (dayStamp - prevValidDayStamp) == 86400 then
                     currentStreak = currentStreak + 1
-                    if currentStreak > maxStreak then
-                        maxStreak = currentStreak
-                    end
                 else
                     currentStreak = 1
                 end
-            end
 
-            streakResults[minKills] = maxStreak
+                if currentStreak > maxStreak then
+                    maxStreak = currentStreak
+                end
+
+                prevValidDayStamp = dayStamp
+            end
         end
+
+        streakResults["total_" .. minKills] = totalDays
+        streakResults[minKills] = maxStreak
     end
 
     return streakResults
