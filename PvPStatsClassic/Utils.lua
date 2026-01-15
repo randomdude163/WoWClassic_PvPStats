@@ -1103,24 +1103,6 @@ function PSC_CountKillsInTimeRangeOnWeekdays(startHour, endHour, weekdays, timez
     return count
 end
 
-function PSC_CountKillsOnDate(day, month, timezoneOffsetHours)
-    local stats = PSC_GetTimeBasedStats()
-    local key = day .. "_" .. month
-    return stats.specialDates[key] or 0
-end
-
-function PSC_CountKillsOnFridayThe13th(timezoneOffsetHours)
-    local stats = PSC_GetTimeBasedStats()
-    return stats.specialConditions.friday13th or 0
-end
-
-function PSC_CountKillsInMonth(month, timezoneOffsetHours)
-    local stats = PSC_GetTimeBasedStats()
-    return stats.months[month] or 0
-end
-
--- New helper functions for easy access to time-based stats
-
 -- Get kills by time range name (from config)
 function PSC_CountKillsByTimeRangeName(rangeName)
     local stats = PSC_GetTimeBasedStats()
