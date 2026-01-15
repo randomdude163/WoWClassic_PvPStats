@@ -62,7 +62,6 @@ function PSC_StartIncrementalAchievementsCalculation()
         return
     end
 
-    local achievementsPerSlice = 50
     local killLocationsPerSlice = 1000
 
     local job = {
@@ -83,7 +82,7 @@ function PSC_StartIncrementalAchievementsCalculation()
 
 
     local taskQueue = {
-        TaskQueueDelayFrame(10),
+        TaskQueueDelayFrame(5),
         function()
             local characterData = charactersToProcess[currentCharacterKey]
             job._timeStatsTask = PSC_CreateIncrementalTimeBasedStatsTask(characterData, killLocationsPerSlice * 2, function(result)
@@ -107,14 +106,14 @@ function PSC_StartIncrementalAchievementsCalculation()
 
             return job._timeStatsTask()
         end,
-        TaskQueueDelayFrame(10),
+        TaskQueueDelayFrame(5),
         function()
             local t1 = debugprofilestop()
             PSC_GetStreakStats(true)
             local t2 = debugprofilestop()
             print("[PvPStats] Streak stats calculation took " .. (t2 - t1) .. " ms")
         end,
-        TaskQueueDelayFrame(10),
+        TaskQueueDelayFrame(5),
         function()
             local t1 = debugprofilestop()
             classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
@@ -122,7 +121,7 @@ function PSC_StartIncrementalAchievementsCalculation()
             local t2 = debugprofilestop()
             print("[PvPStats] Bar chart statistics calculation took " .. (t2 - t1) .. " ms")
         end,
-        TaskQueueDelayFrame(10),
+        TaskQueueDelayFrame(5),
         function()
             local task = PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, killLocationsPerSlice, function(result)
                 summaryStats = result
@@ -172,12 +171,8 @@ function PSC_StartIncrementalAchievementsCalculation()
             return true
         end,
         function()
-            if not PVPSC.AchievementSystem or type(PVPSC.AchievementSystem.CreateIncrementalAchievementCheckTask) ~= "function" then
-                return true
-            end
-
             if not job._achievementTask then
-                job._achievementTask = PVPSC.AchievementSystem:CreateIncrementalAchievementCheckTask(achievementStats, achievementsPerSlice)
+                job._achievementTask = PVPSC.AchievementSystem:CreateIncrementalAchievementCheckTask(achievementStats)
             end
 
             return job._achievementTask()

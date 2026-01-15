@@ -249,18 +249,14 @@ local function PSC_SaveAchievementProgressValue(achievementID, progressValue)
     PSC_DB.CharacterAchievements[characterKey][achievementID].progress = progressValue
 end
 
-function AchievementSystem:CreateIncrementalAchievementCheckTask(stats, maxAchievementsPerFrame)
-    local maxAchievementsPerSlice = tonumber(maxAchievementsPerFrame) or 0
-    maxAchievementsPerSlice = math.floor(maxAchievementsPerSlice)
-    if maxAchievementsPerSlice < 25 then
-        maxAchievementsPerSlice = 25
-    end
-
+function AchievementSystem:CreateIncrementalAchievementCheckTask(stats)
     local achievements = self.achievements or {}
     local playerName = UnitName("player")
     local unlockedList = {}
     local achievementsUnlocked = 0
     local startIndex = 1
+
+    local achievementsPerSlice = 10
 
     return function()
         local i = startIndex
@@ -281,7 +277,7 @@ function AchievementSystem:CreateIncrementalAchievementCheckTask(stats, maxAchie
             i = i + 1
             processed = processed + 1
 
-            if processed >= maxAchievementsPerSlice then
+            if processed >= achievementsPerSlice then
                 break
             end
         end
