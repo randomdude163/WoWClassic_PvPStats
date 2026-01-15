@@ -1028,8 +1028,8 @@ function PSC_CreateIncrementalTimeBasedStatsTask(characterData, maxKillLocations
 end
 
 
-function PSC_GetTimeBasedStats(forceRefresh)
-    if not TimeStatsCache or forceRefresh then
+function PSC_GetTimeBasedStats()
+    if not TimeStatsCache then
         TimeStatsCache = PSC_CalculateAllTimeBasedStats()
     end
 

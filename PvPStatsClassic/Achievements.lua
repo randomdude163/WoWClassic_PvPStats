@@ -127,6 +127,64 @@ function PSC_InitializeGrayKillsCounter()
     end
 end
 
+function PSC_InitializeSpawnCamperCounter()
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    -- Calculate once using the spawn camper logic
+    characterData.SpawnCamperMaxKills = PSC_CalculateSpawnCamperMaxKills() or 0
+
+    if PSC_Debug then
+        print("[PvPStats]: Initialized spawn camper counter with " .. characterData.SpawnCamperMaxKills .. " max kills in 60s window")
+    end
+end
+
+function PSC_CalculateSpawnCamperMaxKills()
+    local characterKey = PSC_GetCharacterKey()
+    if not characterKey or not PSC_DB.PlayerKillCounts.Characters[characterKey] then return 0 end
+
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    -- Only build the timestamp list if it hasn't been initialized yet (first-time setup)
+    if not characterData.Level1KillTimestamps or #characterData.Level1KillTimestamps == 0 then
+        local timestamps = {}
+
+        -- One-time historical data collection
+        for nameWithLevel, data in pairs(characterData.Kills) do
+            if string.match(nameWithLevel, ":1$") then
+                for _, loc in ipairs(data.killLocations) do
+                    table.insert(timestamps, loc.timestamp)
+                end
+            end
+        end
+
+        if #timestamps == 0 then
+            characterData.Level1KillTimestamps = {}
+            return 0
+        end
+
+        table.sort(timestamps)
+        characterData.Level1KillTimestamps = timestamps
+    end
+
+    -- Calculate max from the cached list
+    local timestamps = characterData.Level1KillTimestamps
+    local maxKillsInWindow = 0
+    local left = 1
+
+    for right = 1, #timestamps do
+        while timestamps[right] - timestamps[left] > 60 do
+            left = left + 1
+        end
+        local count = right - left + 1
+        if count > maxKillsInWindow then
+            maxKillsInWindow = count
+        end
+    end
+
+    return maxKillsInWindow
+end
+
 -- Helper function to check if a kill is a gray level kill
 function PSC_IsGrayLevelKill(playerLevel, targetLevel)
     if not playerLevel or not targetLevel or targetLevel == -1 then
@@ -256,7 +314,7 @@ function AchievementSystem:CreateIncrementalAchievementCheckTask(stats)
     local achievementsUnlocked = 0
     local startIndex = 1
 
-    local achievementsPerSlice = 10
+    local achievementsPerSlice = 50
 
     return function()
         local i = startIndex

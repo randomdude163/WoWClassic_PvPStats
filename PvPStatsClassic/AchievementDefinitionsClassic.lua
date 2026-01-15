@@ -3128,9 +3128,6 @@ AchievementSystem.achievementsClassic = {
         achievementPoints = 50,
         targetValue = 10,
         condition = function(achievement, stats)
-            -- Performance optimization: Check if we even have enough level 1 kills total
-            if (stats.levelData["1"] or 0) < achievement.targetValue then return false end
-
             return achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
@@ -3139,44 +3136,12 @@ AchievementSystem.achievementsClassic = {
             return "You really showed those level 1s who's boss!"
         end,
         progress = function(achievement, stats)
-            if not PSC_DB or not PSC_DB.PlayerKillCounts then return 0 end
-
-            -- Fast exit if no level 1 kills at all
-            if (stats.levelData["1"] or 0) == 0 then return 0 end
-
             local characterKey = PSC_GetCharacterKey()
-            if not characterKey or not PSC_DB.PlayerKillCounts.Characters[characterKey] then return 0 end
+            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
-            local kills = PSC_DB.PlayerKillCounts.Characters[characterKey].Kills
-            local timestamps = {}
-
-            for nameWithLevel, data in pairs(kills) do
-                if string.match(nameWithLevel, ":1$") then
-                    for _, loc in ipairs(data.killLocations) do
-                        table.insert(timestamps, loc.timestamp)
-                    end
-                end
-            end
-
-            if #timestamps == 0 then return 0 end
-
-            table.sort(timestamps)
-
-            local maxKillsInWindow = 0
-            local left = 1
-
-            -- Sliding window algorithm to find max kills in 60s
-            for right = 1, #timestamps do
-                while timestamps[right] - timestamps[left] > 60 do
-                    left = left + 1
-                end
-                local count = right - left + 1
-                if count > maxKillsInWindow then
-                    maxKillsInWindow = count
-                end
-            end
-
-            return maxKillsInWindow
+            -- Return the cached maximum - this represents the best 60-second window ever achieved
+            -- It's updated incrementally when level 1 kills happen
+            return characterData.SpawnCamperMaxKills or 0
         end,
     },
     {

@@ -546,6 +546,7 @@ local function HandlePlayerEnteringWorld()
     PSC_InCombat = UnitAffectingCombat("player")
     PSC_CheckBattlegroundStatus()
     PSC_InitializeGrayKillsCounter()
+    PSC_InitializeSpawnCamperCounter()
 
     if UnitIsDeadOrGhost("player") then
         HandlePlayerDeath()
@@ -559,8 +560,6 @@ local function HandlePlayerEnteringWorld()
         addonWelcomeMessageShown = true
         print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
     end
-
-    PSC_GetTimeBasedStats(true)
 
     C_Timer.After(1, function()
         PSC_StartIncrementalAchievementsCalculation()
