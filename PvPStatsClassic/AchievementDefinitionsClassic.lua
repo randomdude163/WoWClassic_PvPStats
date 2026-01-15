@@ -2690,14 +2690,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local maxSameGuild = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > maxSameGuild then
-                    maxSameGuild = count
-                end
-            end
-            return maxSameGuild
+            return stats.maxSameGuildKills or 0
         end,
     },
     {
@@ -2717,14 +2710,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local maxSameGuild = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > maxSameGuild then
-                    maxSameGuild = count
-                end
-            end
-            return maxSameGuild
+            return stats.maxSameGuildKills or 0
         end,
     },
     {
@@ -2744,14 +2730,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local maxSameGuild = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > maxSameGuild then
-                    maxSameGuild = count
-                end
-            end
-            return maxSameGuild
+            return stats.maxSameGuildKills or 0
         end,
     },
     {
@@ -2771,14 +2750,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local maxSameGuild = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > maxSameGuild then
-                    maxSameGuild = count
-                end
-            end
-            return maxSameGuild
+            return stats.maxSameGuildKills or 0
         end,
     },
     {
@@ -2798,14 +2770,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local uniqueGuilds = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > 0 then
-                    uniqueGuilds = uniqueGuilds + 1
-                end
-            end
-            return uniqueGuilds
+            return stats.uniqueGuildsKilled or 0
         end,
     },
     {
@@ -2825,14 +2790,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local uniqueGuilds = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > 0 then
-                    uniqueGuilds = uniqueGuilds + 1
-                end
-            end
-            return uniqueGuilds
+            return stats.uniqueGuildsKilled or 0
         end,
     },
     {
@@ -2852,14 +2810,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local maxSameGuild = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > maxSameGuild then
-                    maxSameGuild = count
-                end
-            end
-            return maxSameGuild
+            return stats.maxSameGuildKills or 0
         end,
     },
     {
@@ -2879,14 +2830,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local maxSameGuild = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > maxSameGuild then
-                    maxSameGuild = count
-                end
-            end
-            return maxSameGuild
+            return stats.maxSameGuildKills or 0
         end,
     },
     {
@@ -2906,14 +2850,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local maxSameGuild = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > maxSameGuild then
-                    maxSameGuild = count
-                end
-            end
-            return maxSameGuild
+            return stats.maxSameGuildKills or 0
         end,
     },
     {
@@ -2933,14 +2870,9 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local uniqueGuilds = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > 0 then
-                    uniqueGuilds = uniqueGuilds + 1
-                end
-            end
-            return uniqueGuilds
+            local characterKey = PSC_GetCharacterKey()
+            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+            return characterData.UniqueGuildsKilled or 0
         end,
     },
     {
@@ -2960,14 +2892,9 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            if not stats.guildData then return 0 end
-            local uniqueGuilds = 0
-            for guildName, count in pairs(stats.guildData) do
-                if count > 0 then
-                    uniqueGuilds = uniqueGuilds + 1
-                end
-            end
-            return uniqueGuilds
+            local characterKey = PSC_GetCharacterKey()
+            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+            return characterData.UniqueGuildsKilled or 0
         end,
     },
     {
