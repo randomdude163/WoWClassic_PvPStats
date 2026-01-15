@@ -2,7 +2,7 @@ local addonName, PVPSC = ...
 
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = false
+PSC_Debug = true
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
@@ -563,7 +563,7 @@ local function HandlePlayerEnteringWorld()
     PSC_GetTimeBasedStats(true)
 
     C_Timer.After(2, function()
-        PVPSC.AchievementSystem:CheckAchievements()
+        PVPSC.AchievementSystem:CheckAchievementsIncrementally(4)
     end)
 end
 

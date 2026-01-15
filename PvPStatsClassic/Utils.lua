@@ -34,7 +34,7 @@ function PSC_StartIncrementalAchievementsCalculation()
         TaskQueueDelayFrame,
         TaskQueueDelayFrame,
         function()
-            PVPSC.AchievementSystem:CheckAchievements()
+            PVPSC.AchievementSystem:CheckAchievementsIncrementally(4)
         end
     }
 

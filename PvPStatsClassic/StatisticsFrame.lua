@@ -870,6 +870,15 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     local firstKillTimestamp = nil
     local lastKillTimestamp = nil
 
+    -- Track today/week/month/year kills while we're already iterating killLocations.
+    -- This avoids additional full-database scans via PSC_GetKillsToday/ThisWeek/ThisMonth/ThisYear.
+---@diagnostic disable-next-line: undefined-global
+    local timeBoundaries = PSC_CalculateTimePeriodBoundaries and PSC_CalculateTimePeriodBoundaries() or nil
+    local killsToday = 0
+    local killsThisWeek = 0
+    local killsThisMonth = 0
+    local killsThisYear = 0
+
     for characterKey, characterData in pairs(charactersToProcess) do
         if characterKey == PSC_GetCharacterKey() then
             currentKillStreak = characterData.CurrentKillStreak
@@ -937,12 +946,34 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
                                 lastKillTimestamp = timestamp
                             end
 
+                            if timeBoundaries then
+                                if timestamp >= timeBoundaries.todayStart then
+                                    killsToday = killsToday + 1
+                                end
+                                if timestamp >= timeBoundaries.weekStart then
+                                    killsThisWeek = killsThisWeek + 1
+                                end
+                                if timestamp >= timeBoundaries.monthStart then
+                                    killsThisMonth = killsThisMonth + 1
+                                end
+                                if timestamp >= timeBoundaries.yearStart then
+                                    killsThisYear = killsThisYear + 1
+                                end
+                            end
+
                             -- Calculate weekday, hour, and month statistics
-                            local dateInfo = date("*t", timestamp)
-                            if dateInfo then
-                                weekdayKills[dateInfo.wday] = weekdayKills[dateInfo.wday] + 1
-                                hourlyKills[dateInfo.hour] = hourlyKills[dateInfo.hour] + 1
-                                monthlyKills[dateInfo.month] = monthlyKills[dateInfo.month] + 1
+                            -- Avoid allocating a full date table for every killLocation.
+                            local wday0 = tonumber(date("%w", timestamp))
+                            if wday0 then
+                                weekdayKills[wday0 + 1] = weekdayKills[wday0 + 1] + 1
+                            end
+                            local hour = tonumber(date("%H", timestamp))
+                            if hour then
+                                hourlyKills[hour] = hourlyKills[hour] + 1
+                            end
+                            local month = tonumber(date("%m", timestamp))
+                            if month then
+                                monthlyKills[month] = monthlyKills[month] + 1
                             end
                         end
 
@@ -1043,17 +1074,27 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     local avgLevelDiff = killsWithLevelData > 0 and (levelDiffSum / killsWithLevelData) or 0
     local avgKillsPerPlayer = uniqueKills > 0 and (totalKills / uniqueKills) or 0
 
-    -- Calculate daily, weekly, monthly, and yearly kills
-    local killsToday = PSC_GetKillsToday()
-    local killsThisWeek = PSC_GetKillsThisWeek()
-    local killsThisMonth = PSC_GetKillsThisMonth()
-    local killsThisYear = PSC_GetKillsThisYear()
-
     -- Calculate nemesis (player with most kills against the user, assists as tie-breaker)
     local nemesisName = "None"
     local nemesisScore = 0
     local nemesisAssists = 0
     local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+
+    -- Precompute assist counts per player once (PSC_CountPlayerAssists is O(n) per player).
+    local assistsByPlayer = {}
+    for _, deathData in pairs(deathDataByPlayer) do
+        if deathData.deathLocations then
+            for _, location in ipairs(deathData.deathLocations) do
+                if location.assisters then
+                    for _, assister in ipairs(location.assisters) do
+                        if assister and assister.name then
+                            assistsByPlayer[assister.name] = (assistsByPlayer[assister.name] or 0) + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
 
     -- Total deaths across the same character scope as nemesis calculation
     local totalDeaths = 0
@@ -1063,7 +1104,7 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
 
     for killerName, deathData in pairs(deathDataByPlayer) do
         local deaths = deathData.deaths or 0
-        local assists, _ = PSC_CountPlayerAssists(killerName, deathDataByPlayer)
+        local assists = assistsByPlayer[killerName] or 0
 
         -- Primary: Most kills. Secondary: Most assists (tie-breaker)
         if deaths > nemesisScore or (deaths == nemesisScore and assists > nemesisAssists) then

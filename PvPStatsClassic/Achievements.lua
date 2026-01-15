@@ -158,7 +158,6 @@ function PSC_GetStatsForAchievements()
     local charactersToProcess = {}
     local currentCharacterKey = PSC_GetCharacterKey()
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData = PSC_CalculateBarChartStatistics(charactersToProcess)
     local summaryStats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local stats = {
@@ -184,41 +183,12 @@ function PSC_GetStatsForAchievements()
 end
 
 
-function AchievementSystem:CheckAchievements()
-    local playerName = UnitName("player")
-    local achievementsUnlocked = 0
-    local stats = PSC_GetStatsForAchievements()
-    local characterKey = PSC_GetCharacterKey()
-    local unlockedList = {}
-
-    for _, achievement in ipairs(self.achievements) do
-        if not achievement.unlocked and achievement.condition(achievement, stats) then
-            achievement.unlocked = true
-            achievement.completedDate = date("%d/%m/%Y %H:%M")
-
-            PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
-
-            local personalizedDescription = PSC_ReplacePlayerNamePlaceholder(achievement.description, playerName, achievement)
-            local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(achievement.title, playerName, achievement)
-            local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(achievement.subText, playerName, achievement)
-
-            table.insert(unlockedList, {
-                icon = achievement.iconID,
-                title = personalizedTitle,
-                description = personalizedDescription,
-                subText = personalizedSubText,
-                rarity = achievement.rarity
-            })
-
-            achievementsUnlocked = achievementsUnlocked + 1
-        end
+local function PSC_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
+    if achievementsUnlocked <= 0 then
+        return
     end
 
-    self:SaveAchievementPoints()
-
-    -- Show popups
     if achievementsUnlocked > 3 then
-        -- Print achievements in chat
         print("|cffffffff[PvPStats]|r You have unlocked |cffffff00" .. achievementsUnlocked .. "|r new achievements:")
         for _, achievement in ipairs(unlockedList) do
             print("|cffffff00" .. achievement.title .. "|r: |cffffffff" .. achievement.description .. "|r")
@@ -230,6 +200,128 @@ function AchievementSystem:CheckAchievements()
             PVPSC.AchievementPopup:ShowPopup(popupData)
         end
     end
+end
+
+local function PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList)
+    if achievement.unlocked then
+        return false
+    end
+
+    if not achievement.condition(achievement, stats) then
+        return false
+    end
+
+    achievement.unlocked = true
+    achievement.completedDate = date("%d/%m/%Y %H:%M")
+
+    PSC_SaveAchievement(achievement.id, achievement.completedDate, achievement.achievementPoints)
+
+    local personalizedDescription = PSC_ReplacePlayerNamePlaceholder(achievement.description, playerName, achievement)
+    local personalizedTitle = PSC_ReplacePlayerNamePlaceholder(achievement.title, playerName, achievement)
+    local personalizedSubText = PSC_ReplacePlayerNamePlaceholder(achievement.subText, playerName, achievement)
+
+    table.insert(unlockedList, {
+        icon = achievement.iconID,
+        title = personalizedTitle,
+        description = personalizedDescription,
+        subText = personalizedSubText,
+        rarity = achievement.rarity
+    })
+
+    return true
+end
+
+
+function AchievementSystem:CheckAchievementsIncrementally(timeBudgetMs)
+    -- If a job is already running, mark it dirty and let it finish.
+    if self._activeAchievementCheckJob then
+        self._activeAchievementCheckJob.dirty = true
+        return
+    end
+
+    local maxAchievementsPerSlice = tonumber(timeBudgetMs) or 0
+    maxAchievementsPerSlice = math.floor(maxAchievementsPerSlice)
+    if maxAchievementsPerSlice < 25 then
+        maxAchievementsPerSlice = 25
+    end
+
+    local stats = PSC_GetStatsForAchievements()
+
+    local job = {
+        startIndex = 1,
+        maxAchievementsPerSlice = maxAchievementsPerSlice,
+        playerName = UnitName("player"),
+        stats = stats,
+        unlockedList = {},
+        achievementsUnlocked = 0,
+        dirty = false
+    }
+
+    self._activeAchievementCheckJob = job
+
+    local function runSlice()
+        if self._activeAchievementCheckJob ~= job then
+            return
+        end
+
+        local achievements = self.achievements or {}
+        local i = job.startIndex
+        local processed = 0
+
+        while i <= #achievements do
+            local achievement = achievements[i]
+            if achievement and PSC_ProcessSingleAchievement(achievement, job.stats, job.playerName, job.unlockedList) then
+                job.achievementsUnlocked = job.achievementsUnlocked + 1
+            end
+
+            i = i + 1
+            processed = processed + 1
+
+            if processed >= job.maxAchievementsPerSlice then
+                break
+            end
+        end
+
+        job.startIndex = i
+
+        if job.startIndex <= #achievements then
+            C_Timer.After(0, runSlice)
+            return
+        end
+
+        self._activeAchievementCheckJob = nil
+
+        self:SaveAchievementPoints()
+        PSC_ShowUnlockedAchievements(job.achievementsUnlocked, job.unlockedList)
+
+        if job.dirty then
+            C_Timer.After(0, function()
+                self:CheckAchievementsIncrementally(timeBudgetMs)
+            end)
+        end
+    end
+
+    C_Timer.After(0, runSlice)
+end
+
+
+function AchievementSystem:CheckAchievements()
+    local playerName = UnitName("player")
+    local achievementsUnlocked = 0
+
+    local stats = PSC_GetStatsForAchievements()
+
+    local unlockedList = {}
+
+    for _, achievement in ipairs(self.achievements) do
+        if achievement and PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList) then
+            achievementsUnlocked = achievementsUnlocked + 1
+        end
+    end
+
+    self:SaveAchievementPoints()
+
+    PSC_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
 
     return achievementsUnlocked
 end
