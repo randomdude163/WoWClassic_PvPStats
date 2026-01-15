@@ -3,6 +3,8 @@ local addonName, PVPSC = ...
 local TimeStatsCache = nil
 local streakStatsCache = nil
 local nameStatsCache = nil
+local barChartStatsCache = nil
+local summaryStatsCache = nil
 
 
 -- Helper function for task queue - returns a task that delays N frames.
@@ -125,6 +127,17 @@ function PSC_StartIncrementalAchievementsCalculation()
             local t1 = debugprofilestop()
             classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
                 PSC_CalculateBarChartStatistics(charactersToProcess)
+            -- Cache bar chart stats
+            barChartStatsCache = {
+                classData = classData,
+                raceData = raceData,
+                genderData = genderData,
+                unknownLevelClassData = unknownLevelClassData,
+                zoneData = zoneData,
+                levelData = levelData,
+                guildStatusData = guildStatusData,
+                guildData = guildData
+            }
             local t2 = debugprofilestop()
             print("[PvPStats] Bar chart statistics calculation took " .. (t2 - t1) .. " ms")
         end,
@@ -155,6 +168,9 @@ function PSC_StartIncrementalAchievementsCalculation()
             if not summaryStats then
                 return false
             end
+
+            -- Cache summary stats
+            summaryStatsCache = summaryStats
 
             achievementStats = {
                 classData = classData,
@@ -199,6 +215,14 @@ end
 -- ============================================================================
 -- UTILITY FUNCTIONS
 -- ============================================================================
+
+function PSC_GetCachedBarChartStats()
+    return barChartStatsCache
+end
+
+function PSC_GetCachedSummaryStats()
+    return summaryStatsCache
+end
 
 function PSC_SendAnnounceMessage(message)
     local channel = PSC_DB.AnnounceChannel or "GROUP"
