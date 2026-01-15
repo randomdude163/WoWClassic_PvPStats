@@ -724,6 +724,10 @@ function PSC_CalculateGuildKills()
 end
 
 local function PSC_SummaryStats_CreateState(charactersToProcess)
+    local PSC_DB = PSC_DB
+---@diagnostic disable-next-line: undefined-global
+    local PSC_CalculateTimePeriodBoundaries = PSC_CalculateTimePeriodBoundaries
+
     local state = {
         totalKills = 0,
         uniqueKills = 0,
@@ -772,13 +776,15 @@ local function PSC_SummaryStats_CreateState(charactersToProcess)
         state.monthlyKills[i] = 0
     end
 
----@diagnostic disable-next-line: undefined-global
     state.timeBoundaries = PSC_CalculateTimePeriodBoundaries()
 
     return state
 end
 
 local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, characterData)
+    local PSC_GetCharacterKey = PSC_GetCharacterKey
+    local PSC_DB = PSC_DB
+
     if characterKey == PSC_GetCharacterKey() then
         state.currentKillStreak = characterData.CurrentKillStreak
     end
@@ -800,16 +806,29 @@ local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, char
 end
 
 local function PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killData)
+    local tonumber = tonumber
+    local strfind = string.find
+    local strsub = string.sub
+
     local kills = killData.kills or 0
-    local playerName = nameWithLevel:match("([^:]+)")
+
+    local colonIndex = strfind(nameWithLevel, ":", 1, true)
+    local playerName
+    local levelPart
+    if colonIndex then
+        playerName = strsub(nameWithLevel, 1, colonIndex - 1)
+        levelPart = strsub(nameWithLevel, colonIndex + 1)
+    else
+        playerName = nameWithLevel
+        levelPart = nil
+    end
 
     state.killsPerPlayer[playerName] = (state.killsPerPlayer[playerName] or 0) + kills
 
     state.uniqueKills = state.uniqueKills + 1
     state.totalKills = state.totalKills + kills
 
-    local level = nameWithLevel:match(":(%S+)")
-    local levelNum = tonumber(level or "0") or 0
+    local levelNum = tonumber(levelPart or "0") or 0
 
     if levelNum > 0 then
         if not state.uniquePlayerLevels[playerName] then
@@ -835,6 +854,9 @@ local function PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killD
 end
 
 local function PSC_SummaryStats_ProcessKillLocation(state, location, levelNum)
+    local tonumber = tonumber
+    local date = date
+
     local targetLevel = levelNum
     local playerLevel = location.playerLevel or 0
     local timestamp = location.timestamp
@@ -900,6 +922,11 @@ local function PSC_SummaryStats_ProcessKillEntryFallback(state, killData, kills,
 end
 
 local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
+    local pairs = pairs
+    local ipairs = ipairs
+    local math_floor = math.floor
+    local string_format = string.format
+
     for playerName, kills in pairs(state.killsPerPlayer) do
         if kills > state.mostKilledCount then
             state.mostKilledPlayer = playerName
@@ -932,7 +959,7 @@ local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
     for hour, kills in pairs(state.hourlyKills) do
         if kills > state.busiestHourKills then
             state.busiestHourKills = kills
-            state.busiestHour = string.format("%02d:00 - %02d:00", hour, (hour + 1) % 24)
+            state.busiestHour = string_format("%02d:00 - %02d:00", hour, (hour + 1) % 24)
         end
     end
 
@@ -949,7 +976,7 @@ local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
 
     state.avgKillsPerDay = 0
     if state.firstKillTimestamp and state.lastKillTimestamp then
-        local activitySpanDays = math.floor((state.lastKillTimestamp - state.firstKillTimestamp) / 86400) + 1
+        local activitySpanDays = math_floor((state.lastKillTimestamp - state.firstKillTimestamp) / 86400) + 1
         if activitySpanDays > 0 then
             state.avgKillsPerDay = state.totalKills / activitySpanDays
         end
@@ -970,6 +997,11 @@ local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
 end
 
 local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+    local pairs = pairs
+    local ipairs = ipairs
+    local math_huge = math.huge
+    local PSC_GetDeathDataFromAllCharacters = PSC_GetDeathDataFromAllCharacters
+
     local nemesisName = "None"
     local nemesisScore = 0
     local nemesisAssists = 0
@@ -1013,7 +1045,7 @@ local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
     if totalDeaths > 0 then
         state.kdRatio = state.totalKills / totalDeaths
     elseif state.totalKills > 0 then
-        state.kdRatio = math.huge
+        state.kdRatio = math_huge
     else
         state.kdRatio = 0
     end
@@ -1546,6 +1578,17 @@ local function createSummaryStats(parent, x, y, width, height)
 end
 
 function PSC_CalculateBarChartStatistics(charactersToProcess)
+    local db = PSC_DB
+    local playerInfoCache = db.PlayerInfoCache
+    local getInfoKeyFromName = PSC_GetInfoKeyFromName
+    local strfind = string.find
+    local strsub = string.sub
+    local tonumber = tonumber
+    local ipairs = ipairs
+    local pairs = pairs
+
+    local infoKeyCache = {}
+
     local classData = {}
     local raceData = {}
     local genderData = {}
@@ -1574,43 +1617,62 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         genderData[gender] = 0
     end
 
-    if not PSC_DB.PlayerKillCounts.Characters then
+    if not db.PlayerKillCounts.Characters then
         return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
     end
 
-    for characterKey, characterData in pairs(charactersToProcess) do
+    for _, characterData in pairs(charactersToProcess) do
         if characterData.Kills then
             for nameWithLevel, killData in pairs(characterData.Kills) do
                 if killData.kills and killData.kills > 0 then
-                    local nameWithoutLevel = nameWithLevel:match("([^:]+)")
+                    local colonIndex = strfind(nameWithLevel, ":", 1, true)
+                    local nameWithoutLevel
+                    local levelPart
+                    if colonIndex then
+                        nameWithoutLevel = strsub(nameWithLevel, 1, colonIndex - 1)
+                        levelPart = strsub(nameWithLevel, colonIndex + 1)
+                    else
+                        nameWithoutLevel = nameWithLevel
+                        levelPart = nil
+                    end
+
                     local kills = killData.kills
 
-                    local infoKey = PSC_GetInfoKeyFromName(nameWithoutLevel)
+                    local infoKey = infoKeyCache[nameWithoutLevel]
+                    if not infoKey then
+                        infoKey = getInfoKeyFromName(nameWithoutLevel)
+                        infoKeyCache[nameWithoutLevel] = infoKey
+                    end
 
-                    if PSC_DB.PlayerInfoCache[infoKey] then
-                        local class = PSC_DB.PlayerInfoCache[infoKey].class
+                    local info = infoKey and playerInfoCache[infoKey] or nil
+                    if info then
+                        local class = info.class
                         if class then
                             classData[class] = (classData[class] or 0) + kills
                         end
 
-                        local level = nameWithLevel:match(":(%S+)")
-                        local levelNum = tonumber(level or "0") or 0
-
+                        local levelNum = tonumber(levelPart or "0") or 0
                         if levelNum == -1 then
-                            unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
+                            if class then
+                                unknownLevelClassData[class] = (unknownLevelClassData[class] or 0) + kills
+                            end
                             levelData["??"] = (levelData["??"] or 0) + kills
                         else
                             if levelNum > 0 and levelNum <= 60 then
-                                levelData[tostring(levelNum)] = (levelData[tostring(levelNum)] or 0) + kills
+                                local levelKey = levelPart
+                                if not levelKey or levelKey == "" then
+                                    levelKey = tostring(levelNum)
+                                end
+                                levelData[levelKey] = (levelData[levelKey] or 0) + kills
                             end
                         end
 
-                        local race = PSC_DB.PlayerInfoCache[infoKey].race
+                        local race = info.race
                         if race then
                             raceData[race] = (raceData[race] or 0) + kills
                         end
 
-                        local gender = PSC_DB.PlayerInfoCache[infoKey].gender
+                        local gender = info.gender
                         if gender then
                             genderData[gender] = (genderData[gender] or 0) + kills
                         end
@@ -1622,8 +1684,8 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                             end
                         end
 
-                        local guild = PSC_DB.PlayerInfoCache[infoKey].guild
-                        if guild ~= "" then
+                        local guild = info.guild
+                        if guild and guild ~= "" then
                             guildStatusData["In Guild"] = guildStatusData["In Guild"] + kills
                             guildData[guild] = (guildData[guild] or 0) + kills
                         else
