@@ -562,8 +562,8 @@ local function HandlePlayerEnteringWorld()
 
     PSC_GetTimeBasedStats(true)
 
-    C_Timer.After(2, function()
-        PSC_StartIncrementalAchievementsCalculation(25)
+    C_Timer.After(1, function()
+        PSC_StartIncrementalAchievementsCalculation()
     end)
 end
 

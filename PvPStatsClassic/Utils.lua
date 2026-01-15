@@ -54,7 +54,7 @@ local function PSC_RunTaskQueue(taskQueue, onDone)
 end
 
 -- Incremental calculation that processes stats over multiple frames
-function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
+function PSC_StartIncrementalAchievementsCalculation()
     PVPSC._activeIncrementalAchievementsJob = PVPSC._activeIncrementalAchievementsJob or nil
 
     if PVPSC._activeIncrementalAchievementsJob then
@@ -62,12 +62,7 @@ function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
         return
     end
 
-    local achievementsPerSlice = tonumber(maxAchievementsPerFrame) or 0
-    achievementsPerSlice = math.floor(achievementsPerSlice)
-    if achievementsPerSlice < 25 then
-        achievementsPerSlice = 25
-    end
-
+    local achievementsPerSlice = 50
     local killLocationsPerSlice = 1000
 
     local job = {
@@ -193,7 +188,7 @@ function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
         PVPSC._activeIncrementalAchievementsJob = nil
         if job.dirty then
             C_Timer.After(0, function()
-                PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
+                PSC_StartIncrementalAchievementsCalculation()
             end)
         end
     end)

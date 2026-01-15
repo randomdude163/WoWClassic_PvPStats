@@ -230,22 +230,23 @@ local function PSC_ProcessSingleAchievement(achievement, stats, playerName, unlo
     return true
 end
 
-
-function AchievementSystem:CheckAchievementsIncrementally(timeBudgetMs)
-    local maxAchievementsPerSlice = tonumber(timeBudgetMs) or 0
-    maxAchievementsPerSlice = math.floor(maxAchievementsPerSlice)
-    if maxAchievementsPerSlice < 25 then
-        maxAchievementsPerSlice = 25
-    end
-
----@diagnostic disable-next-line: undefined-global
-    if PSC_StartIncrementalAchievementsCalculation then
-        PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerSlice)
+local function PSC_SaveAchievementProgressValue(achievementID, progressValue)
+    if not achievementID then
         return
     end
 
-    -- Fallback: if task-queue is unavailable for some reason
-    self:CheckAchievements()
+    if not PSC_DB or not PSC_DB.CharacterAchievements then
+        if PSC_InitializeAchievementDataStructure then
+            PSC_InitializeAchievementDataStructure()
+        end
+    end
+
+    local characterKey = PSC_GetCharacterKey()
+    PSC_DB.CharacterAchievements = PSC_DB.CharacterAchievements or {}
+    PSC_DB.CharacterAchievements[characterKey] = PSC_DB.CharacterAchievements[characterKey] or {}
+    PSC_DB.CharacterAchievements[characterKey][achievementID] = PSC_DB.CharacterAchievements[characterKey][achievementID] or {}
+
+    PSC_DB.CharacterAchievements[characterKey][achievementID].progress = progressValue
 end
 
 function AchievementSystem:CreateIncrementalAchievementCheckTask(stats, maxAchievementsPerFrame)
@@ -267,6 +268,12 @@ function AchievementSystem:CreateIncrementalAchievementCheckTask(stats, maxAchie
 
         while i <= #achievements do
             local achievement = achievements[i]
+            if achievement and type(achievement.progress) == "function" then
+                local ok, value = pcall(achievement.progress, achievement, stats)
+                if ok then
+                    PSC_SaveAchievementProgressValue(achievement.id, value)
+                end
+            end
             if achievement and PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList) then
                 achievementsUnlocked = achievementsUnlocked + 1
             end
@@ -301,6 +308,12 @@ function AchievementSystem:CheckAchievements()
     local unlockedList = {}
 
     for _, achievement in ipairs(self.achievements) do
+        if achievement and type(achievement.progress) == "function" then
+            local ok, value = pcall(achievement.progress, achievement, stats)
+            if ok then
+                PSC_SaveAchievementProgressValue(achievement.id, value)
+            end
+        end
         if achievement and PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList) then
             achievementsUnlocked = achievementsUnlocked + 1
         end
