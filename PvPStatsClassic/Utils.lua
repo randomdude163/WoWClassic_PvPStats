@@ -57,7 +57,7 @@ function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
         achievementsPerSlice = 25
     end
 
-    local killLocationsPerSlice = 500
+    local killLocationsPerSlice = 5000
 
     local job = {
         dirty = false
@@ -72,24 +72,31 @@ function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
     local summaryStats = nil
     local achievementStats = nil
 
+    local profiledSummarySlice = false
+
+
     local taskQueue = {
         TaskQueueDelayFrame,
         function()
-            if PSC_GetTimeBasedStats then
-                PSC_GetTimeBasedStats(true)
-            end
+            local t1 = debugprofilestop()
+            PSC_GetTimeBasedStats(true)
+            local t2 = debugprofilestop()
+            print("[PvPStats] Time-based stats calculation took " .. (t2 - t1) .. " ms")
         end,
         function()
-            if PSC_GetStreakStats then
-                PSC_GetStreakStats(true)
-            end
+            local t1 = debugprofilestop()
+            PSC_GetStreakStats(true)
+            local t2 = debugprofilestop()
+            print("[PvPStats] Streak stats calculation took " .. (t2 - t1) .. " ms")
         end,
         function()
+            local t1 = debugprofilestop()
             classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
                 PSC_CalculateBarChartStatistics(charactersToProcess)
+            local t2 = debugprofilestop()
+            print("[PvPStats] Bar chart statistics calculation took " .. (t2 - t1) .. " ms")
         end,
         function()
----@diagnostic disable-next-line: undefined-global
             local task = PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, killLocationsPerSlice, function(result)
                 summaryStats = result
             end)
@@ -100,6 +107,15 @@ function PSC_StartIncrementalAchievementsCalculation(maxAchievementsPerFrame)
             if not job._summaryTask then
                 return true
             end
+            if not profiledSummarySlice then
+                profiledSummarySlice = true
+                local t1 = debugprofilestop()
+                local result = job._summaryTask()
+                local t2 = debugprofilestop()
+                print("[PvPStats] Summary stats slice took " .. (t2 - t1) .. " ms (sliceBudget=" .. tostring(killLocationsPerSlice) .. ")")
+                return result
+            end
+
             return job._summaryTask()
         end,
         function()
