@@ -8283,7 +8283,7 @@ AchievementSystem.achievementsClassic = {
         end,
         unlocked = false,
         completedDate = nil,
-        subText = "You've killed him so many times, he might as well stay in Stormwind.",
+        subText = "You've killed him so many times, he might as well stay at Moonbrook.",
         progress = function(achievement, stats)
             return stats.npcKills["The Defias Traitor"] or 0
         end,
