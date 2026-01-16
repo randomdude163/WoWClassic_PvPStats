@@ -417,7 +417,7 @@ local function HandleCombatLogEvent()
         PSC_PendingHunterKills[destGUID].gotDamagedAfter = true
 
         if PSC_Debug then
-            print("Hunter " .. destName .. " received damage after event - likely using special ability")
+            print("Hunter " .. destName .. " received damage after event - likely using feign death")
         end
     end
 
