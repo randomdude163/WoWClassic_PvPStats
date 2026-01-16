@@ -176,7 +176,17 @@ local function FilterAchievements(achievements, category)
                 table.insert(filtered, achievement)
 
             elseif prefix == "npc" then
-                table.insert(filtered, achievement)
+                if string.find(achievement.id, "_horde_") then
+                    if playerFaction == "Horde" then
+                        table.insert(filtered, achievement)
+                    end
+                elseif string.find(achievement.id, "_alliance_") then
+                    if playerFaction == "Alliance" then
+                        table.insert(filtered, achievement)
+                    end
+                else
+                    table.insert(filtered, achievement)
+                end
 
             elseif prefix == "time" then
                 table.insert(filtered, achievement)

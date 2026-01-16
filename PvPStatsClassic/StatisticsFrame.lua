@@ -2081,10 +2081,12 @@ function PSC_UpdateStatisticsFrame(frame)
     local yearlyChartHeight = calculateChartHeight(yearlyData)
     local levelChartHeight = calculateChartHeight(levelData)
     local zoneChartHeight = calculateChartHeight(zoneData)
-    local npcChartHeight = calculateChartHeight(npcKillsData, {
-        ["Corporal Keeshan"] = true,
-        ["The Defias Traitor"] = true
-    })
+    local fixedNPCs = {}
+    if UnitFactionGroup("player") == "Horde" then
+        fixedNPCs["Corporal Keeshan"] = true
+        fixedNPCs["The Defias Traitor"] = true
+    end
+    local npcChartHeight = calculateChartHeight(npcKillsData, fixedNPCs)
 
     local yOffset = 0
     createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight)
@@ -2093,9 +2095,11 @@ function PSC_UpdateStatisticsFrame(frame)
     createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight)
 
     yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight)
 
-    yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
+    if npcChartHeight > 45 then
+        createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight)
+        yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
+    end
     createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH,
         genderChartHeight)
 

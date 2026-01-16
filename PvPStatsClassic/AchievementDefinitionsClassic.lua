@@ -8151,7 +8151,7 @@ AchievementSystem.achievementsClassic = {
 
     -- NPC Kills: Corporal Keeshan
     {
-        id = "npc_keeshan_1",
+        id = "npc_horde_keeshan_1",
         title = "Mission Failed",
         description = "Eliminate Corporal Keeshan.",
         iconID = 132293,
@@ -8168,11 +8168,11 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
-        id = "npc_keeshan_25",
+        id = "npc_horde_keeshan_25",
         title = "Jungle Stalker",
         description = "Eliminate Corporal Keeshan 25 times.",
         iconID = 132293,
-        achievementPoints = 20,
+        achievementPoints = 25,
         targetValue = 25,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -8185,11 +8185,11 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
-        id = "npc_keeshan_50",
+        id = "npc_horde_keeshan_50",
         title = "Guerrilla Warfare",
         description = "Eliminate Corporal Keeshan 50 times.",
         iconID = 132293,
-        achievementPoints = 30,
+        achievementPoints = 50,
         targetValue = 50,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -8202,11 +8202,11 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
-        id = "npc_keeshan_100",
+        id = "npc_horde_keeshan_100",
         title = "One Man Army Destroyer",
         description = "Eliminate Corporal Keeshan 100 times.",
         iconID = 132293,
-        achievementPoints = 50,
+        achievementPoints = 100,
         targetValue = 100,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -8221,7 +8221,7 @@ AchievementSystem.achievementsClassic = {
 
     -- NPC Kills: The Defias Traitor
     {
-        id = "npc_defias_traitor_1",
+        id = "npc_horde_defias_traitor_1",
         title = "You Shall Not Pass!",
         description = "Eliminate The Defias Traitor.",
         iconID = 132090,
@@ -8238,11 +8238,11 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
-        id = "npc_defias_traitor_25",
+        id = "npc_horde_defias_traitor_25",
         title = "Escort Disruptor",
         description = "Eliminate The Defias Traitor 25 times.",
         iconID = 132090,
-        achievementPoints = 20,
+        achievementPoints = 25,
         targetValue = 25,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -8255,11 +8255,11 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
-        id = "npc_defias_traitor_50",
+        id = "npc_horde_defias_traitor_50",
         title = "Roadblock",
         description = "Eliminate The Defias Traitor 50 times.",
         iconID = 132090,
-        achievementPoints = 30,
+        achievementPoints = 50,
         targetValue = 50,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -8272,11 +8272,11 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
-        id = "npc_defias_traitor_100",
+        id = "npc_horde_defias_traitor_100",
         title = "Traitor TO The Traitor",
         description = "Eliminate The Defias Traitor 100 times.",
         iconID = 132090,
-        achievementPoints = 50,
+        achievementPoints = 100,
         targetValue = 100,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -8295,7 +8295,7 @@ AchievementSystem.achievementsClassic = {
         title = "Spider Squash",
         description = "Eliminate a Tarantula.",
         iconID = 132185, -- Inv_misc_monster_spider_01
-        achievementPoints = 5,
+        achievementPoints = 10,
         targetValue = 1,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -8312,7 +8312,7 @@ AchievementSystem.achievementsClassic = {
         title = "Arachnophobia",
         description = "Eliminate 10 Tarantulas.",
         iconID = 132185,
-        achievementPoints = 10,
+        achievementPoints = 25,
         targetValue = 10,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -8325,3 +8325,5 @@ AchievementSystem.achievementsClassic = {
         end,
     }
 }
+
+
