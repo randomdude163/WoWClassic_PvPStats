@@ -2,7 +2,7 @@ local addonName, PVPSC = ...
 
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = false
+PSC_Debug = true
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
@@ -163,8 +163,7 @@ end
 PSC_TrackedNPCs = {
     [349] = "Corporal Keeshan",
     [467] = "The Defias Traitor",
-    [116] = "Defias Bandit",
-    [6093] = "Dead-Tooth Jack"
+    [442] = "Tarantula"
 }
 
 function PSC_IsValidTarget(destFlags, destGUID)
