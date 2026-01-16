@@ -1,3 +1,10 @@
+v3.2:
+- Significant performance improvements
+- Added overall K/D ratio to statistics overview
+
+v3.1:
+- Support for TBC Anniversary
+
 v3.0:
 - Added 68 new achievements for TBC!
 - Perfomance improvements when killing a player
