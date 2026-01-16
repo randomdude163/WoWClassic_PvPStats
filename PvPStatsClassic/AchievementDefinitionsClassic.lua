@@ -8147,5 +8147,145 @@ AchievementSystem.achievementsClassic = {
         progress = function(achievement, stats)
             return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_CLASSIC, "Alterac Valley")
         end,
+    },
+
+    -- NPC Kills: Corporal Keeshan
+    {
+        id = "npc_keeshan_1",
+        title = "Mission Failed",
+        description = "Eliminate Corporal Keeshan.",
+        iconID = 132293,
+        achievementPoints = 10,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Keeshan couldn't survive this jungle.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Corporal Keeshan"] or 0
+        end,
+    },
+    {
+        id = "npc_keeshan_25",
+        title = "Jungle Stalker",
+        description = "Eliminate Corporal Keeshan 25 times.",
+        iconID = 132293,
+        achievementPoints = 20,
+        targetValue = 25,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "He keeps coming back, and you keep sending him away.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Corporal Keeshan"] or 0
+        end,
+    },
+    {
+        id = "npc_keeshan_50",
+        title = "Guerrilla Warfare",
+        description = "Eliminate Corporal Keeshan 50 times.",
+        iconID = 132293,
+        achievementPoints = 30,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Redridge is your territory now.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Corporal Keeshan"] or 0
+        end,
+    },
+    {
+        id = "npc_keeshan_100",
+        title = "One Man Army Destroyer",
+        description = "Eliminate Corporal Keeshan 100 times.",
+        iconID = 132293,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You've stopped the Rambo of Redridge permanently.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Corporal Keeshan"] or 0
+        end,
+    },
+
+    -- NPC Kills: The Defias Traitor
+    {
+        id = "npc_defias_traitor_1",
+        title = "You Shall Not Pass!",
+        description = "Eliminate The Defias Traitor.",
+        iconID = 132090,
+        achievementPoints = 10,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "The traitor didn't make it to Moonbrook.",
+        progress = function(achievement, stats)
+            return stats.npcKills["The Defias Traitor"] or 0
+        end,
+    },
+    {
+        id = "npc_defias_traitor_25",
+        title = "Escort Disruptor",
+        description = "Eliminate The Defias Traitor 25 times.",
+        iconID = 132090,
+        achievementPoints = 20,
+        targetValue = 25,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Westfall is safer without snitches... or without you?",
+        progress = function(achievement, stats)
+            return stats.npcKills["The Defias Traitor"] or 0
+        end,
+    },
+    {
+        id = "npc_defias_traitor_50",
+        title = "Roadblock",
+        description = "Eliminate The Defias Traitor 50 times.",
+        iconID = 132090,
+        achievementPoints = 30,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "No one walks down the Westfall road on your watch.",
+        progress = function(achievement, stats)
+            return stats.npcKills["The Defias Traitor"] or 0
+        end,
+    },
+    {
+        id = "npc_defias_traitor_100",
+        title = "Traitor TO The Traitor",
+        description = "Eliminate The Defias Traitor 100 times.",
+        iconID = 132090,
+        achievementPoints = 50,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "You've killed him so many times, he might as well stay in Stormwind.",
+        progress = function(achievement, stats)
+            return stats.npcKills["The Defias Traitor"] or 0
+        end,
     }
 }

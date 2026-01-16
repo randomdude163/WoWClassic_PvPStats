@@ -248,6 +248,7 @@ function PSC_GetStatsForAchievements()
         highestMultiKill = summaryStats.highestMultiKill,
         mostKilledPlayer = summaryStats.mostKilledPlayer,
         mostKilledCount = summaryStats.mostKilledCount,
+        npcKills = charactersToProcess[currentCharacterKey].NPCKills or {},
         totalAchievementPoints = PSC_GetCurrentAchievementPoints(),
         unlockedAchievements = PSC_GetUnlockedAchievementCount()
     }
