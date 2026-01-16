@@ -2,7 +2,7 @@ local addonName, PVPSC = ...
 
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = false
+PSC_Debug = true
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
@@ -160,9 +160,25 @@ local function CleanupRecentPetDamage()
     end
 end
 
-function CombatLogDestFlagsEnemyPlayer(destFlags)
-    return bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
-           bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0
+PSC_TrackedNPCs = {
+    [349] = "Corporal Keeshan",
+    [467] = "The Defias Traitor"
+}
+
+function PSC_IsValidTarget(destFlags, destGUID)
+    if bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 and
+       bit.band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+        return true
+    end
+
+    if destGUID then
+        local npcID = PSC_GetNPCIDFromGUID(destGUID)
+        if npcID and PSC_TrackedNPCs[npcID] then
+            return true
+        end
+    end
+
+    return false
 end
 
 local function HandlePlayerDamageEvent(sourceGUID, sourceName, destGUID, destName, param1, param4)
@@ -275,8 +291,16 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     end
 
     if countKill then
-        PSC_RecentlyCountedKills[destGUID] = GetTime()
-        PSC_RegisterPlayerKill(destName, sourceName, sourceGUID)
+        local npcID = PSC_GetNPCIDFromGUID(destGUID)
+        if npcID and PSC_TrackedNPCs[npcID] then
+             -- Mobs tracked by ID are handled exclusively in UnitDied to ensure player participation
+        else
+            local unitType = strsplit("-", destGUID)
+            if unitType == "Player" then
+                PSC_RecentlyCountedKills[destGUID] = GetTime()
+                PSC_RegisterPlayerKill(destName, sourceName, sourceGUID)
+            end
+        end
     end
 end
 
@@ -323,10 +347,29 @@ local function HandleUnitDiedEvent(destGUID, destName)
         end
 
         if countKill then
-            PSC_RecentlyCountedKills[destGUID] = GetTime()
-            PSC_RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
-            RecentPetDamage[destGUID] = nil
-            return
+            local npcID = PSC_GetNPCIDFromGUID(destGUID)
+            if npcID and PSC_TrackedNPCs[npcID] then
+                -- For tracked NPCs, only player's own pet counts as a Killing Blow here.
+                -- Party pet kills are ignored here and fall through to the assist check to verify participation.
+                if petDamage.ownerGUID == PSC_PlayerGUID then
+                    PSC_RecentlyCountedKills[destGUID] = GetTime()
+                    PSC_RegisterNPCKill(PSC_TrackedNPCs[npcID], npcID)
+                end
+            else
+                local unitType = strsplit("-", destGUID)
+                if unitType == "Player" then
+                    PSC_RecentlyCountedKills[destGUID] = GetTime()
+                    PSC_RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
+                end
+            end
+
+            -- If we registered a kill (NPC or Player), we return.
+            -- If we skipped (Party Pet NPC KB), we continue to allow assist check.
+            if (npcID and PSC_TrackedNPCs[npcID] and petDamage.ownerGUID == PSC_PlayerGUID) or
+               (npcID == nil and strsplit("-", destGUID) == "Player") then
+                RecentPetDamage[destGUID] = nil
+                return
+            end
         end
     end
 
@@ -345,7 +388,15 @@ local function HandleUnitDiedEvent(destGUID, destName)
             end
 
             PSC_RecentlyCountedKills[destGUID] = GetTime()
-            PSC_RegisterPlayerKill(destName, "Assist", nil)
+            local npcID = PSC_GetNPCIDFromGUID(destGUID)
+            if npcID and PSC_TrackedNPCs[npcID] then
+                PSC_RegisterNPCKill(PSC_TrackedNPCs[npcID], npcID)
+            else
+                local unitType = strsplit("-", destGUID)
+                if unitType == "Player" then
+                    PSC_RegisterPlayerKill(destName, "Assist", nil)
+                end
+            end
             PSC_RecentPlayerDamage[destGUID] = nil
         end
     end
@@ -421,7 +472,7 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if CombatLogDestFlagsEnemyPlayer(destFlags) then
+    if PSC_IsValidTarget(destFlags, destGUID) then
         HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
         HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
     end
@@ -448,7 +499,7 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if combatEvent == "PARTY_KILL" and CombatLogDestFlagsEnemyPlayer(destFlags) then
+    if combatEvent == "PARTY_KILL" and PSC_IsValidTarget(destFlags, destGUID) then
         local isScheduled = PSC_ScheduleHunterKillValidation(destGUID, destName, "PARTY_KILL", {
             sourceGUID = sourceGUID,
             sourceName = sourceName
@@ -459,7 +510,7 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if combatEvent == "UNIT_DIED" and CombatLogDestFlagsEnemyPlayer(destFlags) then
+    if combatEvent == "UNIT_DIED" and PSC_IsValidTarget(destFlags, destGUID) then
         local isScheduled = PSC_ScheduleHunterKillValidation(destGUID, destName, "UNIT_EVENT", {})
 
         if not isScheduled then

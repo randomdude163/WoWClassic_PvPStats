@@ -139,6 +139,7 @@ function PSC_StartIncrementalAchievementsCalculation()
                 highestMultiKill = summaryStats.highestMultiKill,
                 mostKilledPlayer = summaryStats.mostKilledPlayer,
                 mostKilledCount = summaryStats.mostKilledCount,
+                npcKills = charactersToProcess[currentCharacterKey].NPCKills or {},
                 totalAchievementPoints = PSC_GetCurrentAchievementPoints(),
                 unlockedAchievements = PSC_GetUnlockedAchievementCount()
             }
@@ -1587,4 +1588,14 @@ function PSC_CalculateTimePeriodBoundaries()
         monthStart = monthStart,
         yearStart = yearStart
     }
+end
+
+function PSC_GetNPCIDFromGUID(guid)
+    if not guid then return nil end
+    -- GUID format: Creature-0-Server-Instance-Zone-NPCID-Spawn
+    local unitType, _, _, _, _, npcID = strsplit("-", guid)
+    if unitType == "Creature" or unitType == "Vehicle" then
+        return tonumber(npcID)
+    end
+    return nil
 end

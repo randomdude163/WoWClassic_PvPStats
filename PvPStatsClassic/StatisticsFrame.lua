@@ -108,6 +108,7 @@ local UI = {
     TOP_PADDING = 40,
     LEFT_SCROLL_PADDING = 20,
     ZONE_NAME_WIDTH = 160,
+    NPC_NAME_WIDTH = 130,
     STANDARD_NAME_WIDTH = 80
 }
 
@@ -303,10 +304,12 @@ local function getClassColor(class)
     end
 end
 
-local function calculateChartHeight(data)
+local function calculateChartHeight(data, includeZeroKeys)
     local entries = 0
-    for _, numKills in pairs(data) do
+    for key, numKills in pairs(data) do
         if numKills > 0 then
+            entries = entries + 1
+        elseif includeZeroKeys and includeZeroKeys[key] then
             entries = entries + 1
         end
     end
@@ -340,13 +343,25 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         nameWidth = UI.ZONE_NAME_WIDTH
         barX = nameWidth + 10
         maxBarWidth = UI.CHART.WIDTH - nameWidth - 110
+    elseif titleType == "npc" then
+        nameWidth = UI.NPC_NAME_WIDTH
+        barX = nameWidth + 10
+        maxBarWidth = UI.CHART.WIDTH - nameWidth - 110
     else
         nameWidth = UI.STANDARD_NAME_WIDTH
         barX = 90
         maxBarWidth = UI.CHART.WIDTH - 190
     end
 
-    barWidth = (entry.value / maxValue) * maxBarWidth
+    if maxValue > 0 then
+        barWidth = (entry.value / maxValue) * maxBarWidth
+    else
+        barWidth = 0.5 -- Very thin line if no kills at all (shouldn't really happen with filter, but for safety)
+    end
+
+    if titleType == "npc" and barWidth < 1 then
+         barWidth = 1 -- Minimum visibility
+    end
 
     local barY = -(index * (UI.BAR.HEIGHT + UI.BAR.SPACING) + UI.TITLE_SPACING)
 
@@ -381,7 +396,7 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     barButton:SetPoint("TOPLEFT", 0, barY)
 
     -- Only add highlight and click functionality for clickable chart types
-    local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month" and titleType ~= "year"
+    local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month" and titleType ~= "year" and titleType ~= "npc"
 
     if isClickable then
         local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
@@ -509,6 +524,28 @@ local function createBar(container, entry, index, maxValue, total, titleType)
             g = 0.8,
             b = 0.4
         }
+    elseif titleType == "npc" then
+        if entry.key == "Corporal Keeshan" then
+            -- Redridge Mountains orange
+            color = {
+                r = 0.85,
+                g = 0.35,
+                b = 0.10
+            }
+        elseif entry.key == "The Defias Traitor" then
+            -- Westfall yellowish/tan
+            color = {
+                r = 0.90,
+                g = 0.75,
+                b = 0.40
+            }
+        else
+            color = {
+                r = 0.8,
+                g = 0.8,
+                b = 0.8
+            }
+        end
     else
         color = titleType and titleType[entry.key] or {
             r = 0.8,
@@ -524,9 +561,11 @@ local function createBar(container, entry, index, maxValue, total, titleType)
 
     local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
-    valueLabel:SetText(entry.value .. " (" .. string.format("%.1f", entry.value / total * 100) .. "%)")
 
-    local valueText = entry.value .. " (" .. string.format("%.1f", entry.value / total * 100) .. "%)"
+    local percentage = (total > 0) and (entry.value / total * 100) or 0
+    local valueText = entry.value .. " (" .. string.format("%.1f", percentage) .. "%)"
+    valueLabel:SetText(valueText)
+
     local estimatedTextWidth = string.len(valueText) * 6
 
     if barX + barWidth + estimatedTextWidth > (UI.CHART.WIDTH - 25) then
@@ -540,7 +579,7 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     local sortedData = sortByValue(data, true)
     local filteredData = {}
     for _, entry in ipairs(sortedData) do
-        if entry.value > 0 then
+        if entry.value > 0 or title == "NPC Kills" then
             table.insert(filteredData, entry)
         end
     end
@@ -609,6 +648,8 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
         titleType = "unknownLevelClass"
     elseif title == "Kills by Zone" then
         titleType = "zone"
+    elseif title == "NPC Kills" then
+        titleType = "npc"
     elseif title == "Kills by Level" then
         titleType = "level"
     elseif title == "Kills by Hour of Day" then
@@ -1600,6 +1641,10 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         ["No Guild"] = 0
     }
     local guildData = {}
+    local npcKillsData = {
+        ["Corporal Keeshan"] = 0,
+        ["The Defias Traitor"] = 0
+    }
 
     -- Ensure all classes, races, genders are present with at least 0
     local allClasses = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
@@ -1622,6 +1667,12 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     for _, characterData in pairs(charactersToProcess) do
+        if characterData.NPCKills then
+            for npcName, kills in pairs(characterData.NPCKills) do
+                npcKillsData[npcName] = (npcKillsData[npcName] or 0) + kills
+            end
+        end
+
         if characterData.Kills then
             for nameWithLevel, killData in pairs(characterData.Kills) do
                 if killData.kills and killData.kills > 0 then
@@ -1697,7 +1748,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData
 end
 
 function PSC_CalculateHourlyStatistics(charactersToProcess)
@@ -2011,7 +2062,7 @@ function PSC_UpdateStatisticsFrame(frame)
         end
     end
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
 
     local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
@@ -2032,6 +2083,12 @@ function PSC_UpdateStatisticsFrame(frame)
     local yearlyChartHeight = calculateChartHeight(yearlyData)
     local levelChartHeight = calculateChartHeight(levelData)
     local zoneChartHeight = calculateChartHeight(zoneData)
+    local fixedNPCs = {}
+    if UnitFactionGroup("player") == "Horde" then
+        fixedNPCs["Corporal Keeshan"] = true
+        fixedNPCs["The Defias Traitor"] = true
+    end
+    local npcChartHeight = calculateChartHeight(npcKillsData, fixedNPCs)
 
     local yOffset = 0
     createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight)
@@ -2040,6 +2097,11 @@ function PSC_UpdateStatisticsFrame(frame)
     createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight)
 
     yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
+
+    if npcChartHeight > 45 then
+        createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight)
+        yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
+    end
     createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH,
         genderChartHeight)
 

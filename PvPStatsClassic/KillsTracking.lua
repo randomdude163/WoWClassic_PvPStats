@@ -354,3 +354,20 @@ function PSC_CleanupRecentPlayerDamage()
     PSC_RecentPlayerDamage = {}
 end
 
+function PSC_RegisterNPCKill(npcName, npcID)
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+
+    if not characterData.NPCKills then
+        characterData.NPCKills = {}
+    end
+
+    characterData.NPCKills[npcName] = (characterData.NPCKills[npcName] or 0) + 1
+
+    if PSC_Debug then
+        print("[PvPStats]: Recorded kill for NPC: " .. npcName .. " (ID: " .. npcID .. ")")
+    end
+
+    PSC_StartIncrementalAchievementsCalculation()
+end
+
