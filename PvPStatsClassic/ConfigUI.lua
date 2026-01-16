@@ -370,7 +370,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Count assist kills in Battleground Mode")
         GameTooltip:AddLine(
-            "Kills are counted count if you damage a player or cast harmful spells on them and someone else does the killing blow.",
+            "If checked, kills are also counted if you damage a player or cast harmful spells on them and someone else does the killing blow.",
             1, 1, 1, true)
         GameTooltip:Show()
     end)
