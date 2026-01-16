@@ -293,8 +293,16 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
     end
 
     if countKill then
-        PSC_RecentlyCountedKills[destGUID] = GetTime()
-        PSC_RegisterPlayerKill(destName, sourceName, sourceGUID)
+        local npcID = PSC_GetNPCIDFromGUID(destGUID)
+        if npcID and PSC_TrackedNPCs[npcID] then
+             -- Mobs tracked by ID are handled exclusively in UnitDied to ensure player participation
+        else
+            local unitType = strsplit("-", destGUID)
+            if unitType == "Player" then
+                PSC_RecentlyCountedKills[destGUID] = GetTime()
+                PSC_RegisterPlayerKill(destName, sourceName, sourceGUID)
+            end
+        end
     end
 end
 
@@ -341,15 +349,29 @@ local function HandleUnitDiedEvent(destGUID, destName)
         end
 
         if countKill then
-            PSC_RecentlyCountedKills[destGUID] = GetTime()
             local npcID = PSC_GetNPCIDFromGUID(destGUID)
             if npcID and PSC_TrackedNPCs[npcID] then
-                PSC_RegisterNPCKill(PSC_TrackedNPCs[npcID], npcID)
+                -- For tracked NPCs, only player's own pet counts as a Killing Blow here.
+                -- Party pet kills are ignored here and fall through to the assist check to verify participation.
+                if petDamage.ownerGUID == PSC_PlayerGUID then
+                    PSC_RecentlyCountedKills[destGUID] = GetTime()
+                    PSC_RegisterNPCKill(PSC_TrackedNPCs[npcID], npcID)
+                end
             else
-                PSC_RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
+                local unitType = strsplit("-", destGUID)
+                if unitType == "Player" then
+                    PSC_RecentlyCountedKills[destGUID] = GetTime()
+                    PSC_RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
+                end
             end
-            RecentPetDamage[destGUID] = nil
-            return
+
+            -- If we registered a kill (NPC or Player), we return.
+            -- If we skipped (Party Pet NPC KB), we continue to allow assist check.
+            if (npcID and PSC_TrackedNPCs[npcID] and petDamage.ownerGUID == PSC_PlayerGUID) or
+               (npcID == nil and strsplit("-", destGUID) == "Player") then
+                RecentPetDamage[destGUID] = nil
+                return
+            end
         end
     end
 
@@ -372,7 +394,10 @@ local function HandleUnitDiedEvent(destGUID, destName)
             if npcID and PSC_TrackedNPCs[npcID] then
                 PSC_RegisterNPCKill(PSC_TrackedNPCs[npcID], npcID)
             else
-                PSC_RegisterPlayerKill(destName, "Assist", nil)
+                local unitType = strsplit("-", destGUID)
+                if unitType == "Player" then
+                    PSC_RegisterPlayerKill(destName, "Assist", nil)
+                end
             end
             PSC_RecentPlayerDamage[destGUID] = nil
         end
