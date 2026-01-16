@@ -293,12 +293,7 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
 
     if countKill then
         PSC_RecentlyCountedKills[destGUID] = GetTime()
-        local npcID = PSC_GetNPCIDFromGUID(destGUID)
-        if npcID and PSC_TrackedNPCs[npcID] then
-            PSC_RegisterNPCKill(PSC_TrackedNPCs[npcID], npcID)
-        else
-            PSC_RegisterPlayerKill(destName, sourceName, sourceGUID)
-        end
+        PSC_RegisterPlayerKill(destName, sourceName, sourceGUID)
     end
 end
 
