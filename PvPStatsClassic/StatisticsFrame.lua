@@ -539,6 +539,13 @@ local function createBar(container, entry, index, maxValue, total, titleType)
                 g = 0.75,
                 b = 0.40
             }
+        elseif entry.key == "Defias Messenger" then
+            -- Defias Red
+            color = {
+                r = 0.80,
+                g = 0.20,
+                b = 0.20
+            }
         else
             color = {
                 r = 0.8,
@@ -1643,7 +1650,8 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     local guildData = {}
     local npcKillsData = {
         ["Corporal Keeshan"] = 0,
-        ["The Defias Traitor"] = 0
+        ["The Defias Traitor"] = 0,
+        ["Defias Messenger"] = 0
     }
 
     -- Ensure all classes, races, genders are present with at least 0

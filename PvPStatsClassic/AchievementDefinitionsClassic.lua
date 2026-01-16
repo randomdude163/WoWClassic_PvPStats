@@ -8288,6 +8288,76 @@ AchievementSystem.achievementsClassic = {
             return stats.npcKills["The Defias Traitor"] or 0
         end,
     },
+
+    -- NPC Kills: Defias Messenger
+    {
+        id = "npc_horde_defias_messenger_1",
+        title = "Message Intercepted",
+        description = "Eliminate Defias Messenger.",
+        iconID = 133035,
+        achievementPoints = 10,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "The message never arrived.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Defias Messenger"] or 0
+        end,
+    },
+    {
+        id = "npc_horde_defias_messenger_25",
+        title = "Postman Down",
+        description = "Eliminate Defias Messenger 25 times.",
+        iconID = 133035,
+        achievementPoints = 25,
+        targetValue = 25,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Neither snow nor rain nor heat... but you stopped him.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Defias Messenger"] or 0
+        end,
+    },
+    {
+        id = "npc_horde_defias_messenger_50",
+        title = "Dead Letter Office",
+        description = "Eliminate Defias Messenger 50 times.",
+        iconID = 133035,
+        achievementPoints = 50,
+        targetValue = 50,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "He's got a lot of undelivered mail now.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Defias Messenger"] or 0
+        end,
+    },
+    {
+        id = "npc_horde_defias_messenger_100",
+        title = "Kill the Messenger",
+        description = "Eliminate Defias Messenger 100 times.",
+        iconID = 133035,
+        achievementPoints = 100,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "They say don't shoot the messenger. You disagree.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Defias Messenger"] or 0
+        end,
+    },
 }
 
 
