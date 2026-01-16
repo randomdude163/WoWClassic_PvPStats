@@ -427,7 +427,10 @@ local function HandleCombatLogEvent()
     end
 
     if destGUID == PSC_PlayerGUID then
-        if sourceGUID == PSC_PlayerGUID then return end
+        if sourceGUID == PSC_PlayerGUID then
+            -- Ignore self-damage events
+            return
+        end
 
         if bit.band(sourceFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER) > 0 then
             local spellId, spellName
