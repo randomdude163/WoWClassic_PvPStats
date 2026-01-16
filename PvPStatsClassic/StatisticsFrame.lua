@@ -561,9 +561,11 @@ local function createBar(container, entry, index, maxValue, total, titleType)
 
     local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
-    valueLabel:SetText(entry.value .. " (" .. string.format("%.1f", entry.value / total * 100) .. "%)")
 
-    local valueText = entry.value .. " (" .. string.format("%.1f", entry.value / total * 100) .. "%)"
+    local percentage = (total > 0) and (entry.value / total * 100) or 0
+    local valueText = entry.value .. " (" .. string.format("%.1f", percentage) .. "%)"
+    valueLabel:SetText(valueText)
+
     local estimatedTextWidth = string.len(valueText) * 6
 
     if barX + barWidth + estimatedTextWidth > (UI.CHART.WIDTH - 25) then
