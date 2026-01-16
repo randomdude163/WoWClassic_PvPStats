@@ -8287,5 +8287,41 @@ AchievementSystem.achievementsClassic = {
         progress = function(achievement, stats)
             return stats.npcKills["The Defias Traitor"] or 0
         end,
+    },
+
+    -- NPC Kills: Tarantula
+    {
+        id = "npc_tarantula_1",
+        title = "Spider Squash",
+        description = "Eliminate a Tarantula.",
+        iconID = 132185, -- Inv_misc_monster_spider_01
+        achievementPoints = 5,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Ew, a spider!",
+        progress = function(achievement, stats)
+            return stats.npcKills["Tarantula"] or 0
+        end,
+    },
+    {
+        id = "npc_tarantula_10",
+        title = "Arachnophobia",
+        description = "Eliminate 10 Tarantulas.",
+        iconID = 132185,
+        achievementPoints = 10,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "The only good spider is a dead spider.",
+        progress = function(achievement, stats)
+            return stats.npcKills["Tarantula"] or 0
+        end,
     }
 }

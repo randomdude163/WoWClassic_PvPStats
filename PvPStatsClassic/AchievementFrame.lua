@@ -175,6 +175,9 @@ local function FilterAchievements(achievements, category)
             elseif prefix == "kills" then
                 table.insert(filtered, achievement)
 
+            elseif prefix == "npc" then
+                table.insert(filtered, achievement)
+
             elseif prefix == "time" then
                 table.insert(filtered, achievement)
 
@@ -627,7 +630,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "Time", "Seasonal", "Name", "Gender", "BG", "Zone", "Cities", "Streaks", "Bonus", "Almost", "Latest"}
+    local tabNames = {"Class", "Race", "Kills", "NPC", "Time", "Seasonal", "Name", "Gender", "BG", "Zone", "Cities", "Streaks", "Bonus", "Almost", "Latest"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 
