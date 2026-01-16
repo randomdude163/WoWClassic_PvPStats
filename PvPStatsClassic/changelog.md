@@ -1,3 +1,6 @@
+v3.3:
+- Added achievements for Redridge and Westfall escort quests (Horde only)
+
 v3.2:
 - Significant performance improvements
 - Added overall K/D ratio to statistics overview
