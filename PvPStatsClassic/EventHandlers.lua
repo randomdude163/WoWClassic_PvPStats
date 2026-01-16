@@ -161,6 +161,7 @@ local function CleanupRecentPetDamage()
 end
 
 PSC_TrackedNPCs = {
+    [116] = "Defias Bandit",
     [349] = "Corporal Keeshan",
     [467] = "The Defias Traitor",
     [442] = "Tarantula"
