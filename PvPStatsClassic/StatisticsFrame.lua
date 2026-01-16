@@ -1358,13 +1358,8 @@ local function createSummaryStats(parent, x, y, width, height)
     local spacing_between_sections = 10
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
-    -- Use cached summary stats instead of recalculating
-    local stats = PSC_GetCachedSummaryStats()
-    if not stats then
-        -- Fallback to calculation if cache not available
-        local charactersToProcess = GetCharactersToProcessForStatistics()
-        stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-    end
+    local charactersToProcess = GetCharactersToProcessForStatistics()
+    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local statY = -22
 
     statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
@@ -2016,23 +2011,8 @@ function PSC_UpdateStatisticsFrame(frame)
         end
     end
 
-    -- Use cached bar chart stats instead of recalculating
-    local cachedBarChartStats = PSC_GetCachedBarChartStats()
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
-    if cachedBarChartStats then
-        classData = cachedBarChartStats.classData
-        raceData = cachedBarChartStats.raceData
-        genderData = cachedBarChartStats.genderData
-        unknownLevelClassData = cachedBarChartStats.unknownLevelClassData
-        zoneData = cachedBarChartStats.zoneData
-        levelData = cachedBarChartStats.levelData
-        guildStatusData = cachedBarChartStats.guildStatusData
-        guildData = cachedBarChartStats.guildData
-    else
-        -- Fallback to calculation if cache not available
-        classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
-            PSC_CalculateBarChartStatistics(charactersToProcess)
-    end
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
+        PSC_CalculateBarChartStatistics(charactersToProcess)
 
     local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
     local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
