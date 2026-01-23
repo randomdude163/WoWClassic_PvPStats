@@ -2169,12 +2169,12 @@ function PSC_UpdateStatisticsFrame(frame)
     buttonSeparatorLine:SetHeight(1)
     buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
-    -- Button container at bottom right in 2x2 grid
+    -- Button container at bottom right in 3 rows with 2 columns
     local buttonContainer = CreateFrame("Frame", nil, frame)
     local buttonWidth = 180
     local buttonHeight = 30
     local buttonSpacing = 10
-    buttonContainer:SetSize((buttonWidth * 2) + buttonSpacing, (buttonHeight * 2) + buttonSpacing)
+    buttonContainer:SetSize((buttonWidth * 2) + buttonSpacing, (buttonHeight * 3) + (buttonSpacing * 2))
     buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 20)
     frame.buttonContainer = buttonContainer
 
@@ -2196,19 +2196,28 @@ function PSC_UpdateStatisticsFrame(frame)
         PSC_ToggleAchievementFrame()
     end)
 
-    -- Bottom left button: Kill History
+    -- Middle left button: Kill History
     local killHistoryButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
     killHistoryButton:SetSize(buttonWidth, buttonHeight)
-    killHistoryButton:SetPoint("BOTTOMLEFT", buttonContainer, "BOTTOMLEFT", 0, 0)
+    killHistoryButton:SetPoint("TOPLEFT", settingsButton, "BOTTOMLEFT", 0, -buttonSpacing)
     killHistoryButton:SetText("Show Kill History")
     killHistoryButton:SetScript("OnClick", function()
         PSC_CreateKillsListFrame()
     end)
 
-    -- Bottom right button: Killstreak
+    -- Middle right button: Leaderboard
+    local leaderboardButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    leaderboardButton:SetSize(buttonWidth, buttonHeight)
+    leaderboardButton:SetPoint("TOPRIGHT", achievementsButton, "BOTTOMRIGHT", 0, -buttonSpacing)
+    leaderboardButton:SetText("Show Leaderboard")
+    leaderboardButton:SetScript("OnClick", function()
+        PSC_CreateLeaderboardFrame()
+    end)
+
+    -- Bottom left button: Killstreak
     local killstreakButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
     killstreakButton:SetSize(buttonWidth, buttonHeight)
-    killstreakButton:SetPoint("BOTTOMRIGHT", buttonContainer, "BOTTOMRIGHT", 0, 0)
+    killstreakButton:SetPoint("TOPLEFT", killHistoryButton, "BOTTOMLEFT", 0, -buttonSpacing)
     killstreakButton:SetText("Show Kill Streak")
     killstreakButton:SetScript("OnClick", function()
         PSC_CreateKillStreakPopup()

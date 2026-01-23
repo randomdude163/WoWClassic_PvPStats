@@ -325,6 +325,10 @@ function PSC_GetCharacterKey()
     return PSC_CharacterName .. "-" .. PSC_RealmName
 end
 
+function PSC_GetAddonVersion()
+    return "3.3"
+end
+
 function GetMultiKillText(count)
     if count < 2 then return "" end
 
