@@ -392,6 +392,8 @@ function Network:BuildDetailedStats()
     local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
     local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
     
+    D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
+    
     return {
         summary = stats,
         classData = classData,
@@ -630,6 +632,13 @@ function Network:OnDetailedStatsResponse(playerName, chunkIndex, totalChunks, ch
         -- Deserialize
         local detailedStats = DeserializeDetailedStats(fullPayload)
         detailedStats.timestamp = time()
+        
+        -- Debug: Check what we received
+        if detailedStats.summary then
+            D("Received stats - currentKillStreak:", detailedStats.summary.currentKillStreak, "mostKilledPlayer:", detailedStats.summary.mostKilledPlayer)
+        else
+            D("WARNING: No summary in received stats!")
+        end
         
         -- Cache the data
         self.detailedStatsCache[playerName] = detailedStats
