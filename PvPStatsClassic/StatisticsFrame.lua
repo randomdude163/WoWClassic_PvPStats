@@ -2251,9 +2251,7 @@ function PSC_ShowPlayerDetailedStats(playerName, detailedStats)
     -- Add close button
     viewerFrame.CloseButton:SetScript("OnClick", function()
         viewerFrame:Hide()
-        if PSC_FrameManager then
-            PSC_FrameManager:UnregisterFrame("PlayerStatsViewer_" .. playerName)
-        end
+        -- Frame manager will handle cleanup automatically when frame is hidden
     end)
     
     -- Register with frame manager

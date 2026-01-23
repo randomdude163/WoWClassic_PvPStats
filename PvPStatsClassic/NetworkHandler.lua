@@ -379,9 +379,10 @@ function Network:Initialize()
     
     D("Network handler initialized - Addon v" .. PSC_GetAddonVersion())
     
-    -- Send initial broadcast after a short delay
-    C_Timer.After(5, function()
+    -- Send immediate broadcast on login (so everyone gets your stats right away)
+    C_Timer.After(2, function()
         Network:BroadcastStats()
+        D("Sent initial broadcast on login")
         
         -- Show helpful message on first initialization
         if not PSC_DB.NetworkInitialized then
