@@ -42,7 +42,9 @@ local function SerializeData(data)
         tostring(data.totalKills or 0),
         tostring(data.uniqueKills or 0),
         data.kdRatio or "0.00",
+        tostring(data.currentStreak or 0),
         tostring(data.bestStreak or 0),
+        data.mostKilled or "None",
         data.avgPerDay or "0.0",
         data.achievements or "0/0",
         tostring(data.achievementPoints or 0),
@@ -63,8 +65,8 @@ local function DeserializeData(payload)
         table.insert(parts, part)
     end
     
-    if #parts < 14 then
-        D("Invalid payload, not enough fields:", #parts)
+    if #parts ~= 17 then
+        D("Invalid payload, expected 17 fields but got:", #parts)
         return nil
     end
     
@@ -76,14 +78,16 @@ local function DeserializeData(payload)
         totalKills = tonumber(parts[5]) or 0,
         uniqueKills = tonumber(parts[6]) or 0,
         kdRatio = parts[7],
-        bestStreak = tonumber(parts[8]) or 0,
-        avgPerDay = parts[9],
-        achievements = parts[10],
-        achievementPoints = tonumber(parts[11]) or 0,
-        addonVersion = parts[12],
-        timestamp = tonumber(parts[13]) or 0,
-        realm = parts[14],
-        faction = parts[15]
+        currentStreak = tonumber(parts[8]) or 0,
+        bestStreak = tonumber(parts[9]) or 0,
+        mostKilled = parts[10] or "None",
+        avgPerDay = parts[11],
+        achievements = parts[12],
+        achievementPoints = tonumber(parts[13]) or 0,
+        addonVersion = parts[14],
+        timestamp = tonumber(parts[15]) or 0,
+        realm = parts[16],
+        faction = parts[17]
     }
 end
 
@@ -421,6 +425,7 @@ function Network:BuildDetailedStats()
         weekdayData = weekdayData,
         monthlyData = monthlyData,
         yearlyData = yearlyData,
+        -- Note: guildData intentionally excluded to reduce payload size
         playerName = UnitName("player"),
         level = UnitLevel("player"),
         class = select(2, UnitClass("player")),

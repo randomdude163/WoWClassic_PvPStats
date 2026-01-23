@@ -2152,12 +2152,17 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight)
 
-    -- Add Guild Kills table in left panel after Kills by Zone
-    yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
-    frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
-
-    local totalHeight = -(yOffset) + UI.GUILD_LIST.HEIGHT + 25
-    leftScrollContent:SetHeight(totalHeight)
+    -- Add Guild Kills table in left panel after Kills by Zone (only for local player)
+    if not isExternalPlayer then
+        yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
+        frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
+        local totalHeight = -(yOffset) + UI.GUILD_LIST.HEIGHT + 25
+        leftScrollContent:SetHeight(totalHeight)
+    else
+        -- For external players, no guild table
+        local totalHeight = -(yOffset - zoneChartHeight) + 25
+        leftScrollContent:SetHeight(totalHeight)
+    end
 
     local summaryStatsWidth = 380
     local summaryStatsHeight = 500
