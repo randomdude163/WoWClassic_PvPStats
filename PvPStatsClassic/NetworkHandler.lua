@@ -7,7 +7,7 @@ local Network = PVPSC.Network
 local PREFIX = "PVPSC_LB"  -- PvP Stats Classic Leaderboard
 local PREFIX_REQUEST = "PVPSC_REQ"  -- Detailed stats request
 local PREFIX_RESPONSE = "PVPSC_RES"  -- Detailed stats response
-local DEBUG = false
+local DEBUG = true  -- Enable debug to see what's happening
 
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
@@ -464,6 +464,8 @@ function Network:RequestDetailedStats(playerName, callback)
         return false
     end
     
+    D("=== RequestDetailedStats called for:", playerName)
+    
     -- Check if we already have cached data
     if self.detailedStatsCache[playerName] then
         local age = time() - (self.detailedStatsCache[playerName].timestamp or 0)
@@ -485,6 +487,8 @@ function Network:RequestDetailedStats(playerName, callback)
         end
         return true
     end
+    
+    D("Creating new request for", playerName)
     
     -- Create new request
     self.pendingRequests[playerName] = {
@@ -544,6 +548,8 @@ function Network:OnDetailedStatsRequest(requester, targetPlayer)
     local detailedStats = self:BuildDetailedStats()
     local payload = SerializeDetailedStats(detailedStats)
     
+    D("Payload size:", #payload, "bytes")
+    
     -- Split into chunks if needed
     local chunks = {}
     local chunkSize = self.CHUNK_SIZE
@@ -551,11 +557,19 @@ function Network:OnDetailedStatsRequest(requester, targetPlayer)
         table.insert(chunks, string.sub(payload, i, i + chunkSize - 1))
     end
     
-    -- Send chunks
-    for i, chunk in ipairs(chunks) do
-        local response = playerName .. "|" .. i .. "|" .. #chunks .. "|" .. chunk
+    D("Sending", #chunks, "chunks")
+    
+    -- Send chunks with delays to avoid flooding
+    local function sendChunk(index)
+        if index > #chunks then
+            D("All chunks sent")
+            return
+        end
         
-        -- Try to send to the requester via available channels
+        local chunk = chunks[index]
+        local response = playerName .. "|" .. index .. "|" .. #chunks .. "|" .. chunk
+        
+        -- Try to send via available channels
         if IsInGuild() then
             C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "GUILD")
         end
@@ -566,11 +580,18 @@ function Network:OnDetailedStatsRequest(requester, targetPlayer)
         end
         C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "YELL")
         
-        -- Small delay between chunks to avoid flooding
-        if i < #chunks then
-            C_Timer.After(0.05 * i, function() end)
+        D("Sent chunk", index, "of", #chunks)
+        
+        -- Schedule next chunk
+        if index < #chunks then
+            C_Timer.After(0.1, function()
+                sendChunk(index + 1)
+            end)
         end
     end
+    
+    -- Start sending chunks
+    sendChunk(1)
     
     D("Sent detailed stats response in", #chunks, "chunks to", requester)
 end
