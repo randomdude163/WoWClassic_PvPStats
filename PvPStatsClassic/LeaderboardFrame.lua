@@ -409,6 +409,12 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
 end
 
 local function GetLeaderboardData()
+    -- Use network handler to get all leaderboard data (local + shared)
+    if PVPSC.Network and PVPSC.Network.GetAllLeaderboardData then
+        return PVPSC.Network:GetAllLeaderboardData()
+    end
+    
+    -- Fallback to local-only data if network is not initialized
     local leaderboardData = {}
     
     -- Get current player's stats
@@ -481,8 +487,6 @@ local function GetLeaderboardData()
         achievementPoints = achievementPoints,
         addonVersion = addonVersion
     })
-    
-    -- TODO: Add other players' data when sharing feature is implemented
     
     return leaderboardData
 end

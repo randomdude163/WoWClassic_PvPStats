@@ -21,6 +21,7 @@ KillMilestones.lua
 PlayerDetailFrame.lua
 KillsListFrameFilters.lua
 KillsListFrame.lua
+NetworkHandler.lua
 LeaderboardFrame.lua
 KillsTracking.lua
 Killstreaks.lua
