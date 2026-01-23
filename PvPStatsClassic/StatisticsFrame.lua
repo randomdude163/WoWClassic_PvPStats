@@ -5,87 +5,6 @@ local AchievementSystem = PVPSC.AchievementSystem
 
 local statisticsFrame = nil
 
-local function CreateGoldHighlight(parent, height)
-    local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
-    highlight:SetAllPoints(true)
-
-    local useNewAPI = highlight.SetGradient and type(highlight.SetGradient) == "function" and pcall(function()
-        highlight:SetGradient("HORIZONTAL", {
-            r = 1,
-            g = 1,
-            b = 1,
-            a = 1
-        }, {
-            r = 1,
-            g = 1,
-            b = 1,
-            a = 1
-        })
-        return true
-    end)
-
-    if useNewAPI then
-        highlight:SetColorTexture(1, 0.82, 0, 0.6)
-        pcall(function()
-            highlight:SetGradient("HORIZONTAL", {
-                r = 1,
-                g = 0.82,
-                b = 0,
-                a = 0.3
-            }, {
-                r = 1,
-                g = 0.82,
-                b = 0,
-                a = 0.8
-            })
-        end)
-    else
-        highlight:SetColorTexture(1, 0.82, 0, 0.5)
-
-        local leftGradient = parent:CreateTexture(nil, "HIGHLIGHT")
-        leftGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
-        leftGradient:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-        leftGradient:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-        leftGradient:SetWidth(parent:GetWidth() / 2)
-        leftGradient:SetHeight(height)
-
-        pcall(function()
-            leftGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.3, 1, 0.82, 0, 0.7)
-        end)
-
-        if leftGradient:GetVertexColor() == 1 and select(2, leftGradient:GetVertexColor()) == 1 then
-            leftGradient:SetVertexColor(1, 0.82, 0, 0.6)
-        end
-
-        local rightGradient = parent:CreateTexture(nil, "HIGHLIGHT")
-        rightGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
-        rightGradient:SetPoint("TOPLEFT", leftGradient, "TOPRIGHT", 0, 0)
-        rightGradient:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-
-        pcall(function()
-            rightGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.7, 1, 0.82, 0, 0.3)
-        end)
-
-        if rightGradient:GetVertexColor() == 1 and select(2, rightGradient:GetVertexColor()) == 1 then
-            rightGradient:SetVertexColor(1, 0.82, 0, 0.6)
-        end
-    end
-
-    local topBorder = parent:CreateTexture(nil, "HIGHLIGHT")
-    topBorder:SetHeight(1)
-    topBorder:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    topBorder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    topBorder:SetColorTexture(1, 0.82, 0, 0.8)
-
-    local bottomBorder = parent:CreateTexture(nil, "HIGHLIGHT")
-    bottomBorder:SetHeight(1)
-    bottomBorder:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-    bottomBorder:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-    bottomBorder:SetColorTexture(1, 0.82, 0, 0.8)
-
-    return highlight
-end
-
 local UI = {
     FRAME = {
         WIDTH = 850,
@@ -399,7 +318,7 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month" and titleType ~= "year" and titleType ~= "npc"
 
     if isClickable then
-        local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
+        local highlightTexture = PSC_CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
     end
 
     barButton:SetScript("OnEnter", function(self)
@@ -705,7 +624,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     rowButton:SetPoint("BOTTOMRIGHT", killsText, "BOTTOMRIGHT", 10, 0) -- Remove the -15 offset
 
     -- Use a smaller height value for the highlight (16 matches the font height better)
-    local highlightTexture = CreateGoldHighlight(rowButton, 16)
+    local highlightTexture = PSC_CreateGoldHighlight(rowButton, 16)
 
     rowButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -1188,7 +1107,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
 
-            CreateGoldHighlight(button, 20)
+            PSC_CreateGoldHighlight(button, 20)
 
             button:SetScript("OnMouseUp", function()
                 if value ~= "None (0)" then
@@ -1205,7 +1124,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
 
-            CreateGoldHighlight(button, 20)
+            PSC_CreateGoldHighlight(button, 20)
 
             button:SetScript("OnMouseUp", function()
                 if value ~= "None (0)" then
@@ -1222,7 +1141,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
 
-            CreateGoldHighlight(button, 20)
+            PSC_CreateGoldHighlight(button, 20)
 
             button:SetScript("OnMouseUp", function()
                 PSC_CreateKillStreakPopup()
@@ -1419,16 +1338,8 @@ local function createSummaryStats(parent, x, y, width, height)
     statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY,
         "Total number of times you have died to players.")
 
-    local kdText
-    if stats.totalDeaths and stats.totalDeaths > 0 then
-        kdText = string.format("%.2f", stats.kdRatio) .. " (" .. stats.totalKills .. "/" .. stats.totalDeaths .. ")"
-    else
-        if stats.totalKills and stats.totalKills > 0 then
-            kdText = "∞ (" .. stats.totalKills .. "/0)"
-        else
-            kdText = "0.00 (0/0)"
-        end
-    end
+    local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
+    local kdText = kdRatio .. " (" .. stats.totalKills .. "/" .. (stats.totalDeaths or 0) .. ")"
 
     statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY,
         "Overall kill/death ratio (total player kills divided by total PvP deaths).")
@@ -1494,7 +1405,7 @@ local function createSummaryStats(parent, x, y, width, height)
     killStreakClickButton:SetAllPoints(killStreakTooltipFrame)
 
     -- Add gold highlight for hover effect
-    CreateGoldHighlight(killStreakClickButton, 20)
+    PSC_CreateGoldHighlight(killStreakClickButton, 20)
 
     -- Add tooltip to the click button
     killStreakClickButton:SetScript("OnEnter", function(self)
@@ -1596,7 +1507,7 @@ local function createSummaryStats(parent, x, y, width, height)
     achievementButton:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
 
     -- Add gold highlight
-    CreateGoldHighlight(achievementButton, 20)
+    PSC_CreateGoldHighlight(achievementButton, 20)
 
     -- Add tooltip and click handlers
     achievementButton:SetScript("OnEnter", function(self)

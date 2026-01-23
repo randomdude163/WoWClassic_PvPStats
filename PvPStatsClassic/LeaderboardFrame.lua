@@ -167,87 +167,6 @@ local function CreateColumnHeaders(content)
     return -30
 end
 
-local function CreateGoldHighlight(parent, height)
-    local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
-    highlight:SetAllPoints(true)
-
-    local useNewAPI = highlight.SetGradient and type(highlight.SetGradient) == "function" and pcall(function()
-        highlight:SetGradient("HORIZONTAL", {
-            r = 1,
-            g = 1,
-            b = 1,
-            a = 1
-        }, {
-            r = 1,
-            g = 1,
-            b = 1,
-            a = 1
-        })
-        return true
-    end)
-
-    if useNewAPI then
-        highlight:SetColorTexture(1, 0.82, 0, 0.6)
-        pcall(function()
-            highlight:SetGradient("HORIZONTAL", {
-                r = 1,
-                g = 0.82,
-                b = 0,
-                a = 0.3
-            }, {
-                r = 1,
-                g = 0.82,
-                b = 0,
-                a = 0.8
-            })
-        end)
-    else
-        highlight:SetColorTexture(1, 0.82, 0, 0.5)
-
-        local leftGradient = parent:CreateTexture(nil, "HIGHLIGHT")
-        leftGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
-        leftGradient:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-        leftGradient:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-        leftGradient:SetWidth(parent:GetWidth() / 2)
-        leftGradient:SetHeight(height)
-
-        pcall(function()
-            leftGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.3, 1, 0.82, 0, 0.7)
-        end)
-
-        if leftGradient:GetVertexColor() == 1 and select(2, leftGradient:GetVertexColor()) == 1 then
-            leftGradient:SetVertexColor(1, 0.82, 0, 0.6)
-        end
-
-        local rightGradient = parent:CreateTexture(nil, "HIGHLIGHT")
-        rightGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
-        rightGradient:SetPoint("TOPLEFT", leftGradient, "TOPRIGHT", 0, 0)
-        rightGradient:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-
-        pcall(function()
-            rightGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.7, 1, 0.82, 0, 0.3)
-        end)
-
-        if rightGradient:GetVertexColor() == 1 and select(2, rightGradient:GetVertexColor()) == 1 then
-            rightGradient:SetVertexColor(1, 0.82, 0, 0.6)
-        end
-    end
-
-    local topBorder = parent:CreateTexture(nil, "HIGHLIGHT")
-    topBorder:SetHeight(1)
-    topBorder:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    topBorder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    topBorder:SetColorTexture(1, 0.82, 0, 0.8)
-
-    local bottomBorder = parent:CreateTexture(nil, "HIGHLIGHT")
-    bottomBorder:SetHeight(1)
-    bottomBorder:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-    bottomBorder:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-    bottomBorder:SetColorTexture(1, 0.82, 0, 0.8)
-
-    return highlight
-end
-
 local function CreatePlayerNameCell(content, playerName, width)
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     nameText:SetPoint("LEFT", content, "LEFT", 4, 0)
@@ -374,7 +293,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         bgTexture:SetColorTexture(0.05, 0.05, 0.05, 0.3)
     end
 
-    local highlightTexture = CreateGoldHighlight(rowContainer, 16)
+    local highlightTexture = PSC_CreateGoldHighlight(rowContainer, 16)
 
     local playerNameCell = CreatePlayerNameCell(rowContainer, entry.playerName, colWidths.playerName)
     local levelCell = CreateLevelCell(rowContainer, playerNameCell, entry.level, colWidths.level)
@@ -428,16 +347,7 @@ local function GetLeaderboardData()
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
     
     -- Format K/D ratio (matching StatisticsFrame display logic)
-    local kdRatio
-    if stats.totalDeaths and stats.totalDeaths > 0 then
-        kdRatio = string.format("%.2f", stats.kdRatio)
-    else
-        if stats.totalKills and stats.totalKills > 0 then
-            kdRatio = "∞"
-        else
-            kdRatio = "0.00"
-        end
-    end
+    local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
     
     -- Format average kills per day (matching StatisticsFrame display logic)
     local avgPerDay
