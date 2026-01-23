@@ -348,12 +348,56 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         playerNameCell:SetTextColor(color.r, color.g, color.b)
     end
 
-    -- Add click handler for future functionality
+    -- Add click handler to view player's detailed stats
     rowContainer:SetScript("OnClick", function(self, button)
         if button == "LeftButton" then
-            -- TODO: Add click functionality (e.g., show player details)
-            print("Clicked on player: " .. (entry.playerName or "Unknown"))
+            local playerName = entry.playerName
+            if not playerName or playerName == "" then
+                return
+            end
+            
+            -- Check if it's the local player
+            if playerName == UnitName("player") then
+                -- Just open our own statistics frame
+                PSC_CreateStatisticsFrame()
+                return
+            end
+            
+            -- Request detailed stats from the other player
+            print("[PvP Stats] Requesting detailed statistics from " .. playerName .. "...")
+            
+            if PVPSC.Network and PVPSC.Network.RequestDetailedStats then
+                PVPSC.Network:RequestDetailedStats(playerName, function(detailedStats)
+                    if detailedStats then
+                        print("[PvP Stats] Received statistics from " .. playerName)
+                        -- Display the detailed stats
+                        PSC_ShowPlayerDetailedStats(playerName, detailedStats)
+                    else
+                        print("[PvP Stats] Failed to receive statistics from " .. playerName)
+                        print("Make sure the player is nearby, in your guild, or in your group.")
+                    end
+                end)
+            else
+                print("[PvP Stats] Network system not initialized.")
+            end
         end
+    end)
+    
+    -- Add tooltip to indicate clickability
+    rowContainer:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+        GameTooltip:SetText(entry.playerName or "Unknown", 1, 0.82, 0)
+        if entry.playerName == UnitName("player") then
+            GameTooltip:AddLine("Click to view your detailed statistics", 1, 1, 1, true)
+        else
+            GameTooltip:AddLine("Click to request and view this player's detailed statistics", 1, 1, 1, true)
+            GameTooltip:AddLine("(Player must be nearby or in your guild/group)", 0.7, 0.7, 0.7, true)
+        end
+        GameTooltip:Show()
+    end)
+    
+    rowContainer:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
     end)
 
     rowContainer:RegisterForClicks("LeftButtonUp")

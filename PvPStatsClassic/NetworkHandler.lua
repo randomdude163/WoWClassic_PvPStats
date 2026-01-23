@@ -5,13 +5,19 @@ local Network = PVPSC.Network
 
 -- Network configuration
 local PREFIX = "PVPSC_LB"  -- PvP Stats Classic Leaderboard
+local PREFIX_REQUEST = "PVPSC_REQ"  -- Detailed stats request
+local PREFIX_RESPONSE = "PVPSC_RES"  -- Detailed stats response
 local DEBUG = false
 
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
+Network.detailedStatsCache = Network.detailedStatsCache or {}  -- Cache for detailed stats
+Network.pendingRequests = Network.pendingRequests or {}  -- Track pending requests
 Network.lastBroadcast = Network.lastBroadcast or 0
 Network.BROADCAST_INTERVAL = 60  -- Broadcast every 60 seconds
 Network.DATA_TTL = 600  -- Consider data stale after 10 minutes (600 seconds)
+Network.REQUEST_TIMEOUT = 10  -- Request timeout in seconds
+Network.CHUNK_SIZE = 200  -- Bytes per chunk (WoW limit is 255, leave room for overhead)
 
 -- Deduplication cache to prevent processing the same message multiple times
 local recentMessages = {}
@@ -325,15 +331,17 @@ end
 
 -- Initialize network handler
 function Network:Initialize()
-    -- Register addon message prefix
+    -- Register addon message prefixes
     C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
+    C_ChatInfo.RegisterAddonMessagePrefix(PREFIX_REQUEST)
+    C_ChatInfo.RegisterAddonMessagePrefix(PREFIX_RESPONSE)
     
     -- Set up message handler
     local frame = CreateFrame("Frame")
     frame:RegisterEvent("CHAT_MSG_ADDON")
     frame:SetScript("OnEvent", function(self, event, prefix, payload, channel, sender)
         if event == "CHAT_MSG_ADDON" then
-            Network:OnMessageReceived(prefix, payload, channel, sender)
+            Network:OnMessageReceivedEnhanced(prefix, payload, channel, sender)
         end
     end)
     
@@ -370,6 +378,270 @@ function Network:SetDebug(enabled)
     DEBUG = enabled
     if enabled then
         print("|cFFFFD700[PVPSC Network]|r Debug mode enabled")
+    end
+end
+
+-- Build detailed statistics for a player (all kill data)
+function Network:BuildDetailedStats()
+    local charactersToProcess = GetCharactersToProcessForStatistics()
+    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData = 
+        PSC_CalculateBarChartStatistics(charactersToProcess)
+    local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
+    local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
+    local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
+    local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
+    
+    return {
+        summary = stats,
+        classData = classData,
+        raceData = raceData,
+        genderData = genderData,
+        zoneData = zoneData,
+        levelData = levelData,
+        hourlyData = hourlyData,
+        weekdayData = weekdayData,
+        monthlyData = monthlyData,
+        yearlyData = yearlyData,
+        playerName = UnitName("player"),
+        level = UnitLevel("player"),
+        class = select(2, UnitClass("player")),
+        race = select(2, UnitRace("player")),
+        timestamp = time()
+    }
+end
+
+-- Serialize detailed stats with compression
+local function SerializeDetailedStats(data)
+    -- Simple JSON-like serialization
+    local str = ""
+    for k, v in pairs(data) do
+        if type(v) == "table" then
+            str = str .. k .. ":"
+            for k2, v2 in pairs(v) do
+                str = str .. tostring(k2) .. "=" .. tostring(v2) .. ","
+            end
+            str = str .. ";"
+        else
+            str = str .. k .. ":" .. tostring(v) .. ";"
+        end
+    end
+    return str
+end
+
+-- Deserialize detailed stats
+local function DeserializeDetailedStats(payload)
+    -- Parse the serialized format back into a table
+    local data = {}
+    for field in string.gmatch(payload, "([^;]+)") do
+        local key, values = string.match(field, "([^:]+):(.*)")
+        if key and values then
+            if string.find(values, "=") then
+                -- It's a table
+                data[key] = {}
+                for pair in string.gmatch(values, "([^,]+)") do
+                    local k, v = string.match(pair, "([^=]+)=([^=]+)")
+                    if k and v then
+                        -- Try to convert to number
+                        local num = tonumber(v)
+                        data[key][k] = num or v
+                    end
+                end
+            else
+                -- Simple value
+                local num = tonumber(values)
+                data[key] = num or values
+            end
+        end
+    end
+    return data
+end
+
+-- Request detailed stats from a player
+function Network:RequestDetailedStats(playerName, callback)
+    if not playerName or playerName == "" then
+        D("Invalid player name for request")
+        return false
+    end
+    
+    -- Check if we already have cached data
+    if self.detailedStatsCache[playerName] then
+        local age = time() - (self.detailedStatsCache[playerName].timestamp or 0)
+        if age < 300 then  -- Cache for 5 minutes
+            D("Using cached detailed stats for", playerName)
+            if callback then
+                callback(self.detailedStatsCache[playerName])
+            end
+            return true
+        end
+    end
+    
+    -- Check if there's already a pending request
+    if self.pendingRequests[playerName] then
+        D("Request already pending for", playerName)
+        -- Add callback to existing request
+        if callback then
+            table.insert(self.pendingRequests[playerName].callbacks, callback)
+        end
+        return true
+    end
+    
+    -- Create new request
+    self.pendingRequests[playerName] = {
+        timestamp = time(),
+        callbacks = callback and {callback} or {},
+        chunks = {},
+        expectedChunks = 0
+    }
+    
+    -- Send request
+    local requestData = UnitName("player") .. "|" .. playerName
+    
+    -- Try multiple channels
+    if IsInGuild() then
+        C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, "GUILD")
+        D("Sent detailed stats request to GUILD for", playerName)
+    end
+    
+    if IsInRaid() then
+        C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, "RAID")
+        D("Sent detailed stats request to RAID for", playerName)
+    elseif IsInGroup() then
+        C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, "PARTY")
+        D("Sent detailed stats request to PARTY for", playerName)
+    end
+    
+    C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, "YELL")
+    D("Sent detailed stats request to YELL for", playerName)
+    
+    -- Set timeout
+    C_Timer.After(self.REQUEST_TIMEOUT, function()
+        if self.pendingRequests[playerName] then
+            D("Request timeout for", playerName)
+            -- Call callbacks with nil to indicate failure
+            for _, cb in ipairs(self.pendingRequests[playerName].callbacks) do
+                cb(nil)
+            end
+            self.pendingRequests[playerName] = nil
+        end
+    end)
+    
+    return true
+end
+
+-- Handle detailed stats request
+function Network:OnDetailedStatsRequest(requester, targetPlayer)
+    local playerName = UnitName("player")
+    
+    -- Check if this request is for us
+    if targetPlayer ~= playerName then
+        return
+    end
+    
+    D("Received detailed stats request from", requester)
+    
+    -- Build detailed stats
+    local detailedStats = self:BuildDetailedStats()
+    local payload = SerializeDetailedStats(detailedStats)
+    
+    -- Split into chunks if needed
+    local chunks = {}
+    local chunkSize = self.CHUNK_SIZE
+    for i = 1, #payload, chunkSize do
+        table.insert(chunks, string.sub(payload, i, i + chunkSize - 1))
+    end
+    
+    -- Send chunks
+    for i, chunk in ipairs(chunks) do
+        local response = playerName .. "|" .. i .. "|" .. #chunks .. "|" .. chunk
+        
+        -- Try to send to the requester via available channels
+        if IsInGuild() then
+            C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "GUILD")
+        end
+        if IsInRaid() then
+            C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "RAID")
+        elseif IsInGroup() then
+            C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "PARTY")
+        end
+        C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "YELL")
+        
+        -- Small delay between chunks to avoid flooding
+        if i < #chunks then
+            C_Timer.After(0.05 * i, function() end)
+        end
+    end
+    
+    D("Sent detailed stats response in", #chunks, "chunks to", requester)
+end
+
+-- Handle detailed stats response chunk
+function Network:OnDetailedStatsResponse(playerName, chunkIndex, totalChunks, chunkData)
+    if not self.pendingRequests[playerName] then
+        -- Not expecting data from this player
+        return
+    end
+    
+    local request = self.pendingRequests[playerName]
+    
+    -- Store chunk
+    request.chunks[chunkIndex] = chunkData
+    request.expectedChunks = totalChunks
+    
+    D("Received chunk", chunkIndex, "of", totalChunks, "from", playerName)
+    
+    -- Check if we have all chunks
+    local complete = true
+    for i = 1, totalChunks do
+        if not request.chunks[i] then
+            complete = false
+            break
+        end
+    end
+    
+    if complete then
+        -- Reassemble payload
+        local fullPayload = ""
+        for i = 1, totalChunks do
+            fullPayload = fullPayload .. request.chunks[i]
+        end
+        
+        -- Deserialize
+        local detailedStats = DeserializeDetailedStats(fullPayload)
+        detailedStats.timestamp = time()
+        
+        -- Cache the data
+        self.detailedStatsCache[playerName] = detailedStats
+        
+        D("Received complete detailed stats from", playerName)
+        
+        -- Call all callbacks
+        for _, callback in ipairs(request.callbacks) do
+            callback(detailedStats)
+        end
+        
+        -- Clear pending request
+        self.pendingRequests[playerName] = nil
+    end
+end
+
+-- Enhanced message handler
+function Network:OnMessageReceivedEnhanced(prefix, payload, channel, sender)
+    if prefix == PREFIX then
+        -- Regular stats broadcast
+        self:OnMessageReceived(prefix, payload, channel, sender)
+    elseif prefix == PREFIX_REQUEST then
+        -- Detailed stats request
+        local requester, targetPlayer = string.match(payload, "([^|]+)|([^|]+)")
+        if requester and targetPlayer then
+            self:OnDetailedStatsRequest(requester, targetPlayer)
+        end
+    elseif prefix == PREFIX_RESPONSE then
+        -- Detailed stats response
+        local playerName, chunkIndex, totalChunks, chunkData = string.match(payload, "([^|]+)|(%d+)|(%d+)|(.*)")
+        if playerName and chunkIndex and totalChunks and chunkData then
+            self:OnDetailedStatsResponse(playerName, tonumber(chunkIndex), tonumber(totalChunks), chunkData)
+        end
     end
 end
 
