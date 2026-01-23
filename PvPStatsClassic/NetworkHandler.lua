@@ -4,10 +4,12 @@ PVPSC.Network = PVPSC.Network or {}
 local Network = PVPSC.Network
 
 -- Network configuration
-local PREFIX = "PVPSC_LB"  -- PvP Stats Classic Leaderboard
-local PREFIX_REQUEST = "PVPSC_REQ"  -- Detailed stats request
-local PREFIX_RESPONSE = "PVPSC_RES"  -- Detailed stats response
-local PREFIX_SYNC = "PVPSC_SYNC"  -- Sync request (broadcast on login)
+local PREFIX = "PVPSC"  -- Single prefix for all messages
+-- Message types:
+-- LB = Leaderboard broadcast
+-- REQ = Detailed stats request
+-- RES = Detailed stats response
+-- SYNC = Sync request (on login)
 local DEBUG = true  -- Enable debug to see what's happening
 
 -- Shared data cache: stores other players' stats
@@ -223,6 +225,9 @@ function Network:BroadcastStats()
         return
     end
     
+    -- Prepend message type
+    payload = "LB|" .. payload
+    
     -- Send to guild channel
     if IsInGuild() then
         local success = C_ChatInfo.SendAddonMessage(PREFIX, payload, "GUILD")
@@ -352,11 +357,8 @@ end
 
 -- Initialize network handler
 function Network:Initialize()
-    -- Register addon message prefixes
+    -- Register single addon message prefix
     C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
-    C_ChatInfo.RegisterAddonMessagePrefix(PREFIX_REQUEST)
-    C_ChatInfo.RegisterAddonMessagePrefix(PREFIX_RESPONSE)
-    C_ChatInfo.RegisterAddonMessagePrefix(PREFIX_SYNC)
     
     -- Set up message handler
     local frame = CreateFrame("Frame")
@@ -384,16 +386,16 @@ function Network:Initialize()
     -- Send sync request and immediate broadcast on login
     C_Timer.After(2, function()
         -- Request all other players to broadcast their stats
-        local syncRequest = UnitName("player")
+        local syncRequest = "SYNC|" .. UnitName("player")
         if IsInGuild() then
-            C_ChatInfo.SendAddonMessage(PREFIX_SYNC, syncRequest, "GUILD")
+            C_ChatInfo.SendAddonMessage(PREFIX, syncRequest, "GUILD")
         end
         if IsInRaid() then
-            C_ChatInfo.SendAddonMessage(PREFIX_SYNC, syncRequest, "RAID")
+            C_ChatInfo.SendAddonMessage(PREFIX, syncRequest, "RAID")
         elseif IsInGroup() then
-            C_ChatInfo.SendAddonMessage(PREFIX_SYNC, syncRequest, "PARTY")
+            C_ChatInfo.SendAddonMessage(PREFIX, syncRequest, "PARTY")
         end
-        C_ChatInfo.SendAddonMessage(PREFIX_SYNC, syncRequest, "YELL")
+        C_ChatInfo.SendAddonMessage(PREFIX, syncRequest, "YELL")
         D("Sent sync request to all channels")
         
         -- Also broadcast our own stats immediately
@@ -539,7 +541,7 @@ function Network:RequestDetailedStats(playerName, callback)
     }
     
     -- Send request
-    local requestData = UnitName("player") .. "|" .. playerName
+    local requestData = "REQ|" .. UnitName("player") .. "|" .. playerName
     
     -- Determine best channel (use only ONE)
     local channel = nil
@@ -553,7 +555,7 @@ function Network:RequestDetailedStats(playerName, callback)
         channel = "YELL"
     end
     
-    local success = C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, channel)
+    local success = C_ChatInfo.SendAddonMessage(PREFIX, requestData, channel)
     if success then
         D("Sent detailed stats request via", channel, "for", playerName)
     else
@@ -642,10 +644,10 @@ function Network:OnDetailedStatsRequest(requester, targetPlayer)
         end
         
         local chunk = chunks[index]
-        local response = playerName .. "|" .. index .. "|" .. #chunks .. "|" .. chunk
+        local response = "RES|" .. playerName .. "|" .. index .. "|" .. #chunks .. "|" .. chunk
         
         -- Send via the chosen channel only
-        local success = C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, channel)
+        local success = C_ChatInfo.SendAddonMessage(PREFIX, response, channel)
         
         if success then
             D("Sent chunk", index, "of", #chunks, "(", #chunk, "bytes) via", channel)
@@ -748,25 +750,36 @@ end
 
 -- Enhanced message handler
 function Network:OnMessageReceivedEnhanced(prefix, payload, channel, sender)
-    if prefix == PREFIX then
+    if prefix ~= PREFIX then return end
+    
+    -- Parse message type from payload (format: TYPE|data)
+    local msgType, data = string.match(payload, "([^|]+)|(.*)")
+    if not msgType then
+        D("Invalid message format from", sender)
+        return
+    end
+    
+    if msgType == "LB" then
         -- Regular stats broadcast
-        self:OnMessageReceived(prefix, payload, channel, sender)
-    elseif prefix == PREFIX_REQUEST then
+        self:OnMessageReceived(PREFIX, data, channel, sender)
+    elseif msgType == "REQ" then
         -- Detailed stats request
-        local requester, targetPlayer = string.match(payload, "([^|]+)|([^|]+)")
+        local requester, targetPlayer = string.match(data, "([^|]+)|([^|]+)")
         if requester and targetPlayer then
             self:OnDetailedStatsRequest(requester, targetPlayer)
         end
-    elseif prefix == PREFIX_RESPONSE then
+    elseif msgType == "RES" then
         -- Detailed stats response
-        local playerName, chunkIndex, totalChunks, chunkData = string.match(payload, "([^|]+)|(%d+)|(%d+)|(.*)")
+        local playerName, chunkIndex, totalChunks, chunkData = string.match(data, "([^|]+)|(%d+)|(%d+)|(.*)")
         if playerName and chunkIndex and totalChunks and chunkData then
             self:OnDetailedStatsResponse(playerName, tonumber(chunkIndex), tonumber(totalChunks), chunkData)
         end
-    elseif prefix == PREFIX_SYNC then
+    elseif msgType == "SYNC" then
         -- Sync request - someone logged in and wants fresh data from everyone
         D("Received sync request from", sender, "- broadcasting stats")
         self:BroadcastStats()
+    else
+        D("Unknown message type:", msgType, "from", sender)
     end
 end
 
