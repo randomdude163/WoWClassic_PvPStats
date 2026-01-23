@@ -220,23 +220,39 @@ function Network:BroadcastStats()
     
     -- Send to guild channel
     if IsInGuild() then
-        C_ChatInfo.SendAddonMessage(PREFIX, payload, "GUILD")
-        D("Broadcasted stats to GUILD:", stats.playerName)
+        local success = C_ChatInfo.SendAddonMessage(PREFIX, payload, "GUILD")
+        if success then
+            D("Broadcasted stats to GUILD:", stats.playerName)
+        else
+            D("ERROR: Failed to broadcast to GUILD")
+        end
     end
     
     -- Send to raid/party if in a group
     if IsInRaid() then
-        C_ChatInfo.SendAddonMessage(PREFIX, payload, "RAID")
-        D("Broadcasted stats to RAID:", stats.playerName)
+        local success = C_ChatInfo.SendAddonMessage(PREFIX, payload, "RAID")
+        if success then
+            D("Broadcasted stats to RAID:", stats.playerName)
+        else
+            D("ERROR: Failed to broadcast to RAID")
+        end
     elseif IsInGroup() then
-        C_ChatInfo.SendAddonMessage(PREFIX, payload, "PARTY")
-        D("Broadcasted stats to PARTY:", stats.playerName)
+        local success = C_ChatInfo.SendAddonMessage(PREFIX, payload, "PARTY")
+        if success then
+            D("Broadcasted stats to PARTY:", stats.playerName)
+        else
+            D("ERROR: Failed to broadcast to PARTY")
+        end
     end
     
     -- YELL channel broadcasts to nearby players (anyone in render distance)
     -- This allows non-guild/party members on the same server to see your stats
-    C_ChatInfo.SendAddonMessage(PREFIX, payload, "YELL")
-    D("Broadcasted stats to YELL (nearby players):", stats.playerName)
+    local success = C_ChatInfo.SendAddonMessage(PREFIX, payload, "YELL")
+    if success then
+        D("Broadcasted stats to YELL (nearby players):", stats.playerName)
+    else
+        D("ERROR: Failed to broadcast to YELL")
+    end
     
     -- Refresh leaderboard if it's open
     if PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsShown() then
@@ -503,22 +519,30 @@ function Network:RequestDetailedStats(playerName, callback)
     -- Send request
     local requestData = UnitName("player") .. "|" .. playerName
     
-    -- Try multiple channels
+    -- Determine best channel (use only ONE)
+    local channel = nil
     if IsInGuild() then
-        C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, "GUILD")
-        D("Sent detailed stats request to GUILD for", playerName)
-    end
-    
-    if IsInRaid() then
-        C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, "RAID")
-        D("Sent detailed stats request to RAID for", playerName)
+        channel = "GUILD"
+    elseif IsInRaid() then
+        channel = "RAID"
     elseif IsInGroup() then
-        C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, "PARTY")
-        D("Sent detailed stats request to PARTY for", playerName)
+        channel = "PARTY"
+    else
+        channel = "YELL"
     end
     
-    C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, "YELL")
-    D("Sent detailed stats request to YELL for", playerName)
+    local success = C_ChatInfo.SendAddonMessage(PREFIX_REQUEST, requestData, channel)
+    if success then
+        D("Sent detailed stats request via", channel, "for", playerName)
+    else
+        D("ERROR: Failed to send request via", channel, "for", playerName)
+        -- Clean up the pending request
+        self.pendingRequests[playerName] = nil
+        if callback then
+            callback(nil)
+        end
+        return false
+    end
     
     -- Set timeout
     C_Timer.After(self.REQUEST_TIMEOUT, function()
@@ -548,6 +572,12 @@ function Network:OnDetailedStatsRequest(requester, targetPlayer)
     
     -- Build detailed stats
     local detailedStats = self:BuildDetailedStats()
+    
+    -- Debug: Show what we're sending
+    if detailedStats.summary then
+        D("Sending - currentKillStreak:", detailedStats.summary.currentKillStreak, "mostKilledPlayer:", detailedStats.summary.mostKilledPlayer, "mostKilledCount:", detailedStats.summary.mostKilledCount)
+    end
+    
     local payload = SerializeDetailedStats(detailedStats)
     
     D("Payload size:", #payload, "bytes")
@@ -561,34 +591,68 @@ function Network:OnDetailedStatsRequest(requester, targetPlayer)
     
     D("Sending", #chunks, "chunks")
     
+    -- Determine best channel to use (only use ONE to avoid duplicates)
+    local channel = nil
+    if IsInGuild() then
+        channel = "GUILD"
+    elseif IsInRaid() then
+        channel = "RAID"
+    elseif IsInGroup() then
+        channel = "PARTY"
+    else
+        channel = "YELL"
+    end
+    
+    D("Using channel:", channel)
+    
     -- Send chunks with delays to avoid flooding
-    local function sendChunk(index)
+    local failedChunks = 0
+    local function sendChunk(index, retryCount)
+        retryCount = retryCount or 0
+        
         if index > #chunks then
-            D("All chunks sent")
+            if failedChunks > 0 then
+                D("WARNING: Failed to send", failedChunks, "chunks after retries")
+            else
+                D("All chunks sent successfully via", channel)
+            end
             return
         end
         
         local chunk = chunks[index]
         local response = playerName .. "|" .. index .. "|" .. #chunks .. "|" .. chunk
         
-        -- Try to send via available channels
-        if IsInGuild() then
-            C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "GUILD")
-        end
-        if IsInRaid() then
-            C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "RAID")
-        elseif IsInGroup() then
-            C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "PARTY")
-        end
-        C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, "YELL")
+        -- Send via the chosen channel only
+        local success = C_ChatInfo.SendAddonMessage(PREFIX_RESPONSE, response, channel)
         
-        D("Sent chunk", index, "of", #chunks)
-        
-        -- Schedule next chunk
-        if index < #chunks then
-            C_Timer.After(0.1, function()
-                sendChunk(index + 1)
-            end)
+        if success then
+            D("Sent chunk", index, "of", #chunks, "(", #chunk, "bytes) via", channel)
+            
+            -- Schedule next chunk with 0.2s delay (increased to prevent loss)
+            if index < #chunks then
+                C_Timer.After(0.2, function()
+                    sendChunk(index + 1)
+                end)
+            end
+        else
+            D("ERROR: Failed to send chunk", index, "via", channel)
+            
+            -- Retry up to 2 times
+            if retryCount < 2 then
+                D("Retrying chunk", index, "(attempt", retryCount + 2, "of 3)")
+                C_Timer.After(0.5, function()
+                    sendChunk(index, retryCount + 1)
+                end)
+            else
+                D("ERROR: Chunk", index, "failed after 3 attempts, skipping")
+                failedChunks = failedChunks + 1
+                -- Continue with next chunk
+                if index < #chunks then
+                    C_Timer.After(0.2, function()
+                        sendChunk(index + 1)
+                    end)
+                end
+            end
         end
     end
     
@@ -635,9 +699,14 @@ function Network:OnDetailedStatsResponse(playerName, chunkIndex, totalChunks, ch
         
         -- Debug: Check what we received
         if detailedStats.summary then
-            D("Received stats - currentKillStreak:", detailedStats.summary.currentKillStreak, "mostKilledPlayer:", detailedStats.summary.mostKilledPlayer)
+            D("Received stats - currentKillStreak:", detailedStats.summary.currentKillStreak, "mostKilledPlayer:", detailedStats.summary.mostKilledPlayer, "mostKilledCount:", detailedStats.summary.mostKilledCount)
         else
             D("WARNING: No summary in received stats!")
+            -- Print what keys we DID receive
+            D("Received keys:")
+            for k, v in pairs(detailedStats) do
+                D("  ", k, "=", type(v))
+            end
         end
         
         -- Cache the data
