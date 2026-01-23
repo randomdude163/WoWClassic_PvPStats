@@ -7,6 +7,7 @@ local Network = PVPSC.Network
 local PREFIX = "PVPSC_LB"  -- PvP Stats Classic Leaderboard
 local PREFIX_REQUEST = "PVPSC_REQ"  -- Detailed stats request
 local PREFIX_RESPONSE = "PVPSC_RES"  -- Detailed stats response
+local PREFIX_SYNC = "PVPSC_SYNC"  -- Sync request (broadcast on login)
 local DEBUG = true  -- Enable debug to see what's happening
 
 -- Shared data cache: stores other players' stats
@@ -355,6 +356,7 @@ function Network:Initialize()
     C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
     C_ChatInfo.RegisterAddonMessagePrefix(PREFIX_REQUEST)
     C_ChatInfo.RegisterAddonMessagePrefix(PREFIX_RESPONSE)
+    C_ChatInfo.RegisterAddonMessagePrefix(PREFIX_SYNC)
     
     -- Set up message handler
     local frame = CreateFrame("Frame")
@@ -379,8 +381,22 @@ function Network:Initialize()
     
     D("Network handler initialized - Addon v" .. PSC_GetAddonVersion())
     
-    -- Send immediate broadcast on login (so everyone gets your stats right away)
+    -- Send sync request and immediate broadcast on login
     C_Timer.After(2, function()
+        -- Request all other players to broadcast their stats
+        local syncRequest = UnitName("player")
+        if IsInGuild() then
+            C_ChatInfo.SendAddonMessage(PREFIX_SYNC, syncRequest, "GUILD")
+        end
+        if IsInRaid() then
+            C_ChatInfo.SendAddonMessage(PREFIX_SYNC, syncRequest, "RAID")
+        elseif IsInGroup() then
+            C_ChatInfo.SendAddonMessage(PREFIX_SYNC, syncRequest, "PARTY")
+        end
+        C_ChatInfo.SendAddonMessage(PREFIX_SYNC, syncRequest, "YELL")
+        D("Sent sync request to all channels")
+        
+        -- Also broadcast our own stats immediately
         Network:BroadcastStats()
         D("Sent initial broadcast on login")
         
@@ -747,6 +763,10 @@ function Network:OnMessageReceivedEnhanced(prefix, payload, channel, sender)
         if playerName and chunkIndex and totalChunks and chunkData then
             self:OnDetailedStatsResponse(playerName, tonumber(chunkIndex), tonumber(totalChunks), chunkData)
         end
+    elseif prefix == PREFIX_SYNC then
+        -- Sync request - someone logged in and wants fresh data from everyone
+        D("Received sync request from", sender, "- broadcasting stats")
+        self:BroadcastStats()
     end
 end
 
