@@ -161,6 +161,12 @@ function Network:BuildPlayerStats()
     local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
     local addonVersion = "v" .. PSC_GetAddonVersion()
     
+    -- Format most killed player text
+    local mostKilledText = stats.mostKilledPlayer or "None"
+    if mostKilledText ~= "None" and stats.mostKilledCount and stats.mostKilledCount > 0 then
+        mostKilledText = mostKilledText .. " (" .. stats.mostKilledCount .. ")"
+    end
+    
     return {
         playerName = playerName,
         level = playerLevel,
@@ -169,7 +175,9 @@ function Network:BuildPlayerStats()
         totalKills = stats.totalKills,
         uniqueKills = stats.uniqueKills,
         kdRatio = kdRatio,
+        currentStreak = stats.currentKillStreak,
         bestStreak = stats.highestKillStreak,
+        mostKilled = mostKilledText,
         avgPerDay = avgPerDay,
         achievements = achievementText,
         achievementPoints = achievementPoints,

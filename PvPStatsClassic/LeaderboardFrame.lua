@@ -4,7 +4,7 @@ PSC_LeaderboardFrame = nil
 
 PSC_SortLeaderboardBy = "totalKills"
 PSC_SortLeaderboardAscending = false
-local LEADERBOARD_FRAME_WIDTH = 900
+local LEADERBOARD_FRAME_WIDTH = 1080
 local LEADERBOARD_FRAME_HEIGHT = 550
 
 PSC_LeaderboardFrameInitialSetup = true
@@ -17,7 +17,9 @@ local colWidths = {
     totalKills = 60,
     uniqueKills = 60,
     kdRatio = 55,
+    currentStreak = 75,
     bestStreak = 70,
+    mostKilled = 100,
     avgPerDay = 65,
     achievements = 80,
     achievementPoints = 70,
@@ -107,10 +109,20 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
             GameTooltip:SetText("Kill/Death Ratio", 1, 0.82, 0)
             GameTooltip:AddLine("Total kills divided by total deaths", 1, 1, 1, true)
             GameTooltip:Show()
+        elseif columnId == "currentStreak" then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText("Current Streak", 1, 0.82, 0)
+            GameTooltip:AddLine("The player's current active kill streak", 1, 1, 1, true)
+            GameTooltip:Show()
         elseif columnId == "bestStreak" then
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            GameTooltip:SetText("Best Kill Streak", 1, 0.82, 0)
-            GameTooltip:AddLine("The highest kill streak achieved", 1, 1, 1, true)
+            GameTooltip:SetText("Best Streak", 1, 0.82, 0)
+            GameTooltip:AddLine("The highest kill streak this player has achieved", 1, 1, 1, true)
+            GameTooltip:Show()
+        elseif columnId == "mostKilled" then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText("Most Killed", 1, 0.82, 0)
+            GameTooltip:AddLine("The player this person has killed the most", 1, 1, 1, true)
             GameTooltip:Show()
         elseif columnId == "avgPerDay" then
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -158,8 +170,10 @@ local function CreateColumnHeaders(content)
     local totalKillsButton = CreateColumnHeader(content, "Kills", colWidths.totalKills, raceButton, 0, 0, "totalKills")
     local uniqueKillsButton = CreateColumnHeader(content, "Unique", colWidths.uniqueKills, totalKillsButton, 0, 0, "uniqueKills")
     local kdRatioButton = CreateColumnHeader(content, "K/D", colWidths.kdRatio, uniqueKillsButton, 0, 0, "kdRatio")
-    local bestStreakButton = CreateColumnHeader(content, "Best Streak", colWidths.bestStreak, kdRatioButton, 0, 0, "bestStreak")
-    local avgPerDayButton = CreateColumnHeader(content, "Avg/Day", colWidths.avgPerDay, bestStreakButton, 0, 0, "avgPerDay")
+    local currentStreakButton = CreateColumnHeader(content, "Cur. Streak", colWidths.currentStreak, kdRatioButton, 0, 0, "currentStreak")
+    local bestStreakButton = CreateColumnHeader(content, "Best Streak", colWidths.bestStreak, currentStreakButton, 0, 0, "bestStreak")
+    local mostKilledButton = CreateColumnHeader(content, "Most Killed", colWidths.mostKilled, bestStreakButton, 0, 0, "mostKilled")
+    local avgPerDayButton = CreateColumnHeader(content, "Avg/Day", colWidths.avgPerDay, mostKilledButton, 0, 0, "avgPerDay")
     local achievementsButton = CreateColumnHeader(content, "Ach.", colWidths.achievements, avgPerDayButton, 0, 0, "achievements")
     local achievementPointsButton = CreateColumnHeader(content, "Points", colWidths.achievementPoints, achievementsButton, 0, 0, "achievementPoints")
     local addonVersionButton = CreateColumnHeader(content, "Version", colWidths.addonVersion, achievementPointsButton, 0, 0, "addonVersion")
@@ -237,6 +251,15 @@ local function CreateKDRatioCell(content, anchorTo, kdRatio, width)
     return kdText
 end
 
+local function CreateCurrentStreakCell(content, anchorTo, currentStreak, width)
+    local streakText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    streakText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    streakText:SetText(tostring(currentStreak or 0))
+    streakText:SetWidth(width)
+    streakText:SetJustifyH("LEFT")
+    return streakText
+end
+
 local function CreateBestStreakCell(content, anchorTo, bestStreak, width)
     local streakText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     streakText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
@@ -244,6 +267,15 @@ local function CreateBestStreakCell(content, anchorTo, bestStreak, width)
     streakText:SetWidth(width)
     streakText:SetJustifyH("LEFT")
     return streakText
+end
+
+local function CreateMostKilledCell(content, anchorTo, mostKilled, width)
+    local mostKilledText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    mostKilledText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+    mostKilledText:SetText(mostKilled or "None")
+    mostKilledText:SetWidth(width)
+    mostKilledText:SetJustifyH("LEFT")
+    return mostKilledText
 end
 
 local function CreateAvgPerDayCell(content, anchorTo, avgPerDay, width)
@@ -302,8 +334,10 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local totalKillsCell = CreateTotalKillsCell(rowContainer, raceCell, entry.totalKills, colWidths.totalKills)
     local uniqueKillsCell = CreateUniqueKillsCell(rowContainer, totalKillsCell, entry.uniqueKills, colWidths.uniqueKills)
     local kdRatioCell = CreateKDRatioCell(rowContainer, uniqueKillsCell, entry.kdRatio, colWidths.kdRatio)
-    local bestStreakCell = CreateBestStreakCell(rowContainer, kdRatioCell, entry.bestStreak, colWidths.bestStreak)
-    local avgPerDayCell = CreateAvgPerDayCell(rowContainer, bestStreakCell, entry.avgPerDay, colWidths.avgPerDay)
+    local currentStreakCell = CreateCurrentStreakCell(rowContainer, kdRatioCell, entry.currentStreak, colWidths.currentStreak)
+    local bestStreakCell = CreateBestStreakCell(rowContainer, currentStreakCell, entry.bestStreak, colWidths.bestStreak)
+    local mostKilledCell = CreateMostKilledCell(rowContainer, bestStreakCell, entry.mostKilled, colWidths.mostKilled)
+    local avgPerDayCell = CreateAvgPerDayCell(rowContainer, mostKilledCell, entry.avgPerDay, colWidths.avgPerDay)
     local achievementsCell = CreateAchievementsCell(rowContainer, avgPerDayCell, entry.achievements, colWidths.achievements)
     local achievementPointsCell = CreateAchievementPointsCell(rowContainer, achievementsCell, entry.achievementPoints, colWidths.achievementPoints)
     local addonVersionCell = CreateAddonVersionCell(rowContainer, achievementPointsCell, entry.addonVersion, colWidths.addonVersion)
@@ -382,6 +416,12 @@ local function GetLeaderboardData()
     -- Get addon version using the utility function
     local addonVersion = "v" .. PSC_GetAddonVersion()
     
+    -- Format most killed player text
+    local mostKilledText = stats.mostKilledPlayer or "None"
+    if mostKilledText ~= "None" and stats.mostKilledCount and stats.mostKilledCount > 0 then
+        mostKilledText = mostKilledText .. " (" .. stats.mostKilledCount .. ")"
+    end
+    
     -- Add current player as first entry
     table.insert(leaderboardData, {
         playerName = playerName,
@@ -391,7 +431,9 @@ local function GetLeaderboardData()
         totalKills = stats.totalKills,
         uniqueKills = stats.uniqueKills,
         kdRatio = kdRatio,
+        currentStreak = stats.currentKillStreak,
         bestStreak = stats.highestKillStreak,
+        mostKilled = mostKilledText,
         avgPerDay = avgPerDay,
         achievements = achievementText,
         achievementPoints = achievementPoints,
