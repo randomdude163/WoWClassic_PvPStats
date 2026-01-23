@@ -1321,6 +1321,60 @@ function PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, maxKill
     end
 end
 
+local function createSummaryStatsForExternalPlayer(parent, x, y, width, height, stats, playerName)
+    local spacing_between_sections = 10
+    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
+    local statY = -22
+
+    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills or 0, statY,
+        "Total number of players killed.")
+
+    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills or 0, statY,
+        "Total number of unique players killed.")
+
+    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY,
+        "Total number of deaths to players.")
+
+    local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
+    local kdText = kdRatio .. " (" .. (stats.totalKills or 0) .. "/" .. (stats.totalDeaths or 0) .. ")"
+    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY,
+        "Overall kill/death ratio.")
+
+    if stats.currentKillStreak then
+        statY = addSummaryStatLine(container, "Current kill streak:", tostring(stats.currentKillStreak), statY - spacing_between_sections,
+            "Current active kill streak.", true)
+    end
+
+    if stats.highestKillStreak then
+        statY = addSummaryStatLine(container, "Highest kill streak:", tostring(stats.highestKillStreak), statY,
+            "The highest kill streak achieved.", true)
+    end
+
+    if stats.mostKilledPlayer and stats.mostKilledCount then
+        local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
+        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections,
+            "The player killed most often.")
+    end
+
+    if stats.avgLevel then
+        statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - spacing_between_sections,
+            "Average level of players killed.")
+    end
+
+    if stats.avgKillsPerDay then
+        statY = addSummaryStatLine(container, "Avg. kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY,
+            "Average kills per day.")
+    end
+
+    -- Add a note at the bottom
+    local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, 10)
+    noteText:SetText("Viewing " .. playerName .. "'s statistics")
+    noteText:SetTextColor(0.7, 0.7, 0.7)
+
+    return container
+end
+
 local function createSummaryStats(parent, x, y, width, height)
     local spacing_between_sections = 10
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
@@ -1939,12 +1993,25 @@ function PSC_CreateStatisticsFrame()
     PSC_UpdateStatisticsFrame(statisticsFrame)
 end
 
-function PSC_UpdateStatisticsFrame(frame)
+function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     if not frame then
         return
     end
 
-    local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
+    -- Determine if we're viewing external player data or local data
+    local isExternalPlayer = (externalPlayerData ~= nil)
+    local playerDisplayName = isExternalPlayer and externalPlayerData.playerName or nil
+    
+    -- Set title based on whether it's external or local data
+    local titleText
+    if isExternalPlayer and playerDisplayName then
+        titleText = playerDisplayName .. "'s PvP Statistics"
+        if externalPlayerData.level and externalPlayerData.class then
+            titleText = titleText .. " (Lvl " .. externalPlayerData.level .. " " .. externalPlayerData.class .. ")"
+        end
+    else
+        titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
+    end
     frame.TitleText:SetText(titleText)
 
     if frame.leftScrollContent then
@@ -1971,23 +2038,48 @@ function PSC_UpdateStatisticsFrame(frame)
         return
     end
 
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local charactersToProcess = {}
-    if PSC_DB.ShowAccountWideStats then
-        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    -- Get data based on whether we're viewing external or local player
+    local classData, raceData, genderData, zoneData, levelData, hourlyData, weekdayData, monthlyData, yearlyData, stats
+    local unknownLevelClassData, guildStatusData, guildData, npcKillsData
+    
+    if isExternalPlayer then
+        -- Use data from external player
+        classData = externalPlayerData.classData or {}
+        raceData = externalPlayerData.raceData or {}
+        genderData = externalPlayerData.genderData or {}
+        zoneData = externalPlayerData.zoneData or {}
+        levelData = externalPlayerData.levelData or {}
+        hourlyData = externalPlayerData.hourlyData or {}
+        weekdayData = externalPlayerData.weekdayData or {}
+        monthlyData = externalPlayerData.monthlyData or {}
+        yearlyData = externalPlayerData.yearlyData or {}
+        stats = externalPlayerData.summary or {}
+        -- Set defaults for data not available from external players
+        unknownLevelClassData = {}
+        guildStatusData = {}
+        guildData = {}
+        npcKillsData = {}
     else
-        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
-            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+        -- Calculate local player data
+        local currentCharacterKey = PSC_GetCharacterKey()
+        local charactersToProcess = {}
+        if PSC_DB.ShowAccountWideStats then
+            charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+        else
+            if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
+                charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+            end
         end
+
+        classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
+            PSC_CalculateBarChartStatistics(charactersToProcess)
+
+        hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
+        weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
+        monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
+        yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
+        stats = PSC_CalculateSummaryStatistics(charactersToProcess)
     end
-
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
-        PSC_CalculateBarChartStatistics(charactersToProcess)
-
-    local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
-    local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
-    local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
-    local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent
@@ -2070,8 +2162,12 @@ function PSC_UpdateStatisticsFrame(frame)
     local summaryStatsWidth = 380
     local summaryStatsHeight = 500
 
-    -- Summary Statistics at top right
-    frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
+    -- Summary Statistics at top right (pass stats if external player)
+    if isExternalPlayer then
+        frame.summaryStats = createSummaryStatsForExternalPlayer(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight, stats, playerDisplayName)
+    else
+        frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
+    end
 
     -- Separator line above buttons
     local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
@@ -2138,7 +2234,7 @@ end
 -- Display another player's detailed statistics
 function PSC_ShowPlayerDetailedStats(playerName, detailedStats)
     -- Create a separate frame for viewing other players' stats
-    local viewerFrame = CreateFrame("Frame", "PSC_PlayerStatsViewer", UIParent, "BasicFrameTemplateWithInset")
+    local viewerFrame = CreateFrame("Frame", "PSC_PlayerStatsViewer_" .. playerName, UIParent, "BasicFrameTemplateWithInset")
     viewerFrame:SetSize(UI.FRAME.WIDTH, UI.FRAME.HEIGHT)
     viewerFrame:SetPoint("CENTER")
     viewerFrame:SetMovable(true)
@@ -2147,180 +2243,21 @@ function PSC_ShowPlayerDetailedStats(playerName, detailedStats)
     viewerFrame:SetScript("OnDragStart", viewerFrame.StartMoving)
     viewerFrame:SetScript("OnDragStop", viewerFrame.StopMovingOrSizing)
     
-    -- Set title with player name and info
-    local titleText = playerName .. "'s PvP Statistics"
-    if detailedStats.level and detailedStats.class then
-        titleText = titleText .. " (Lvl " .. detailedStats.level .. " " .. detailedStats.class .. ")"
-    end
-    viewerFrame.TitleText:SetText(titleText)
-    
     -- Add close button
     viewerFrame.CloseButton:SetScript("OnClick", function()
         viewerFrame:Hide()
-        viewerFrame:SetParent(nil)
-        viewerFrame = nil
+        if PSC_FrameManager then
+            PSC_FrameManager:UnregisterFrame("PlayerStatsViewer_" .. playerName)
+        end
     end)
     
-    -- Create scrollable left panel for charts
-    local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(viewerFrame)
-    
-    local yOffset = 0
-    
-    -- Create charts from the detailed stats data
-    if detailedStats.classData then
-        local classChartHeight = calculateChartHeight(detailedStats.classData)
-        createBarChart(leftScrollContent, "Kills by Class", detailedStats.classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight)
-        yOffset = yOffset - classChartHeight - UI.CHART.PADDING
-    end
-    
-    if detailedStats.raceData then
-        local raceChartHeight = calculateChartHeight(detailedStats.raceData)
-        createBarChart(leftScrollContent, "Kills by Race", detailedStats.raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight)
-        yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
-    end
-    
-    if detailedStats.genderData then
-        local genderChartHeight = calculateChartHeight(detailedStats.genderData)
-        createBarChart(leftScrollContent, "Kills by Gender", detailedStats.genderData, genderColors, 0, yOffset, UI.CHART.WIDTH, genderChartHeight)
-        yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
-    end
-    
-    if detailedStats.hourlyData then
-        local hourlyChartHeight = calculateChartHeight(detailedStats.hourlyData)
-        createBarChart(leftScrollContent, "Kills by Hour of Day", detailedStats.hourlyData, nil, 0, yOffset, UI.CHART.WIDTH, hourlyChartHeight)
-        yOffset = yOffset - hourlyChartHeight - UI.CHART.PADDING
-    end
-    
-    if detailedStats.weekdayData then
-        local weekdayChartHeight = calculateChartHeight(detailedStats.weekdayData)
-        createBarChart(leftScrollContent, "Kills by Weekday", detailedStats.weekdayData, nil, 0, yOffset, UI.CHART.WIDTH, weekdayChartHeight)
-        yOffset = yOffset - weekdayChartHeight - UI.CHART.PADDING
-    end
-    
-    if detailedStats.monthlyData then
-        local monthlyChartHeight = calculateChartHeight(detailedStats.monthlyData)
-        createBarChart(leftScrollContent, "Kills by Month", detailedStats.monthlyData, nil, 0, yOffset, UI.CHART.WIDTH, monthlyChartHeight)
-        yOffset = yOffset - monthlyChartHeight - UI.CHART.PADDING
-    end
-    
-    if detailedStats.yearlyData then
-        local yearlyChartHeight = calculateChartHeight(detailedStats.yearlyData)
-        createBarChart(leftScrollContent, "Kills by Year", detailedStats.yearlyData, nil, 0, yOffset, UI.CHART.WIDTH, yearlyChartHeight)
-        yOffset = yOffset - yearlyChartHeight - UI.CHART.PADDING
-    end
-    
-    if detailedStats.levelData then
-        local levelChartHeight = calculateChartHeight(detailedStats.levelData)
-        createBarChart(leftScrollContent, "Kills by Level", detailedStats.levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
-        yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
-    end
-    
-    if detailedStats.zoneData then
-        local zoneChartHeight = calculateChartHeight(detailedStats.zoneData)
-        createBarChart(leftScrollContent, "Kills by Zone", detailedStats.zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight)
-        yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
-    end
-    
-    -- Set scroll content height
-    local totalHeight = -(yOffset) + 25
-    leftScrollContent:SetHeight(totalHeight)
-    
-    -- Create summary statistics panel on the right
-    if detailedStats.summary then
-        local summaryContainer = CreateFrame("Frame", nil, viewerFrame)
-        summaryContainer:SetPoint("TOPLEFT", 440, -UI.TOP_PADDING)
-        summaryContainer:SetSize(380, 600)
-        
-        local summaryTitle = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        summaryTitle:SetPoint("TOPLEFT", 0, 0)
-        summaryTitle:SetText("Summary Statistics")
-        
-        local summaryY = -25
-        local stats = detailedStats.summary
-        
-        if stats.totalKills then
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText("Total Kills: " .. tostring(stats.totalKills))
-            summaryY = summaryY - 20
-        end
-        
-        if stats.uniqueKills then
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText("Unique Kills: " .. tostring(stats.uniqueKills))
-            summaryY = summaryY - 20
-        end
-        
-        if stats.totalDeaths then
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText("Total Deaths: " .. tostring(stats.totalDeaths))
-            summaryY = summaryY - 20
-        end
-        
-        if stats.kdRatio then
-            local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText("K/D Ratio: " .. kdRatio)
-            summaryY = summaryY - 20
-        end
-        
-        if stats.currentKillStreak then
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText("Current Streak: " .. tostring(stats.currentKillStreak))
-            statText:SetTextColor(1.0, 0.82, 0.0)
-            summaryY = summaryY - 20
-        end
-        
-        if stats.highestKillStreak then
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText("Best Streak: " .. tostring(stats.highestKillStreak))
-            summaryY = summaryY - 20
-        end
-        
-        if stats.mostKilledPlayer and stats.mostKilledCount then
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText("Most Killed: " .. stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")")
-            summaryY = summaryY - 20
-        end
-        
-        if stats.avgLevel then
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText(string.format("Avg Victim Level: %.1f", stats.avgLevel))
-            summaryY = summaryY - 20
-        end
-        
-        if stats.avgKillsPerDay then
-            local statText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            statText:SetPoint("TOPLEFT", 0, summaryY)
-            statText:SetText(string.format("Avg Kills/Day: %.1f", stats.avgKillsPerDay))
-            summaryY = summaryY - 20
-        end
-        
-        -- Add a note at the bottom
-        local noteText = summaryContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        noteText:SetPoint("BOTTOM", summaryContainer, "BOTTOM", 0, 10)
-        noteText:SetText("Viewing " .. playerName .. "'s statistics")
-        noteText:SetTextColor(0.7, 0.7, 0.7)
-    end
-    
-    -- Separator line
-    local separator = viewerFrame:CreateTexture(nil, "ARTWORK")
-    separator:SetPoint("TOPLEFT", 430, -5)
-    separator:SetPoint("BOTTOMLEFT", 430, 5)
-    separator:SetWidth(1)
-    separator:SetColorTexture(0.5, 0.5, 0.5, 0.5)
-    
-    viewerFrame:Show()
-    
-    -- Register with frame manager if available
+    -- Register with frame manager
     if PSC_FrameManager then
         PSC_FrameManager:RegisterFrame(viewerFrame, "PlayerStatsViewer_" .. playerName)
     end
+    
+    -- Reuse the existing update function with external player data
+    PSC_UpdateStatisticsFrame(viewerFrame, detailedStats)
+    
+    viewerFrame:Show()
 end
