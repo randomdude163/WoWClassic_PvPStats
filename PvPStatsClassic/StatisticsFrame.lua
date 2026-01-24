@@ -2055,10 +2055,10 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         yearlyData = externalPlayerData.yearlyData or {}
         stats = externalPlayerData.summary or {}
         -- Set defaults for data not available from external players
-        unknownLevelClassData = {}
-        guildStatusData = {}
+        unknownLevelClassData = externalPlayerData.unknownLevelClassData or {}
+        guildStatusData = externalPlayerData.guildStatusData or {}
         guildData = {}
-        npcKillsData = {}
+        npcKillsData = externalPlayerData.npcKillsData or {}
     else
         -- Calculate local player data
         local currentCharacterKey = PSC_GetCharacterKey()
