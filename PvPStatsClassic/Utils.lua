@@ -162,7 +162,7 @@ function PSC_StartIncrementalAchievementsCalculation()
             }
 
             -- Broadcast calculated stats to network
-            if PVPSC.Network and PVPSC.Network.BroadcastStats then
+            if PVPSC.Network and PVPSC.Network.initialized then
                 local broadcastStats = {
                     summary = summaryStats,
                     classData = classData,

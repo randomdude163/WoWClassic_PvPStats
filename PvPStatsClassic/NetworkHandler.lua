@@ -149,6 +149,18 @@ function Network:IsThrottled()
     return false
 end
 
+-- Wrapper for SendCommMessage with debug output
+function Network:SendCommMessageWithDebug(prefix, payload, channel, target, priority)
+    if PSC_Debug then
+        local msgPreview = payload
+        if #msgPreview > 120 then
+            msgPreview = msgPreview:sub(1, 120) .. "..." -- Truncate for readability
+        end
+        print("|cFFFFD700[PVPSC Network]|r Sending message to ", channel, "(size:", #payload, "bytes):", msgPreview)
+    end
+    self:SendCommMessage(prefix, payload, channel, target, priority)
+end
+
 -- Build detailed statistics for a player (all kill data)
 function Network:BuildDetailedStats()
     local charactersToProcess = GetCharactersToProcessForStatistics()
@@ -269,7 +281,6 @@ function Network:BroadcastStats(providedStats)
     if IsInGuild() then
         table.insert(distributionList, "GUILD")
     end
-
     if IsInRaid() then
         table.insert(distributionList, "RAID")
     elseif IsInGroup() then
@@ -289,13 +300,10 @@ function Network:BroadcastStats(providedStats)
     for i, channel in ipairs(distributionList) do
         local delay = (i - 1) * self.MIN_BROADCAST_INTERVAL
         if delay == 0 then
-            if PSC_Debug then
-                D("Broadcasting FULL stats via AceComm (Size: " .. #payload .. " bytes) to channel: " .. channel)
-            end
-            self:SendCommMessage(PREFIX, payload, channel, nil, priority)
+            self:SendCommMessageWithDebug(PREFIX, payload, channel, nil, priority)
         else
             C_Timer.After(delay, function()
-                self:SendCommMessage(PREFIX, payload, channel, nil, priority)
+                self:SendCommMessageWithDebug(PREFIX, payload, channel, nil, priority)
             end)
         end
     end
@@ -459,8 +467,6 @@ function Network:Initialize()
         Network:CleanupStaleData()
     end)
 
-    self.initialized = true
-
     -- Send sync request and immediate broadcast on login
     C_Timer.After(2, function()
         -- Request all other players to broadcast their stats
@@ -484,15 +490,13 @@ function Network:Initialize()
         for i, channel in ipairs(distributionList) do
             local delay = (i - 1) * self.MIN_BROADCAST_INTERVAL
             if delay == 0 then
-                self:SendCommMessage(PREFIX, syncRequest, channel, nil, "NORMAL")
+                self:SendCommMessageWithDebug(PREFIX, syncRequest, channel, nil, "NORMAL")
             else
                 C_Timer.After(delay, function()
-                    self:SendCommMessage(PREFIX, syncRequest, channel, nil, "NORMAL")
+                    self:SendCommMessageWithDebug(PREFIX, syncRequest, channel, nil, "NORMAL")
                 end)
             end
         end
-
-        D("Sent sync request to all channels")
 
         -- Also broadcast our own stats immediately
         -- Wait for sync requests to finish to avoid bandwidth congestion
@@ -502,10 +506,6 @@ function Network:Initialize()
             D("Sent initial broadcast on login")
         end)
 
-        -- Show helpful message on first initialization
-        if not PSC_DB.NetworkInitialized then
-            PSC_DB.NetworkInitialized = true
-            print("|cFFFFD700[PvP Stats Classic]|r Network sharing enabled! Stats will be broadcast automatically.")
-        end
+        self.initialized = true
     end)
 end
