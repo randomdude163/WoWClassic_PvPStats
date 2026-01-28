@@ -790,9 +790,13 @@ local function PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killD
         levelPart = nil
     end
 
-    state.killsPerPlayer[playerName] = (state.killsPerPlayer[playerName] or 0) + kills
+    if not state.killsPerPlayer[playerName] then
+        state.uniqueKills = state.uniqueKills + 1
+        state.killsPerPlayer[playerName] = kills
+    else
+        state.killsPerPlayer[playerName] = state.killsPerPlayer[playerName] + kills
+    end
 
-    state.uniqueKills = state.uniqueKills + 1
     state.totalKills = state.totalKills + kills
 
     local levelNum = tonumber(levelPart or "0") or 0

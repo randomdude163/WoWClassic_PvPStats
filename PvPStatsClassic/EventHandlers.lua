@@ -649,6 +649,8 @@ function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_LOGOUT")
     pvpStatsClassicFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+    pvpStatsClassicFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+    pvpStatsClassicFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
 
     pvpStatsClassicFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_ENTERING_WORLD" then
@@ -674,6 +676,10 @@ function PSC_RegisterEvents()
             PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             PSC_CheckBattlegroundStatus()
+        elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_GUILD_UPDATE" then
+            if PVPSC.Network then
+               PVPSC.Network:BroadcastStats()
+            end
         end
     end)
 end

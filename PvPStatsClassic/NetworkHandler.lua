@@ -381,14 +381,22 @@ function Network:GetAllLeaderboardData()
     -- Add local player's data first
     local localStats = self:BuildDetailedStats()
     if localStats then
-        -- Flatten summary for display compatibility
+        -- Flatten key stats for display compatibility (most data is inside summary)
         if localStats.summary then
-            for k, v in pairs(localStats.summary) do
-                localStats[k] = v
-            end
+             -- Common fields expected at root level
+             localStats.totalKills = localStats.summary.totalKills
+             localStats.uniqueKills = localStats.summary.uniqueKills
+             localStats.totalDeaths = localStats.summary.totalDeaths
+             localStats.kdRatio = localStats.summary.kdRatio
+             localStats.currentKillStreak = localStats.summary.currentKillStreak
+             localStats.highestKillStreak = localStats.summary.highestKillStreak
+             localStats.mostKilledPlayer = localStats.summary.mostKilledPlayer
+             localStats.mostKilledCount = localStats.summary.mostKilledCount
+             localStats.avgKillsPerDay = localStats.summary.avgKillsPerDay
         end
         table.insert(leaderboardData, localStats)
     end
+
 
     -- Add other players' data (filter out stale data)
     for name, data in pairs(self.sharedData) do

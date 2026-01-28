@@ -403,82 +403,81 @@ end
 
 local function GetLeaderboardData()
     -- Use network handler to get all leaderboard data (local + shared)
-    if PVPSC.Network and PVPSC.Network.GetAllLeaderboardData then
-        return PVPSC.Network:GetAllLeaderboardData()
-    end
-
-    -- Fallback to local-only data if network is not initialized
+    -- This function was refactored to prioritize unified logic via Network:GetAllLeaderboardData()
+    -- The fallback logic was merged into the main block to avoid duplication
     local leaderboardData = {}
 
-    -- Get current player's stats
-    local playerName = UnitName("player")
-    local _, playerClass = UnitClass("player")
-    local _, playerRace = UnitRace("player")
-    local playerLevel = UnitLevel("player")
-
-    -- Use the same statistics calculation function as StatisticsFrame
-    local charactersToProcess = GetCharactersToProcessForStatistics()
-    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-
-    -- Format K/D ratio (matching StatisticsFrame display logic)
-    local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
-
-    -- Format average kills per day (matching StatisticsFrame display logic)
-    local avgPerDay
-    if stats.avgKillsPerDay > 0 then
-        avgPerDay = string.format("%.1f", stats.avgKillsPerDay)
-    else
-        avgPerDay = "0.0"
+    -- Attempt to get data from Network handler
+    local netData = nil
+    if PVPSC.Network and PVPSC.Network.GetAllLeaderboardData then
+        netData = PVPSC.Network:GetAllLeaderboardData()
     end
 
-    -- Count unlocked achievements (using the same logic as StatisticsFrame)
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local completedAchievements = 0
-    local totalAchievements = 0
-
-    if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
-        totalAchievements = #PVPSC.AchievementSystem.achievements
-
-        if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[currentCharacterKey] then
-            for _, achievementData in pairs(PSC_DB.CharacterAchievements[currentCharacterKey]) do
-                if achievementData.unlocked then
-                    completedAchievements = completedAchievements + 1
-                end
+    -- If network didn't return data (or empty), simulate a local-only result
+    -- by calling the same BuildDetailedStats function the Network handler uses for local stats.
+    if not netData or #netData == 0 then
+        if PVPSC.Network and PVPSC.Network.BuildDetailedStats then
+            local localStats = PVPSC.Network:BuildDetailedStats()
+            if localStats then
+                 netData = { localStats }
             end
         end
     end
 
-    local achievementText = completedAchievements .. "/" .. totalAchievements
+    if netData and #netData > 0 then
+         -- Transform network data into display format
+         for _, data in ipairs(netData) do
+             -- Data coming from network might have nested summary or flattened fields
+             -- If keys are missing at root, check if they exist in summary table
+             local statsTarget = data
+             if data.summary then
+                 statsTarget = data.summary
+             end
 
-    -- Get achievement points
-    local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
+             local currentStreak = data.currentKillStreak or statsTarget.currentKillStreak
+             local bestStreak = data.highestKillStreak or statsTarget.highestKillStreak
+             local avgPerDayVal = data.avgKillsPerDay or statsTarget.avgKillsPerDay
 
-    -- Get addon version using the utility function
-    local addonVersion = "v" .. PSC_GetAddonVersion()
+             local mostKilledVal = data.mostKilledPlayer or statsTarget.mostKilledPlayer or "None"
+             local mostKilledCount = data.mostKilledCount or statsTarget.mostKilledCount or 0
 
-    -- Format most killed player text
-    local mostKilledText = stats.mostKilledPlayer or "None"
-    if mostKilledText ~= "None" and stats.mostKilledCount and stats.mostKilledCount > 0 then
-        mostKilledText = mostKilledText .. " (" .. stats.mostKilledCount .. ")"
+             if mostKilledVal ~= "None" and mostKilledCount > 0 then
+                 mostKilledVal = mostKilledVal .. " (" .. mostKilledCount .. ")"
+             else
+                 mostKilledVal = "None"
+             end
+
+             local avgPerDayStr = "0.0"
+             if avgPerDayVal and tonumber(avgPerDayVal) then
+                 avgPerDayStr = string.format("%.1f", tonumber(avgPerDayVal))
+             end
+
+             local kills = data.totalKills or statsTarget.totalKills or 0
+             local deaths = data.totalDeaths or statsTarget.totalDeaths or 0
+             local kdRatioVal = PSC_FormatKDRatio(kills, deaths)
+
+             local acUnlocked = data.achievementsUnlocked or 0
+             local acTotal = data.totalAchievements or (PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements and #PVPSC.AchievementSystem.achievements) or 0
+             local achievementText = acUnlocked .. "/" .. acTotal
+
+             table.insert(leaderboardData, {
+                 playerName = data.playerName or "Unknown",
+                 level = data.level or 0,
+                 class = data.class or "Unknown",
+                 race = data.race or "Unknown",
+                 totalKills = kills,
+                 uniqueKills = data.uniqueKills or statsTarget.uniqueKills or 0,
+                 kdRatio = kdRatioVal,
+                 currentStreak = currentStreak or 0,
+                 bestStreak = bestStreak or 0,
+                 mostKilled = mostKilledVal,
+                 avgPerDay = avgPerDayStr,
+                 achievements = achievementText,
+                 achievementPoints = data.achievementPoints or 0,
+                 addonVersion = data.addonVersion or "Unknown"
+             })
+         end
     end
-
-    -- Add current player as first entry
-    table.insert(leaderboardData, {
-        playerName = playerName,
-        level = playerLevel,
-        class = playerClass,
-        race = playerRace,
-        totalKills = stats.totalKills,
-        uniqueKills = stats.uniqueKills,
-        kdRatio = kdRatio,
-        currentStreak = stats.currentKillStreak,
-        bestStreak = stats.highestKillStreak,
-        mostKilled = mostKilledText,
-        avgPerDay = avgPerDay,
-        achievements = achievementText,
-        achievementPoints = achievementPoints,
-        addonVersion = addonVersion
-    })
 
     return leaderboardData
 end
@@ -610,7 +609,7 @@ function PSC_CreateLeaderboardFrame()
 
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", 0, 15)
-    infoText:SetText("Leaderboard syncs with guild, party, and raid members who have this addon installed")
+    infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
     infoText:SetTextColor(0.7, 0.7, 0.7)
     infoText:SetJustifyH("CENTER")
     PSC_LeaderboardFrame.infoText = infoText
