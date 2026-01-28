@@ -47,21 +47,17 @@ function PSC_SlashCommandHandler(msg)
     local command, arguments = msg:match("^(%S*)%s*(.-)$")
     command = string.lower(command or "")
 
-    if not PSC_Debug then
-        if command == "stats" then
-            PSC_CreateStatisticsFrame()
-        elseif command == "history" then
-            PSC_CreateKillsListFrame()
-        elseif command == "achievements" then
-            PSC_ToggleAchievementFrame()
-        elseif command == "leaderboard" or command == "lb" then
-            PSC_CreateLeaderboardFrame()
-        elseif command == "options" or command == "settings" then
-            PSC_CreateConfigUI()
-        else
-            PrintSlashCommandUsage()
-        end
-    else
+    if command == "stats" then
+        PSC_CreateStatisticsFrame()
+    elseif command == "history" then
+        PSC_CreateKillsListFrame()
+    elseif command == "achievements" then
+        PSC_ToggleAchievementFrame()
+    elseif command == "leaderboard" or command == "lb" then
+        PSC_CreateLeaderboardFrame()
+    elseif command == "options" or command == "settings" then
+        PSC_CreateConfigUI()
+    elseif PSC_Debug then
         if command == "simulatedeath" then
             local killerCount = 1
             local assistCount = 0
@@ -146,5 +142,7 @@ function PSC_SlashCommandHandler(msg)
         else
             PrintSlashCommandUsage()
         end
+    else
+        PrintSlashCommandUsage()
     end
 end
