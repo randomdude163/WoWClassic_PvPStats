@@ -16,6 +16,7 @@ local PREFIX = "PVPSC"  -- Single prefix for all messages
 Network.sharedData = Network.sharedData or {}
 Network.detailedStatsCache = Network.detailedStatsCache or {}  -- Cache for detailed stats
 Network.DATA_TTL = 600  -- Consider data stale after 10 minutes (600 seconds)
+Network.MIN_BROADCAST_INTERVAL = 5 -- Minimum seconds between broadcasts to prevent throttling
 
 -- Deduplication cache to prevent processing the same message multiple times
 local recentMessages = {}
@@ -67,12 +68,19 @@ local KEY_MAP = {
     weekdayData = "W",
     monthlyData = "M",
     yearlyData = "Y",
+    unknownLevelClassData = "UL",
+    guildStatusData = "GS",
+    npcKillsData = "NK",
     playerName = "pn",
     level = "l",
     class = "c",
     race = "r",
     faction = "f",
-    timestamp = "t"
+    timestamp = "t",
+    addonVersion = "av",
+    achievementsUnlocked = "au",
+    totalAchievements = "ta",
+    achievementPoints = "ap"
 }
 local REVERSE_KEY_MAP = {}
 for k, v in pairs(KEY_MAP) do REVERSE_KEY_MAP[v] = k end
@@ -154,6 +162,26 @@ function Network:BuildDetailedStats()
 
     D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
 
+    -- Calculate achievement stats
+    local achievementsUnlocked = 0
+    local totalAchievements = 0
+    local achievementPoints = 0
+
+    if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
+        totalAchievements = #PVPSC.AchievementSystem.achievements
+        local currentCharacterKey = PSC_GetCharacterKey()
+
+        if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[currentCharacterKey] then
+            for _, achievementData in pairs(PSC_DB.CharacterAchievements[currentCharacterKey]) do
+                if achievementData.unlocked then
+                    achievementsUnlocked = achievementsUnlocked + 1
+                end
+            end
+        end
+
+        achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
+    end
+
     return {
         summary = stats,
         classData = classData,
@@ -165,19 +193,48 @@ function Network:BuildDetailedStats()
         weekdayData = weekdayData,
         monthlyData = monthlyData,
         yearlyData = yearlyData,
+        unknownLevelClassData = unknownLevelClassData,
+        guildStatusData = guildStatusData,
+        npcKillsData = npcKillsData,
         -- Note: guildData intentionally excluded to reduce payload size
         playerName = UnitName("player"),
         level = UnitLevel("player"),
         class = select(2, UnitClass("player")),
         race = select(2, UnitRace("player")),
         faction = UnitFactionGroup("player") or "",
-        timestamp = time()
+        timestamp = time(),
+        addonVersion = "v" .. PSC_GetAddonVersion(),
+        achievementsUnlocked = achievementsUnlocked,
+        totalAchievements = totalAchievements,
+        achievementPoints = achievementPoints
     }
 end
 
 -- Broadcast player stats
 function Network:BroadcastStats()
-    -- If we are throttled, defer this update
+    local now = GetTime()
+
+    -- Check if we are broadcasting too frequently (time-based throttling)
+    if self.lastBroadcastTime and (now - self.lastBroadcastTime < self.MIN_BROADCAST_INTERVAL) then
+        -- We are too early. Queue a Deferred broadcast if one isn't already scheduled.
+        if not self.deferredBroadcastTimer then
+            local delay = self.MIN_BROADCAST_INTERVAL - (now - self.lastBroadcastTime)
+            -- Ensure delay is positive and reasonable
+            if delay < 0.1 then delay = 0.1 end
+
+            if PSC_Debug then
+                print("|cFFFFD700[PVPSC Network]|r Too many updates. Deferring broadcast by " .. string.format("%.1f", delay) .. "s")
+            end
+
+            self.deferredBroadcastTimer = C_Timer.NewTimer(delay, function()
+                self.deferredBroadcastTimer = nil
+                self:BroadcastStats()
+            end)
+        end
+        return
+    end
+
+    -- If we are throttled by the game client/library (bandwidth limit), defer this update
     if self:IsThrottled() then
         if PSC_Debug then
             print("|cFFFFD700[PVPSC Network]|r Network throttled (BULK queue full), deferring broadcast...")
@@ -192,6 +249,8 @@ function Network:BroadcastStats()
         end
         return
     end
+
+    self.lastBroadcastTime = now
 
     -- Always build full detailed stats
     local detailedStats = self:BuildDetailedStats()
@@ -274,7 +333,7 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
         self.detailedStatsCache[statsData.playerName] = statsData
         self.sharedData[statsData.playerName] = statsData
 
-        D("Received detailed stats from", statsData.playerName, "- Kills:", statsData.totalKills)
+        D("Received detailed stats from", statsData.playerName, "via", distribution, "- Kills:", statsData.totalKills)
 
         -- Refresh leaderboard if it's open
         if PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsShown() then
@@ -283,12 +342,34 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
 
     elseif msgType == "SYNC" then
         -- Sync request - broadcast our stats immediately
-        D("Received sync request from", sender)
+        D("Received sync request from", sender, "via", distribution)
+
+        -- Prevent multiple responses to the same sync event (e.g. receiving via GUILD and PARTY)
+        if self.syncResponsePending then
+            D("Ignoring duplicate SYNC request from", sender, "via", distribution, "- response already pending")
+            return
+        end
+
+        self.syncResponsePending = true
+
         -- Broadcast after a short random delay to avoid network spam if many players respond at once
         C_Timer.After(math.random() * 2, function()
+            self.syncResponsePending = false
             self:BroadcastStats()
         end)
     end
+end
+
+-- Get cached detailed stats for a player
+function Network:GetDetailedStatsForPlayer(playerName)
+    if self.detailedStatsCache and self.detailedStatsCache[playerName] then
+        return self.detailedStatsCache[playerName]
+    end
+    -- Fallback to shared data if available
+    if self.sharedData and self.sharedData[playerName] then
+        return self.sharedData[playerName]
+    end
+    return nil
 end
 
 -- Get all leaderboard data (local + shared)

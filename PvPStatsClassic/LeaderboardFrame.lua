@@ -211,13 +211,13 @@ end
 local function CreateRaceCell(content, anchorTo, raceName, width)
     local raceText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     raceText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
-    
+
     if raceName and raceName ~= "Unknown" then
         raceName = raceName:gsub("(%w)(%w*)", function(first, rest)
             return first:upper() .. rest:lower()
         end)
     end
-    
+
     raceText:SetText(raceName or "Unknown")
     raceText:SetWidth(width)
     raceText:SetJustifyH("LEFT")
@@ -355,34 +355,30 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
             if not playerName or playerName == "" then
                 return
             end
-            
+
             -- Check if it's the local player
             if playerName == UnitName("player") then
                 -- Just open our own statistics frame
                 PSC_CreateStatisticsFrame()
                 return
             end
-            
-            -- Request detailed stats from the other player
-            print("[PvP Stats] Requesting detailed statistics from " .. playerName .. "...")
-            
-            if PVPSC.Network and PVPSC.Network.RequestDetailedStats then
-                PVPSC.Network:RequestDetailedStats(playerName, function(detailedStats)
-                    if detailedStats then
-                        print("[PvP Stats] Received statistics from " .. playerName)
-                        -- Display the detailed stats
-                        PSC_ShowPlayerDetailedStats(playerName, detailedStats)
-                    else
-                        print("[PvP Stats] Failed to receive statistics from " .. playerName)
-                        print("Make sure the player is nearby, in your guild, or in your group.")
-                    end
-                end)
+
+            -- Retrieve detailed stats from cache
+            if PVPSC.Network and PVPSC.Network.GetDetailedStatsForPlayer then
+                local detailedStats = PVPSC.Network:GetDetailedStatsForPlayer(playerName)
+                if detailedStats then
+                    -- Display the detailed stats
+                    PSC_ShowPlayerDetailedStats(playerName, detailedStats)
+                else
+                    print("[PvP Stats] No detailed statistics available for " .. playerName)
+                    print("Wait for their next broadcast.")
+                end
             else
                 print("[PvP Stats] Network system not initialized.")
             end
         end
     end)
-    
+
     -- Add tooltip to indicate clickability
     rowContainer:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
@@ -395,7 +391,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         end
         GameTooltip:Show()
     end)
-    
+
     rowContainer:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
     end)
@@ -410,23 +406,23 @@ local function GetLeaderboardData()
     if PVPSC.Network and PVPSC.Network.GetAllLeaderboardData then
         return PVPSC.Network:GetAllLeaderboardData()
     end
-    
+
     -- Fallback to local-only data if network is not initialized
     local leaderboardData = {}
-    
+
     -- Get current player's stats
     local playerName = UnitName("player")
     local _, playerClass = UnitClass("player")
     local _, playerRace = UnitRace("player")
     local playerLevel = UnitLevel("player")
-    
+
     -- Use the same statistics calculation function as StatisticsFrame
     local charactersToProcess = GetCharactersToProcessForStatistics()
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-    
+
     -- Format K/D ratio (matching StatisticsFrame display logic)
     local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
-    
+
     -- Format average kills per day (matching StatisticsFrame display logic)
     local avgPerDay
     if stats.avgKillsPerDay > 0 then
@@ -434,15 +430,15 @@ local function GetLeaderboardData()
     else
         avgPerDay = "0.0"
     end
-    
+
     -- Count unlocked achievements (using the same logic as StatisticsFrame)
     local currentCharacterKey = PSC_GetCharacterKey()
     local completedAchievements = 0
     local totalAchievements = 0
-    
+
     if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
         totalAchievements = #PVPSC.AchievementSystem.achievements
-        
+
         if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[currentCharacterKey] then
             for _, achievementData in pairs(PSC_DB.CharacterAchievements[currentCharacterKey]) do
                 if achievementData.unlocked then
@@ -451,21 +447,21 @@ local function GetLeaderboardData()
             end
         end
     end
-    
+
     local achievementText = completedAchievements .. "/" .. totalAchievements
-    
+
     -- Get achievement points
     local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
-    
+
     -- Get addon version using the utility function
     local addonVersion = "v" .. PSC_GetAddonVersion()
-    
+
     -- Format most killed player text
     local mostKilledText = stats.mostKilledPlayer or "None"
     if mostKilledText ~= "None" and stats.mostKilledCount and stats.mostKilledCount > 0 then
         mostKilledText = mostKilledText .. " (" .. stats.mostKilledCount .. ")"
     end
-    
+
     -- Add current player as first entry
     table.insert(leaderboardData, {
         playerName = playerName,
@@ -483,7 +479,7 @@ local function GetLeaderboardData()
         achievementPoints = achievementPoints,
         addonVersion = addonVersion
     })
-    
+
     return leaderboardData
 end
 
@@ -611,7 +607,7 @@ function PSC_CreateLeaderboardFrame()
 
     PSC_LeaderboardFrame = CreateMainFrame()
     PSC_LeaderboardFrame.content = CreateScrollFrame(PSC_LeaderboardFrame)
-    
+
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", 0, 15)
     infoText:SetText("Leaderboard syncs with guild, party, and raid members who have this addon installed")

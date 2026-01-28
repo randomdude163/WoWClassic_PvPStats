@@ -1321,218 +1321,204 @@ function PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, maxKill
     end
 end
 
-local function createSummaryStatsForExternalPlayer(parent, x, y, width, height, stats, playerName)
+local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer, extraData, playerName)
     local spacing_between_sections = 10
-    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
     local statY = -22
 
-    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills or 0, statY,
-        "Total number of players killed.")
+    -- 1. Totals
+    local totalKillsTooltip = isLocalPlayer and "Total number of players you have killed." or "Total number of players killed."
+    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills or 0, statY, totalKillsTooltip)
 
-    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills or 0, statY,
-        "Total number of unique players killed.")
+    local uniqueKillsTooltip = isLocalPlayer and "Total number of unique players you have killed. Multiple kills of the same player are counted only once." or "Total number of unique players killed."
+    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills or 0, statY, uniqueKillsTooltip)
 
-    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY,
-        "Total number of deaths to players.")
+    local totalDeathsTooltip = isLocalPlayer and "Total number of times you have died to players." or "Total number of deaths to players."
+    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY, totalDeathsTooltip)
 
     local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
     local kdText = kdRatio .. " (" .. (stats.totalKills or 0) .. "/" .. (stats.totalDeaths or 0) .. ")"
-    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY,
-        "Overall kill/death ratio.")
+    local kdTooltip = isLocalPlayer and "Overall kill/death ratio (total player kills divided by total PvP deaths)." or "Overall kill/death ratio."
+    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY, kdTooltip)
 
-    if stats.currentKillStreak then
-        statY = addSummaryStatLine(container, "Current kill streak:", tostring(stats.currentKillStreak), statY - spacing_between_sections,
-            "Current active kill streak.", true)
+    if (stats.unknownLevelKills and stats.unknownLevelKills > 0) or isLocalPlayer then
+        local unknownTooltip = "Total number of times you have killed a level ?? player."
+        statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills or 0, statY, unknownTooltip)
     end
 
-    if stats.highestKillStreak then
-        statY = addSummaryStatLine(container, "Highest kill streak:", tostring(stats.highestKillStreak), statY,
-            "The highest kill streak achieved.", true)
+    -- 2. Most Killed & Nemesis
+    if stats.mostKilledPlayer and (stats.mostKilledCount or 0) > 0 and stats.mostKilledPlayer ~= "None" then
+        local mostKilledText = stats.mostKilledPlayer .. " (" .. (stats.mostKilledCount or 0) .. ")"
+        local mkTooltip = isLocalPlayer and "Click to show all kills of this player" or "The player killed most often."
+        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mkTooltip)
     end
 
-    if stats.mostKilledPlayer and stats.mostKilledCount then
-        local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
-        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections,
-            "The player killed most often.")
+    if stats.nemesisName and stats.nemesisName ~= "None" and (stats.nemesisScore or 0) > 0 then
+        local nemesisText = stats.nemesisName .. " (" .. (stats.nemesisScore or 0) .. ")"
+        local nemesisTooltip = isLocalPlayer and "The player who has killed you the most (kills + assists). Click to view details." or "The player who has killed this player the most."
+        statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY, nemesisTooltip)
     end
 
-    if stats.avgLevel then
+    -- 3. Averages
+    if stats.avgLevel and stats.avgLevel > 0 then
         statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - spacing_between_sections,
-            "Average level of players killed.")
+            isLocalPlayer and "Average level of players you have killed." or "Average level of players killed.")
     end
 
-    if stats.avgKillsPerDay then
-        statY = addSummaryStatLine(container, "Avg. kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY,
-            "Average kills per day.")
+    if stats.avgKillsPerPlayer and stats.avgKillsPerPlayer > 0 then
+        statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
+            isLocalPlayer and "Average number of kills per unique player." or "Average number of kills per unique player.")
     end
 
-    -- Add a note at the bottom
-    local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, 10)
-    noteText:SetText("Viewing " .. playerName .. "'s statistics")
-    noteText:SetTextColor(0.7, 0.7, 0.7)
+    if stats.avgLevelDiff and stats.avgLevelDiff ~= 0 then
+        local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
+                              (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
+        statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
+            isLocalPlayer and "Average level difference between you and the players you have killed." or "Average level difference.")
+    end
 
+    -- 4. Streaks
+    local killStreakY = statY - spacing_between_sections
+    local csTooltip = isLocalPlayer
+        and "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings."
+        or "Current active kill streak."
+
+    statY = addSummaryStatLine(container, "Current kill streak:", tostring(stats.currentKillStreak or 0), killStreakY, csTooltip, true)
+
+    local hkTooltip = "The highest kill streak achieved."
+    local mkTooltip = "The highest number of kills achieved while staying in combat."
+    local hkValue = tostring(stats.highestKillStreak or 0)
+    local mkValue = tostring(stats.highestMultiKill or 0)
+
+    if isLocalPlayer then
+        if PSC_DB.ShowAccountWideStats then
+            hkTooltip = "The highest kill streak you ever achieved across all characters."
+            if (stats.highestKillStreak or 0) > 0 then
+                hkValue = hkValue .. " (" .. (stats.highestKillStreakCharacter or "") .. ")"
+            end
+
+            mkTooltip = "The highest number of kills you achieved while staying in combat across all characters."
+            if (stats.highestMultiKill or 0) > 0 then
+                mkValue = mkValue .. " (" .. (stats.highestMultiKillCharacter or "") .. ")"
+            end
+        else
+            hkTooltip = "The highest kill streak you achieved on this character."
+            mkTooltip = "The highest number of kills you achieved while staying in combat on this character."
+        end
+    end
+
+    -- Note: Passing 'true' for isKillStreak (6th arg) to make it gold
+    statY = addSummaryStatLine(container, "Highest kill streak:", hkValue, statY, hkTooltip, true)
+    statY = addSummaryStatLine(container, "Highest multi-kill:", mkValue, statY, mkTooltip, true)
+
+    -- 5. Time Periods
+    if stats.killsToday or (isLocalPlayer and stats.killsToday ~= nil) then
+        statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday or 0), statY, "Total player kills today.")
+    end
+    if stats.killsThisWeek or (isLocalPlayer and stats.killsThisWeek ~= nil) then
+        statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek or 0), statY, "Total player kills this week.")
+    end
+    if stats.killsThisMonth or (isLocalPlayer and stats.killsThisMonth ~= nil) then
+        statY = addSummaryStatLine(container, "Kills this month:", tostring(stats.killsThisMonth or 0), statY, "Total player kills this month.")
+    end
+    if stats.killsThisYear or (isLocalPlayer and stats.killsThisYear ~= nil) then
+        statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear or 0), statY, "Total player kills this year.")
+    end
+
+    statY = statY - spacing_between_sections
+
+    -- 6. Busiest & Activity
+    if stats.busiestWeekday and stats.busiestWeekday ~= "None" then
+        local tip = isLocalPlayer and "Your most active day of the week for PvP kills." or "Most active day of the week."
+        statY = addSummaryStatLine(container, "Busiest weekday:", stats.busiestWeekday .. " (" .. (stats.busiestWeekdayKills or 0) .. ")", statY, tip)
+    end
+
+    if stats.busiestHour and stats.busiestHour ~= "None" then
+        local tip = isLocalPlayer and "Your most active hour of the day for PvP kills." or "Most active hour of the day."
+        statY = addSummaryStatLine(container, "Busiest hour:", stats.busiestHour .. " (" .. (stats.busiestHourKills or 0) .. ")", statY, tip)
+    end
+
+    if stats.busiestMonth and stats.busiestMonth ~= "None" then
+        local tip = isLocalPlayer and "Your most active month for PvP kills." or "Most active month."
+        statY = addSummaryStatLine(container, "Busiest month:", stats.busiestMonth .. " (" .. (stats.busiestMonthKills or 0) .. ")", statY, tip)
+    end
+
+    if stats.avgKillsPerDay and stats.avgKillsPerDay > 0 then
+        local tip = isLocalPlayer and "Your average kills per day from your first recorded kill to your most recent kill. This includes all days in that time period, even days when you didn't play." or "Average kills per day."
+        statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY, tip)
+    end
+
+    -- 7. Achievements
+    if extraData and extraData.achievementsUnlocked and extraData.totalAchievements then
+        statY = statY - spacing_between_sections
+        local percentage = 0
+        if extraData.totalAchievements > 0 then
+            percentage = (extraData.achievementsUnlocked / extraData.totalAchievements) * 100
+        end
+
+        local achieveText = extraData.achievementsUnlocked .. " / " .. extraData.totalAchievements .. " (" .. string.format("%.1f%%", percentage) .. ")"
+
+        if isLocalPlayer then
+            local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            labelText:SetPoint("TOPLEFT", 0, statY)
+            labelText:SetText("Achievements unlocked:")
+
+            local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            valueText:SetPoint("TOPLEFT", 150, statY)
+            valueText:SetText(achieveText)
+
+            local achievementButton = CreateFrame("Button", nil, container)
+            achievementButton:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
+            achievementButton:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
+            PSC_CreateGoldHighlight(achievementButton, 20)
+
+            achievementButton:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+                GameTooltip:AddLine("Click to view your achievements", 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            achievementButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            achievementButton:SetScript("OnClick", function() PSC_ToggleAchievementFrame() end)
+
+            statY = statY - 20
+        else
+            statY = addSummaryStatLine(container, "Achievements:", achieveText, statY, "Total achievements completed.")
+        end
+
+        if extraData.achievementPoints then
+             local ptText = tostring(extraData.achievementPoints)
+             if extraData.totalPossiblePoints then
+                 ptText = ptText .. " / " .. extraData.totalPossiblePoints
+             end
+             statY = addSummaryStatLine(container, "Achievement points:", ptText, statY, "Total achievement points earned.")
+        end
+    end
+
+    -- 8. Footer Note
+    if not isLocalPlayer then
+        local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, 10)
+        noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
+        noteText:SetTextColor(0.7, 0.7, 0.7)
+    end
+end
+
+local function createSummaryStatsForExternalPlayer(parent, x, y, width, height, stats, playerName, extraData)
+    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
+    PSC_PopulateSummaryStatsContainer(container, stats, false, extraData, playerName)
     return container
 end
 
 local function createSummaryStats(parent, x, y, width, height)
-    local spacing_between_sections = 10
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
     local charactersToProcess = GetCharactersToProcessForStatistics()
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-    local statY = -22
 
-    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
-        "Total number of players you have killed.")
-
-    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills, statY,
-        "Total number of unique players you have killed. Mlitple kills of the same player are counted only once.")
-
-    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY,
-        "Total number of times you have died to players.")
-
-    local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
-    local kdText = kdRatio .. " (" .. stats.totalKills .. "/" .. (stats.totalDeaths or 0) .. ")"
-
-    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY,
-        "Overall kill/death ratio (total player kills divided by total PvP deaths).")
-    statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills, statY,
-        "Total number of times you have killed a level ?? player.")
-
-    local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
-    statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections,
-        "Click to show all kills of this player")
-
-    -- Add nemesis stat (player with most kills + assists against you)
-    local nemesisText = stats.nemesisName .. " (" .. stats.nemesisScore .. ")"
-    statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY,
-        "The player who has killed you the most (kills + assists). Click to view details.")
-
-    if stats.mostKilledPlayer ~= "None" then
-        local tooltipFrame = container:GetChildren()
-        for _, child in pairs({container:GetChildren()}) do
----@diagnostic disable-next-line: undefined-field
-            if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
----@diagnostic disable-next-line: undefined-field
-                child:SetScript("OnMouseUp", function()
-                    PSC_CreateKillsListFrame()
-                    C_Timer.After(0.05, function()
-                        PSC_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
-                        PSC_FrameManager:BringToFront("KillsList")
-                    end)
-                end)
-                break
-            end
-        end
-    end
-
-    statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - spacing_between_sections,
-        "Average level of players you have killed.")
-    statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
-        "Average number of kills per unique player.")
-    local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
-                              (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
-    statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
-        "Average level difference between you and the players you have killed.")
-
-
-    -- Current kill streak with button (similar to achievements)
-    local killStreakY = statY - spacing_between_sections
-
-    local killStreakLabelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killStreakLabelText:SetPoint("TOPLEFT", 0, killStreakY)
-    killStreakLabelText:SetText("Current kill streak:")
-
-    local killStreakValueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killStreakValueText:SetPoint("TOPLEFT", 150, killStreakY)
-    killStreakValueText:SetText(tostring(stats.currentKillStreak))
-    killStreakValueText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
-
-    -- Add tooltip for kill streak text (label and value)
-    local killStreakTooltipFrame = CreateFrame("Frame", nil, container)
-    killStreakTooltipFrame:SetPoint("TOPLEFT", killStreakLabelText, "TOPLEFT", 0, 0)
-    killStreakTooltipFrame:SetPoint("BOTTOMRIGHT", killStreakValueText, "BOTTOMRIGHT", 0, 0)
-
-    -- Make the kill streak text clickable (like the original implementation)
-    local killStreakClickButton = CreateFrame("Button", nil, killStreakTooltipFrame)
-    killStreakClickButton:SetAllPoints(killStreakTooltipFrame)
-
-    -- Add gold highlight for hover effect
-    PSC_CreateGoldHighlight(killStreakClickButton, 20)
-
-    -- Add tooltip to the click button
-    killStreakClickButton:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-        GameTooltip:AddLine("Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-
-    killStreakClickButton:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
-    end)
-
-    killStreakClickButton:SetScript("OnMouseUp", function()
-        PSC_CreateKillStreakPopup()
-    end)
-
-    statY = killStreakY - 20
-
-    local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
-    local highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat across all characters."
-    local highestKillStreakValueText = tostring(stats.highestKillStreak)
-    if stats.highestKillStreak > 0 then
-        highestKillStreakValueText = highestKillStreakValueText .. " (" .. stats.highestKillStreakCharacter .. ")"
-    end
-    local highestMultiKillValueText = tostring(stats.highestMultiKill)
-    if stats.highestMultiKill > 0 then
-        highestMultiKillValueText = highestMultiKillValueText .. " (" .. stats.highestMultiKillCharacter .. ")"
-    end
-    if not PSC_DB.ShowAccountWideStats then
-        highestKillStreakTooltip = "The highest kill streak you achieved on this character."
-        highestKillStreakValueText = tostring(stats.highestKillStreak)
-        highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat on this character."
-        highestMultiKillValueText = tostring(stats.highestMultiKill)
-    end
-    statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
-    statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
-
-    -- Add daily, weekly, monthly, and yearly kill statistics
-    statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday), statY, "Total player kills you achieved today, including all levels and grey players.")
-    statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek), statY, "Total player kills this week (Wednesday to Wednesday, matching WoW's weekly reset). Includes all levels and grey players.")
-    statY = addSummaryStatLine(container, "Kills this month:", tostring(stats.killsThisMonth), statY, "Total player kills this month (from the 1st to today). Includes all levels and grey players.")
-    statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear), statY, "Total player kills this year (from January 1st to today). Includes all levels and grey players.")
-
-    statY = statY - spacing_between_sections  -- Add some spacing before the achievement section
-
-    if stats.busiestWeekday ~= "None" then
-        statY = addSummaryStatLine(container, "Busiest weekday:", stats.busiestWeekday .. " (" .. stats.busiestWeekdayKills .. ")", statY,
-            "Your most active day of the week for PvP kills.")
-    end
-
-    if stats.busiestHour ~= "None" then
-        statY = addSummaryStatLine(container, "Busiest hour:", stats.busiestHour .. " (" .. stats.busiestHourKills .. ")", statY,
-            "Your most active hour of the day for PvP kills.")
-    end
-
-    if stats.busiestMonth ~= "None" then
-        statY = addSummaryStatLine(container, "Busiest month:", stats.busiestMonth .. " (" .. stats.busiestMonthKills .. ")", statY,
-            "Your most active month for PvP kills.")
-    end
-
-    if stats.avgKillsPerDay > 0 then
-        statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY,
-            "Your average kills per day from your first recorded kill to your most recent kill. This includes all days in that time period, even days when you didn't play.")
-    end
-
-    -- Count total and completed achievements
-    statY = statY - spacing_between_sections  -- Extra spacing before new section
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local completedCount = 0
-    local totalCount = 0
-
+    local extraData = {}
     if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
-        totalCount = #PVPSC.AchievementSystem.achievements
+        local currentCharacterKey = PSC_GetCharacterKey()
+        local totalCount = #PVPSC.AchievementSystem.achievements
+        local completedCount = 0
 
         if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[currentCharacterKey] then
             for _, achievementData in pairs(PSC_DB.CharacterAchievements[currentCharacterKey]) do
@@ -1541,52 +1527,14 @@ local function createSummaryStats(parent, x, y, width, height)
                 end
             end
         end
+
+        extraData.achievementsUnlocked = completedCount
+        extraData.totalAchievements = totalCount
+        extraData.achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
+        extraData.totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
     end
 
-    -- Find the achievement stats section
-    local achievementText = completedCount .. " / " .. totalCount
-    local achievementTooltip = "Click to view your achievements (" .. completedCount .. " out of " .. totalCount .. " completed)"
-
-    local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    labelText:SetPoint("TOPLEFT", 0, statY)
-    labelText:SetText("Achievements unlocked:")
-
-    local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    valueText:SetPoint("TOPLEFT", 150, statY)
-    valueText:SetText(achievementText)
-
-    -- Create a clickable button for the achievements line
-    local achievementButton = CreateFrame("Button", nil, container)
-    achievementButton:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
-    achievementButton:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
-
-    -- Add gold highlight
-    PSC_CreateGoldHighlight(achievementButton, 20)
-
-    -- Add tooltip and click handlers
-    achievementButton:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-        GameTooltip:AddLine(achievementTooltip, 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-
-    achievementButton:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
-    end)
-
-    -- Open achievement frame on click
-    achievementButton:SetScript("OnClick", function()
-        PSC_ToggleAchievementFrame()
-    end)
-
-    statY = statY - 20  -- Standard line height
-
-    -- Add the achievement points line:
-    local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
-    local totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
-    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints .. " / " .. totalPossiblePoints, statY,
-        "Progress toward total possible achievement points (" .. achievementPoints .. " out of " .. totalPossiblePoints .. "). Earn more by completing achievements!")
-
+    PSC_PopulateSummaryStatsContainer(container, stats, true, extraData)
     return container
 end
 
@@ -2001,7 +1949,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     -- Determine if we're viewing external player data or local data
     local isExternalPlayer = (externalPlayerData ~= nil)
     local playerDisplayName = isExternalPlayer and externalPlayerData.playerName or nil
-    
+
     -- Set title based on whether it's external or local data
     local titleText
     if isExternalPlayer and playerDisplayName then
@@ -2041,7 +1989,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     -- Get data based on whether we're viewing external or local player
     local classData, raceData, genderData, zoneData, levelData, hourlyData, weekdayData, monthlyData, yearlyData, stats
     local unknownLevelClassData, guildStatusData, guildData, npcKillsData
-    
+
     if isExternalPlayer then
         -- Use data from external player
         classData = externalPlayerData.classData or {}
@@ -2162,6 +2110,19 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         -- For external players, no guild table
         local totalHeight = -(yOffset - zoneChartHeight) + 25
         leftScrollContent:SetHeight(totalHeight)
+
+        -- Extra charts for external players (unknown level / class) if data exists
+        if calculateChartHeight(unknownLevelClassData) > 50 then
+            -- We don't display this specifically in separate charts usually,
+            -- but the 'Kills by Class' chart usually covers it if 'Unknown' is a valid key.
+            -- However, 'Level ??' kills often come from 'unknownLevelClassData' processing in standard flow.
+            -- The standard 'Kills by Class' chart function uses 'classData'.
+            -- 'unknownLevelClassData' is separate, often tracking kills where level/class was missing
+            -- but standard logic merges them into main counts usually.
+
+            -- If the user wants to see "Level ?? kills" specifically,
+            -- usually that's just part of "Kills by Level" where key is "-1".
+        end
     end
 
     local summaryStatsWidth = 380
@@ -2169,7 +2130,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
 
     -- Summary Statistics at top right (pass stats if external player)
     if isExternalPlayer then
-        frame.summaryStats = createSummaryStatsForExternalPlayer(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight, stats, playerDisplayName)
+        frame.summaryStats = createSummaryStatsForExternalPlayer(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight, stats, playerDisplayName, externalPlayerData)
     else
         frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
     end
@@ -2247,20 +2208,20 @@ function PSC_ShowPlayerDetailedStats(playerName, detailedStats)
     viewerFrame:RegisterForDrag("LeftButton")
     viewerFrame:SetScript("OnDragStart", viewerFrame.StartMoving)
     viewerFrame:SetScript("OnDragStop", viewerFrame.StopMovingOrSizing)
-    
+
     -- Add close button
     viewerFrame.CloseButton:SetScript("OnClick", function()
         viewerFrame:Hide()
         -- Frame manager will handle cleanup automatically when frame is hidden
     end)
-    
+
     -- Register with frame manager
     if PSC_FrameManager then
         PSC_FrameManager:RegisterFrame(viewerFrame, "PlayerStatsViewer_" .. playerName)
     end
-    
+
     -- Reuse the existing update function with external player data
     PSC_UpdateStatisticsFrame(viewerFrame, detailedStats)
-    
+
     viewerFrame:Show()
 end
