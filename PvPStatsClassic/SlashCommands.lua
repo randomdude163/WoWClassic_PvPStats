@@ -6,9 +6,6 @@ local function PrintSlashCommandUsage()
     PSC_Print("Usage: /psc achievements - Show PvP achievements")
     PSC_Print("Usage: /psc leaderboard - Show PvP leaderboard")
     PSC_Print("Usage: /psc settings - Open addon settings")
-    PSC_Print("Usage: /psc broadcast - Manually broadcast your stats to guild")
-    PSC_Print("Usage: /psc networkstatus - Show network sharing status")
-    PSC_Print("Usage: /psc networkdebug - Toggle network debug mode")
 
     if PSC_Debug then
         PSC_Print("Debug Commands:")
@@ -59,27 +56,6 @@ function PSC_SlashCommandHandler(msg)
             PSC_ToggleAchievementFrame()
         elseif command == "leaderboard" or command == "lb" then
             PSC_CreateLeaderboardFrame()
-        elseif command == "broadcast" then
-            if PVPSC.Network and PVPSC.Network.BroadcastStats then
-                PVPSC.Network:BroadcastStats()
-                PSC_Print("Manually broadcasting your stats to guild...")
-            else
-                PSC_Print("Network handler not initialized")
-            end
-        elseif command == "networkdebug" then
-            if PVPSC.Network and PVPSC.Network.SetDebug then
-                PVPSC.Network.DEBUG = not PVPSC.Network.DEBUG
-                PVPSC.Network:SetDebug(PVPSC.Network.DEBUG)
-                PSC_Print("Network debug mode: " .. (PVPSC.Network.DEBUG and "ON" or "OFF"))
-            else
-                PSC_Print("Network handler not initialized")
-            end
-        elseif command == "networkstatus" or command == "netstatus" then
-            if PVPSC.Network and PVPSC.Network.PrintStatus then
-                PVPSC.Network:PrintStatus()
-            else
-                PSC_Print("Network handler not initialized")
-            end
         elseif command == "options" or command == "settings" then
             PSC_CreateConfigUI()
         else

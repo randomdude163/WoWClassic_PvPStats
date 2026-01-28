@@ -11,7 +11,6 @@ AceComm:Embed(Network)
 
 -- Network configuration
 local PREFIX = "PVPSC"  -- Single prefix for all messages
-local DEBUG = true  -- Enable debug to see what's happening
 
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
@@ -23,7 +22,7 @@ local recentMessages = {}
 local RECENT_TTL = 300  -- 5 minutes
 
 local function D(...)
-    if DEBUG then
+    if PSC_Debug then
         print("|cFFFFD700[PVPSC Network]|r", ...)
     end
 end
@@ -180,7 +179,7 @@ end
 function Network:BroadcastStats()
     -- If we are throttled, defer this update
     if self:IsThrottled() then
-        if DEBUG then
+        if PSC_Debug then
             print("|cFFFFD700[PVPSC Network]|r Network throttled (BULK queue full), deferring broadcast...")
         end
 
@@ -389,12 +388,4 @@ function Network:Initialize()
             print("|cFFFFD700[PvP Stats Classic]|r Network sharing enabled! Stats will be broadcast automatically.")
         end
     end)
-end
-
--- Enable/disable debug mode
-function Network:SetDebug(enabled)
-    DEBUG = enabled
-    if enabled then
-        print("|cFFFFD700[PVPSC Network]|r Debug mode enabled")
-    end
 end
