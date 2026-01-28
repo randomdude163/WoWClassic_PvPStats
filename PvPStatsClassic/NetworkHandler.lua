@@ -280,6 +280,14 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
         if PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsShown() then
             RefreshLeaderboardFrame()
         end
+
+    elseif msgType == "SYNC" then
+        -- Sync request - broadcast our stats immediately
+        D("Received sync request from", sender)
+        -- Broadcast after a short random delay to avoid network spam if many players respond at once
+        C_Timer.After(math.random() * 2, function()
+            self:BroadcastStats()
+        end)
     end
 end
 
@@ -352,9 +360,25 @@ function Network:Initialize()
 
     D("Network handler initialized with AceComm - Addon v" .. PSC_GetAddonVersion())
 
-    -- Send immediate broadcast on login
+    -- Send sync request and immediate broadcast on login
     C_Timer.After(2, function()
-        -- Broadcast our own stats immediately
+        -- Request all other players to broadcast their stats
+        local syncRequest = "SYNC|" .. UnitName("player")
+        if IsInGuild() then
+            self:SendCommMessage(PREFIX, syncRequest, "GUILD", nil, "NORMAL")
+        end
+        if IsInRaid() then
+            self:SendCommMessage(PREFIX, syncRequest, "RAID", nil, "NORMAL")
+        elseif IsInGroup() then
+            self:SendCommMessage(PREFIX, syncRequest, "PARTY", nil, "NORMAL")
+        end
+
+        -- Try to yell to nearby players
+        self:SendCommMessage(PREFIX, syncRequest, "YELL", nil, "NORMAL")
+
+        D("Sent sync request to all channels")
+
+        -- Also broadcast our own stats immediately
         Network:BroadcastStats()
         D("Sent initial broadcast on login")
 
