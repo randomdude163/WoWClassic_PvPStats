@@ -227,6 +227,11 @@ function Network:BroadcastStats()
     if not IsInGroup() and not IsInGuild() then
          self:SendCommMessage(PREFIX, payload, "YELL", nil, priority)
     end
+
+    -- Refresh local leaderboard if open (since we updated our own stats which triggered this broadcast)
+    if RefreshLeaderboardFrame and PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsShown() then
+        RefreshLeaderboardFrame()
+    end
 end
 
 -- Handle received communications
