@@ -41,8 +41,6 @@ local function CleanupFrameElements(content)
         region:SetParent(nil)
         region = nil
     end
-
-    collectgarbage("collect")
 end
 
 local function SetHeaderButtonHighlight(button, enter)
@@ -72,7 +70,7 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
             PSC_SortLeaderboardBy = columnId
             PSC_SortLeaderboardAscending = false
         end
-        RefreshLeaderboardFrame()
+        RefreshLeaderboardFrame(true)
     end)
 
     local header = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -572,7 +570,9 @@ local function CreateMainFrame()
     return frame
 end
 
-function RefreshLeaderboardFrame()
+local PSC_LeaderboardDataCache = nil
+
+function RefreshLeaderboardFrame(useCache)
     if PSC_LeaderboardFrameInitialSetup then
         return
     end
@@ -587,10 +587,17 @@ function RefreshLeaderboardFrame()
     end
 
     CleanupFrameElements(content)
-    collectgarbage("collect")
 
     local yOffset = CreateColumnHeaders(content)
-    local leaderboardData = GetLeaderboardData()
+
+    local leaderboardData
+    if useCache and PSC_LeaderboardDataCache then
+        leaderboardData = PSC_LeaderboardDataCache
+    else
+        leaderboardData = GetLeaderboardData()
+        PSC_LeaderboardDataCache = leaderboardData
+    end
+
     local sortedEntries = SortLeaderboardData(leaderboardData)
     local finalYOffset, entryCount = DisplayEntries(content, sortedEntries, yOffset)
 

@@ -296,11 +296,6 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     end
 
     PSC_StartIncrementalAchievementsCalculation()
-
-    -- Broadcast stats update on kill
-    if PVPSC.Network then
-        PVPSC.Network:BroadcastStats()
-    end
 end
 
 function PSC_RecordPetDamage(petGUID, petName, targetGUID, amount)

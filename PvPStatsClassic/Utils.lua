@@ -74,7 +74,8 @@ function PSC_StartIncrementalAchievementsCalculation()
     local charactersToProcess = {}
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData
+    local hourlyData, weekdayData, monthlyData, yearlyData
     local summaryStats = nil
     local achievementStats = nil
 
@@ -102,8 +103,24 @@ function PSC_StartIncrementalAchievementsCalculation()
         end,
         TaskQueueDelayFrame(1),
         function()
-            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
+            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
                 PSC_CalculateBarChartStatistics(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
         end,
         TaskQueueDelayFrame(1),
         function()
@@ -143,6 +160,36 @@ function PSC_StartIncrementalAchievementsCalculation()
                 totalAchievementPoints = PSC_GetCurrentAchievementPoints(),
                 unlockedAchievements = PSC_GetUnlockedAchievementCount()
             }
+
+            -- Broadcast calculated stats to network
+            if PVPSC.Network and PVPSC.Network.BroadcastStats then
+                local broadcastStats = {
+                    summary = summaryStats,
+                    classData = classData,
+                    raceData = raceData,
+                    genderData = genderData,
+                    zoneData = zoneData,
+                    levelData = levelData,
+                    hourlyData = TimeStatsCache and TimeStatsCache.hours,
+                    weekdayData = TimeStatsCache and TimeStatsCache.weekdays,
+                    monthlyData = TimeStatsCache and TimeStatsCache.months,
+                    yearlyData = TimeStatsCache and TimeStatsCache.years,
+                    unknownLevelClassData = unknownLevelClassData,
+                    guildStatusData = guildStatusData,
+                    npcKillsData = npcKillsData,
+                    playerName = UnitName("player"),
+                    level = UnitLevel("player"),
+                    class = select(2, UnitClass("player")),
+                    race = select(2, UnitRace("player")),
+                    faction = UnitFactionGroup("player"),
+                    timestamp = GetServerTime(),
+                    addonVersion = PSC_GetAddonVersion(),
+                    achievementsUnlocked = PSC_GetUnlockedAchievementCount(),
+                    totalAchievements = (PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements and #PVPSC.AchievementSystem.achievements) or 0,
+                     achievementPoints = PSC_GetCurrentAchievementPoints()
+                }
+                PVPSC.Network:BroadcastStats(broadcastStats)
+            end
 
             return true
         end,
@@ -380,6 +427,9 @@ end
 
 function PSC_FormatKDRatio(totalKills, totalDeaths, kdRatio)
     if totalDeaths and totalDeaths > 0 then
+        if not kdRatio then
+            kdRatio = totalKills / totalDeaths
+        end
         return string.format("%.2f", kdRatio)
     else
         if totalKills and totalKills > 0 then

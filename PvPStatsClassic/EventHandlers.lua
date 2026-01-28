@@ -147,11 +147,6 @@ function HandlePlayerDeath()
         end
         PSC_RegisterPlayerDeath(killerInfo)
     end
-
-    -- Broadcast stats update on death
-    if PVPSC.Network then
-        PVPSC.Network:BroadcastStats()
-    end
 end
 
 local function CleanupRecentPetDamage()

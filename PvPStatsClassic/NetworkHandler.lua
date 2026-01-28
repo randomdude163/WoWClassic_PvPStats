@@ -152,6 +152,7 @@ end
 -- Build detailed statistics for a player (all kill data)
 function Network:BuildDetailedStats()
     local charactersToProcess = GetCharactersToProcessForStatistics()
+
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
@@ -211,7 +212,7 @@ function Network:BuildDetailedStats()
 end
 
 -- Broadcast player stats
-function Network:BroadcastStats()
+function Network:BroadcastStats(providedStats)
     local now = GetTime()
 
     -- Check if we are broadcasting too frequently (time-based throttling)
@@ -228,7 +229,7 @@ function Network:BroadcastStats()
 
             self.deferredBroadcastTimer = C_Timer.NewTimer(delay, function()
                 self.deferredBroadcastTimer = nil
-                self:BroadcastStats()
+                self:BroadcastStats(providedStats)
             end)
         end
         return
@@ -244,7 +245,7 @@ function Network:BroadcastStats()
         if not self.retryTimer then
             self.retryTimer = C_Timer.NewTimer(2.0, function()
                 self.retryTimer = nil
-                self:BroadcastStats()
+                self:BroadcastStats(providedStats)
             end)
         end
         return
@@ -253,37 +254,50 @@ function Network:BroadcastStats()
     self.lastBroadcastTime = now
 
     -- Always build full detailed stats
-    local detailedStats = self:BuildDetailedStats()
+    local detailedStats = providedStats or self:BuildDetailedStats()
 
     -- Serialize
     local payload = SerializeDetailedStats(detailedStats)
     payload = "FULL|" .. payload
 
-    D("Broadcasting FULL stats via AceComm (Size: " .. #payload .. " bytes)")
-
     -- Priority BULK for large data
     local priority = "BULK"
 
-    -- Send to appropriate channels
+    -- Collect channels to send to
+    local distributionList = {}
+
     if IsInGuild() then
-        self:SendCommMessage(PREFIX, payload, "GUILD", nil, priority)
+        table.insert(distributionList, "GUILD")
     end
 
     if IsInRaid() then
-        self:SendCommMessage(PREFIX, payload, "RAID", nil, priority)
+        table.insert(distributionList, "RAID")
     elseif IsInGroup() then
-        self:SendCommMessage(PREFIX, payload, "PARTY", nil, priority)
+        table.insert(distributionList, "PARTY")
     end
 
     -- Send to interactions in instance
     local inInstance, instanceType = IsInInstance()
     if instanceType == "pvp" or instanceType == "arena" then
-        self:SendCommMessage(PREFIX, payload, "INSTANCE_CHAT", nil, priority)
+        table.insert(distributionList, "INSTANCE_CHAT")
     end
 
-    -- Also yell if not in group/guild to share with others nearby
-    if not IsInGroup() and not IsInGuild() then
-         self:SendCommMessage(PREFIX, payload, "YELL", nil, priority)
+    -- Always yell to share with others nearby
+    table.insert(distributionList, "YELL")
+
+    -- Send with staggering to avoid immediate throttling
+    for i, channel in ipairs(distributionList) do
+        local delay = (i - 1) * self.MIN_BROADCAST_INTERVAL
+        if delay == 0 then
+            if PSC_Debug then
+                D("Broadcasting FULL stats via AceComm (Size: " .. #payload .. " bytes) to channel: " .. channel)
+            end
+            self:SendCommMessage(PREFIX, payload, channel, nil, priority)
+        else
+            C_Timer.After(delay, function()
+                self:SendCommMessage(PREFIX, payload, channel, nil, priority)
+            end)
+        end
     end
 
     -- Refresh local leaderboard if open (since we updated our own stats which triggered this broadcast)
@@ -447,29 +461,46 @@ function Network:Initialize()
 
     self.initialized = true
 
-    D("Network handler initialized with AceComm - Addon v" .. PSC_GetAddonVersion())
-
     -- Send sync request and immediate broadcast on login
     C_Timer.After(2, function()
         -- Request all other players to broadcast their stats
         local syncRequest = "SYNC|" .. UnitName("player")
+        local distributionList = {}
+
         if IsInGuild() then
-            self:SendCommMessage(PREFIX, syncRequest, "GUILD", nil, "NORMAL")
+            table.insert(distributionList, "GUILD")
         end
+
         if IsInRaid() then
-            self:SendCommMessage(PREFIX, syncRequest, "RAID", nil, "NORMAL")
+            table.insert(distributionList, "RAID")
         elseif IsInGroup() then
-            self:SendCommMessage(PREFIX, syncRequest, "PARTY", nil, "NORMAL")
+            table.insert(distributionList, "PARTY")
         end
 
         -- Try to yell to nearby players
-        self:SendCommMessage(PREFIX, syncRequest, "YELL", nil, "NORMAL")
+        table.insert(distributionList, "YELL")
+
+        -- Send with staggering to avoid immediate throttling
+        for i, channel in ipairs(distributionList) do
+            local delay = (i - 1) * self.MIN_BROADCAST_INTERVAL
+            if delay == 0 then
+                self:SendCommMessage(PREFIX, syncRequest, channel, nil, "NORMAL")
+            else
+                C_Timer.After(delay, function()
+                    self:SendCommMessage(PREFIX, syncRequest, channel, nil, "NORMAL")
+                end)
+            end
+        end
 
         D("Sent sync request to all channels")
 
         -- Also broadcast our own stats immediately
-        Network:BroadcastStats()
-        D("Sent initial broadcast on login")
+        -- Wait for sync requests to finish to avoid bandwidth congestion
+        local initialBroadcastDelay = #distributionList * self.MIN_BROADCAST_INTERVAL
+        C_Timer.After(initialBroadcastDelay, function()
+            Network:BroadcastStats()
+            D("Sent initial broadcast on login")
+        end)
 
         -- Show helpful message on first initialization
         if not PSC_DB.NetworkInitialized then
