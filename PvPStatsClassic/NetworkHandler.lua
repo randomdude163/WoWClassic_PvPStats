@@ -16,8 +16,6 @@ local DEBUG = true  -- Enable debug to see what's happening
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
 Network.detailedStatsCache = Network.detailedStatsCache or {}  -- Cache for detailed stats
-Network.lastBroadcast = Network.lastBroadcast or 0
-Network.BROADCAST_INTERVAL = 60  -- Broadcast every 60 seconds
 Network.DATA_TTL = 600  -- Consider data stale after 10 minutes (600 seconds)
 
 -- Deduplication cache to prevent processing the same message multiple times
@@ -132,6 +130,18 @@ local function DeserializeDetailedStats(payload)
     return data
 end
 
+-- Check if the network is currently throttled (BULK queue has pending messages)
+function Network:IsThrottled()
+    -- ChatThrottleLib is used by AceComm
+    if ChatThrottleLib and ChatThrottleLib.Prio and ChatThrottleLib.Prio["BULK"] and ChatThrottleLib.Prio["BULK"].Ring then
+        -- If Ring.pos is not nil, there are items in the ring (queue not empty)
+        if ChatThrottleLib.Prio["BULK"].Ring.pos then
+            return true
+        end
+    end
+    return false
+end
+
 -- Build detailed statistics for a player (all kill data)
 function Network:BuildDetailedStats()
     local charactersToProcess = GetCharactersToProcessForStatistics()
@@ -168,14 +178,21 @@ end
 
 -- Broadcast player stats
 function Network:BroadcastStats()
-    local now = time()
+    -- If we are throttled, defer this update
+    if self:IsThrottled() then
+        if DEBUG then
+            print("|cFFFFD700[PVPSC Network]|r Network throttled (BULK queue full), deferring broadcast...")
+        end
 
-    -- Check throttle
-    if now - self.lastBroadcast < self.BROADCAST_INTERVAL then
+        -- Schedule a retry if not already scheduled
+        if not self.retryTimer then
+            self.retryTimer = C_Timer.NewTimer(2.0, function()
+                self.retryTimer = nil
+                self:BroadcastStats()
+            end)
+        end
         return
     end
-
-    self.lastBroadcast = now
 
     -- Always build full detailed stats
     local detailedStats = self:BuildDetailedStats()
@@ -328,10 +345,7 @@ function Network:Initialize()
     -- Register AceComm prefix and callback
     self:RegisterComm(PREFIX, "OnCommReceived")
 
-    -- Set up periodic broadcast ticker (every 60 seconds)
-    C_Timer.NewTicker(60, function()
-        Network:BroadcastStats()
-    end)
+    -- Periodic broadcast ticker removed in favor of event-based updates
 
     -- Set up cleanup ticker (every 5 minutes)
     C_Timer.NewTicker(300, function()
