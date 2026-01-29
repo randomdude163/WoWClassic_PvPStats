@@ -33,10 +33,7 @@ local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
     PSC_GetAndStorePlayerInfoFromUnit("targettarget")
     PSC_UpdatePetOwnerFromUnit("target")
-
-    if UnitExists("targettarget") then
-        PSC_UpdatePetOwnerFromUnit("targettarget")
-    end
+    PSC_UpdatePetOwnerFromUnit("targettarget")
 end
 
 local function OnUpdateMouseoverUnit()
@@ -625,6 +622,7 @@ local function HandlePlayerRegenEnabled()
     PSC_CleanupRecentPlayerDamage()
     PSC_CleanupRecentDamageFromPlayers()
     PSC_CleanupPendingHunterKills()
+    PSC_ClearGUIDCache()
 end
 
 local function HandleNamePlateEvent(unit)

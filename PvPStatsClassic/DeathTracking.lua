@@ -5,12 +5,20 @@ PSC_PetOwnerCache = {}
 -- Track unattributed pet damage until we discover its owner
 PSC_UnattributedPetDamage = {}
 
+-- Create a hidden tooltip to scan pet information (reused)
+local scanTooltip = CreateFrame("GameTooltip", "PSC_PetScanTooltip", nil, "GameTooltipTemplate")
+scanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
+
 -- This function extracts pet owner information from tooltip for any unit
 function PSC_UpdatePetOwnerFromUnit(unitID)
     if not unitID or not UnitExists(unitID) then return end
 
     -- Skip if this isn't a pet (skip players and non-creatures)
     if UnitIsPlayer(unitID) then return end
+
+    -- Optimization: Only check player-controlled units (pets, minions, charms)
+    -- This filters out the vast majority of dungeon/raid trash mobs instantly.
+    if not UnitPlayerControlled(unitID) then return end
 
     if UnitIsFriend("player", unitID) then
         return
@@ -24,16 +32,12 @@ function PSC_UpdatePetOwnerFromUnit(unitID)
         return PSC_PetOwnerCache[petName]
     end
 
-    -- Create a hidden tooltip to scan pet information
-    local scanTooltip = CreateFrame("GameTooltip", "PSCScanTooltip", nil, "GameTooltipTemplate")
-    scanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
-
     -- Set the tooltip to examine the specified unit
     scanTooltip:SetUnit(unitID)
 
     -- Scan tooltip lines for pet owner formats
     for i = 1, scanTooltip:NumLines() do
-        local line = _G["PSCScanTooltipTextLeft" .. i]:GetText()
+        local line = _G["PSC_PetScanTooltipTextLeft" .. i]:GetText()
         if line then
             -- Check for regular pets: "<Owner name>'s Pet"
             local owner = line:match("(.+)'s [Pp]et")

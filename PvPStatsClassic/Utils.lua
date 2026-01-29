@@ -199,9 +199,10 @@ end
 
 function IsPetGUID(guid)
     if not guid then return false end
-
-    -- Classic WoW GUID format: Pet-0-xxxx-xxxx-xxxx-xxxx
-    return guid:match("^Pet%-") ~= nil
+    -- Classic WoW Pet GUID format example: Pet-0-6428-0-30486-3225-0400AB8043
+    -- Check bytes P(80), e(101), t(116). Avoids string creation (garbage) and pattern matching overhead.
+    local b1, b2, b3 = string.byte(guid, 1, 3)
+    return b1 == 80 and b2 == 101 and b3 == 116
 end
 
 function GetPetOwnerGUID(petGUID)
@@ -1590,12 +1591,33 @@ function PSC_CalculateTimePeriodBoundaries()
     }
 end
 
+local GUIDToNPCIDCache = {}
+
+function PSC_ClearGUIDCache()
+    GUIDToNPCIDCache = {}
+end
+
 function PSC_GetNPCIDFromGUID(guid)
     if not guid then return nil end
-    -- GUID format: Creature-0-Server-Instance-Zone-NPCID-Spawn
-    local unitType, _, _, _, _, npcID = strsplit("-", guid)
-    if unitType == "Creature" or unitType == "Vehicle" then
-        return tonumber(npcID)
+
+    -- Check cache first (O(1) lookup)
+    local npcId = GUIDToNPCIDCache[guid]
+    if npcId then
+        return npcId
     end
-    return nil
+
+    -- Fast check for Creature (C=67)
+    -- Filters out Players, Pets, Items, etc. instantly without memory allocation
+    local firstByte = string.byte(guid)
+    if firstByte ~= 67 then return nil end
+
+    -- GUID format: UnitType-0-Server-Instance-Zone-NPCID-Spawn
+    local npcIDString = string.match(guid, "^%a+%-%d+%-%d+%-%d+%-%d+%-(%d+)")
+    local npcID = npcIDString and tonumber(npcIDString)
+
+    if npcID then
+        GUIDToNPCIDCache[guid] = npcID
+    end
+
+    return npcID
 end
