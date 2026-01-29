@@ -245,7 +245,7 @@ function PSC_ScheduleHunterKillValidation(destGUID, destName, eventType, validat
     end
 
     if PSC_Debug then
-        print("Hunter " .. destName .. " might be using their special ability - validating...")
+        print("Hunter " .. destName .. " might be using feign death- validating...")
     end
 
     PSC_PendingHunterKills[destGUID] = {
