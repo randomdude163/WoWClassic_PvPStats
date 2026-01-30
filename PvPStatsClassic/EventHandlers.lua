@@ -745,7 +745,12 @@ function PSC_GetTotalsKillsForPlayer(playerName)
     return total_kills
 end
 
+local tooltipHooksRegistered = false
+
 function PSC_SetupMouseoverTooltip()
+    if tooltipHooksRegistered then return end
+    tooltipHooksRegistered = true
+
     local function GetLastKillTimestamp(playerName)
         local characterKey = PSC_GetCharacterKey()
         local lastKill = 0
