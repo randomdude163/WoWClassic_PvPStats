@@ -636,7 +636,6 @@ function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
     pvpStatsClassicFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
     pvpStatsClassicFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-    pvpStatsClassicFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_DEAD")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -652,7 +651,7 @@ function PSC_RegisterEvents()
             OnPlayerTargetChanged()
         elseif event == "UPDATE_MOUSEOVER_UNIT" then
             OnUpdateMouseoverUnit()
-        elseif event == "NAME_PLATE_UNIT_ADDED" or event == "NAME_PLATE_UNIT_REMOVED" then
+        elseif event == "NAME_PLATE_UNIT_ADDED" then
             local unit = ...
             if unit then
                 HandleNamePlateEvent(unit)
