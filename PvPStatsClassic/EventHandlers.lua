@@ -470,7 +470,9 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if PSC_IsValidTarget(destFlags, destGUID) then
+    local isValidTarget = PSC_IsValidTarget(destFlags, destGUID)
+
+    if isValidTarget then
         HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
         HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
     end
@@ -497,7 +499,7 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if combatEvent == "PARTY_KILL" and PSC_IsValidTarget(destFlags, destGUID) then
+    if combatEvent == "PARTY_KILL" and isValidTarget then
         local isScheduled = PSC_ScheduleHunterKillValidation(destGUID, destName, "PARTY_KILL", {
             sourceGUID = sourceGUID,
             sourceName = sourceName
@@ -508,7 +510,7 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if combatEvent == "UNIT_DIED" and PSC_IsValidTarget(destFlags, destGUID) then
+    if combatEvent == "UNIT_DIED" and isValidTarget then
         local isScheduled = PSC_ScheduleHunterKillValidation(destGUID, destName, "UNIT_EVENT", {})
 
         if not isScheduled then
