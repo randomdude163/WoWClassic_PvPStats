@@ -160,7 +160,8 @@ end
 PSC_TrackedNPCs = {
     [349] = "Corporal Keeshan",
     [467] = "The Defias Traitor",
-    [550] = "Defias Messenger"
+    [550] = "Defias Messenger",
+    [442] = "Tarantula"
 }
 
 function PSC_IsValidTarget(destFlags, destGUID)
