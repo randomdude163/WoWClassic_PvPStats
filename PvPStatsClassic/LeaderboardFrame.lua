@@ -23,7 +23,7 @@ local colWidths = {
     avgPerDay = 55,
     achievements = 100,
     achievementPoints = 70,
-    addonVersion = 55,
+    addonVersion = 60,
     -- Add column width for Last Seen
     lastSeen = 130
 }
@@ -501,6 +501,33 @@ local function GetLeaderboardData()
     return leaderboardData
 end
 
+local function CompareVersions(v1, v2)
+    if v1 == v2 then return 0 end
+    -- Handle nil values
+    if not v1 then return -1 end
+    if not v2 then return 1 end
+
+    -- Convert to string and strip 'v' prefix (e.g. "v3.0" -> "3.0")
+    v1 = tostring(v1):gsub("^v", "")
+    v2 = tostring(v2):gsub("^v", "")
+
+    -- Split by dot
+    local parts1 = { strsplit(".", v1) }
+    local parts2 = { strsplit(".", v2) }
+    local maxParts = math.max(#parts1, #parts2)
+
+    for i = 1, maxParts do
+        local p1 = tonumber(parts1[i]) or 0
+        local p2 = tonumber(parts2[i]) or 0
+
+        if p1 ~= p2 then
+            if p1 < p2 then return -1 else return 1 end
+        end
+    end
+
+    return 0
+end
+
 local function SortLeaderboardData(data)
     local sortedData = {}
     for _, entry in pairs(data) do
@@ -521,11 +548,38 @@ local function SortLeaderboardData(data)
             end
         end
 
+        -- Special handling for Addon Version (Semantic Versioning)
+        if PSC_SortLeaderboardBy == "addonVersion" then
+            local cmp = CompareVersions(a.addonVersion, b.addonVersion)
+            if cmp ~= 0 then
+                if PSC_SortLeaderboardAscending then
+                    return cmp < 0
+                else
+                    return cmp > 0
+                end
+            end
+        end
+
         local aVal = a[PSC_SortLeaderboardBy]
         local bVal = b[PSC_SortLeaderboardBy]
 
         if aVal == nil then aVal = "" end
         if bVal == nil then bVal = "" end
+
+        -- Robust comparison: Ensure variables are of the same type
+        if type(aVal) ~= type(bVal) then
+            local aNum = tonumber(aVal)
+            local bNum = tonumber(bVal)
+            -- If both can be numbers, compare as numbers
+            if aNum and bNum then
+                aVal = aNum
+                bVal = bNum
+            else
+                -- Otherwise compare as strings
+                aVal = tostring(aVal)
+                bVal = tostring(bVal)
+            end
+        end
 
         if PSC_SortLeaderboardAscending then
             return aVal < bVal

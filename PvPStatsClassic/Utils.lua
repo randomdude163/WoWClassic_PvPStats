@@ -365,7 +365,7 @@ function PSC_GetCharacterKey()
 end
 
 function PSC_GetAddonVersion()
-    return "3.4"
+    return "4.0.0"
 end
 
 function GetMultiKillText(count)

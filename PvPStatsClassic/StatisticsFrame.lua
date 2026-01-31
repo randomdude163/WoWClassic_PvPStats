@@ -2188,22 +2188,22 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         PSC_CreateKillsListFrame()
     end)
 
-    -- Middle right button: Leaderboard
-    local leaderboardButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    leaderboardButton:SetSize(buttonWidth, buttonHeight)
-    leaderboardButton:SetPoint("TOPRIGHT", achievementsButton, "BOTTOMRIGHT", 0, -buttonSpacing)
-    leaderboardButton:SetText("Show Leaderboard")
-    leaderboardButton:SetScript("OnClick", function()
-        PSC_CreateLeaderboardFrame()
-    end)
-
-    -- Bottom left button: Killstreak
+    -- Middle right button: Kill Streak
     local killstreakButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
     killstreakButton:SetSize(buttonWidth, buttonHeight)
-    killstreakButton:SetPoint("TOPLEFT", killHistoryButton, "BOTTOMLEFT", 0, -buttonSpacing)
+    killstreakButton:SetPoint("TOPRIGHT", achievementsButton, "BOTTOMRIGHT", 0, -buttonSpacing)
     killstreakButton:SetText("Show Kill Streak")
     killstreakButton:SetScript("OnClick", function()
         PSC_CreateKillStreakPopup()
+    end)
+
+    -- Bottom button: Leaderboard (Full width)
+    local leaderboardButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    leaderboardButton:SetSize((buttonWidth * 2) + buttonSpacing, buttonHeight)
+    leaderboardButton:SetPoint("TOPLEFT", killHistoryButton, "BOTTOMLEFT", 0, -buttonSpacing)
+    leaderboardButton:SetText("Show Leaderboard")
+    leaderboardButton:SetScript("OnClick", function()
+        PSC_CreateLeaderboardFrame()
     end)
 end
 
