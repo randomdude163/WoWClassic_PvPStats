@@ -278,13 +278,14 @@ function Network:BroadcastStats(providedStats)
     -- Collect channels to send to
     local distributionList = {}
 
-    if IsInGuild() then
-        table.insert(distributionList, "GUILD")
-    end
     if IsInRaid() then
         table.insert(distributionList, "RAID")
     elseif IsInGroup() then
         table.insert(distributionList, "PARTY")
+    end
+
+    if IsInGuild() then
+        table.insert(distributionList, "GUILD")
     end
 
     -- Send to interactions in instance
