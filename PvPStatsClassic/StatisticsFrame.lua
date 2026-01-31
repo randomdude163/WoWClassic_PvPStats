@@ -1077,7 +1077,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
-local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak)
+local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak, isLocalPlayer)
     local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", 0, yPosition)
     labelText:SetText(label)
@@ -1106,7 +1106,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             GameTooltip:Hide()
         end)
 
-        if label == "Most killed player:" then
+        if label == "Most killed player:" and isLocalPlayer then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
@@ -1123,7 +1123,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
                     end)
                 end
             end)
-        elseif label == "Nemesis:" then
+        elseif label == "Nemesis:" and isLocalPlayer then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
@@ -1140,7 +1140,7 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
                     end)
                 end
             end)
-        elseif isKillStreak then
+        elseif isKillStreak and isLocalPlayer then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
@@ -1331,53 +1331,53 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
 
     -- 1. Totals
     local totalKillsTooltip = isLocalPlayer and "Total number of players you have killed." or "Total number of players killed."
-    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills or 0, statY, totalKillsTooltip)
+    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills or 0, statY, totalKillsTooltip, false, isLocalPlayer)
 
     local uniqueKillsTooltip = isLocalPlayer and "Total number of unique players you have killed. Multiple kills of the same player are counted only once." or "Total number of unique players killed."
-    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills or 0, statY, uniqueKillsTooltip)
+    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills or 0, statY, uniqueKillsTooltip, false, isLocalPlayer)
 
     local totalDeathsTooltip = isLocalPlayer and "Total number of times you have died to players." or "Total number of deaths to players."
-    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY, totalDeathsTooltip)
+    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY, totalDeathsTooltip, false, isLocalPlayer)
 
     local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
     local kdText = kdRatio .. " (" .. (stats.totalKills or 0) .. "/" .. (stats.totalDeaths or 0) .. ")"
     local kdTooltip = isLocalPlayer and "Overall kill/death ratio (total player kills divided by total PvP deaths)." or "Overall kill/death ratio."
-    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY, kdTooltip)
+    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY, kdTooltip, false, isLocalPlayer)
 
     if (stats.unknownLevelKills and stats.unknownLevelKills > 0) or isLocalPlayer then
         local unknownTooltip = "Total number of times you have killed a level ?? player."
-        statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills or 0, statY, unknownTooltip)
+        statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills or 0, statY, unknownTooltip, false, isLocalPlayer)
     end
 
     -- 2. Most Killed & Nemesis
     if stats.mostKilledPlayer and (stats.mostKilledCount or 0) > 0 and stats.mostKilledPlayer ~= "None" then
         local mostKilledText = stats.mostKilledPlayer .. " (" .. (stats.mostKilledCount or 0) .. ")"
         local mkTooltip = isLocalPlayer and "Click to show all kills of this player" or "The player killed most often."
-        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mkTooltip)
+        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mkTooltip, false, isLocalPlayer)
     end
 
     if stats.nemesisName and stats.nemesisName ~= "None" and (stats.nemesisScore or 0) > 0 then
         local nemesisText = stats.nemesisName .. " (" .. (stats.nemesisScore or 0) .. ")"
         local nemesisTooltip = isLocalPlayer and "The player who has killed you the most (kills + assists). Click to view details." or "The player who has killed this player the most."
-        statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY, nemesisTooltip)
+        statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY, nemesisTooltip, false, isLocalPlayer)
     end
 
     -- 3. Averages
     if stats.avgLevel and stats.avgLevel > 0 then
         statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - spacing_between_sections,
-            isLocalPlayer and "Average level of players you have killed." or "Average level of players killed.")
+            isLocalPlayer and "Average level of players you have killed." or "Average level of players killed.", false, isLocalPlayer)
     end
 
     if stats.avgKillsPerPlayer and stats.avgKillsPerPlayer > 0 then
         statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
-            isLocalPlayer and "Average number of kills per unique player." or "Average number of kills per unique player.")
+            isLocalPlayer and "Average number of kills per unique player." or "Average number of kills per unique player.", false, isLocalPlayer)
     end
 
     if stats.avgLevelDiff and stats.avgLevelDiff ~= 0 then
         local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
                               (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
         statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
-            isLocalPlayer and "Average level difference between you and the players you have killed." or "Average level difference.")
+            isLocalPlayer and "Average level difference between you and the players you have killed." or "Average level difference.", false, isLocalPlayer)
     end
 
     -- 4. Streaks
@@ -1386,7 +1386,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         and "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings."
         or "Current active kill streak."
 
-    statY = addSummaryStatLine(container, "Current kill streak:", tostring(stats.currentKillStreak or 0), killStreakY, csTooltip, true)
+    statY = addSummaryStatLine(container, "Current kill streak:", tostring(stats.currentKillStreak or 0), killStreakY, csTooltip, true, isLocalPlayer)
 
     local hkTooltip = "The highest kill streak achieved."
     local mkTooltip = "The highest number of kills achieved while staying in combat."
@@ -1411,21 +1411,21 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     end
 
     -- Note: Passing 'true' for isKillStreak (6th arg) to make it gold
-    statY = addSummaryStatLine(container, "Highest kill streak:", hkValue, statY, hkTooltip, true)
-    statY = addSummaryStatLine(container, "Highest multi-kill:", mkValue, statY, mkTooltip, true)
+    statY = addSummaryStatLine(container, "Highest kill streak:", hkValue, statY, hkTooltip, true, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Highest multi-kill:", mkValue, statY, mkTooltip, true, isLocalPlayer)
 
     -- 5. Time Periods
     if stats.killsToday or (isLocalPlayer and stats.killsToday ~= nil) then
-        statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday or 0), statY, "Total player kills today.")
+        statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday or 0), statY, "Total player kills today.", false, isLocalPlayer)
     end
     if stats.killsThisWeek or (isLocalPlayer and stats.killsThisWeek ~= nil) then
-        statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek or 0), statY, "Total player kills this week.")
+        statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek or 0), statY, "Total player kills this week.", false, isLocalPlayer)
     end
     if stats.killsThisMonth or (isLocalPlayer and stats.killsThisMonth ~= nil) then
-        statY = addSummaryStatLine(container, "Kills this month:", tostring(stats.killsThisMonth or 0), statY, "Total player kills this month.")
+        statY = addSummaryStatLine(container, "Kills this month:", tostring(stats.killsThisMonth or 0), statY, "Total player kills this month.", false, isLocalPlayer)
     end
     if stats.killsThisYear or (isLocalPlayer and stats.killsThisYear ~= nil) then
-        statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear or 0), statY, "Total player kills this year.")
+        statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear or 0), statY, "Total player kills this year.", false, isLocalPlayer)
     end
 
     statY = statY - spacing_between_sections
@@ -1433,22 +1433,22 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     -- 6. Busiest & Activity
     if stats.busiestWeekday and stats.busiestWeekday ~= "None" then
         local tip = isLocalPlayer and "Your most active day of the week for PvP kills." or "Most active day of the week."
-        statY = addSummaryStatLine(container, "Busiest weekday:", stats.busiestWeekday .. " (" .. (stats.busiestWeekdayKills or 0) .. ")", statY, tip)
+        statY = addSummaryStatLine(container, "Busiest weekday:", stats.busiestWeekday .. " (" .. (stats.busiestWeekdayKills or 0) .. ")", statY, tip, false, isLocalPlayer)
     end
 
     if stats.busiestHour and stats.busiestHour ~= "None" then
         local tip = isLocalPlayer and "Your most active hour of the day for PvP kills." or "Most active hour of the day."
-        statY = addSummaryStatLine(container, "Busiest hour:", stats.busiestHour .. " (" .. (stats.busiestHourKills or 0) .. ")", statY, tip)
+        statY = addSummaryStatLine(container, "Busiest hour:", stats.busiestHour .. " (" .. (stats.busiestHourKills or 0) .. ")", statY, tip, false, isLocalPlayer)
     end
 
     if stats.busiestMonth and stats.busiestMonth ~= "None" then
         local tip = isLocalPlayer and "Your most active month for PvP kills." or "Most active month."
-        statY = addSummaryStatLine(container, "Busiest month:", stats.busiestMonth .. " (" .. (stats.busiestMonthKills or 0) .. ")", statY, tip)
+        statY = addSummaryStatLine(container, "Busiest month:", stats.busiestMonth .. " (" .. (stats.busiestMonthKills or 0) .. ")", statY, tip, false, isLocalPlayer)
     end
 
     if stats.avgKillsPerDay and stats.avgKillsPerDay > 0 then
         local tip = isLocalPlayer and "Your average kills per day from your first recorded kill to your most recent kill. This includes all days in that time period, even days when you didn't play." or "Average kills per day."
-        statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY, tip)
+        statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY, tip, false, isLocalPlayer)
     end
 
     -- 7. Achievements
@@ -1483,7 +1483,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
             achievementButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
             achievementButton:SetScript("OnClick", function() PSC_ToggleAchievementFrame() end)
         else
-            addSummaryStatLine(container, "Achievements:", achieveText, statY, "Total achievements completed.")
+            addSummaryStatLine(container, "Achievements:", achieveText, statY, "Total achievements completed.", false, isLocalPlayer)
         end
 
         statY = statY - 20
@@ -1493,7 +1493,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
              if extraData.totalPossiblePoints then
                  ptText = ptText .. " / " .. extraData.totalPossiblePoints
              end
-             statY = addSummaryStatLine(container, "Achievement points:", ptText, statY, "Total achievement points earned.")
+             statY = addSummaryStatLine(container, "Achievement points:", ptText, statY, "Total achievement points earned.", false, isLocalPlayer)
         end
     end
 
