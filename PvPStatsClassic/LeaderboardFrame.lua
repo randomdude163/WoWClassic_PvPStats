@@ -801,3 +801,4 @@ function PSC_CreateLeaderboardFrame()
         RefreshLeaderboardFrame()
     end)
 end
+

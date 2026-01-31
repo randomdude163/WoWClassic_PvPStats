@@ -1783,3 +1783,55 @@ function PSC_GetNPCIDFromGUID(guid)
 
     return npcID
 end
+
+function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback)
+    local frame = CreateFrame("Frame", "PSC_WhatsNewPopup", UIParent, BackdropTemplateMixin and "BackdropTemplate")
+    frame:SetSize(500, 200)
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    frame:SetFrameStrata("DIALOG")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetClampedToScreen(true)
+
+    frame:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = { left = 11, right = 11, top = 12, bottom = 11 }
+    })
+
+    local icon = frame:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(96, 96)
+    icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 25, -20)
+    icon:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
+
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 15, -10)
+    title:SetText(titleText)
+
+    local text = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    text:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -15)
+    text:SetPoint("RIGHT", frame, "RIGHT", -30, 0)
+    text:SetJustifyH("LEFT")
+    text:SetJustifyV("TOP")
+    text:SetText(messageText)
+
+    local button = CreateFrame("Button", nil, frame, "GameMenuButtonTemplate")
+    button:SetSize(120, 25)
+    button:SetPoint("BOTTOM", frame, "BOTTOM", 0, 25)
+    button:SetText("Got it!")
+    button:SetScript("OnClick", function()
+        frame:Hide()
+        if onCloseCallback then
+            onCloseCallback()
+        end
+    end)
+
+    frame:Show()
+end
+

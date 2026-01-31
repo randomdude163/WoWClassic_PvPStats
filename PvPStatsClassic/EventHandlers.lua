@@ -594,6 +594,11 @@ local function HandlePlayerEnteringWorld()
         PSC_DB.AnnounceChannel = "GROUP"
     end
 
+    -- Initialize popup flag
+    if PSC_DB.WhatsNewPopupShown == nil then
+        PSC_DB.WhatsNewPopupShown = false
+    end
+
     PSC_MigratePlayerInfoCache()
     PSC_MigratePlayerInfoToEnglish()
     PSC_InitializePlayerKillCounts()
@@ -617,6 +622,14 @@ local function HandlePlayerEnteringWorld()
     if not addonWelcomeMessageShown then
         addonWelcomeMessageShown = true
         print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
+    end
+
+    if not PSC_DB.WhatsNewPopupShown then
+        local title = "PvP Stats (Classic)"
+        local message = "New Feature: Leaderboard!\n\nYou can access it via the minimap button (Shift-Click) or by typing /psc leaderboard in the chat."
+        PSC_ShowWhatsNewPopup(title, message, function()
+            PSC_DB.WhatsNewPopupShown = true
+        end)
     end
 
     PSC_StartIncrementalAchievementsCalculation()
