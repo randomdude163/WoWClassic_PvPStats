@@ -224,8 +224,7 @@ local function SerializeDetailedStats(data)
             local key = KEY_MAP[k] or k
 
             if type(v) == "table" then
-                str = str .. key .. ":"
-
+                local tableContent = ""
                 local subMap = SUB_KEY_MAPS[k] -- using original key k
 
                 for k2, v2 in pairs(v) do
@@ -236,14 +235,18 @@ local function SerializeDetailedStats(data)
                         local subKey = (subMap and subMap[k2]) or k2
                         local subVal = RoundForCompression(v2)
 
-                        str = str .. tostring(subKey) .. "=" .. tostring(subVal) .. ","
+                        tableContent = tableContent .. tostring(subKey) .. "=" .. tostring(subVal) .. ","
                     end
                 end
-                -- Optimization: Remove trailing comma to save space
-                if string.sub(str, -1) == "," then
-                    str = string.sub(str, 1, -2)
+
+                -- Only append if the table has content
+                if tableContent ~= "" then
+                     -- Optimization: Remove trailing comma to save space
+                    if string.sub(tableContent, -1) == "," then
+                        tableContent = string.sub(tableContent, 1, -2)
+                    end
+                    str = str .. key .. ":" .. tableContent .. ";"
                 end
-                str = str .. ";"
             else
                 local val = v
                 -- Apply top-level value compression
@@ -385,6 +388,24 @@ function Network:ConstructPayload(components)
 
     local _, classFilename = UnitClass("player")
     local _, raceFilename = UnitRace("player")
+
+    -- Sanitize/Normalize Class and Race names
+    -- Ideally we want them in Title Case (e.g. "Warrior") instead of UPPERCASE (e.g. "WARRIOR")
+    if classFilename then
+        classFilename = classFilename:gsub("(%w)(%w*)", function(first, rest)
+            return first:upper() .. rest:lower()
+        end)
+    else
+        classFilename = "Unknown"
+    end
+
+    if raceFilename then
+        raceFilename = raceFilename:gsub("(%w)(%w*)", function(first, rest)
+            return first:upper() .. rest:lower()
+        end)
+    else
+        raceFilename = "Unknown"
+    end
 
     return {
         summary = components.summary,

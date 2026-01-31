@@ -201,12 +201,6 @@ local function CreateClassCell(content, anchorTo, className, width)
     local classText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     classText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
 
-    if className and className ~= "Unknown" then
-        className = className:gsub("(%w)(%w*)", function(first, rest)
-            return first:upper() .. rest:lower()
-        end)
-    end
-
     classText:SetText(className or "Unknown")
     classText:SetWidth(width)
     classText:SetJustifyH("LEFT")
@@ -216,12 +210,6 @@ end
 local function CreateRaceCell(content, anchorTo, raceName, width)
     local raceText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     raceText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
-
-    if raceName and raceName ~= "Unknown" then
-        raceName = raceName:gsub("(%w)(%w*)", function(first, rest)
-            return first:upper() .. rest:lower()
-        end)
-    end
 
     raceText:SetText(raceName or "Unknown")
     raceText:SetWidth(width)
