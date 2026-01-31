@@ -323,9 +323,9 @@ local function CreateLastKillCell(content, anchorTo, lastKill, width)
 
     -- Only add timespan if we have a valid lastKill timestamp
     if lastKill and lastKill > 0 then
-        local timeSinceLastKill = PSC_FormatLastKillTimespan(lastKill)
-        if timeSinceLastKill then
-            timespan = "  (" .. timeSinceLastKill .. " ago)"
+        local timeInfo = PSC_GetTimeAgo(lastKill)
+        if timeInfo and timeInfo ~= "Unknown" then
+            timespan = "  (" .. timeInfo .. ")"
         end
     end
 

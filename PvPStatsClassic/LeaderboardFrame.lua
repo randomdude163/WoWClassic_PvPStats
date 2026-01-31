@@ -4,7 +4,7 @@ PSC_LeaderboardFrame = nil
 
 PSC_SortLeaderboardBy = "totalKills"
 PSC_SortLeaderboardAscending = false
-local LEADERBOARD_FRAME_WIDTH = 1003
+local LEADERBOARD_FRAME_WIDTH = 1093
 local LEADERBOARD_FRAME_HEIGHT = 400
 
 PSC_LeaderboardFrameInitialSetup = true
@@ -23,7 +23,9 @@ local colWidths = {
     avgPerDay = 55,
     achievements = 85,
     achievementPoints = 70,
-    addonVersion = 90
+    addonVersion = 50,
+    -- Add column width for Last Seen
+    lastSeen = 130
 }
 
 local function CleanupFrameElements(content)
@@ -142,6 +144,12 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
             GameTooltip:SetText("Addon Version", 1, 0.82, 0)
             GameTooltip:AddLine("The version of PvP Stats Classic this player is using", 1, 1, 1, true)
             GameTooltip:Show()
+        elseif columnId == "lastSeen" then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText("Last Seen", 1, 0.82, 0)
+            GameTooltip:AddLine("Time passed since this player last updated their stats.", 1, 1, 1, true)
+            GameTooltip:AddLine("Note: This timestamp only updates when the player records a new kill/event, not continuously.", 0.7, 0.7, 0.7, true)
+            GameTooltip:Show()
         end
     end)
 
@@ -175,6 +183,7 @@ local function CreateColumnHeaders(content)
     local achievementsButton = CreateColumnHeader(content, "Achievements", colWidths.achievements, avgPerDayButton, 0, 0, "achievements")
     local achievementPointsButton = CreateColumnHeader(content, "Ach. Points", colWidths.achievementPoints, achievementsButton, 0, 0, "achievementPoints")
     local addonVersionButton = CreateColumnHeader(content, "Version", colWidths.addonVersion, achievementPointsButton, 0, 0, "addonVersion")
+    local lastSeenButton = CreateColumnHeader(content, "Last Seen", colWidths.lastSeen, addonVersionButton, 0, 0, "lastSeen")
 
     return -30
 end
@@ -307,6 +316,21 @@ local function CreateAddonVersionCell(content, anchorTo, addonVersion, width)
     return versionText
 end
 
+local function CreateLastSeenCell(content, anchorTo, timestamp, width)
+    local lastSeenText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    lastSeenText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+
+    -- Use server time for relative comparison since the timestamp comes from the network
+    local timeString = PSC_GetTimeAgo(timestamp, true)
+
+    lastSeenText:SetText(timeString)
+    lastSeenText:SetWidth(width)
+    lastSeenText:SetJustifyH("LEFT")
+    lastSeenText:SetTextColor(0.6, 0.8, 1.0) -- Soft blue color like KillsListFrame
+
+    return lastSeenText
+end
+
 local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local rowContainer = CreateFrame("Button", nil, content)
     rowContainer:SetSize(content:GetWidth() - 20, 16)
@@ -334,6 +358,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local achievementsCell = CreateAchievementsCell(rowContainer, avgPerDayCell, entry.achievements, colWidths.achievements)
     local achievementPointsCell = CreateAchievementPointsCell(rowContainer, achievementsCell, entry.achievementPoints, colWidths.achievementPoints)
     local addonVersionCell = CreateAddonVersionCell(rowContainer, achievementPointsCell, entry.addonVersion, colWidths.addonVersion)
+    local lastSeenCell = CreateLastSeenCell(rowContainer, addonVersionCell, entry.lastSeen, colWidths.lastSeen)
 
     -- Apply class color to name like in KillsListFrame
     if entry.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class:upper()] then
@@ -466,7 +491,8 @@ local function GetLeaderboardData()
                  avgPerDay = avgPerDayStr,
                  achievements = achievementText,
                  achievementPoints = data.achievementPoints or 0,
-                 addonVersion = data.addonVersion or "Unknown"
+                 addonVersion = data.addonVersion or "Unknown",
+                 lastSeen = data.timestamp or 0
              })
          end
     end

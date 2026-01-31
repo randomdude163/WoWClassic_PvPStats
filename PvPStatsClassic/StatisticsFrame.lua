@@ -2051,6 +2051,12 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         fixedNPCs["Corporal Keeshan"] = true
         fixedNPCs["The Defias Traitor"] = true
         fixedNPCs["Defias Messenger"] = true
+        -- Ensure keys exist for display even if 0 (due to network compression skipping them)
+        if npcKillsData then
+            npcKillsData["Corporal Keeshan"] = npcKillsData["Corporal Keeshan"] or 0
+            npcKillsData["The Defias Traitor"] = npcKillsData["The Defias Traitor"] or 0
+            npcKillsData["Defias Messenger"] = npcKillsData["Defias Messenger"] or 0
+        end
     end
     local npcChartHeight = calculateChartHeight(npcKillsData, fixedNPCs)
 

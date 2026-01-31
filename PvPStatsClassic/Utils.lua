@@ -398,13 +398,22 @@ function PSC_GetPlayerCoordinates()
     return x, y
 end
 
-function PSC_FormatLastKillTimespan(lastKillTimestamp)
+function PSC_FormatLastKillTimespan(lastKillTimestamp, useServerTime)
     if not lastKillTimestamp then
         return nil
     end
 
-    local currentTime = time()
+    local currentTime
+    if useServerTime then
+        currentTime = GetServerTime()
+    else
+        currentTime = time()
+    end
+
     local timeDiff = currentTime - lastKillTimestamp
+
+    -- Handle negative diffs (clock skew etc)
+    if timeDiff < 0 then timeDiff = 0 end
 
     if timeDiff < 60 then
         return format("%ds", timeDiff)
@@ -415,6 +424,20 @@ function PSC_FormatLastKillTimespan(lastKillTimestamp)
     else
         return format("%dd", math.floor(timeDiff/86400))
     end
+end
+
+-- Formats a timestamp into a relative "time ago" string (e.g., "5m ago")
+function PSC_GetTimeAgo(timestamp, useServerTime)
+    if not timestamp or timestamp <= 0 then
+        return "Unknown"
+    end
+
+    local timeString = PSC_FormatLastKillTimespan(timestamp, useServerTime)
+    if timeString then
+        return timeString .. " ago"
+    end
+
+    return "Unknown"
 end
 
 function PSC_FormatKDRatio(totalKills, totalDeaths, kdRatio)
