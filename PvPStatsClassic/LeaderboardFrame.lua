@@ -5,13 +5,13 @@ PSC_LeaderboardFrame = nil
 PSC_SortLeaderboardBy = "totalKills"
 PSC_SortLeaderboardAscending = false
 local LEADERBOARD_FRAME_WIDTH = 1150
-local LEADERBOARD_FRAME_HEIGHT = 400
+local LEADERBOARD_FRAME_HEIGHT = 450
 
 PSC_LeaderboardFrameInitialSetup = true
 
 local colWidths = {
-    playerName = 95,
-    realm = 100,
+    playerName = 90,
+    realm = 135,
     level = 30,
     class = 65,
     race = 75,
