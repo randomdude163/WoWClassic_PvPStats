@@ -163,7 +163,7 @@ function PSC_StartIncrementalAchievementsCalculation()
 
             -- Broadcast calculated stats to network
             if PVPSC.Network and PVPSC.Network.initialized then
-                local broadcastStats = {
+                local statsComponents = {
                     summary = summaryStats,
                     classData = classData,
                     raceData = raceData,
@@ -176,18 +176,10 @@ function PSC_StartIncrementalAchievementsCalculation()
                     yearlyData = TimeStatsCache and TimeStatsCache.years,
                     unknownLevelClassData = unknownLevelClassData,
                     guildStatusData = guildStatusData,
-                    npcKillsData = npcKillsData,
-                    playerName = UnitName("player"),
-                    level = UnitLevel("player"),
-                    class = select(2, UnitClass("player")),
-                    race = select(2, UnitRace("player")),
-                    faction = UnitFactionGroup("player"),
-                    timestamp = GetServerTime(),
-                    addonVersion = PSC_GetAddonVersion(),
-                    achievementsUnlocked = PSC_GetUnlockedAchievementCount(),
-                    totalAchievements = (PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements and #PVPSC.AchievementSystem.achievements) or 0,
-                    achievementPoints = PSC_GetCurrentAchievementPoints()
+                    npcKillsData = npcKillsData
                 }
+
+                local broadcastStats = PVPSC.Network:ConstructPayload(statsComponents)
                 PVPSC.Network:BroadcastStats(broadcastStats)
             end
 

@@ -44,16 +44,6 @@ local function IsDuplicate(playerName, timestamp)
     end
 
     recentMessages[key] = now + RECENT_TTL
-
-    -- Cleanup old entries occasionally
-    if math.random(20) == 1 then
-        for k, expireTime in pairs(recentMessages) do
-            if expireTime <= now then
-                recentMessages[k] = nil
-            end
-        end
-    end
-
     return false
 end
 
@@ -184,27 +174,8 @@ function Network:BuildDetailedStats()
 
     D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
 
-    -- Calculate achievement stats
-    local achievementsUnlocked = 0
-    local totalAchievements = 0
-    local achievementPoints = 0
-
-    if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
-        totalAchievements = #PVPSC.AchievementSystem.achievements
-        local currentCharacterKey = PSC_GetCharacterKey()
-
-        if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[currentCharacterKey] then
-            for _, achievementData in pairs(PSC_DB.CharacterAchievements[currentCharacterKey]) do
-                if achievementData.unlocked then
-                    achievementsUnlocked = achievementsUnlocked + 1
-                end
-            end
-        end
-
-        achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
-    end
-
-    local result = {
+    -- Construct payload using centralized helper
+    local statsComponents = {
         summary = stats,
         classData = classData,
         raceData = raceData,
@@ -217,22 +188,78 @@ function Network:BuildDetailedStats()
         yearlyData = yearlyData,
         unknownLevelClassData = unknownLevelClassData,
         guildStatusData = guildStatusData,
-        npcKillsData = npcKillsData,
+        npcKillsData = npcKillsData
         -- Note: guildData intentionally excluded to reduce payload size
-        playerName = UnitName("player"),
-        level = UnitLevel("player"),
-        class = select(2, UnitClass("player")),
-        race = select(2, UnitRace("player")),
-        faction = UnitFactionGroup("player") or "",
-        timestamp = GetServerTime(),
-        addonVersion = "v" .. PSC_GetAddonVersion(),
-        achievementsUnlocked = achievementsUnlocked,
-        totalAchievements = totalAchievements,
-        achievementPoints = achievementPoints
     }
+
+    local result = self:ConstructPayload(statsComponents)
 
     self.lastPlayerStats = result
     return result
+end
+
+-- Constructs the standardized broadcast payload from component stats
+function Network:ConstructPayload(components)
+    local totalAchievements = 0
+    if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
+        totalAchievements = #PVPSC.AchievementSystem.achievements
+    end
+
+    local _, classFilename = UnitClass("player")
+    local _, raceFilename = UnitRace("player")
+
+    return {
+        summary = components.summary,
+        classData = components.classData,
+        raceData = components.raceData,
+        genderData = components.genderData,
+        zoneData = components.zoneData,
+        levelData = components.levelData,
+        hourlyData = components.hourlyData,
+        weekdayData = components.weekdayData,
+        monthlyData = components.monthlyData,
+        yearlyData = components.yearlyData,
+        unknownLevelClassData = components.unknownLevelClassData,
+        guildStatusData = components.guildStatusData,
+        npcKillsData = components.npcKillsData,
+
+        playerName = UnitName("player"),
+        level = UnitLevel("player"),
+        class = classFilename,
+        race = raceFilename,
+        faction = UnitFactionGroup("player") or "",
+        timestamp = GetServerTime(),
+        addonVersion = "v" .. PSC_GetAddonVersion(),
+        achievementsUnlocked = PSC_GetUnlockedAchievementCount(),
+        totalAchievements = totalAchievements,
+        achievementPoints = PSC_GetCurrentAchievementPoints()
+    }
+end
+
+-- Determine the list of channels to broadcast to
+function Network:GetBroadcastChannels()
+    local distributionList = {}
+
+    if IsInRaid() then
+        table.insert(distributionList, "RAID")
+    elseif IsInGroup() then
+        table.insert(distributionList, "PARTY")
+    end
+
+    if IsInGuild() then
+        table.insert(distributionList, "GUILD")
+    end
+
+    -- Send to interactions in instance
+    local inInstance, instanceType = IsInInstance()
+    if instanceType == "pvp" or instanceType == "arena" then
+        table.insert(distributionList, "INSTANCE_CHAT")
+    end
+
+    -- Always yell to share with others nearby
+    table.insert(distributionList, "YELL")
+
+    return distributionList
 end
 
 -- Broadcast player stats
@@ -298,26 +325,14 @@ function Network:BroadcastStats(providedStats)
     local priority = "BULK"
 
     -- Collect channels to send to
-    local distributionList = {}
+    local distributionList = self:GetBroadcastChannels()
 
-    if IsInRaid() then
-        table.insert(distributionList, "RAID")
-    elseif IsInGroup() then
-        table.insert(distributionList, "PARTY")
+    if PSC_Debug then
+        local payloadSize = #payload
+        local channelCount = #distributionList
+        print(string.format("|cFFFFD700[PVPSC Network]|r Stats Size: %dB x %d chans. Interval: %.1fs",
+            payloadSize, channelCount, self.MIN_BROADCAST_INTERVAL))
     end
-
-    if IsInGuild() then
-        table.insert(distributionList, "GUILD")
-    end
-
-    -- Send to interactions in instance
-    local inInstance, instanceType = IsInInstance()
-    if instanceType == "pvp" or instanceType == "arena" then
-        table.insert(distributionList, "INSTANCE_CHAT")
-    end
-
-    -- Always yell to share with others nearby
-    table.insert(distributionList, "YELL")
 
     -- Send with slight staggering to avoid immediate throttling
     -- Reduced from MIN_BROADCAST_INTERVAL to 0.5s to avoid overlapping broadcasts
@@ -467,6 +482,7 @@ function Network:CleanupStaleData()
     local now = GetServerTime()
     local removed = 0
 
+    -- Cleanup shared player data
     for name, data in pairs(self.sharedData) do
         local age = now - (data.timestamp or 0)
         if age >= self.DATA_TTL then
@@ -476,7 +492,20 @@ function Network:CleanupStaleData()
     end
 
     if removed > 0 then
-        D("Cleaned up", removed, "stale entries")
+        D("Cleaned up", removed, "stale entries from shared data")
+    end
+
+    -- Cleanup duplicate message cache
+    local removedDuplicates = 0
+    for k, expireTime in pairs(recentMessages) do
+        if expireTime <= now then
+            recentMessages[k] = nil
+            removedDuplicates = removedDuplicates + 1
+        end
+    end
+
+    if removedDuplicates > 0 then
+        D("Cleaned up", removedDuplicates, "expired entries from duplicate cache")
     end
 end
 
