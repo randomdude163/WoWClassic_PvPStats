@@ -91,6 +91,10 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
 end
 
 function HandlePlayerDeath()
+    if not PSC_CharacterName or PSC_CharacterName == "" then
+        return
+    end
+
     local now = GetTime()
     if (now - PSC_LastDeathTime) < PSC_DEATH_EVENT_COOLDOWN then
         if PSC_Debug then
@@ -594,6 +598,7 @@ local function HandlePlayerEnteringWorld()
     PSC_MigratePlayerInfoCache()
     PSC_MigratePlayerInfoToEnglish()
     PSC_InitializePlayerKillCounts()
+    PSC_InitializeLeaderboardCache()
     PSC_InitializePlayerLossCounts()
     PSC_UpdateMinimapButtonPosition()
     PSC_SetupMouseoverTooltip()
@@ -644,6 +649,8 @@ function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_LOGOUT")
     pvpStatsClassicFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+    pvpStatsClassicFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+    pvpStatsClassicFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
 
     pvpStatsClassicFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_ENTERING_WORLD" then
@@ -669,6 +676,11 @@ function PSC_RegisterEvents()
             PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             PSC_CheckBattlegroundStatus()
+        elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_GUILD_UPDATE" then
+            -- Only broadcast stats on group/guild change if Network is initialized
+            if PVPSC.Network and PVPSC.Network.initialized then
+                PVPSC.Network:BroadcastStats()
+            end
         end
     end)
 end

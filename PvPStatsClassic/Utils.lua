@@ -74,7 +74,8 @@ function PSC_StartIncrementalAchievementsCalculation()
     local charactersToProcess = {}
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData
+    local hourlyData, weekdayData, monthlyData, yearlyData
     local summaryStats = nil
     local achievementStats = nil
 
@@ -102,8 +103,24 @@ function PSC_StartIncrementalAchievementsCalculation()
         end,
         TaskQueueDelayFrame(1),
         function()
-            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData =
+            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
                 PSC_CalculateBarChartStatistics(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
+            yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
         end,
         TaskQueueDelayFrame(1),
         function()
@@ -143,6 +160,28 @@ function PSC_StartIncrementalAchievementsCalculation()
                 totalAchievementPoints = PSC_GetCurrentAchievementPoints(),
                 unlockedAchievements = PSC_GetUnlockedAchievementCount()
             }
+
+            -- Broadcast calculated stats to network
+            if PVPSC.Network and PVPSC.Network.initialized then
+                local statsComponents = {
+                    summary = summaryStats,
+                    classData = classData,
+                    raceData = raceData,
+                    genderData = genderData,
+                    zoneData = zoneData,
+                    levelData = levelData,
+                    hourlyData = TimeStatsCache and TimeStatsCache.hours,
+                    weekdayData = TimeStatsCache and TimeStatsCache.weekdays,
+                    monthlyData = TimeStatsCache and TimeStatsCache.months,
+                    yearlyData = TimeStatsCache and TimeStatsCache.years,
+                    unknownLevelClassData = unknownLevelClassData,
+                    guildStatusData = guildStatusData,
+                    npcKillsData = npcKillsData
+                }
+
+                local broadcastStats = PVPSC.Network:ConstructPayload(statsComponents)
+                PVPSC.Network:BroadcastStats(broadcastStats)
+            end
 
             return true
         end,
@@ -325,6 +364,10 @@ function PSC_GetCharacterKey()
     return PSC_CharacterName .. "-" .. PSC_RealmName
 end
 
+function PSC_GetAddonVersion()
+    return "4.0.0"
+end
+
 function GetMultiKillText(count)
     if count < 2 then return "" end
 
@@ -355,13 +398,22 @@ function PSC_GetPlayerCoordinates()
     return x, y
 end
 
-function PSC_FormatLastKillTimespan(lastKillTimestamp)
+function PSC_FormatLastKillTimespan(lastKillTimestamp, useServerTime)
     if not lastKillTimestamp then
         return nil
     end
 
-    local currentTime = time()
+    local currentTime
+    if useServerTime then
+        currentTime = GetServerTime()
+    else
+        currentTime = time()
+    end
+
     local timeDiff = currentTime - lastKillTimestamp
+
+    -- Handle negative diffs (clock skew etc)
+    if timeDiff < 0 then timeDiff = 0 end
 
     if timeDiff < 60 then
         return format("%ds", timeDiff)
@@ -372,6 +424,116 @@ function PSC_FormatLastKillTimespan(lastKillTimestamp)
     else
         return format("%dd", math.floor(timeDiff/86400))
     end
+end
+
+-- Formats a timestamp into a relative "time ago" string (e.g., "5m ago")
+function PSC_GetTimeAgo(timestamp, useServerTime)
+    if not timestamp or timestamp <= 0 then
+        return "Unknown"
+    end
+
+    local timeString = PSC_FormatLastKillTimespan(timestamp, useServerTime)
+    if timeString then
+        return timeString .. " ago"
+    end
+
+    return "Unknown"
+end
+
+function PSC_FormatKDRatio(totalKills, totalDeaths, kdRatio)
+    if totalDeaths and totalDeaths > 0 then
+        if not kdRatio then
+            kdRatio = totalKills / totalDeaths
+        end
+        return string.format("%.1f", kdRatio)
+    else
+        if totalKills and totalKills > 0 then
+            return "∞"
+        else
+            return "0.0"
+        end
+    end
+end
+
+function PSC_CreateGoldHighlight(parent, height)
+    local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
+    highlight:SetAllPoints(true)
+
+    local useNewAPI = highlight.SetGradient and type(highlight.SetGradient) == "function" and pcall(function()
+        highlight:SetGradient("HORIZONTAL", {
+            r = 1,
+            g = 1,
+            b = 1,
+            a = 1
+        }, {
+            r = 1,
+            g = 1,
+            b = 1,
+            a = 1
+        })
+        return true
+    end)
+
+    if useNewAPI then
+        highlight:SetColorTexture(1, 0.82, 0, 0.6)
+        pcall(function()
+            highlight:SetGradient("HORIZONTAL", {
+                r = 1,
+                g = 0.82,
+                b = 0,
+                a = 0.3
+            }, {
+                r = 1,
+                g = 0.82,
+                b = 0,
+                a = 0.8
+            })
+        end)
+    else
+        highlight:SetColorTexture(1, 0.82, 0, 0.5)
+
+        local leftGradient = parent:CreateTexture(nil, "HIGHLIGHT")
+        leftGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+        leftGradient:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+        leftGradient:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+        leftGradient:SetWidth(parent:GetWidth() / 2)
+        leftGradient:SetHeight(height)
+
+        pcall(function()
+            leftGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.3, 1, 0.82, 0, 0.7)
+        end)
+
+        if leftGradient:GetVertexColor() == 1 and select(2, leftGradient:GetVertexColor()) == 1 then
+            leftGradient:SetVertexColor(1, 0.82, 0, 0.6)
+        end
+
+        local rightGradient = parent:CreateTexture(nil, "HIGHLIGHT")
+        rightGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+        rightGradient:SetPoint("TOPLEFT", leftGradient, "TOPRIGHT", 0, 0)
+        rightGradient:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+
+        pcall(function()
+            rightGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.7, 1, 0.82, 0, 0.3)
+        end)
+
+        if rightGradient:GetVertexColor() == 1 and select(2, rightGradient:GetVertexColor()) == 1 then
+            rightGradient:SetVertexColor(1, 0.82, 0, 0.6)
+        end
+    end
+
+    local topBorder = parent:CreateTexture(nil, "HIGHLIGHT")
+    topBorder:SetHeight(1)
+    topBorder:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    topBorder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    topBorder:SetColorTexture(1, 0.82, 0, 0.8)
+
+    local bottomBorder = parent:CreateTexture(nil, "HIGHLIGHT")
+    bottomBorder:SetHeight(1)
+    bottomBorder:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+    bottomBorder:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+    bottomBorder:SetColorTexture(1, 0.82, 0, 0.8)
+
+    return highlight
 end
 
 function PSC_TimestampToHour(timestamp, timezoneOffsetHours)

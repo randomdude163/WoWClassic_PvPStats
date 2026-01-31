@@ -470,6 +470,7 @@ function PSC_LoadDefaultSettings()
     }
 
     PSC_InitializeAchievementDataStructure()
+    PSC_InitializeLeaderboardCache()
 end
 
 function PSC_InitializePlayerKillCounts()
@@ -534,16 +535,24 @@ function PSC_InitializePlayerLossCounts()
     end
 end
 
+function PSC_InitializeLeaderboardCache()
+    if not PSC_DB.LeaderboardCache then
+        PSC_DB.LeaderboardCache = {}
+    end
+end
+
 function ResetAllStatsToDefault()
     PSC_DB.PlayerInfoCache = {}
     PSC_DB.PlayerKillCounts = {}
     PSC_DB.PvPLossCounts = {}
     PSC_DB.CharacterAchievements = {}
     PSC_DB.CharacterAchievementPoints = {}
+    PSC_DB.LeaderboardCache = {}
 
     PSC_InitializePlayerKillCounts()
     PSC_InitializePlayerLossCounts()
     PSC_InitializeAchievementDataStructure()
+    PSC_InitializeLeaderboardCache()
 
     print("[PvPStats]: All statistics have been reset!")
 end

@@ -5,87 +5,6 @@ local AchievementSystem = PVPSC.AchievementSystem
 
 local statisticsFrame = nil
 
-local function CreateGoldHighlight(parent, height)
-    local highlight = parent:CreateTexture(nil, "HIGHLIGHT")
-    highlight:SetAllPoints(true)
-
-    local useNewAPI = highlight.SetGradient and type(highlight.SetGradient) == "function" and pcall(function()
-        highlight:SetGradient("HORIZONTAL", {
-            r = 1,
-            g = 1,
-            b = 1,
-            a = 1
-        }, {
-            r = 1,
-            g = 1,
-            b = 1,
-            a = 1
-        })
-        return true
-    end)
-
-    if useNewAPI then
-        highlight:SetColorTexture(1, 0.82, 0, 0.6)
-        pcall(function()
-            highlight:SetGradient("HORIZONTAL", {
-                r = 1,
-                g = 0.82,
-                b = 0,
-                a = 0.3
-            }, {
-                r = 1,
-                g = 0.82,
-                b = 0,
-                a = 0.8
-            })
-        end)
-    else
-        highlight:SetColorTexture(1, 0.82, 0, 0.5)
-
-        local leftGradient = parent:CreateTexture(nil, "HIGHLIGHT")
-        leftGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
-        leftGradient:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-        leftGradient:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-        leftGradient:SetWidth(parent:GetWidth() / 2)
-        leftGradient:SetHeight(height)
-
-        pcall(function()
-            leftGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.3, 1, 0.82, 0, 0.7)
-        end)
-
-        if leftGradient:GetVertexColor() == 1 and select(2, leftGradient:GetVertexColor()) == 1 then
-            leftGradient:SetVertexColor(1, 0.82, 0, 0.6)
-        end
-
-        local rightGradient = parent:CreateTexture(nil, "HIGHLIGHT")
-        rightGradient:SetTexture("Interface\\Buttons\\WHITE8x8")
-        rightGradient:SetPoint("TOPLEFT", leftGradient, "TOPRIGHT", 0, 0)
-        rightGradient:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-
-        pcall(function()
-            rightGradient:SetGradientAlpha("HORIZONTAL", 1, 0.82, 0, 0.7, 1, 0.82, 0, 0.3)
-        end)
-
-        if rightGradient:GetVertexColor() == 1 and select(2, rightGradient:GetVertexColor()) == 1 then
-            rightGradient:SetVertexColor(1, 0.82, 0, 0.6)
-        end
-    end
-
-    local topBorder = parent:CreateTexture(nil, "HIGHLIGHT")
-    topBorder:SetHeight(1)
-    topBorder:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    topBorder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-    topBorder:SetColorTexture(1, 0.82, 0, 0.8)
-
-    local bottomBorder = parent:CreateTexture(nil, "HIGHLIGHT")
-    bottomBorder:SetHeight(1)
-    bottomBorder:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-    bottomBorder:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-    bottomBorder:SetColorTexture(1, 0.82, 0, 0.8)
-
-    return highlight
-end
-
 local UI = {
     FRAME = {
         WIDTH = 850,
@@ -333,7 +252,7 @@ local function createContainerWithTitle(parent, title, x, y, width, height)
     return container
 end
 
-local function createBar(container, entry, index, maxValue, total, titleType)
+local function createBar(container, entry, index, maxValue, total, titleType, disableClicks)
     local barWidth
     local nameWidth
     local barX
@@ -398,23 +317,35 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     -- Only add highlight and click functionality for clickable chart types
     local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month" and titleType ~= "year" and titleType ~= "npc"
 
+    if disableClicks then
+        isClickable = false
+    end
+
     if isClickable then
-        local highlightTexture = CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
+        local highlightTexture = PSC_CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
     end
 
     barButton:SetScript("OnEnter", function(self)
+        if disableClicks then return end
+
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(displayName)
 
         if titleType == "class" or titleType == "unknownLevelClass" then
-            GameTooltip:AddLine("Click to show all kills for this class", 1, 1, 1, true)
+            if isClickable then
+                GameTooltip:AddLine("Click to show all kills for this class", 1, 1, 1, true)
+            end
         elseif titleType == "zone" then
-            GameTooltip:AddLine("Click to show all kills for this zone", 1, 1, 1, true)
+            if isClickable then
+                GameTooltip:AddLine("Click to show all kills for this zone", 1, 1, 1, true)
+            end
         elseif titleType == "level" then
-            if entry.key == "??" then
-                GameTooltip:AddLine("Click to show all kill for level ??", 1, 1, 1, true)
-            else
-                GameTooltip:AddLine("Click to show all kills for this level", 1, 1, 1, true)
+            if isClickable then
+                if entry.key == "??" then
+                    GameTooltip:AddLine("Click to show all kill for level ??", 1, 1, 1, true)
+                else
+                    GameTooltip:AddLine("Click to show all kills for this level", 1, 1, 1, true)
+                end
             end
         elseif titleType == "hour" then
             local hour = tonumber(entry.key)
@@ -430,9 +361,13 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         elseif titleType == "year" then
             GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
         elseif titleType == raceColors then
-            GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
+            if isClickable then
+                GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
+            end
         elseif titleType == genderColors then
-            GameTooltip:AddLine("Click to show all kills for this gender", 1, 1, 1, true)
+            if isClickable then
+                GameTooltip:AddLine("Click to show all kills for this gender", 1, 1, 1, true)
+            end
         end
 
         GameTooltip:Show()
@@ -580,7 +515,7 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     end
 end
 
-local function createBarChart(parent, title, data, colorTable, x, y, width, height)
+local function createBarChart(parent, title, data, colorTable, x, y, width, height, disableClicks)
     local container = createContainerWithTitle(parent, title, x, y, width, height)
 
     local sortedData = sortByValue(data, true)
@@ -672,7 +607,7 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     end
 
     for i, entry in ipairs(filteredData) do
-        createBar(container, entry, i, maxValue, total, titleType)
+        createBar(container, entry, i, maxValue, total, titleType, disableClicks)
     end
 
     return container
@@ -705,7 +640,7 @@ local function createGuildTableRow(content, entry, index, firstRowSpacing)
     rowButton:SetPoint("BOTTOMRIGHT", killsText, "BOTTOMRIGHT", 10, 0) -- Remove the -15 offset
 
     -- Use a smaller height value for the highlight (16 matches the font height better)
-    local highlightTexture = CreateGoldHighlight(rowButton, 16)
+    local highlightTexture = PSC_CreateGoldHighlight(rowButton, 16)
 
     rowButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -871,9 +806,13 @@ local function PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killD
         levelPart = nil
     end
 
-    state.killsPerPlayer[playerName] = (state.killsPerPlayer[playerName] or 0) + kills
+    if not state.killsPerPlayer[playerName] then
+        state.uniqueKills = state.uniqueKills + 1
+        state.killsPerPlayer[playerName] = kills
+    else
+        state.killsPerPlayer[playerName] = state.killsPerPlayer[playerName] + kills
+    end
 
-    state.uniqueKills = state.uniqueKills + 1
     state.totalKills = state.totalKills + kills
 
     local levelNum = tonumber(levelPart or "0") or 0
@@ -1154,7 +1093,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
-local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak)
+local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak, isLocalPlayer)
     local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", 0, yPosition)
     labelText:SetText(label)
@@ -1183,12 +1122,12 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
             GameTooltip:Hide()
         end)
 
-        if label == "Most killed player:" then
+        if label == "Most killed player:" and isLocalPlayer then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
 
-            CreateGoldHighlight(button, 20)
+            PSC_CreateGoldHighlight(button, 20)
 
             button:SetScript("OnMouseUp", function()
                 if value ~= "None (0)" then
@@ -1200,12 +1139,12 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
                     end)
                 end
             end)
-        elseif label == "Nemesis:" then
+        elseif label == "Nemesis:" and isLocalPlayer then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
 
-            CreateGoldHighlight(button, 20)
+            PSC_CreateGoldHighlight(button, 20)
 
             button:SetScript("OnMouseUp", function()
                 if value ~= "None (0)" then
@@ -1217,12 +1156,12 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
                     end)
                 end
             end)
-        elseif isKillStreak then
+        elseif isKillStreak and isLocalPlayer then
             local button = CreateFrame("Button", nil, tooltipFrame)
             ---@diagnostic disable-next-line: param-type-mismatch
             button:SetAllPoints(true)
 
-            CreateGoldHighlight(button, 20)
+            PSC_CreateGoldHighlight(button, 20)
 
             button:SetScript("OnMouseUp", function()
                 PSC_CreateKillStreakPopup()
@@ -1402,172 +1341,204 @@ function PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, maxKill
     end
 end
 
-local function createSummaryStats(parent, x, y, width, height)
+local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer, extraData, playerName)
     local spacing_between_sections = 10
+    local statY = -22
+
+    -- 1. Totals
+    local totalKillsTooltip = isLocalPlayer and "Total number of players you have killed." or "Total number of players killed."
+    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills or 0, statY, totalKillsTooltip, false, isLocalPlayer)
+
+    local uniqueKillsTooltip = isLocalPlayer and "Total number of unique players you have killed. Multiple kills of the same player are counted only once." or "Total number of unique players killed."
+    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills or 0, statY, uniqueKillsTooltip, false, isLocalPlayer)
+
+    local totalDeathsTooltip = isLocalPlayer and "Total number of times you have died to players." or "Total number of deaths to players."
+    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY, totalDeathsTooltip, false, isLocalPlayer)
+
+    local kdRatio = PSC_FormatKDRatio(stats.totalKills, stats.totalDeaths, stats.kdRatio)
+    local kdText = kdRatio .. " (" .. (stats.totalKills or 0) .. "/" .. (stats.totalDeaths or 0) .. ")"
+    local kdTooltip = isLocalPlayer and "Overall kill/death ratio (total player kills divided by total PvP deaths)." or "Overall kill/death ratio."
+    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY, kdTooltip, false, isLocalPlayer)
+
+    if (stats.unknownLevelKills and stats.unknownLevelKills > 0) or isLocalPlayer then
+        local unknownTooltip = "Total number of times you have killed a level ?? player."
+        statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills or 0, statY, unknownTooltip, false, isLocalPlayer)
+    end
+
+    -- 2. Most Killed & Nemesis
+    if stats.mostKilledPlayer and (stats.mostKilledCount or 0) > 0 and stats.mostKilledPlayer ~= "None" then
+        local mostKilledText = stats.mostKilledPlayer .. " (" .. (stats.mostKilledCount or 0) .. ")"
+        local mkTooltip = isLocalPlayer and "Click to show all kills of this player" or "The player killed most often."
+        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mkTooltip, false, isLocalPlayer)
+    end
+
+    if stats.nemesisName and stats.nemesisName ~= "None" and (stats.nemesisScore or 0) > 0 then
+        local nemesisText = stats.nemesisName .. " (" .. (stats.nemesisScore or 0) .. ")"
+        local nemesisTooltip = isLocalPlayer and "The player who has killed you the most (kills + assists). Click to view details." or "The player who has killed this player the most."
+        statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY, nemesisTooltip, false, isLocalPlayer)
+    end
+
+    -- 3. Averages
+    if stats.avgLevel and stats.avgLevel > 0 then
+        statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - spacing_between_sections,
+            isLocalPlayer and "Average level of players you have killed." or "Average level of players killed.", false, isLocalPlayer)
+    end
+
+    if stats.avgKillsPerPlayer and stats.avgKillsPerPlayer > 0 then
+        statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
+            isLocalPlayer and "Average number of kills per unique player." or "Average number of kills per unique player.", false, isLocalPlayer)
+    end
+
+    if stats.avgLevelDiff and stats.avgLevelDiff ~= 0 then
+        local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
+                              (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
+        statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
+            isLocalPlayer and "Average level difference between you and the players you have killed." or "Average level difference.", false, isLocalPlayer)
+    end
+
+    -- 4. Streaks
+    local killStreakY = statY - spacing_between_sections
+    local csTooltip = isLocalPlayer
+        and "Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings."
+        or "Current active kill streak."
+
+    statY = addSummaryStatLine(container, "Current kill streak:", tostring(stats.currentKillStreak or 0), killStreakY, csTooltip, true, isLocalPlayer)
+
+    local hkTooltip = "The highest kill streak achieved."
+    local mkTooltip = "The highest number of kills achieved while staying in combat."
+    local hkValue = tostring(stats.highestKillStreak or 0)
+    local mkValue = tostring(stats.highestMultiKill or 0)
+
+    if isLocalPlayer then
+        if PSC_DB.ShowAccountWideStats then
+            hkTooltip = "The highest kill streak you ever achieved across all characters."
+            if (stats.highestKillStreak or 0) > 0 then
+                hkValue = hkValue .. " (" .. (stats.highestKillStreakCharacter or "") .. ")"
+            end
+
+            mkTooltip = "The highest number of kills you achieved while staying in combat across all characters."
+            if (stats.highestMultiKill or 0) > 0 then
+                mkValue = mkValue .. " (" .. (stats.highestMultiKillCharacter or "") .. ")"
+            end
+        else
+            hkTooltip = "The highest kill streak you achieved on this character."
+            mkTooltip = "The highest number of kills you achieved while staying in combat on this character."
+        end
+    end
+
+    -- Note: Passing 'true' for isKillStreak (6th arg) to make it gold
+    statY = addSummaryStatLine(container, "Highest kill streak:", hkValue, statY, hkTooltip, true, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Highest multi-kill:", mkValue, statY, mkTooltip, true, isLocalPlayer)
+
+    -- 5. Time Periods
+    if stats.killsToday or (isLocalPlayer and stats.killsToday ~= nil) then
+        statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday or 0), statY, "Total player kills today.", false, isLocalPlayer)
+    end
+    if stats.killsThisWeek or (isLocalPlayer and stats.killsThisWeek ~= nil) then
+        statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek or 0), statY, "Total player kills this week.", false, isLocalPlayer)
+    end
+    if stats.killsThisMonth or (isLocalPlayer and stats.killsThisMonth ~= nil) then
+        statY = addSummaryStatLine(container, "Kills this month:", tostring(stats.killsThisMonth or 0), statY, "Total player kills this month.", false, isLocalPlayer)
+    end
+    if stats.killsThisYear or (isLocalPlayer and stats.killsThisYear ~= nil) then
+        statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear or 0), statY, "Total player kills this year.", false, isLocalPlayer)
+    end
+
+    statY = statY - spacing_between_sections
+
+    -- 6. Busiest & Activity
+    if stats.busiestWeekday and stats.busiestWeekday ~= "None" then
+        local tip = isLocalPlayer and "Your most active day of the week for PvP kills." or "Most active day of the week."
+        statY = addSummaryStatLine(container, "Busiest weekday:", stats.busiestWeekday .. " (" .. (stats.busiestWeekdayKills or 0) .. ")", statY, tip, false, isLocalPlayer)
+    end
+
+    if stats.busiestHour and stats.busiestHour ~= "None" then
+        local tip = isLocalPlayer and "Your most active hour of the day for PvP kills." or "Most active hour of the day."
+        statY = addSummaryStatLine(container, "Busiest hour:", stats.busiestHour .. " (" .. (stats.busiestHourKills or 0) .. ")", statY, tip, false, isLocalPlayer)
+    end
+
+    if stats.busiestMonth and stats.busiestMonth ~= "None" then
+        local tip = isLocalPlayer and "Your most active month for PvP kills." or "Most active month."
+        statY = addSummaryStatLine(container, "Busiest month:", stats.busiestMonth .. " (" .. (stats.busiestMonthKills or 0) .. ")", statY, tip, false, isLocalPlayer)
+    end
+
+    if stats.avgKillsPerDay and stats.avgKillsPerDay > 0 then
+        local tip = isLocalPlayer and "Your average kills per day from your first recorded kill to your most recent kill. This includes all days in that time period, even days when you didn't play." or "Average kills per day."
+        statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY, tip, false, isLocalPlayer)
+    end
+
+    -- 7. Achievements
+    if extraData and extraData.achievementsUnlocked and extraData.totalAchievements then
+        statY = statY - spacing_between_sections
+        local percentage = 0
+        if extraData.totalAchievements > 0 then
+            percentage = (extraData.achievementsUnlocked / extraData.totalAchievements) * 100
+        end
+
+        local achieveText = extraData.achievementsUnlocked .. " / " .. extraData.totalAchievements .. " (" .. string.format("%.1f%%", percentage) .. ")"
+
+        if isLocalPlayer then
+            local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            labelText:SetPoint("TOPLEFT", 0, statY)
+            labelText:SetText("Achievements unlocked:")
+
+            local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            valueText:SetPoint("TOPLEFT", 150, statY)
+            valueText:SetText(achieveText)
+
+            local achievementButton = CreateFrame("Button", nil, container)
+            achievementButton:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
+            achievementButton:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
+            PSC_CreateGoldHighlight(achievementButton, 20)
+
+            achievementButton:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+                GameTooltip:AddLine("Click to view your achievements", 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            achievementButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            achievementButton:SetScript("OnClick", function() PSC_ToggleAchievementFrame() end)
+        else
+            addSummaryStatLine(container, "Achievements:", achieveText, statY, "Total achievements completed.", false, isLocalPlayer)
+        end
+
+        statY = statY - 20
+
+        if extraData.achievementPoints then
+             local ptText = tostring(extraData.achievementPoints)
+             if extraData.totalPossiblePoints then
+                 ptText = ptText .. " / " .. extraData.totalPossiblePoints
+             end
+             statY = addSummaryStatLine(container, "Achievement points:", ptText, statY, "Total achievement points earned.", false, isLocalPlayer)
+        end
+    end
+
+    -- 8. Footer Note
+    if not isLocalPlayer then
+        local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -47)
+        noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
+        noteText:SetTextColor(0.7, 0.7, 0.7)
+    end
+end
+
+local function createSummaryStatsForExternalPlayer(parent, x, y, width, height, stats, playerName, extraData)
+    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
+    PSC_PopulateSummaryStatsContainer(container, stats, false, extraData, playerName)
+    return container
+end
+
+local function createSummaryStats(parent, x, y, width, height)
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
 
     local charactersToProcess = GetCharactersToProcessForStatistics()
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-    local statY = -22
 
-    statY = addSummaryStatLine(container, "Total player kills:", stats.totalKills, statY,
-        "Total number of players you have killed.")
-
-    statY = addSummaryStatLine(container, "Unique players killed:", stats.uniqueKills, statY,
-        "Total number of unique players you have killed. Mlitple kills of the same player are counted only once.")
-
-    statY = addSummaryStatLine(container, "Total player deaths:", stats.totalDeaths or 0, statY,
-        "Total number of times you have died to players.")
-
-    local kdText
-    if stats.totalDeaths and stats.totalDeaths > 0 then
-        kdText = string.format("%.2f", stats.kdRatio) .. " (" .. stats.totalKills .. "/" .. stats.totalDeaths .. ")"
-    else
-        if stats.totalKills and stats.totalKills > 0 then
-            kdText = "∞ (" .. stats.totalKills .. "/0)"
-        else
-            kdText = "0.00 (0/0)"
-        end
-    end
-
-    statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY,
-        "Overall kill/death ratio (total player kills divided by total PvP deaths).")
-    statY = addSummaryStatLine(container, "Level ?? kills:", stats.unknownLevelKills, statY,
-        "Total number of times you have killed a level ?? player.")
-
-    local mostKilledText = stats.mostKilledPlayer .. " (" .. stats.mostKilledCount .. ")"
-    statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections,
-        "Click to show all kills of this player")
-
-    -- Add nemesis stat (player with most kills + assists against you)
-    local nemesisText = stats.nemesisName .. " (" .. stats.nemesisScore .. ")"
-    statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY,
-        "The player who has killed you the most (kills + assists). Click to view details.")
-
-    if stats.mostKilledPlayer ~= "None" then
-        local tooltipFrame = container:GetChildren()
-        for _, child in pairs({container:GetChildren()}) do
----@diagnostic disable-next-line: undefined-field
-            if child:IsObjectType("Frame") and child:GetScript("OnEnter") then
----@diagnostic disable-next-line: undefined-field
-                child:SetScript("OnMouseUp", function()
-                    PSC_CreateKillsListFrame()
-                    C_Timer.After(0.05, function()
-                        PSC_SetKillListSearch(stats.mostKilledPlayer, nil, nil, nil, nil, nil, true)
-                        PSC_FrameManager:BringToFront("KillsList")
-                    end)
-                end)
-                break
-            end
-        end
-    end
-
-    statY = addSummaryStatLine(container, "Avg. victim level:", string.format("%.1f", stats.avgLevel), statY - spacing_between_sections,
-        "Average level of players you have killed.")
-    statY = addSummaryStatLine(container, "Avg. kills per player:", string.format("%.2f", stats.avgKillsPerPlayer), statY,
-        "Average number of kills per unique player.")
-    local levelDiffText = string.format("%.1f", stats.avgLevelDiff) ..
-                              (stats.avgLevelDiff > 0 and " (you're higher)" or " (you're lower)")
-    statY = addSummaryStatLine(container, "Avg. level difference:", levelDiffText, statY,
-        "Average level difference between you and the players you have killed.")
-
-
-    -- Current kill streak with button (similar to achievements)
-    local killStreakY = statY - spacing_between_sections
-
-    local killStreakLabelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killStreakLabelText:SetPoint("TOPLEFT", 0, killStreakY)
-    killStreakLabelText:SetText("Current kill streak:")
-
-    local killStreakValueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    killStreakValueText:SetPoint("TOPLEFT", 150, killStreakY)
-    killStreakValueText:SetText(tostring(stats.currentKillStreak))
-    killStreakValueText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
-
-    -- Add tooltip for kill streak text (label and value)
-    local killStreakTooltipFrame = CreateFrame("Frame", nil, container)
-    killStreakTooltipFrame:SetPoint("TOPLEFT", killStreakLabelText, "TOPLEFT", 0, 0)
-    killStreakTooltipFrame:SetPoint("BOTTOMRIGHT", killStreakValueText, "BOTTOMRIGHT", 0, 0)
-
-    -- Make the kill streak text clickable (like the original implementation)
-    local killStreakClickButton = CreateFrame("Button", nil, killStreakTooltipFrame)
-    killStreakClickButton:SetAllPoints(killStreakTooltipFrame)
-
-    -- Add gold highlight for hover effect
-    CreateGoldHighlight(killStreakClickButton, 20)
-
-    -- Add tooltip to the click button
-    killStreakClickButton:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-        GameTooltip:AddLine("Your current kill streak on this character. Streaks persist through logouts and only end when you die or manually reset your statistics in the addon settings.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-
-    killStreakClickButton:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
-    end)
-
-    killStreakClickButton:SetScript("OnMouseUp", function()
-        PSC_CreateKillStreakPopup()
-    end)
-
-    statY = killStreakY - 20
-
-    local highestKillStreakTooltip = "The highest kill streak you ever achieved across all characters."
-    local highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat across all characters."
-    local highestKillStreakValueText = tostring(stats.highestKillStreak)
-    if stats.highestKillStreak > 0 then
-        highestKillStreakValueText = highestKillStreakValueText .. " (" .. stats.highestKillStreakCharacter .. ")"
-    end
-    local highestMultiKillValueText = tostring(stats.highestMultiKill)
-    if stats.highestMultiKill > 0 then
-        highestMultiKillValueText = highestMultiKillValueText .. " (" .. stats.highestMultiKillCharacter .. ")"
-    end
-    if not PSC_DB.ShowAccountWideStats then
-        highestKillStreakTooltip = "The highest kill streak you achieved on this character."
-        highestKillStreakValueText = tostring(stats.highestKillStreak)
-        highestMultiKillTooltip = "The highest number of kills you achieved while staying in combat on this character."
-        highestMultiKillValueText = tostring(stats.highestMultiKill)
-    end
-    statY = addSummaryStatLine(container, "Highest kill streak:", highestKillStreakValueText, statY, highestKillStreakTooltip)
-    statY = addSummaryStatLine(container, "Highest multi-kill:", highestMultiKillValueText, statY, highestMultiKillTooltip)
-
-    -- Add daily, weekly, monthly, and yearly kill statistics
-    statY = addSummaryStatLine(container, "Kills today:", tostring(stats.killsToday), statY, "Total player kills you achieved today, including all levels and grey players.")
-    statY = addSummaryStatLine(container, "Kills this week:", tostring(stats.killsThisWeek), statY, "Total player kills this week (Wednesday to Wednesday, matching WoW's weekly reset). Includes all levels and grey players.")
-    statY = addSummaryStatLine(container, "Kills this month:", tostring(stats.killsThisMonth), statY, "Total player kills this month (from the 1st to today). Includes all levels and grey players.")
-    statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear), statY, "Total player kills this year (from January 1st to today). Includes all levels and grey players.")
-
-    statY = statY - spacing_between_sections  -- Add some spacing before the achievement section
-
-    if stats.busiestWeekday ~= "None" then
-        statY = addSummaryStatLine(container, "Busiest weekday:", stats.busiestWeekday .. " (" .. stats.busiestWeekdayKills .. ")", statY,
-            "Your most active day of the week for PvP kills.")
-    end
-
-    if stats.busiestHour ~= "None" then
-        statY = addSummaryStatLine(container, "Busiest hour:", stats.busiestHour .. " (" .. stats.busiestHourKills .. ")", statY,
-            "Your most active hour of the day for PvP kills.")
-    end
-
-    if stats.busiestMonth ~= "None" then
-        statY = addSummaryStatLine(container, "Busiest month:", stats.busiestMonth .. " (" .. stats.busiestMonthKills .. ")", statY,
-            "Your most active month for PvP kills.")
-    end
-
-    if stats.avgKillsPerDay > 0 then
-        statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY,
-            "Your average kills per day from your first recorded kill to your most recent kill. This includes all days in that time period, even days when you didn't play.")
-    end
-
-    -- Count total and completed achievements
-    statY = statY - spacing_between_sections  -- Extra spacing before new section
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local completedCount = 0
-    local totalCount = 0
-
+    local extraData = {}
     if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
-        totalCount = #PVPSC.AchievementSystem.achievements
+        local currentCharacterKey = PSC_GetCharacterKey()
+        local totalCount = #PVPSC.AchievementSystem.achievements
+        local completedCount = 0
 
         if PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[currentCharacterKey] then
             for _, achievementData in pairs(PSC_DB.CharacterAchievements[currentCharacterKey]) do
@@ -1576,52 +1547,14 @@ local function createSummaryStats(parent, x, y, width, height)
                 end
             end
         end
+
+        extraData.achievementsUnlocked = completedCount
+        extraData.totalAchievements = totalCount
+        extraData.achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
+        extraData.totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
     end
 
-    -- Find the achievement stats section
-    local achievementText = completedCount .. " / " .. totalCount
-    local achievementTooltip = "Click to view your achievements (" .. completedCount .. " out of " .. totalCount .. " completed)"
-
-    local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    labelText:SetPoint("TOPLEFT", 0, statY)
-    labelText:SetText("Achievements unlocked:")
-
-    local valueText = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    valueText:SetPoint("TOPLEFT", 150, statY)
-    valueText:SetText(achievementText)
-
-    -- Create a clickable button for the achievements line
-    local achievementButton = CreateFrame("Button", nil, container)
-    achievementButton:SetPoint("TOPLEFT", labelText, "TOPLEFT", 0, 0)
-    achievementButton:SetPoint("BOTTOMRIGHT", valueText, "BOTTOMRIGHT", 0, 0)
-
-    -- Add gold highlight
-    CreateGoldHighlight(achievementButton, 20)
-
-    -- Add tooltip and click handlers
-    achievementButton:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-        GameTooltip:AddLine(achievementTooltip, 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-
-    achievementButton:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
-    end)
-
-    -- Open achievement frame on click
-    achievementButton:SetScript("OnClick", function()
-        PSC_ToggleAchievementFrame()
-    end)
-
-    statY = statY - 20  -- Standard line height
-
-    -- Add the achievement points line:
-    local achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
-    local totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
-    statY = addSummaryStatLine(container, "Achievement points:", achievementPoints .. " / " .. totalPossiblePoints, statY,
-        "Progress toward total possible achievement points (" .. achievementPoints .. " out of " .. totalPossiblePoints .. "). Earn more by completing achievements!")
-
+    PSC_PopulateSummaryStatsContainer(container, stats, true, extraData)
     return container
 end
 
@@ -2028,12 +1961,25 @@ function PSC_CreateStatisticsFrame()
     PSC_UpdateStatisticsFrame(statisticsFrame)
 end
 
-function PSC_UpdateStatisticsFrame(frame)
+function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     if not frame then
         return
     end
 
-    local titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
+    -- Determine if we're viewing external player data or local data
+    local isExternalPlayer = (externalPlayerData ~= nil)
+    local playerDisplayName = isExternalPlayer and externalPlayerData.playerName or nil
+
+    -- Set title based on whether it's external or local data
+    local titleText
+    if isExternalPlayer and playerDisplayName then
+        titleText = playerDisplayName .. "'s PvP Statistics"
+        if externalPlayerData.level and externalPlayerData.class then
+            titleText = titleText .. " (Lvl " .. externalPlayerData.level .. " " .. externalPlayerData.class .. ")"
+        end
+    else
+        titleText = GetFrameTitleTextWithCharacterText("PvP Statistics")
+    end
     frame.TitleText:SetText(titleText)
 
     if frame.leftScrollContent then
@@ -2060,23 +2006,48 @@ function PSC_UpdateStatisticsFrame(frame)
         return
     end
 
-    local currentCharacterKey = PSC_GetCharacterKey()
-    local charactersToProcess = {}
-    if PSC_DB.ShowAccountWideStats then
-        charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+    -- Get data based on whether we're viewing external or local player
+    local classData, raceData, genderData, zoneData, levelData, hourlyData, weekdayData, monthlyData, yearlyData, stats
+    local unknownLevelClassData, guildStatusData, guildData, npcKillsData
+
+    if isExternalPlayer then
+        -- Use data from external player
+        classData = externalPlayerData.classData or {}
+        raceData = externalPlayerData.raceData or {}
+        genderData = externalPlayerData.genderData or {}
+        zoneData = externalPlayerData.zoneData or {}
+        levelData = externalPlayerData.levelData or {}
+        hourlyData = externalPlayerData.hourlyData or {}
+        weekdayData = externalPlayerData.weekdayData or {}
+        monthlyData = externalPlayerData.monthlyData or {}
+        yearlyData = externalPlayerData.yearlyData or {}
+        stats = externalPlayerData.summary or {}
+        -- Set defaults for data not available from external players
+        unknownLevelClassData = externalPlayerData.unknownLevelClassData or {}
+        guildStatusData = externalPlayerData.guildStatusData or {}
+        guildData = {}
+        npcKillsData = externalPlayerData.npcKillsData or {}
     else
-        if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
-            charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+        -- Calculate local player data
+        local currentCharacterKey = PSC_GetCharacterKey()
+        local charactersToProcess = {}
+        if PSC_DB.ShowAccountWideStats then
+            charactersToProcess = PSC_DB.PlayerKillCounts.Characters
+        else
+            if PSC_DB.PlayerKillCounts.Characters[currentCharacterKey] then
+                charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+            end
         end
+
+        classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
+            PSC_CalculateBarChartStatistics(charactersToProcess)
+
+        hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
+        weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
+        monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
+        yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
+        stats = PSC_CalculateSummaryStatistics(charactersToProcess)
     end
-
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
-        PSC_CalculateBarChartStatistics(charactersToProcess)
-
-    local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
-    local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
-    local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
-    local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent
@@ -2095,24 +2066,30 @@ function PSC_UpdateStatisticsFrame(frame)
     if UnitFactionGroup("player") == "Horde" then
         fixedNPCs["Corporal Keeshan"] = true
         fixedNPCs["The Defias Traitor"] = true
+        fixedNPCs["Defias Messenger"] = true
+        -- Ensure keys exist for display even if 0 (due to network compression skipping them)
+        if npcKillsData then
+            npcKillsData["Corporal Keeshan"] = npcKillsData["Corporal Keeshan"] or 0
+            npcKillsData["The Defias Traitor"] = npcKillsData["The Defias Traitor"] or 0
+            npcKillsData["Defias Messenger"] = npcKillsData["Defias Messenger"] or 0
+        end
     end
     local npcChartHeight = calculateChartHeight(npcKillsData, fixedNPCs)
 
     local yOffset = 0
-    createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight)
-
+    createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight, isExternalPlayer)
     yOffset = yOffset - classChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight)
 
+    createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight, isExternalPlayer)
     yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
 
     if npcChartHeight > 45 then
-        createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight)
-        yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
+        createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight, isExternalPlayer)
     end
-    createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH,
-        genderChartHeight)
+    yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
 
+    createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH,
+        genderChartHeight, isExternalPlayer)
     yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
 
     local guildStatusChartHeight = calculateChartHeight(guildStatusData)
@@ -2129,38 +2106,60 @@ function PSC_UpdateStatisticsFrame(frame)
         }
     }
     createBarChart(leftScrollContent, "Kills by Guild Status", guildStatusData, guildStatusColors, 0, yOffset,
-        UI.CHART.WIDTH, guildStatusChartHeight)
+        UI.CHART.WIDTH, guildStatusChartHeight, isExternalPlayer)
 
     yOffset = yOffset - guildStatusChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Hour of Day", hourlyData, nil, 0, yOffset, UI.CHART.WIDTH, hourlyChartHeight)
+    createBarChart(leftScrollContent, "Kills by Hour of Day", hourlyData, nil, 0, yOffset, UI.CHART.WIDTH, hourlyChartHeight, isExternalPlayer)
 
     yOffset = yOffset - hourlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Weekday", weekdayData, nil, 0, yOffset, UI.CHART.WIDTH, weekdayChartHeight)
+    createBarChart(leftScrollContent, "Kills by Weekday", weekdayData, nil, 0, yOffset, UI.CHART.WIDTH, weekdayChartHeight, isExternalPlayer)
 
     yOffset = yOffset - weekdayChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Month", monthlyData, nil, 0, yOffset, UI.CHART.WIDTH, monthlyChartHeight)
+    createBarChart(leftScrollContent, "Kills by Month", monthlyData, nil, 0, yOffset, UI.CHART.WIDTH, monthlyChartHeight, isExternalPlayer)
 
     yOffset = yOffset - monthlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Year", yearlyData, nil, 0, yOffset, UI.CHART.WIDTH, yearlyChartHeight)
+    createBarChart(leftScrollContent, "Kills by Year", yearlyData, nil, 0, yOffset, UI.CHART.WIDTH, yearlyChartHeight, isExternalPlayer)
 
     yOffset = yOffset - yearlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
+    createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight, isExternalPlayer)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight)
+    createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight, isExternalPlayer)
 
-    -- Add Guild Kills table in left panel after Kills by Zone
-    yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
-    frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
+    -- Add Guild Kills table in left panel after Kills by Zone (only for local player)
+    if not isExternalPlayer then
+        yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
+        frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
+        local totalHeight = -(yOffset) + UI.GUILD_LIST.HEIGHT + 25
+        leftScrollContent:SetHeight(totalHeight)
+    else
+        -- For external players, no guild table
+        local totalHeight = -(yOffset - zoneChartHeight) + 25
+        leftScrollContent:SetHeight(totalHeight)
 
-    local totalHeight = -(yOffset) + UI.GUILD_LIST.HEIGHT + 25
-    leftScrollContent:SetHeight(totalHeight)
+        -- Extra charts for external players (unknown level / class) if data exists
+        if calculateChartHeight(unknownLevelClassData) > 50 then
+            -- We don't display this specifically in separate charts usually,
+            -- but the 'Kills by Class' chart usually covers it if 'Unknown' is a valid key.
+            -- However, 'Level ??' kills often come from 'unknownLevelClassData' processing in standard flow.
+            -- The standard 'Kills by Class' chart function uses 'classData'.
+            -- 'unknownLevelClassData' is separate, often tracking kills where level/class was missing
+            -- but standard logic merges them into main counts usually.
+
+            -- If the user wants to see "Level ?? kills" specifically,
+            -- usually that's just part of "Kills by Level" where key is "-1".
+        end
+    end
 
     local summaryStatsWidth = 380
     local summaryStatsHeight = 500
 
-    -- Summary Statistics at top right
-    frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
+    -- Summary Statistics at top right (pass stats if external player)
+    if isExternalPlayer then
+        frame.summaryStats = createSummaryStatsForExternalPlayer(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight, stats, playerDisplayName, externalPlayerData)
+    else
+        frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
+    end
 
     -- Separator line above buttons
     local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
@@ -2169,13 +2168,13 @@ function PSC_UpdateStatisticsFrame(frame)
     buttonSeparatorLine:SetHeight(1)
     buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
-    -- Button container at bottom right in 2x2 grid
+    -- Button container at bottom right in 3 rows with 2 columns
     local buttonContainer = CreateFrame("Frame", nil, frame)
-    local buttonWidth = 180
-    local buttonHeight = 30
-    local buttonSpacing = 10
-    buttonContainer:SetSize((buttonWidth * 2) + buttonSpacing, (buttonHeight * 2) + buttonSpacing)
-    buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 20)
+    local buttonWidth = 140
+    local buttonHeight = 25
+    local buttonSpacing = 5
+    buttonContainer:SetSize((buttonWidth * 2) + buttonSpacing, (buttonHeight * 3) + (buttonSpacing * 2))
+    buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 13)
     frame.buttonContainer = buttonContainer
 
     -- Top left button: Settings
@@ -2196,21 +2195,59 @@ function PSC_UpdateStatisticsFrame(frame)
         PSC_ToggleAchievementFrame()
     end)
 
-    -- Bottom left button: Kill History
+    -- Middle left button: Kill History
     local killHistoryButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
     killHistoryButton:SetSize(buttonWidth, buttonHeight)
-    killHistoryButton:SetPoint("BOTTOMLEFT", buttonContainer, "BOTTOMLEFT", 0, 0)
+    killHistoryButton:SetPoint("TOPLEFT", settingsButton, "BOTTOMLEFT", 0, -buttonSpacing)
     killHistoryButton:SetText("Show Kill History")
     killHistoryButton:SetScript("OnClick", function()
         PSC_CreateKillsListFrame()
     end)
 
-    -- Bottom right button: Killstreak
+    -- Middle right button: Kill Streak
     local killstreakButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
     killstreakButton:SetSize(buttonWidth, buttonHeight)
-    killstreakButton:SetPoint("BOTTOMRIGHT", buttonContainer, "BOTTOMRIGHT", 0, 0)
+    killstreakButton:SetPoint("TOPRIGHT", achievementsButton, "BOTTOMRIGHT", 0, -buttonSpacing)
     killstreakButton:SetText("Show Kill Streak")
     killstreakButton:SetScript("OnClick", function()
         PSC_CreateKillStreakPopup()
     end)
+
+    -- Bottom button: Leaderboard (Full width)
+    local leaderboardButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    leaderboardButton:SetSize((buttonWidth * 2) + buttonSpacing, buttonHeight)
+    leaderboardButton:SetPoint("TOPLEFT", killHistoryButton, "BOTTOMLEFT", 0, -buttonSpacing)
+    leaderboardButton:SetText("Show Leaderboard")
+    leaderboardButton:SetScript("OnClick", function()
+        PSC_CreateLeaderboardFrame()
+    end)
+end
+
+-- Display another player's detailed statistics
+function PSC_ShowPlayerDetailedStats(playerName, detailedStats)
+    -- Create a separate frame for viewing other players' stats
+    local viewerFrame = CreateFrame("Frame", "PSC_PlayerStatsViewer_" .. playerName, UIParent, "BasicFrameTemplateWithInset")
+    viewerFrame:SetSize(UI.FRAME.WIDTH, UI.FRAME.HEIGHT)
+    viewerFrame:SetPoint("CENTER")
+    viewerFrame:SetMovable(true)
+    viewerFrame:EnableMouse(true)
+    viewerFrame:RegisterForDrag("LeftButton")
+    viewerFrame:SetScript("OnDragStart", viewerFrame.StartMoving)
+    viewerFrame:SetScript("OnDragStop", viewerFrame.StopMovingOrSizing)
+
+    -- Add close button
+    viewerFrame.CloseButton:SetScript("OnClick", function()
+        viewerFrame:Hide()
+        -- Frame manager will handle cleanup automatically when frame is hidden
+    end)
+
+    -- Register with frame manager
+    if PSC_FrameManager then
+        PSC_FrameManager:RegisterFrame(viewerFrame, "PlayerStatsViewer_" .. playerName)
+    end
+
+    -- Reuse the existing update function with external player data
+    PSC_UpdateStatisticsFrame(viewerFrame, detailedStats)
+
+    viewerFrame:Show()
 end

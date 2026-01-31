@@ -250,6 +250,8 @@ function PSC_RegisterPlayerDeath(killerInfo)
         end
         print("Death recorded: killed by " .. killerName .. " (Level: " .. killerLevel .. ")" .. assistText)
     end
+
+    PSC_StartIncrementalAchievementsCalculation()
 end
 
 function TrackIncomingPlayerDamage(sourceGUID, sourceName, amount)
