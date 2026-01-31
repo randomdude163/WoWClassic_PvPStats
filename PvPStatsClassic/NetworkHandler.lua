@@ -17,7 +17,7 @@ Network.sharedData = Network.sharedData or {}
 Network.detailedStatsCache = Network.detailedStatsCache or {}  -- Cache for detailed stats
 Network.lastPlayerStats = nil -- Cache for own stats to avoid recalculation
 Network.DATA_TTL = 600  -- Consider data stale after 10 minutes (600 seconds)
-Network.MIN_BROADCAST_INTERVAL = 4 -- Minimum seconds between broadcasts to prevent throttling
+Network.MIN_BROADCAST_INTERVAL = 5
 
 -- Deduplication cache to prevent processing the same message multiple times
 local recentMessages = {}
@@ -73,25 +73,189 @@ local KEY_MAP = {
     totalAchievements = "ta",
     achievementPoints = "ap"
 }
+
+-- Shared sub-key mappings
+local CLASS_KEY_MAP = {
+    Warrior = "W", Paladin = "Pa", Hunter = "H", Rogue = "R", Priest = "Pr",
+    Shaman = "S", Mage = "M", Warlock = "Wl", Druid = "D"
+}
+
+local RACE_KEY_MAP = {
+    Human = "Hu", Dwarf = "Dw", ["Night Elf"] = "NE", Gnome = "Gn",
+    Orc = "Or", Undead = "Un", Troll = "Tr", Tauren = "Ta"
+}
+
+local FACTION_KEY_MAP = {
+    Alliance = "A", Horde = "H"
+}
+
+local NPC_KEY_MAP = {
+    ["Corporal Keeshan"] = "CK",
+    ["The Defias Traitor"] = "DT",
+    ["Defias Messenger"] = "DM"
+}
+
+local ZONE_KEY_MAP = {
+    -- Classic Zones (Kalimdor)
+    ["Ashenvale"] = "As", ["Azshara"] = "Az", ["Darkshore"] = "DS", ["Darnassus"] = "Da",
+    ["Desolace"] = "De", ["Durotar"] = "Du", ["Dustwallow Marsh"] = "DM", ["Felwood"] = "FW",
+    ["Feralas"] = "Fe", ["Moonglade"] = "Mg", ["Mulgore"] = "Mu", ["Orgrimmar"] = "Org",
+    ["Silithus"] = "Si", ["Stonetalon Mountains"] = "STM", ["Tanaris"] = "Tn", ["Teldrassil"] = "Tel",
+    ["The Barrens"] = "Bar", ["Thousand Needles"] = "ThN", ["Thunder Bluff"] = "TB",
+    ["Un'Goro Crater"] = "UG", ["Winterspring"] = "Wi",
+
+    -- Classic Zones (Eastern Kingdoms)
+    ["Alterac Mountains"] = "AM", ["Arathi Highlands"] = "AH", ["Badlands"] = "Bd",
+    ["Blasted Lands"] = "BL", ["Burning Steppes"] = "BS", ["Deadwind Pass"] = "DP",
+    ["Dun Morogh"] = "DMo", ["Duskwood"] = "Dk", ["Eastern Plaguelands"] = "EPL",
+    ["Elwynn Forest"] = "EF", ["Hillsbrad Foothills"] = "HF", ["Ironforge"] = "IF",
+    ["Loch Modan"] = "LM", ["Redridge Mountains"] = "RM", ["Searing Gorge"] = "SG",
+    ["Silverpine Forest"] = "SPF", ["Stormwind City"] = "SW", ["Stranglethorn Vale"] = "STV",
+    ["Swamp of Sorrows"] = "SoS", ["The Hinterlands"] = "Hi", ["Tirisfal Glades"] = "TG",
+    ["Undercity"] = "UC", ["Western Plaguelands"] = "WPL", ["Westfall"] = "Wf", ["Wetlands"] = "Wt",
+    ["Blackrock Mountain"] = "BRM",
+
+    -- TBC Zones (Outland)
+    ["Blade's Edge Mountains"] = "BEM", ["Hellfire Peninsula"] = "HFP", ["Nagrand"] = "Na",
+    ["Netherstorm"] = "NS", ["Shadowmoon Valley"] = "SMV", ["Shattrath City"] = "Sha",
+    ["Terokkar Forest"] = "Te", ["Zangarmarsh"] = "Za",
+
+    -- TBC Zones (Azeroth)
+    ["Azuremyst Isle"] = "AI", ["Bloodmyst Isle"] = "BI", ["The Exodar"] = "Ex",
+    ["Eversong Woods"] = "EW", ["Ghostlands"] = "Gl", ["Silvermoon City"] = "SMC",
+    ["Isle of Quel'Danas"] = "IQD",
+
+    -- Battlegrounds
+    ["Alterac Valley"] = "AV", ["Arathi Basin"] = "AB", ["Warsong Gulch"] = "WSG",
+    ["Eye of the Storm"] = "EotS"
+}
+
+-- Mappings for keys inside specific tables (e.g. summary)
+local SUB_KEY_MAPS = {
+    summary = {
+        totalKills = "tk",
+        uniqueKills = "uk",
+        unknownLevelKills = "ulk",
+        totalDeaths = "td",
+        kdRatio = "kdr",
+        avgLevel = "al",
+        avgLevelDiff = "ald",
+        avgKillsPerPlayer = "akp",
+        mostKilledPlayer = "mkp",
+        mostKilledCount = "mkc",
+        currentKillStreak = "cks",
+        highestKillStreak = "hks",
+        highestMultiKill = "hmk",
+        highestKillStreakCharacter = "hksc",
+        highestMultiKillCharacter = "hmkc",
+        busiestWeekday = "bw",
+        busiestWeekdayKills = "bwk",
+        busiestHour = "bh",
+        busiestHourKills = "bhk",
+        busiestMonth = "bm",
+        busiestMonthKills = "bmk",
+        avgKillsPerDay = "akpd",
+        killsToday = "kt",
+        killsThisWeek = "ktw",
+        killsThisMonth = "ktm",
+        killsThisYear = "kty",
+        nemesisName = "nn",
+        nemesisScore = "ns"
+    },
+    classData = CLASS_KEY_MAP,
+    unknownLevelClassData = CLASS_KEY_MAP,
+    raceData = RACE_KEY_MAP,
+    genderData = {
+        MALE = "M", FEMALE = "F"
+    },
+    guildStatusData = {
+        ["In Guild"] = "Y",
+        ["No Guild"] = "N"
+    },
+    npcKillsData = NPC_KEY_MAP,
+    zoneData = ZONE_KEY_MAP
+}
+
 local REVERSE_KEY_MAP = {}
 for k, v in pairs(KEY_MAP) do REVERSE_KEY_MAP[v] = k end
+
+local REVERSE_SUB_KEY_MAPS = {}
+for parentKey, subMap in pairs(SUB_KEY_MAPS) do
+    REVERSE_SUB_KEY_MAPS[parentKey] = {}
+    for k, v in pairs(subMap) do
+        REVERSE_SUB_KEY_MAPS[parentKey][v] = k
+    end
+end
+
+local REVERSE_CLASS_KEY_MAP = {}
+for k, v in pairs(CLASS_KEY_MAP) do REVERSE_CLASS_KEY_MAP[v] = k end
+
+local REVERSE_RACE_KEY_MAP = {}
+for k, v in pairs(RACE_KEY_MAP) do REVERSE_RACE_KEY_MAP[v] = k end
+
+local REVERSE_FACTION_KEY_MAP = {}
+for k, v in pairs(FACTION_KEY_MAP) do REVERSE_FACTION_KEY_MAP[v] = k end
+
+local REVERSE_NPC_KEY_MAP = {}
+for k, v in pairs(NPC_KEY_MAP) do REVERSE_NPC_KEY_MAP[v] = k end
+
+local REVERSE_ZONE_KEY_MAP = {}
+for k, v in pairs(ZONE_KEY_MAP) do REVERSE_ZONE_KEY_MAP[v] = k end
+
+-- Helper to round numbers for compression (max 2 decimal places)
+local function RoundForCompression(num)
+    if type(num) ~= "number" then return num end
+    -- If it's an integer, return as is
+    if num % 1 == 0 then return num end
+    -- Round to 2 decimal places
+    return math.floor(num * 100 + 0.5) / 100
+end
 
 -- Serialize detailed stats with compression
 local function SerializeDetailedStats(data)
     -- Simple JSON-like serialization with short keys
     local str = ""
     for k, v in pairs(data) do
-        -- Use short key if available, otherwise original
-        local key = KEY_MAP[k] or k
-
-        if type(v) == "table" then
-            str = str .. key .. ":"
-            for k2, v2 in pairs(v) do
-                str = str .. tostring(k2) .. "=" .. tostring(v2) .. ","
-            end
-            str = str .. ";"
+        -- Optimization: Skip empty tables
+        if type(v) == "table" and next(v) == nil then
+            -- skip
         else
-            str = str .. key .. ":" .. tostring(v) .. ";"
+            -- Use short key if available, otherwise original
+            local key = KEY_MAP[k] or k
+
+            if type(v) == "table" then
+                str = str .. key .. ":"
+
+                local subMap = SUB_KEY_MAPS[k] -- using original key k
+
+                for k2, v2 in pairs(v) do
+                    -- Optimization: Skip zero values
+                    if v2 == 0 then
+                        -- continue
+                    else
+                        local subKey = (subMap and subMap[k2]) or k2
+                        local subVal = RoundForCompression(v2)
+
+                        str = str .. tostring(subKey) .. "=" .. tostring(subVal) .. ","
+                    end
+                end
+                -- Optimization: Remove trailing comma to save space
+                if string.sub(str, -1) == "," then
+                    str = string.sub(str, 1, -2)
+                end
+                str = str .. ";"
+            else
+                local val = v
+                -- Apply top-level value compression
+                if k == "class" and CLASS_KEY_MAP[v] then val = CLASS_KEY_MAP[v] end
+                if k == "race" and RACE_KEY_MAP[v] then val = RACE_KEY_MAP[v] end
+                if k == "faction" and FACTION_KEY_MAP[v] then val = FACTION_KEY_MAP[v] end
+
+                -- Round top-level numbers (like timestamp)
+                val = RoundForCompression(val)
+
+                str = str .. key .. ":" .. tostring(val) .. ";"
+            end
         end
     end
     return str
@@ -102,26 +266,40 @@ local function DeserializeDetailedStats(payload)
     -- Parse the serialized format back into a table
     local data = {}
     for field in string.gmatch(payload, "([^;]+)") do
-        local key, values = string.match(field, "([^:]+):(.*)")
-        if key and values then
+        local keyStr, values = string.match(field, "([^:]+):(.*)")
+        if keyStr and values then
             -- Restore original long key if it was compressed
-            key = REVERSE_KEY_MAP[key] or key
+            local originalKey = REVERSE_KEY_MAP[keyStr] or keyStr
 
             if string.find(values, "=") then
                 -- It's a table
-                data[key] = {}
+                data[originalKey] = {}
+
+                local subMapReverse = REVERSE_SUB_KEY_MAPS[originalKey]
+
                 for pair in string.gmatch(values, "([^,]+)") do
                     local k, v = string.match(pair, "([^=]+)=([^=]+)")
                     if k and v then
+                         -- Restore sub key if compressed
+                        local originalSubKey = (subMapReverse and subMapReverse[k]) or k
+
                         -- Try to convert to number
                         local num = tonumber(v)
-                        data[key][k] = num or v
+                        data[originalKey][originalSubKey] = num or v
                     end
                 end
             else
                 -- Simple value
-                local num = tonumber(values)
-                data[key] = num or values
+                local val = values
+                -- Restore top-level value compression
+                if originalKey == "class" and REVERSE_CLASS_KEY_MAP[val] then val = REVERSE_CLASS_KEY_MAP[val] end
+                if originalKey == "race" and REVERSE_RACE_KEY_MAP[val] then val = REVERSE_RACE_KEY_MAP[val] end
+                if originalKey == "faction" and REVERSE_FACTION_KEY_MAP[val] then val = REVERSE_FACTION_KEY_MAP[val] end
+
+                local num = tonumber(val)
+                -- If it's a number, it's a number. If it looked like a number but was actually a compressed string (unlikely for top level except values), we keep string
+                -- For top level fields like "class", it is a string. "W" -> "Warrior". tonumber will fail.
+                data[originalKey] = num or val
             end
         end
     end
@@ -229,7 +407,8 @@ function Network:ConstructPayload(components)
         race = raceFilename,
         faction = UnitFactionGroup("player") or "",
         timestamp = GetServerTime(),
-        addonVersion = "v" .. PSC_GetAddonVersion(),
+        -- Optimization: Send version without "v" prefix
+        addonVersion = PSC_GetAddonVersion(),
         achievementsUnlocked = PSC_GetUnlockedAchievementCount(),
         totalAchievements = totalAchievements,
         achievementPoints = PSC_GetCurrentAchievementPoints()
@@ -335,8 +514,8 @@ function Network:BroadcastStats(providedStats)
     end
 
     -- Send with slight staggering to avoid immediate throttling
-    -- Reduced from MIN_BROADCAST_INTERVAL to 0.5s to avoid overlapping broadcasts
-    local STAGGER_DELAY = 0.5
+    -- Reduced stagger to 0.1s to clearer the queue faster
+    local STAGGER_DELAY = 0.1
     for i, channel in ipairs(distributionList) do
         local delay = (i - 1) * STAGGER_DELAY
         if delay == 0 then
@@ -525,24 +704,14 @@ function Network:Initialize()
     C_Timer.After(2, function()
         -- Request all other players to broadcast their stats
         local syncRequest = "SYNC|" .. UnitName("player")
-        local distributionList = {}
 
-        if IsInGuild() then
-            table.insert(distributionList, "GUILD")
-        end
-
-        if IsInRaid() then
-            table.insert(distributionList, "RAID")
-        elseif IsInGroup() then
-            table.insert(distributionList, "PARTY")
-        end
-
-        -- Try to yell to nearby players
-        table.insert(distributionList, "YELL")
+        -- Use centralized channel list
+        local distributionList = self:GetBroadcastChannels()
 
         -- Send with staggering to avoid immediate throttling
+        local SYNC_STAGGER = 0.5
         for i, channel in ipairs(distributionList) do
-            local delay = (i - 1) * self.MIN_BROADCAST_INTERVAL
+            local delay = (i - 1) * SYNC_STAGGER
             if delay == 0 then
                 self:SendCommMessageWithDebug(PREFIX, syncRequest, channel, nil, "NORMAL")
             else
@@ -554,7 +723,7 @@ function Network:Initialize()
 
         -- Also broadcast our own stats immediately
         -- Wait for sync requests to finish to avoid bandwidth congestion
-        local initialBroadcastDelay = #distributionList * self.MIN_BROADCAST_INTERVAL
+        local initialBroadcastDelay = #distributionList * SYNC_STAGGER + 1.0
         C_Timer.After(initialBroadcastDelay, function()
             Network:BroadcastStats()
             D("Sent initial broadcast on login")
