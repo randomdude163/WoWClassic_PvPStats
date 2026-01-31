@@ -186,7 +186,7 @@ function PSC_StartIncrementalAchievementsCalculation()
                     addonVersion = PSC_GetAddonVersion(),
                     achievementsUnlocked = PSC_GetUnlockedAchievementCount(),
                     totalAchievements = (PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements and #PVPSC.AchievementSystem.achievements) or 0,
-                     achievementPoints = PSC_GetCurrentAchievementPoints()
+                    achievementPoints = PSC_GetCurrentAchievementPoints()
                 }
                 PVPSC.Network:BroadcastStats(broadcastStats)
             end

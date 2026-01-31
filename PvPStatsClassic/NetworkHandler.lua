@@ -15,8 +15,9 @@ local PREFIX = "PVPSC"  -- Single prefix for all messages
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
 Network.detailedStatsCache = Network.detailedStatsCache or {}  -- Cache for detailed stats
+Network.lastPlayerStats = nil -- Cache for own stats to avoid recalculation
 Network.DATA_TTL = 600  -- Consider data stale after 10 minutes (600 seconds)
-Network.MIN_BROADCAST_INTERVAL = 5 -- Minimum seconds between broadcasts to prevent throttling
+Network.MIN_BROADCAST_INTERVAL = 4 -- Minimum seconds between broadcasts to prevent throttling
 
 -- Deduplication cache to prevent processing the same message multiple times
 local recentMessages = {}
@@ -35,7 +36,7 @@ end
 
 -- Check if we've recently processed this message
 local function IsDuplicate(playerName, timestamp)
-    local now = time()
+    local now = GetServerTime()
     local key = GetMessageKey(playerName, timestamp)
 
     if recentMessages[key] and recentMessages[key] > now then
@@ -163,6 +164,14 @@ end
 
 -- Build detailed statistics for a player (all kill data)
 function Network:BuildDetailedStats()
+    if self.lastPlayerStats then
+        if PSC_Debug then
+            -- D() is local, but print is fine
+            print("|cFFFFD700[PVPSC Network]|r Using cached player stats.")
+        end
+        return self.lastPlayerStats
+    end
+
     local charactersToProcess = GetCharactersToProcessForStatistics()
 
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
@@ -195,7 +204,7 @@ function Network:BuildDetailedStats()
         achievementPoints = PSC_DB.CharacterAchievementPoints[currentCharacterKey] or 0
     end
 
-    return {
+    local result = {
         summary = stats,
         classData = classData,
         raceData = raceData,
@@ -215,16 +224,24 @@ function Network:BuildDetailedStats()
         class = select(2, UnitClass("player")),
         race = select(2, UnitRace("player")),
         faction = UnitFactionGroup("player") or "",
-        timestamp = time(),
+        timestamp = GetServerTime(),
         addonVersion = "v" .. PSC_GetAddonVersion(),
         achievementsUnlocked = achievementsUnlocked,
         totalAchievements = totalAchievements,
         achievementPoints = achievementPoints
     }
+
+    self.lastPlayerStats = result
+    return result
 end
 
 -- Broadcast player stats
 function Network:BroadcastStats(providedStats)
+    -- Cache provided stats for future use
+    if providedStats then
+        self.lastPlayerStats = providedStats
+    end
+
     local now = GetTime()
 
     -- Check if we are broadcasting too frequently (time-based throttling)
@@ -241,7 +258,8 @@ function Network:BroadcastStats(providedStats)
 
             self.deferredBroadcastTimer = C_Timer.NewTimer(delay, function()
                 self.deferredBroadcastTimer = nil
-                self:BroadcastStats(providedStats)
+                -- Execute broadcast with latest cached stats
+                self:BroadcastStats(nil)
             end)
         end
         return
@@ -257,7 +275,7 @@ function Network:BroadcastStats(providedStats)
         if not self.retryTimer then
             self.retryTimer = C_Timer.NewTimer(2.0, function()
                 self.retryTimer = nil
-                self:BroadcastStats(providedStats)
+                self:BroadcastStats(nil)
             end)
         end
         return
@@ -266,7 +284,11 @@ function Network:BroadcastStats(providedStats)
     self.lastBroadcastTime = now
 
     -- Always build full detailed stats
-    local detailedStats = providedStats or self:BuildDetailedStats()
+    local detailedStats = self.lastPlayerStats or self:BuildDetailedStats()
+
+    -- Update timestamp to now, otherwise rebroadcasting cached stats (e.g. on SYNC)
+    -- might result in receivers discarding data as stale (TTL expires)
+    detailedStats.timestamp = GetServerTime()
 
     -- Serialize
     local payload = SerializeDetailedStats(detailedStats)
@@ -297,9 +319,11 @@ function Network:BroadcastStats(providedStats)
     -- Always yell to share with others nearby
     table.insert(distributionList, "YELL")
 
-    -- Send with staggering to avoid immediate throttling
+    -- Send with slight staggering to avoid immediate throttling
+    -- Reduced from MIN_BROADCAST_INTERVAL to 0.5s to avoid overlapping broadcasts
+    local STAGGER_DELAY = 0.5
     for i, channel in ipairs(distributionList) do
-        local delay = (i - 1) * self.MIN_BROADCAST_INTERVAL
+        local delay = (i - 1) * STAGGER_DELAY
         if delay == 0 then
             self:SendCommMessageWithDebug(PREFIX, payload, channel, nil, priority)
         else
@@ -398,7 +422,7 @@ end
 -- Get all leaderboard data (local + shared)
 function Network:GetAllLeaderboardData()
     local leaderboardData = {}
-    local now = time()
+    local now = GetServerTime()
     local playerName = UnitName("player")
 
     -- Add local player's data first
@@ -440,7 +464,7 @@ end
 
 -- Clean up stale data periodically
 function Network:CleanupStaleData()
-    local now = time()
+    local now = GetServerTime()
     local removed = 0
 
     for name, data in pairs(self.sharedData) do
