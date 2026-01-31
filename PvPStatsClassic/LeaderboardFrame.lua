@@ -4,25 +4,26 @@ PSC_LeaderboardFrame = nil
 
 PSC_SortLeaderboardBy = "totalKills"
 PSC_SortLeaderboardAscending = false
-local LEADERBOARD_FRAME_WIDTH = 1120
+local LEADERBOARD_FRAME_WIDTH = 1150
 local LEADERBOARD_FRAME_HEIGHT = 400
 
 PSC_LeaderboardFrameInitialSetup = true
 
 local colWidths = {
-    playerName = 110,
-    level = 35,
+    playerName = 95,
+    realm = 100,
+    level = 30,
     class = 65,
-    race = 85,
-    totalKills = 60,
-    uniqueKills = 60,
-    kdRatio = 55,
+    race = 75,
+    totalKills = 55,
+    uniqueKills = 55,
+    kdRatio = 50,
     currentStreak = 55,
     bestStreak = 55,
-    mostKilled = 120,
-    avgPerDay = 55,
-    achievements = 100,
-    achievementPoints = 70,
+    mostKilled = 115,
+    avgPerDay = 50,
+    achievements = 70,
+    achievementPoints = 55,
     addonVersion = 60,
     -- Add column width for Last Seen
     lastSeen = 130
@@ -150,6 +151,11 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
             GameTooltip:AddLine("Time passed since this player last updated their stats.", 1, 1, 1, true)
             GameTooltip:AddLine("Note: This timestamp only updates when the player records a new kill/event, not continuously.", 0.7, 0.7, 0.7, true)
             GameTooltip:Show()
+        elseif columnId == "realm" then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText("Realm", 1, 0.82, 0)
+            GameTooltip:AddLine("The realm this character belongs to.", 1, 1, 1, true)
+            GameTooltip:Show()
         end
     end)
 
@@ -170,7 +176,8 @@ local function CreateColumnHeaders(content)
     headerRowBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
 
     local playerNameButton = CreateColumnHeader(content, "Name", colWidths.playerName, nil, 10, 0, "playerName")
-    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, playerNameButton, 0, 0, "level")
+    local realmButton = CreateColumnHeader(content, "Realm", colWidths.realm, playerNameButton, 0, 0, "realm")
+    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, realmButton, 0, 0, "level")
     local classButton = CreateColumnHeader(content, "Class", colWidths.class, levelButton, 0, 0, "class")
     local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
     local totalKillsButton = CreateColumnHeader(content, "Kills", colWidths.totalKills, raceButton, 0, 0, "totalKills")
@@ -180,8 +187,8 @@ local function CreateColumnHeaders(content)
     local bestStreakButton = CreateColumnHeader(content, "Best Streak", colWidths.bestStreak, currentStreakButton, 0, 0, "bestStreak")
     local mostKilledButton = CreateColumnHeader(content, "Most Killed", colWidths.mostKilled, bestStreakButton, 0, 0, "mostKilled")
     local avgPerDayButton = CreateColumnHeader(content, "Avg/Day", colWidths.avgPerDay, mostKilledButton, 0, 0, "avgPerDay")
-    local achievementsButton = CreateColumnHeader(content, "Achievements", colWidths.achievements, avgPerDayButton, 0, 0, "achievements")
-    local achievementPointsButton = CreateColumnHeader(content, "Ach. Points", colWidths.achievementPoints, achievementsButton, 0, 0, "achievementPoints")
+    local achievementsButton = CreateColumnHeader(content, "Achiev.", colWidths.achievements, avgPerDayButton, 0, 0, "achievements")
+    local achievementPointsButton = CreateColumnHeader(content, "Achiev. Points", colWidths.achievementPoints, achievementsButton, 0, 0, "achievementPoints")
     local addonVersionButton = CreateColumnHeader(content, "Version", colWidths.addonVersion, achievementPointsButton, 0, 0, "addonVersion")
     local lastSeenButton = CreateColumnHeader(content, "Last Seen", colWidths.lastSeen, addonVersionButton, 0, 0, "lastSeen")
 
@@ -191,10 +198,29 @@ end
 local function CreatePlayerNameCell(content, playerName, width)
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     nameText:SetPoint("LEFT", content, "LEFT", 4, 0)
-    nameText:SetText(playerName or "Unknown")
+
+    -- Strip realm if present
+    local cleanName = strsplit("-", playerName or "")
+    if not cleanName or cleanName == "" then cleanName = "Unknown" end
+
+    nameText:SetText(cleanName)
     nameText:SetWidth(width)
     nameText:SetJustifyH("LEFT")
     return nameText
+end
+
+local function CreateRealmCell(content, anchorTo, realmName, width)
+    local realmText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    realmText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
+
+    realmText:SetText(realmName or "")
+    realmText:SetWidth(width)
+    realmText:SetJustifyH("LEFT")
+
+    -- Truncate if too long (no word wrap + fixed width)
+    realmText:SetWordWrap(false)
+
+    return realmText
 end
 
 local function CreateLevelCell(content, anchorTo, level, width)
@@ -345,7 +371,8 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local highlightTexture = PSC_CreateGoldHighlight(rowContainer, 16)
 
     local playerNameCell = CreatePlayerNameCell(rowContainer, entry.playerName, colWidths.playerName)
-    local levelCell = CreateLevelCell(rowContainer, playerNameCell, entry.level, colWidths.level)
+    local realmCell = CreateRealmCell(rowContainer, playerNameCell, entry.realm, colWidths.realm)
+    local levelCell = CreateLevelCell(rowContainer, realmCell, entry.level, colWidths.level)
     local classCell = CreateClassCell(rowContainer, levelCell, entry.class, colWidths.class)
     local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
     local totalKillsCell = CreateTotalKillsCell(rowContainer, raceCell, entry.totalKills, colWidths.totalKills)
@@ -366,10 +393,16 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         playerNameCell:SetTextColor(color.r, color.g, color.b)
     end
 
+    -- If cross-realm, maybe add a subtle hint if not explicitly distinguishing via text?
+    -- The playerName already contains "-Realm" if it was set in NetworkHandler.
+    -- We can verify this and perhaps color the realm part differently if we wanted to get fancy,
+    -- but for now the text modification in NetworkHandler handles the display requirement.
+
     -- If no detailed stats available (cached only), gray out the text
     if not entry.hasDetailedStats and entry.playerName ~= UnitName("player") then
         local gray = 0.6
         playerNameCell:SetTextColor(gray, gray, gray)
+        realmCell:SetTextColor(gray, gray, gray)
         levelCell:SetTextColor(gray, gray, gray)
         classCell:SetTextColor(gray, gray, gray)
         raceCell:SetTextColor(gray, gray, gray)
@@ -510,6 +543,7 @@ local function GetLeaderboardData()
              if data.playerName == UnitName("player") then
                  isDetailedAvailable = true
              elseif PVPSC.Network and PVPSC.Network.GetDetailedStatsForPlayer then
+                 -- GetDetailedStatsForPlayer should support lookup by the unique name (Name-Realm)
                  if PVPSC.Network:GetDetailedStatsForPlayer(data.playerName) then
                      isDetailedAvailable = true
                  end
@@ -517,6 +551,8 @@ local function GetLeaderboardData()
 
              table.insert(leaderboardData, {
                  playerName = data.playerName or "Unknown",
+                 -- We now store the true realm in the data object if available, though playerName might be "Name-Realm"
+                 realm = data.realm or PSC_RealmName,
                  level = data.level or 0,
                  class = data.class or "Unknown",
                  race = data.race or "Unknown",

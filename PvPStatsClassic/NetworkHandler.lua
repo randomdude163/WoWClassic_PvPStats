@@ -69,7 +69,8 @@ local KEY_MAP = {
     addonVersion = "av",
     achievementsUnlocked = "au",
     totalAchievements = "ta",
-    achievementPoints = "ap"
+    achievementPoints = "ap",
+    realm = "re"
 }
 
 -- Shared sub-key mappings
@@ -426,6 +427,7 @@ function Network:ConstructPayload(components)
         race = raceFilename,
         faction = UnitFactionGroup("player") or "",
         timestamp = GetServerTime(),
+        realm = PSC_RealmName,
         -- Optimization: Send version without "v" prefix
         addonVersion = PSC_GetAddonVersion(),
         achievementsUnlocked = PSC_GetUnlockedAchievementCount(),
@@ -560,6 +562,7 @@ function Network:UpdateLeaderboardCache(statsData)
     -- Create a summary entry (strip detailed lists to save space)
     local entry = {
         playerName = statsData.playerName,
+        realm = statsData.realm,
         class = statsData.class,
         race = statsData.race,
         level = statsData.level,
@@ -590,7 +593,17 @@ end
 -- Handle received communications
 function Network:OnCommReceived(prefix, message, distribution, sender)
     if prefix ~= PREFIX then return end
-    if sender == UnitName("player") then return end
+
+    -- Parse sender to handle cross-realm names (Name-Realm)
+    -- If sender is just "Name", it means they are on our realm.
+    local senderName, senderRealm = strsplit("-", sender)
+    if not senderRealm then
+        senderName = sender
+        senderRealm = PSC_RealmName -- Default to our realm
+    end
+
+    -- Ignore messages from ourselves (even if sent across channels like YELL/GUILD)
+    if senderName == UnitName("player") and senderRealm == PSC_RealmName then return end
 
     local msgType, data = message:match("^([^|]+)|(.*)$")
 
@@ -618,17 +631,33 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
             return
         end
 
-        -- Check for duplicates
-        if IsDuplicate(statsData.playerName, statsData.timestamp) then
-            D("Duplicate message from", statsData.playerName)
+        -- Ensure realm is set (backward compatibility for older clients not sending realm)
+        if not statsData.realm then
+            statsData.realm = senderRealm
+        end
+
+        -- Construct unique identifier (Name-Realm)
+        -- We modify the playerName in the stored data to be unique if it's from another realm
+        -- This ensures the leaderboard treats "Player-Realm1" and "Player-Realm2" as different entries
+        local uniqueName = statsData.playerName
+
+        if statsData.realm and statsData.realm ~= PSC_RealmName then
+             uniqueName = statsData.playerName .. "-" .. statsData.realm
+             -- Update display name to show realm for clarity
+             statsData.playerName = uniqueName
+        end
+
+        -- Check for duplicates (using unique key)
+        if IsDuplicate(uniqueName, statsData.timestamp) then
+            D("Duplicate message from", uniqueName)
             return
         end
 
         -- Update caches
-        self.sharedData[statsData.playerName] = statsData
+        self.sharedData[uniqueName] = statsData
         self:UpdateLeaderboardCache(statsData)
 
-        D("Received detailed stats from", statsData.playerName, "via", distribution, "- Kills:", statsData.totalKills)
+        D("Received detailed stats from", uniqueName, "via", distribution, "- Kills:", statsData.totalKills)
 
         -- Refresh leaderboard if it's open
         if PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsShown() then

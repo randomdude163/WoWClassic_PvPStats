@@ -445,12 +445,12 @@ function PSC_FormatKDRatio(totalKills, totalDeaths, kdRatio)
         if not kdRatio then
             kdRatio = totalKills / totalDeaths
         end
-        return string.format("%.2f", kdRatio)
+        return string.format("%.1f", kdRatio)
     else
         if totalKills and totalKills > 0 then
             return "∞"
         else
-            return "0.00"
+            return "0.0"
         end
     end
 end
