@@ -400,7 +400,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
 
     -- If no detailed stats available (cached only), gray out the text
     if not entry.hasDetailedStats and entry.playerName ~= UnitName("player") then
-        local gray = 0.6
+        local gray = 0.5
         playerNameCell:SetTextColor(gray, gray, gray)
         realmCell:SetTextColor(gray, gray, gray)
         levelCell:SetTextColor(gray, gray, gray)
