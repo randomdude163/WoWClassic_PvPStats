@@ -4,7 +4,7 @@ PSC_LeaderboardFrame = nil
 
 PSC_SortLeaderboardBy = "totalKills"
 PSC_SortLeaderboardAscending = false
-local LEADERBOARD_FRAME_WIDTH = 1093
+local LEADERBOARD_FRAME_WIDTH = 1120
 local LEADERBOARD_FRAME_HEIGHT = 400
 
 PSC_LeaderboardFrameInitialSetup = true
@@ -13,17 +13,17 @@ local colWidths = {
     playerName = 110,
     level = 35,
     class = 65,
-    race = 75,
+    race = 85,
     totalKills = 60,
     uniqueKills = 60,
     kdRatio = 55,
-    currentStreak = 50,
-    bestStreak = 50,
+    currentStreak = 55,
+    bestStreak = 55,
     mostKilled = 120,
     avgPerDay = 55,
-    achievements = 85,
+    achievements = 100,
     achievementPoints = 70,
-    addonVersion = 50,
+    addonVersion = 55,
     -- Add column width for Last Seen
     lastSeen = 130
 }
@@ -75,7 +75,7 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
         RefreshLeaderboardFrame(true)
     end)
 
-    local header = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    local header = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     header:SetPoint("LEFT", 3, 0)
     header:SetTextColor(1, 0.82, 0)
     header:SetWidth(width - 6)
@@ -488,6 +488,7 @@ local function GetLeaderboardData()
                  currentStreak = currentStreak or 0,
                  bestStreak = bestStreak or 0,
                  mostKilled = mostKilledVal,
+                 _mostKilledCount = mostKilledCount,
                  avgPerDay = avgPerDayStr,
                  achievements = achievementText,
                  achievementPoints = data.achievementPoints or 0,
@@ -507,6 +508,19 @@ local function SortLeaderboardData(data)
     end
 
     table.sort(sortedData, function(a, b)
+        -- Special handling for Most Killed column to sort by count
+        if PSC_SortLeaderboardBy == "mostKilled" then
+            local aCount = a._mostKilledCount or 0
+            local bCount = b._mostKilledCount or 0
+            if aCount ~= bCount then
+                if PSC_SortLeaderboardAscending then
+                    return aCount < bCount
+                else
+                    return aCount > bCount
+                end
+            end
+        end
+
         local aVal = a[PSC_SortLeaderboardBy]
         local bVal = b[PSC_SortLeaderboardBy]
 
