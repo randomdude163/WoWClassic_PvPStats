@@ -14,9 +14,7 @@ local PREFIX = "PVPSC"  -- Single prefix for all messages
 
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
-Network.detailedStatsCache = Network.detailedStatsCache or {}  -- Cache for detailed stats
 Network.lastPlayerStats = nil -- Cache for own stats to avoid recalculation
-Network.DATA_TTL = 600  -- Consider data stale after 10 minutes (600 seconds)
 Network.MIN_BROADCAST_INTERVAL = 5
 
 -- Deduplication cache to prevent processing the same message multiple times
@@ -554,6 +552,41 @@ function Network:BroadcastStats(providedStats)
     end
 end
 
+-- Update the persistent leaderboard cache with new stats
+function Network:UpdateLeaderboardCache(statsData)
+    if not PSC_DB.LeaderboardCache then return end
+    if not statsData or not statsData.playerName then return end
+
+    -- Create a summary entry (strip detailed lists to save space)
+    local entry = {
+        playerName = statsData.playerName,
+        class = statsData.class,
+        race = statsData.race,
+        level = statsData.level,
+        faction = statsData.faction,
+        guild = statsData.guild,
+        timestamp = statsData.timestamp,
+        addonVersion = statsData.addonVersion,
+
+        -- Flattened stats
+        totalKills = statsData.totalKills,
+        totalDeaths = statsData.totalDeaths,
+        uniqueKills = statsData.uniqueKills,
+        kdRatio = statsData.kdRatio,
+        currentKillStreak = statsData.currentKillStreak,
+        highestKillStreak = statsData.highestKillStreak,
+        mostKilledPlayer = statsData.mostKilledPlayer,
+        mostKilledCount = statsData.mostKilledCount,
+        avgKillsPerDay = statsData.avgKillsPerDay,
+
+        achievementsUnlocked = statsData.achievementsUnlocked,
+        totalAchievements = statsData.totalAchievements,
+        achievementPoints = statsData.achievementPoints
+    }
+
+    PSC_DB.LeaderboardCache[statsData.playerName] = entry
+end
+
 -- Handle received communications
 function Network:OnCommReceived(prefix, message, distribution, sender)
     if prefix ~= PREFIX then return end
@@ -592,8 +625,8 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
         end
 
         -- Update caches
-        self.detailedStatsCache[statsData.playerName] = statsData
         self.sharedData[statsData.playerName] = statsData
+        self:UpdateLeaderboardCache(statsData)
 
         D("Received detailed stats from", statsData.playerName, "via", distribution, "- Kills:", statsData.totalKills)
 
@@ -624,21 +657,17 @@ end
 
 -- Get cached detailed stats for a player
 function Network:GetDetailedStatsForPlayer(playerName)
-    if self.detailedStatsCache and self.detailedStatsCache[playerName] then
-        return self.detailedStatsCache[playerName]
-    end
-    -- Fallback to shared data if available
     if self.sharedData and self.sharedData[playerName] then
         return self.sharedData[playerName]
     end
     return nil
 end
 
--- Get all leaderboard data (local + shared)
+-- Get all leaderboard data (local + shared + cache)
 function Network:GetAllLeaderboardData()
     local leaderboardData = {}
-    local now = GetServerTime()
     local playerName = UnitName("player")
+    local addedPlayers = {}
 
     -- Add local player's data first
     local localStats = self:BuildDetailedStats()
@@ -657,19 +686,24 @@ function Network:GetAllLeaderboardData()
              localStats.avgKillsPerDay = localStats.summary.avgKillsPerDay
         end
         table.insert(leaderboardData, localStats)
+        addedPlayers[playerName] = true
     end
 
 
-    -- Add other players' data (filter out stale data)
+    -- Add other players' data
     for name, data in pairs(self.sharedData) do
         if name ~= playerName then
-            local age = now - (data.timestamp or 0)
-            if age < self.DATA_TTL then
+            table.insert(leaderboardData, data)
+            addedPlayers[name] = true
+        end
+    end
+
+    -- Add persistent cache data for offline players
+    if PSC_DB.LeaderboardCache then
+        for name, data in pairs(PSC_DB.LeaderboardCache) do
+            if name ~= playerName and not addedPlayers[name] then
                 table.insert(leaderboardData, data)
-            else
-                -- Remove stale data
-                self.sharedData[name] = nil
-                D("Removed stale data for", name)
+                addedPlayers[name] = true
             end
         end
     end
@@ -677,23 +711,9 @@ function Network:GetAllLeaderboardData()
     return leaderboardData
 end
 
--- Clean up stale data periodically
-function Network:CleanupStaleData()
+-- Clean up message deduplication cache periodically
+function Network:CleanupDeduplicationCache()
     local now = GetServerTime()
-    local removed = 0
-
-    -- Cleanup shared player data
-    for name, data in pairs(self.sharedData) do
-        local age = now - (data.timestamp or 0)
-        if age >= self.DATA_TTL then
-            self.sharedData[name] = nil
-            removed = removed + 1
-        end
-    end
-
-    if removed > 0 then
-        D("Cleaned up", removed, "stale entries from shared data")
-    end
 
     -- Cleanup duplicate message cache
     local removedDuplicates = 0
@@ -718,7 +738,7 @@ function Network:Initialize()
 
     -- Set up cleanup ticker (every 5 minutes)
     C_Timer.NewTicker(300, function()
-        Network:CleanupStaleData()
+        Network:CleanupDeduplicationCache()
     end)
 
     -- Send sync request and immediate broadcast on login

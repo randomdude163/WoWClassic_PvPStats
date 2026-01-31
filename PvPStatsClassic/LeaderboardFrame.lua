@@ -366,6 +366,26 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         playerNameCell:SetTextColor(color.r, color.g, color.b)
     end
 
+    -- If no detailed stats available (cached only), gray out the text
+    if not entry.hasDetailedStats and entry.playerName ~= UnitName("player") then
+        local gray = 0.6
+        playerNameCell:SetTextColor(gray, gray, gray)
+        levelCell:SetTextColor(gray, gray, gray)
+        classCell:SetTextColor(gray, gray, gray)
+        raceCell:SetTextColor(gray, gray, gray)
+        totalKillsCell:SetTextColor(gray, gray, gray)
+        uniqueKillsCell:SetTextColor(gray, gray, gray)
+        kdRatioCell:SetTextColor(gray, gray, gray)
+        currentStreakCell:SetTextColor(gray, gray, gray)
+        bestStreakCell:SetTextColor(gray, gray, gray)
+        mostKilledCell:SetTextColor(gray, gray, gray)
+        avgPerDayCell:SetTextColor(gray, gray, gray)
+        achievementsCell:SetTextColor(gray, gray, gray)
+        achievementPointsCell:SetTextColor(gray, gray, gray)
+        addonVersionCell:SetTextColor(gray, gray, gray)
+        lastSeenCell:SetTextColor(gray, gray, gray)
+    end
+
     -- Add click handler to view player's detailed stats
     rowContainer:SetScript("OnClick", function(self, button)
         if button == "LeftButton" then
@@ -381,30 +401,37 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                 return
             end
 
-            -- Retrieve detailed stats from cache
-            if PVPSC.Network and PVPSC.Network.GetDetailedStatsForPlayer then
-                local detailedStats = PVPSC.Network:GetDetailedStatsForPlayer(playerName)
-                if detailedStats then
-                    -- Display the detailed stats
-                    PSC_ShowPlayerDetailedStats(playerName, detailedStats)
-                else
-                    print("[PvP Stats] No detailed statistics available for " .. playerName)
-                    print("Wait for their next broadcast.")
+            -- Only attempt to open if we have detailed stats
+            if entry.hasDetailedStats then
+                -- Retrieve detailed stats from cache
+                if PVPSC.Network and PVPSC.Network.GetDetailedStatsForPlayer then
+                    local detailedStats = PVPSC.Network:GetDetailedStatsForPlayer(playerName)
+                    if detailedStats then
+                        -- Display the detailed stats
+                        PSC_ShowPlayerDetailedStats(playerName, detailedStats)
+                    end
                 end
-            else
-                print("[PvP Stats] Network system not initialized.")
             end
         end
     end)
+
+    -- Grey out row to indicate reduced functionality if no details available
+    -- Actually, don't grey out the whole row as the data is still valid,
+    -- just maybe don't highlight as strongly on hover or handle tooltip.
+    -- But since we use Gold Highlight, maybe we just leave visual as is and rely on tooltip.
 
     -- Add tooltip to indicate clickability
     rowContainer:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
         GameTooltip:SetText(entry.playerName or "Unknown", 1, 0.82, 0)
+
         if entry.playerName == UnitName("player") then
             GameTooltip:AddLine("Click to view your detailed statistics", 1, 1, 1, true)
-        else
+        elseif entry.hasDetailedStats then
             GameTooltip:AddLine("Click to view this player's detailed statistics", 1, 1, 1, true)
+        else
+             GameTooltip:AddLine("Detailed statistics currently unavailable.", 1, 0.5, 0.5, true)
+             GameTooltip:AddLine("This player is currently not near you, or in your party/raid/guild.", 0.8, 0.8, 0.8, true)
         end
         GameTooltip:Show()
     end)
@@ -477,6 +504,17 @@ local function GetLeaderboardData()
              local acTotal = data.totalAchievements or (PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements and #PVPSC.AchievementSystem.achievements) or 0
              local achievementText = acUnlocked .. "/" .. acTotal
 
+             -- Check if we have detailed stats for this player
+             -- We can use Network handler to verify if this player is in cache/live or just summary cache
+             local isDetailedAvailable = false
+             if data.playerName == UnitName("player") then
+                 isDetailedAvailable = true
+             elseif PVPSC.Network and PVPSC.Network.GetDetailedStatsForPlayer then
+                 if PVPSC.Network:GetDetailedStatsForPlayer(data.playerName) then
+                     isDetailedAvailable = true
+                 end
+             end
+
              table.insert(leaderboardData, {
                  playerName = data.playerName or "Unknown",
                  level = data.level or 0,
@@ -493,7 +531,8 @@ local function GetLeaderboardData()
                  achievements = achievementText,
                  achievementPoints = data.achievementPoints or 0,
                  addonVersion = data.addonVersion or "Unknown",
-                 lastSeen = data.timestamp or 0
+                 lastSeen = data.timestamp or 0,
+                 hasDetailedStats = isDetailedAvailable
              })
          end
     end
@@ -566,16 +605,16 @@ local function SortLeaderboardData(data)
         if aVal == nil then aVal = "" end
         if bVal == nil then bVal = "" end
 
-        -- Robust comparison: Ensure variables are of the same type
-        if type(aVal) ~= type(bVal) then
-            local aNum = tonumber(aVal)
-            local bNum = tonumber(bVal)
-            -- If both can be numbers, compare as numbers
-            if aNum and bNum then
-                aVal = aNum
-                bVal = bNum
-            else
-                -- Otherwise compare as strings
+        -- Enhanced comparison: Try to treat strings as numbers if possible (fixes "28.0" > "207.0")
+        local aNum = tonumber(aVal)
+        local bNum = tonumber(bVal)
+
+        if aNum and bNum then
+            aVal = aNum
+            bVal = bNum
+        else
+            -- Fallback for non-numeric or mixed types: convert to string
+            if type(aVal) ~= type(bVal) then
                 aVal = tostring(aVal)
                 bVal = tostring(bVal)
             end
