@@ -703,7 +703,7 @@ function PSC_CreateLeaderboardFrame()
     PSC_LeaderboardFrame.content = CreateScrollFrame(PSC_LeaderboardFrame)
 
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", 0, 15)
+    infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", 0, 12)
     infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
     infoText:SetTextColor(0.7, 0.7, 0.7)
     infoText:SetJustifyH("CENTER")
