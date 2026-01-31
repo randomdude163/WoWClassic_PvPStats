@@ -91,6 +91,10 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
 end
 
 function HandlePlayerDeath()
+    if not PSC_CharacterName or PSC_CharacterName == "" then
+        return
+    end
+
     local now = GetTime()
     if (now - PSC_LastDeathTime) < PSC_DEATH_EVENT_COOLDOWN then
         if PSC_Debug then
