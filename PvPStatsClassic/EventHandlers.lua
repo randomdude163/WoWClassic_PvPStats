@@ -33,10 +33,7 @@ local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
     PSC_GetAndStorePlayerInfoFromUnit("targettarget")
     PSC_UpdatePetOwnerFromUnit("target")
-
-    if UnitExists("targettarget") then
-        PSC_UpdatePetOwnerFromUnit("targettarget")
-    end
+    PSC_UpdatePetOwnerFromUnit("targettarget")
 end
 
 local function OnUpdateMouseoverUnit()
@@ -252,7 +249,7 @@ function PSC_ScheduleHunterKillValidation(destGUID, destName, eventType, validat
     end
 
     if PSC_Debug then
-        print("Hunter " .. destName .. " might be using their special ability - validating...")
+        print("Hunter " .. destName .. " might be using feign death- validating...")
     end
 
     PSC_PendingHunterKills[destGUID] = {
@@ -477,7 +474,9 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if PSC_IsValidTarget(destFlags, destGUID) then
+    local isValidTarget = PSC_IsValidTarget(destFlags, destGUID)
+
+    if isValidTarget then
         HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
         HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
     end
@@ -504,7 +503,7 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if combatEvent == "PARTY_KILL" and PSC_IsValidTarget(destFlags, destGUID) then
+    if combatEvent == "PARTY_KILL" and isValidTarget then
         local isScheduled = PSC_ScheduleHunterKillValidation(destGUID, destName, "PARTY_KILL", {
             sourceGUID = sourceGUID,
             sourceName = sourceName
@@ -515,7 +514,7 @@ local function HandleCombatLogEvent()
         end
     end
 
-    if combatEvent == "UNIT_DIED" and PSC_IsValidTarget(destFlags, destGUID) then
+    if combatEvent == "UNIT_DIED" and isValidTarget then
         local isScheduled = PSC_ScheduleHunterKillValidation(destGUID, destName, "UNIT_EVENT", {})
 
         if not isScheduled then
@@ -630,6 +629,7 @@ local function HandlePlayerRegenEnabled()
     PSC_CleanupRecentPlayerDamage()
     PSC_CleanupRecentDamageFromPlayers()
     PSC_CleanupPendingHunterKills()
+    PSC_ClearGUIDCache()
 end
 
 local function HandleNamePlateEvent(unit)
@@ -643,7 +643,6 @@ function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
     pvpStatsClassicFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
     pvpStatsClassicFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-    pvpStatsClassicFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_DEAD")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -661,7 +660,7 @@ function PSC_RegisterEvents()
             OnPlayerTargetChanged()
         elseif event == "UPDATE_MOUSEOVER_UNIT" then
             OnUpdateMouseoverUnit()
-        elseif event == "NAME_PLATE_UNIT_ADDED" or event == "NAME_PLATE_UNIT_REMOVED" then
+        elseif event == "NAME_PLATE_UNIT_ADDED" then
             local unit = ...
             if unit then
                 HandleNamePlateEvent(unit)
@@ -759,7 +758,12 @@ function PSC_GetTotalsKillsForPlayer(playerName)
     return total_kills
 end
 
+local tooltipHooksRegistered = false
+
 function PSC_SetupMouseoverTooltip()
+    if tooltipHooksRegistered then return end
+    tooltipHooksRegistered = true
+
     local function GetLastKillTimestamp(playerName)
         local characterKey = PSC_GetCharacterKey()
         local lastKill = 0

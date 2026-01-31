@@ -311,13 +311,12 @@ function PSC_RecordPetDamage(petGUID, petName, targetGUID, amount)
         ownerGUID = ownerGUID,
         amount = amount or 0
     }
-
-    -- if PSC_Debug then
-    --     local playerGUID = PlayerGUID
-    --     if ownerGUID == playerGUID then
-    --         print("Recorded damage from your pet to: " .. targetName)
-    --     end
-    -- end
+    if ownerGUID == PSC_PlayerGUID then
+        PSC_RecordPlayerDamage(ownerGUID, PSC_CharacterName, targetGUID, "Unknown", amount)
+        if PSC_Debug then
+            print("Recorded damage from your pet to: " .. targetGUID .. " Amount: " .. amount)
+        end
+    end
 end
 
 function PSC_CleanupRecentlyCountedKillsDict()
