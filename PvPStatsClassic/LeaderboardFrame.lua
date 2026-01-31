@@ -4,24 +4,24 @@ PSC_LeaderboardFrame = nil
 
 PSC_SortLeaderboardBy = "totalKills"
 PSC_SortLeaderboardAscending = false
-local LEADERBOARD_FRAME_WIDTH = 1080
-local LEADERBOARD_FRAME_HEIGHT = 550
+local LEADERBOARD_FRAME_WIDTH = 1003
+local LEADERBOARD_FRAME_HEIGHT = 400
 
 PSC_LeaderboardFrameInitialSetup = true
 
 local colWidths = {
-    playerName = 120,
-    level = 40,
-    class = 70,
-    race = 70,
+    playerName = 110,
+    level = 35,
+    class = 65,
+    race = 75,
     totalKills = 60,
     uniqueKills = 60,
     kdRatio = 55,
-    currentStreak = 75,
-    bestStreak = 70,
-    mostKilled = 100,
-    avgPerDay = 65,
-    achievements = 80,
+    currentStreak = 50,
+    bestStreak = 50,
+    mostKilled = 120,
+    avgPerDay = 55,
+    achievements = 85,
     achievementPoints = 70,
     addonVersion = 90
 }
@@ -168,12 +168,12 @@ local function CreateColumnHeaders(content)
     local totalKillsButton = CreateColumnHeader(content, "Kills", colWidths.totalKills, raceButton, 0, 0, "totalKills")
     local uniqueKillsButton = CreateColumnHeader(content, "Unique", colWidths.uniqueKills, totalKillsButton, 0, 0, "uniqueKills")
     local kdRatioButton = CreateColumnHeader(content, "K/D", colWidths.kdRatio, uniqueKillsButton, 0, 0, "kdRatio")
-    local currentStreakButton = CreateColumnHeader(content, "Cur. Streak", colWidths.currentStreak, kdRatioButton, 0, 0, "currentStreak")
+    local currentStreakButton = CreateColumnHeader(content, "Streak", colWidths.currentStreak, kdRatioButton, 0, 0, "currentStreak")
     local bestStreakButton = CreateColumnHeader(content, "Best Streak", colWidths.bestStreak, currentStreakButton, 0, 0, "bestStreak")
     local mostKilledButton = CreateColumnHeader(content, "Most Killed", colWidths.mostKilled, bestStreakButton, 0, 0, "mostKilled")
     local avgPerDayButton = CreateColumnHeader(content, "Avg/Day", colWidths.avgPerDay, mostKilledButton, 0, 0, "avgPerDay")
-    local achievementsButton = CreateColumnHeader(content, "Ach.", colWidths.achievements, avgPerDayButton, 0, 0, "achievements")
-    local achievementPointsButton = CreateColumnHeader(content, "Points", colWidths.achievementPoints, achievementsButton, 0, 0, "achievementPoints")
+    local achievementsButton = CreateColumnHeader(content, "Achievements", colWidths.achievements, avgPerDayButton, 0, 0, "achievements")
+    local achievementPointsButton = CreateColumnHeader(content, "Ach. Points", colWidths.achievementPoints, achievementsButton, 0, 0, "achievementPoints")
     local addonVersionButton = CreateColumnHeader(content, "Version", colWidths.addonVersion, achievementPointsButton, 0, 0, "addonVersion")
 
     return -30
@@ -200,6 +200,13 @@ end
 local function CreateClassCell(content, anchorTo, className, width)
     local classText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     classText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
+
+    if className and className ~= "Unknown" then
+        className = className:gsub("(%w)(%w*)", function(first, rest)
+            return first:upper() .. rest:lower()
+        end)
+    end
+
     classText:SetText(className or "Unknown")
     classText:SetWidth(width)
     classText:SetJustifyH("LEFT")
