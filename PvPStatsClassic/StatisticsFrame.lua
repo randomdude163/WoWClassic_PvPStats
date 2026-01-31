@@ -1482,11 +1482,11 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
             end)
             achievementButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
             achievementButton:SetScript("OnClick", function() PSC_ToggleAchievementFrame() end)
-
-            statY = statY - 20
         else
-            statY = addSummaryStatLine(container, "Achievements:", achieveText, statY, "Total achievements completed.")
+            addSummaryStatLine(container, "Achievements:", achieveText, statY, "Total achievements completed.")
         end
+
+        statY = statY - 20
 
         if extraData.achievementPoints then
              local ptText = tostring(extraData.achievementPoints)
@@ -1500,7 +1500,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     -- 8. Footer Note
     if not isLocalPlayer then
         local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, 10)
+        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -40)
         noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
         noteText:SetTextColor(0.7, 0.7, 0.7)
     end
@@ -2050,24 +2050,24 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     if UnitFactionGroup("player") == "Horde" then
         fixedNPCs["Corporal Keeshan"] = true
         fixedNPCs["The Defias Traitor"] = true
+        fixedNPCs["Defias Messenger"] = true
     end
     local npcChartHeight = calculateChartHeight(npcKillsData, fixedNPCs)
 
     local yOffset = 0
     createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight)
-
     yOffset = yOffset - classChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight)
 
+    createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight)
     yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
 
     if npcChartHeight > 45 then
         createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight)
-        yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
     end
+    yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
+
     createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH,
         genderChartHeight)
-
     yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
 
     local guildStatusChartHeight = calculateChartHeight(guildStatusData)
@@ -2148,11 +2148,11 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
 
     -- Button container at bottom right in 3 rows with 2 columns
     local buttonContainer = CreateFrame("Frame", nil, frame)
-    local buttonWidth = 180
-    local buttonHeight = 30
-    local buttonSpacing = 10
+    local buttonWidth = 140
+    local buttonHeight = 25
+    local buttonSpacing = 5
     buttonContainer:SetSize((buttonWidth * 2) + buttonSpacing, (buttonHeight * 3) + (buttonSpacing * 2))
-    buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 20)
+    buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 13)
     frame.buttonContainer = buttonContainer
 
     -- Top left button: Settings

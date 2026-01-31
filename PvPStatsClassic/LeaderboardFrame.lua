@@ -384,8 +384,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         if entry.playerName == UnitName("player") then
             GameTooltip:AddLine("Click to view your detailed statistics", 1, 1, 1, true)
         else
-            GameTooltip:AddLine("Click to request and view this player's detailed statistics", 1, 1, 1, true)
-            GameTooltip:AddLine("(Player must be nearby or in your guild/group)", 0.7, 0.7, 0.7, true)
+            GameTooltip:AddLine("Click to view this player's detailed statistics", 1, 1, 1, true)
         end
         GameTooltip:Show()
     end)
