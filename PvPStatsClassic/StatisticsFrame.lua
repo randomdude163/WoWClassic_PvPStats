@@ -252,7 +252,7 @@ local function createContainerWithTitle(parent, title, x, y, width, height)
     return container
 end
 
-local function createBar(container, entry, index, maxValue, total, titleType)
+local function createBar(container, entry, index, maxValue, total, titleType, disableClicks)
     local barWidth
     local nameWidth
     local barX
@@ -317,23 +317,35 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     -- Only add highlight and click functionality for clickable chart types
     local isClickable = titleType ~= "hour" and titleType ~= "weekday" and titleType ~= "month" and titleType ~= "year" and titleType ~= "npc"
 
+    if disableClicks then
+        isClickable = false
+    end
+
     if isClickable then
         local highlightTexture = PSC_CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
     end
 
     barButton:SetScript("OnEnter", function(self)
+        if disableClicks then return end
+
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(displayName)
 
         if titleType == "class" or titleType == "unknownLevelClass" then
-            GameTooltip:AddLine("Click to show all kills for this class", 1, 1, 1, true)
+            if isClickable then
+                GameTooltip:AddLine("Click to show all kills for this class", 1, 1, 1, true)
+            end
         elseif titleType == "zone" then
-            GameTooltip:AddLine("Click to show all kills for this zone", 1, 1, 1, true)
+            if isClickable then
+                GameTooltip:AddLine("Click to show all kills for this zone", 1, 1, 1, true)
+            end
         elseif titleType == "level" then
-            if entry.key == "??" then
-                GameTooltip:AddLine("Click to show all kill for level ??", 1, 1, 1, true)
-            else
-                GameTooltip:AddLine("Click to show all kills for this level", 1, 1, 1, true)
+            if isClickable then
+                if entry.key == "??" then
+                    GameTooltip:AddLine("Click to show all kill for level ??", 1, 1, 1, true)
+                else
+                    GameTooltip:AddLine("Click to show all kills for this level", 1, 1, 1, true)
+                end
             end
         elseif titleType == "hour" then
             local hour = tonumber(entry.key)
@@ -349,9 +361,13 @@ local function createBar(container, entry, index, maxValue, total, titleType)
         elseif titleType == "year" then
             GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
         elseif titleType == raceColors then
-            GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
+            if isClickable then
+                GameTooltip:AddLine("Click to show all kills for this race", 1, 1, 1, true)
+            end
         elseif titleType == genderColors then
-            GameTooltip:AddLine("Click to show all kills for this gender", 1, 1, 1, true)
+            if isClickable then
+                GameTooltip:AddLine("Click to show all kills for this gender", 1, 1, 1, true)
+            end
         end
 
         GameTooltip:Show()
@@ -499,7 +515,7 @@ local function createBar(container, entry, index, maxValue, total, titleType)
     end
 end
 
-local function createBarChart(parent, title, data, colorTable, x, y, width, height)
+local function createBarChart(parent, title, data, colorTable, x, y, width, height, disableClicks)
     local container = createContainerWithTitle(parent, title, x, y, width, height)
 
     local sortedData = sortByValue(data, true)
@@ -591,7 +607,7 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     end
 
     for i, entry in ipairs(filteredData) do
-        createBar(container, entry, i, maxValue, total, titleType)
+        createBar(container, entry, i, maxValue, total, titleType, disableClicks)
     end
 
     return container
@@ -1500,7 +1516,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     -- 8. Footer Note
     if not isLocalPlayer then
         local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -40)
+        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -47)
         noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
         noteText:SetTextColor(0.7, 0.7, 0.7)
     end
@@ -2061,19 +2077,19 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     local npcChartHeight = calculateChartHeight(npcKillsData, fixedNPCs)
 
     local yOffset = 0
-    createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight)
+    createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight, isExternalPlayer)
     yOffset = yOffset - classChartHeight - UI.CHART.PADDING
 
-    createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight)
+    createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight, isExternalPlayer)
     yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
 
     if npcChartHeight > 45 then
-        createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight)
+        createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight, isExternalPlayer)
     end
     yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
 
     createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH,
-        genderChartHeight)
+        genderChartHeight, isExternalPlayer)
     yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
 
     local guildStatusChartHeight = calculateChartHeight(guildStatusData)
@@ -2090,25 +2106,25 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         }
     }
     createBarChart(leftScrollContent, "Kills by Guild Status", guildStatusData, guildStatusColors, 0, yOffset,
-        UI.CHART.WIDTH, guildStatusChartHeight)
+        UI.CHART.WIDTH, guildStatusChartHeight, isExternalPlayer)
 
     yOffset = yOffset - guildStatusChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Hour of Day", hourlyData, nil, 0, yOffset, UI.CHART.WIDTH, hourlyChartHeight)
+    createBarChart(leftScrollContent, "Kills by Hour of Day", hourlyData, nil, 0, yOffset, UI.CHART.WIDTH, hourlyChartHeight, isExternalPlayer)
 
     yOffset = yOffset - hourlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Weekday", weekdayData, nil, 0, yOffset, UI.CHART.WIDTH, weekdayChartHeight)
+    createBarChart(leftScrollContent, "Kills by Weekday", weekdayData, nil, 0, yOffset, UI.CHART.WIDTH, weekdayChartHeight, isExternalPlayer)
 
     yOffset = yOffset - weekdayChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Month", monthlyData, nil, 0, yOffset, UI.CHART.WIDTH, monthlyChartHeight)
+    createBarChart(leftScrollContent, "Kills by Month", monthlyData, nil, 0, yOffset, UI.CHART.WIDTH, monthlyChartHeight, isExternalPlayer)
 
     yOffset = yOffset - monthlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Year", yearlyData, nil, 0, yOffset, UI.CHART.WIDTH, yearlyChartHeight)
+    createBarChart(leftScrollContent, "Kills by Year", yearlyData, nil, 0, yOffset, UI.CHART.WIDTH, yearlyChartHeight, isExternalPlayer)
 
     yOffset = yOffset - yearlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight)
+    createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight, isExternalPlayer)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight)
+    createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight, isExternalPlayer)
 
     -- Add Guild Kills table in left panel after Kills by Zone (only for local player)
     if not isExternalPlayer then
