@@ -368,7 +368,10 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         bgTexture:SetColorTexture(0.05, 0.05, 0.05, 0.3)
     end
 
-    local highlightTexture = PSC_CreateGoldHighlight(rowContainer, 16)
+    -- Only show highlight if interaction is available
+    if entry.hasDetailedStats or entry.playerName == UnitName("player") then
+        local highlightTexture = PSC_CreateGoldHighlight(rowContainer, 16)
+    end
 
     local playerNameCell = CreatePlayerNameCell(rowContainer, entry.playerName, colWidths.playerName)
     local realmCell = CreateRealmCell(rowContainer, playerNameCell, entry.realm, colWidths.realm)
