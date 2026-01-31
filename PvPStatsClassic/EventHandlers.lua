@@ -626,7 +626,7 @@ local function HandlePlayerEnteringWorld()
 
     if not PSC_DB.WhatsNewPopupShown then
         local title = "PvP Stats (Classic)"
-        local message = "New Feature: Leaderboard!\n\nYou can access it via the minimap button (Shift-Click) or by typing /psc leaderboard in the chat."
+        local message = "New Feature: Leaderboard!\n\nYou can access it via the minimap button (Shift-Click) or by typing /psc leaderboard in the chat.\n\nAlso lots of performance optimizations, especially in instances."
         PSC_ShowWhatsNewPopup(title, message, function()
             PSC_DB.WhatsNewPopupShown = true
         end)

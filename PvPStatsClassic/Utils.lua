@@ -1786,7 +1786,7 @@ end
 
 function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback)
     local frame = CreateFrame("Frame", "PSC_WhatsNewPopup", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(500, 200)
+    frame:SetSize(500, 225)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     frame:SetFrameStrata("DIALOG")
     frame:SetMovable(true)
@@ -1804,6 +1804,7 @@ function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback)
         edgeSize = 32,
         insets = { left = 11, right = 11, top = 12, bottom = 11 }
     })
+    frame:SetBackdropColor(0, 0, 0, 0.99)
 
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetSize(96, 96)
