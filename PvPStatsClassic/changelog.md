@@ -1,3 +1,7 @@
+v4.0.0:
+- Added Leaderboard that syncs with nearby players and party/raid/guild members.
+- Performance optimizations
+
 v3.3:
 - Added achievements for Redridge and Westfall escort quests (Horde only)
 
