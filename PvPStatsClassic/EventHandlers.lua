@@ -633,6 +633,11 @@ local function HandlePlayerEnteringWorld()
     end
 
     PSC_StartIncrementalAchievementsCalculation()
+
+    -- Check for data import from legacy clients
+    if PSC_CheckForDataMigration then
+        C_Timer.After(2, function() PSC_CheckForDataMigration() end)
+    end
 end
 
 local function HandlePlayerRegenEnabled()

@@ -139,6 +139,9 @@ function PSC_SlashCommandHandler(msg)
         elseif command == "snapshot" then
             PSC_CreateDebugSnapshot(arguments ~= "" and arguments or nil)
 
+        elseif command == "testdatamigration" then
+            PSC_RunMigrationTests()
+
         else
             PrintSlashCommandUsage()
         end
