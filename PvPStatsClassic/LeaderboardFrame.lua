@@ -10,8 +10,7 @@ local LEADERBOARD_FRAME_HEIGHT = 450
 PSC_LeaderboardFrameInitialSetup = true
 
 local colWidths = {
-    playerName = 225,
-    -- realm = 135, -- Removed
+    playerName = 210,
     level = 30,
     class = 65,
     race = 75,
@@ -178,9 +177,9 @@ local function CreateColumnHeaders(content)
     local playerNameButton = CreateColumnHeader(content, "Name", colWidths.playerName, nil, 10, 0, "playerName")
     -- Realm column removed
     local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, playerNameButton, 0, 0, "level")
-    local classButton = CreateColumnHeader(content, "Class", colWidths.class, levelButton, 0, 0, "class")
-    local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
-    local totalKillsButton = CreateColumnHeader(content, "Kills", colWidths.totalKills, raceButton, 0, 0, "totalKills")
+    local raceButton = CreateColumnHeader(content, "Race", colWidths.race, levelButton, 0, 0, "race")
+    local classButton = CreateColumnHeader(content, "Class", colWidths.class, raceButton, 0, 0, "class")
+    local totalKillsButton = CreateColumnHeader(content, "Kills", colWidths.totalKills, classButton, 0, 0, "totalKills")
     local uniqueKillsButton = CreateColumnHeader(content, "Unique", colWidths.uniqueKills, totalKillsButton, 0, 0, "uniqueKills")
     local kdRatioButton = CreateColumnHeader(content, "K/D", colWidths.kdRatio, uniqueKillsButton, 0, 0, "kdRatio")
     local currentStreakButton = CreateColumnHeader(content, "Streak", colWidths.currentStreak, kdRatioButton, 0, 0, "currentStreak")
@@ -207,20 +206,6 @@ local function CreatePlayerNameCell(content, playerName, width)
     nameText:SetWidth(width)
     nameText:SetJustifyH("LEFT")
     return nameText
-end
-
-local function CreateRealmCell(content, anchorTo, realmName, width)
-    local realmText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    realmText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
-
-    realmText:SetText(realmName or "")
-    realmText:SetWidth(width)
-    realmText:SetJustifyH("LEFT")
-
-    -- Truncate if too long (no word wrap + fixed width)
-    realmText:SetWordWrap(false)
-
-    return realmText
 end
 
 local function CreateLevelCell(content, anchorTo, level, width)
@@ -381,9 +366,9 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     local playerNameCell = CreatePlayerNameCell(rowContainer, entry.playerName, colWidths.playerName)
     -- Realm cell removed
     local levelCell = CreateLevelCell(rowContainer, playerNameCell, entry.level, colWidths.level)
-    local classCell = CreateClassCell(rowContainer, levelCell, entry.class, colWidths.class)
-    local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
-    local totalKillsCell = CreateTotalKillsCell(rowContainer, raceCell, entry.totalKills, colWidths.totalKills)
+    local raceCell = CreateRaceCell(rowContainer, levelCell, entry.race, colWidths.race)
+    local classCell = CreateClassCell(rowContainer, raceCell, entry.class, colWidths.class)
+    local totalKillsCell = CreateTotalKillsCell(rowContainer, classCell, entry.totalKills, colWidths.totalKills)
     local uniqueKillsCell = CreateUniqueKillsCell(rowContainer, totalKillsCell, entry.uniqueKills, colWidths.uniqueKills)
     local kdRatioCell = CreateKDRatioCell(rowContainer, uniqueKillsCell, entry.kdRatio, colWidths.kdRatio)
     local currentStreakCell = CreateCurrentStreakCell(rowContainer, kdRatioCell, entry.currentStreak, colWidths.currentStreak)
@@ -407,7 +392,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     -- but for now the text modification in NetworkHandler handles the display requirement.
 
     -- If no detailed stats available (cached only), gray out the text
-    if not entry.hasDetailedStats and entry.playerName ~= UnitName("player") then
+    if not entry.hasDetailedStats and entry.rawName ~= UnitName("player") then
         local gray = 0.5
         playerNameCell:SetTextColor(gray, gray, gray)
         levelCell:SetTextColor(gray, gray, gray)
@@ -429,7 +414,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     -- Add click handler to view player's detailed stats
     rowContainer:SetScript("OnClick", function(self, button)
         if button == "LeftButton" then
-            local playerName = entry.playerName
+            local playerName = entry.rawName or entry.playerName
             if not playerName or playerName == "" then
                 return
             end
@@ -448,7 +433,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                     local detailedStats = PVPSC.Network:GetDetailedStatsForPlayer(playerName)
                     if detailedStats then
                         -- Display the detailed stats
-                        PSC_ShowPlayerDetailedStats(playerName, detailedStats)
+                        PSC_ShowPlayerDetailedStats(entry.playerName, detailedStats)
                     end
                 end
             end
@@ -465,7 +450,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
         GameTooltip:SetText(entry.playerName or "Unknown", 1, 0.82, 0)
 
-        if entry.playerName == UnitName("player") then
+        if entry.rawName == UnitName("player") then
             GameTooltip:AddLine("Click to view your detailed statistics", 1, 1, 1, true)
         elseif entry.hasDetailedStats then
             GameTooltip:AddLine("Click to view this player's detailed statistics", 1, 1, 1, true)
@@ -556,13 +541,24 @@ local function GetLeaderboardData()
                  end
              end
 
+             -- Construct display name with realm if missing (for display purposes only)
+             local displayName = data.playerName or "Unknown"
+             local realmName = data.realm or PSC_RealmName
+             if realmName and realmName ~= "" and not string.find(displayName, "-") then
+                 displayName = displayName .. "-" .. realmName
+             end
+
+             local raceVal = data.race or "Unknown"
+             if raceVal == "Scourge" then raceVal = "Undead" end
+
              table.insert(leaderboardData, {
-                 playerName = data.playerName or "Unknown",
+                 playerName = displayName,
+                 rawName = data.playerName, -- Store original name for data lookup
                  -- We now store the true realm in the data object if available, though playerName might be "Name-Realm"
-                 realm = data.realm or PSC_RealmName,
+                 realm = realmName,
                  level = data.level or 0,
                  class = data.class or "Unknown",
-                 race = data.race or "Unknown",
+                 race = raceVal,
                  totalKills = kills,
                  uniqueKills = data.uniqueKills or statsTarget.uniqueKills or 0,
                  kdRatio = kdRatioVal,
