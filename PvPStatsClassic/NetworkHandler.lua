@@ -342,7 +342,12 @@ function Network:BuildDetailedStats()
         return self.lastPlayerStats
     end
 
-    local charactersToProcess = GetCharactersToProcessForStatistics()
+    -- Explicitly only broadcast current character stats regardless of account-wide setting
+    local charactersToProcess = {}
+    local currentCharacterKey = PSC_GetCharacterKey()
+    if PSC_DB and PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters then
+        charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
+    end
 
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
