@@ -209,6 +209,11 @@ end
 -- ============================================================================
 
 function PSC_SendAnnounceMessage(message)
+    -- Global suppression of announce messages in Battlegrounds
+    if PSC_CurrentlyInBattleground then
+        return
+    end
+
     local channel = PSC_DB.AnnounceChannel or "GROUP"
 
     if channel == "SELF" then
