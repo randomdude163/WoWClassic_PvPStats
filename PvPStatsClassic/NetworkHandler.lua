@@ -711,6 +711,11 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
     -- Ignore messages from ourselves (even if sent across channels like YELL/GUILD)
     if senderName == UnitName("player") and senderRealm == PSC_RealmName then return end
 
+    if PSC_Debug then
+        print("|cFFFFD700[PVPSC RX]|r From:", sender, "Len:", #message)
+        print(message)
+    end
+
     local msgType, data = message:match("^([^|]+)|(.*)$")
 
     -- Handle different message types
