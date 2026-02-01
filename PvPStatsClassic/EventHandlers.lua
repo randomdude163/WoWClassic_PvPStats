@@ -105,7 +105,7 @@ function HandlePlayerDeath()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
 
-    if characterData.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages then
+    if characterData.CurrentKillStreak >= 10 and PSC_DB.EnableRecordAnnounceMessages and not PSC_CurrentlyInBattleground then
         local streakEndedMsg = string.gsub(PSC_DB.KillStreakEndedMessage, "STREAKCOUNT", characterData.CurrentKillStreak)
         PSC_SendAnnounceMessage(streakEndedMsg)
     end

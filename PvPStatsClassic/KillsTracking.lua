@@ -170,7 +170,7 @@ local function UpdateMultiKill()
     if PSC_MultiKillCount > highestMultiKillAlias then
         PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill = PSC_MultiKillCount
 
-        if highestMultiKillAlias >= 3 and PSC_DB.EnableRecordAnnounceMessages then
+        if highestMultiKillAlias >= 3 and PSC_DB.EnableRecordAnnounceMessages and not PSC_CurrentlyInBattleground then
             local newMultiKillRecordMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(PSC_MultiKillCount))
             PSC_SendAnnounceMessage(newMultiKillRecordMsg)
         end
