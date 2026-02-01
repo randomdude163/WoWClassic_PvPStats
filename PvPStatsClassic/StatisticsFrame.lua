@@ -224,6 +224,8 @@ local function getClassColor(class)
 end
 
 local function calculateChartHeight(data, includeZeroKeys)
+    if not data then return 30 + 15 end -- Minimum height for title + padding
+
     local entries = 0
     for key, numKills in pairs(data) do
         if numKills > 0 then
@@ -250,6 +252,33 @@ local function createContainerWithTitle(parent, title, x, y, width, height)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
     return container
+end
+
+local function NormalizeMonthKey(key)
+    local num = tonumber(key)
+    if num and num >= 1 and num <= 12 then return num end
+
+    local keyLower = string.lower(tostring(key))
+    local months = {
+        january = 1, february = 2, march = 3, april = 4, may = 5, june = 6,
+        july = 7, august = 8, september = 9, october = 10, november = 11, december = 12,
+        jan = 1, feb = 2, mar = 3, apr = 4, jun = 6, jul = 7, aug = 8, sep = 9, oct = 10, nov = 11, dec = 12
+    }
+    if months[keyLower] then return months[keyLower] end
+    return nil
+end
+
+local function NormalizeWeekdayKey(key)
+    local num = tonumber(key)
+    if num and num >= 1 and num <= 7 then return num end
+
+    local keyLower = string.lower(tostring(key))
+    local days = {
+        sunday = 1, monday = 2, tuesday = 3, wednesday = 4, thursday = 5, friday = 6, saturday = 7,
+        sun = 1, mon = 2, tue = 3, wed = 4, thu = 5, fri = 6, sat = 7
+    }
+    if days[keyLower] then return days[keyLower] end
+    return nil
 end
 
 local function createBar(container, entry, index, maxValue, total, titleType, disableClicks)
@@ -518,7 +547,36 @@ end
 local function createBarChart(parent, title, data, colorTable, x, y, width, height, disableClicks)
     local container = createContainerWithTitle(parent, title, x, y, width, height)
 
-    local sortedData = sortByValue(data, true)
+    -- Pre-process data to handle numeric/string key duplication and normalization
+    local processedData = {}
+    if data then
+        for k, v in pairs(data) do
+            local finalKey = k
+
+            if title == "Kills by Month" then
+                local norm = NormalizeMonthKey(k)
+                if norm then finalKey = norm end
+            elseif title == "Kills by Weekday" then
+                local norm = NormalizeWeekdayKey(k)
+                if norm then finalKey = norm end
+            elseif title == "Kills by Hour of Day" or title == "Kills by Year" then
+                local num = tonumber(k)
+                if num then finalKey = num end
+            elseif title == "Kills by Level" then
+                if k ~= "??" then
+                    local num = tonumber(k)
+                    if num then finalKey = num end
+                end
+            end
+
+            -- Ensure we don't valid keys
+            if finalKey then
+                 processedData[finalKey] = (processedData[finalKey] or 0) + v
+            end
+        end
+    end
+
+    local sortedData = sortByValue(processedData, true)
     local filteredData = {}
     for _, entry in ipairs(sortedData) do
         if entry.value > 0 or title == "NPC Kills" then

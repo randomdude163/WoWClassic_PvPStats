@@ -260,13 +260,36 @@ local function SerializeDetailedStats(data)
             end
         end
     end
+    -- Append EOM marker
+    -- str = str .. "EOM:1;"
     return str
 end
 
 -- Deserialize detailed stats
 local function DeserializeDetailedStats(payload)
+    -- Check for EOM marker to ensure message is complete
+    -- if not string.find(payload, "EOM:1") then
+    --     if PSC_Debug then
+    --         print("|cFFFFD700[PVPSC Network]|r Incomplete payload received (EOM missing). Discarding.")
+    --     end
+    --     return nil
+    -- end
+
     -- Parse the serialized format back into a table
-    local data = {}
+    local data = {
+        monthlyData = {},
+        weekdayData = {},
+        hourlyData = {},
+        yearlyData = {},
+        classData = {},
+        raceData = {},
+        genderData = {},
+        zoneData = {},
+        levelData = {},
+        npcKillsData = {},
+        guildStatusData = {},
+        unknownLevelClassData = {}
+    }
     for field in string.gmatch(payload, "([^;]+)") do
         local keyStr, values = string.match(field, "([^:]+):(.*)")
         if keyStr and values then
@@ -275,7 +298,8 @@ local function DeserializeDetailedStats(payload)
 
             if string.find(values, "=") then
                 -- It's a table
-                data[originalKey] = {}
+                -- If we haven't initialized this key yet (e.g. unexpected key), create it
+                if not data[originalKey] then data[originalKey] = {} end
 
                 local subMapReverse = REVERSE_SUB_KEY_MAPS[originalKey]
 
@@ -284,6 +308,15 @@ local function DeserializeDetailedStats(payload)
                     if k and v then
                          -- Restore sub key if compressed
                         local originalSubKey = (subMapReverse and subMapReverse[k]) or k
+
+                        -- Enforce numeric keys for time-based statistics and level
+                        if originalKey == "monthlyData" or originalKey == "weekdayData" or originalKey == "hourlyData" or originalKey == "yearlyData" then
+                            local nKey = tonumber(originalSubKey)
+                            if nKey then originalSubKey = nKey end
+                        elseif originalKey == "levelData" and originalSubKey ~= "??" then
+                            local nKey = tonumber(originalSubKey)
+                            if nKey then originalSubKey = nKey end
+                        end
 
                         -- Try to convert to number
                         local num = tonumber(v)
@@ -559,6 +592,59 @@ function Network:BroadcastStats(providedStats)
     end
 end
 
+-- Validate and Clean Leaderboard Cache (Run once on startup)
+function Network:ValidateLeaderboardCache()
+    if not PSC_DB.LeaderboardCache then return end
+
+    local fixedCount = 0
+    for playerName, entry in pairs(PSC_DB.LeaderboardCache) do
+        local changed = false
+
+        -- Ensure structural integrity
+        if not entry.hourlyData then entry.hourlyData = {}; changed = true end
+        if not entry.weekdayData then entry.weekdayData = {}; changed = true end
+        if not entry.monthlyData then entry.monthlyData = {}; changed = true end
+        if not entry.yearlyData then entry.yearlyData = {}; changed = true end
+
+        -- Helper to sanitize a specific table
+        local function SanitizeTable(tbl)
+            local sanitized = {}
+            local tableChanged = false
+            for k, v in pairs(tbl) do
+                local nKey = tonumber(k)
+                if not nKey then
+                    -- Try to recover known string keys (e.g. "January" -> 1)
+                    -- For now, just simplistic tonumber check as our display logic handles the hard normalization
+                    -- But we want to store it as number if possible
+                    tableChanged = true
+                 else
+                    sanitized[nKey] = v
+                 end
+            end
+            -- If we found bad keys, replace content with sanitized version (skipping garbage)
+            -- Note: This is aggressive. If keys are "January", tonumber fails, and they are dropped.
+            -- Using StatisticsFrame logic to recover them would be better, but strict numeric enforcement is safer for DB.
+            if tableChanged then
+                return sanitized, true
+            end
+            return tbl, false
+        end
+
+        -- We only strictly sanitize time-based tables where we KNOW keys must be numbers
+        local hData, hChanged = SanitizeTable(entry.hourlyData)
+        if hChanged then entry.hourlyData = hData; changed = true end
+
+        local yData, yChanged = SanitizeTable(entry.yearlyData)
+        if yChanged then entry.yearlyData = yData; changed = true end
+
+        if changed then fixedCount = fixedCount + 1 end
+    end
+
+    if fixedCount > 0 and PSC_Debug then
+        print("|cFFFFD700[PVPSC Network]|r Fixed " .. fixedCount .. " corrupted cache entries.")
+    end
+end
+
 -- Update the persistent leaderboard cache with new stats
 function Network:UpdateLeaderboardCache(statsData)
     if not PSC_DB.LeaderboardCache then return end
@@ -589,7 +675,22 @@ function Network:UpdateLeaderboardCache(statsData)
 
         achievementsUnlocked = statsData.achievementsUnlocked,
         totalAchievements = statsData.totalAchievements,
-        achievementPoints = statsData.achievementPoints
+        achievementPoints = statsData.achievementPoints,
+
+        -- Store detailed time-based stats for detailed view
+        -- Note: We now store them in cache to persist detailed view for offline players
+        hourlyData = statsData.hourlyData or {},
+        weekdayData = statsData.weekdayData or {},
+        monthlyData = statsData.monthlyData or {},
+        yearlyData = statsData.yearlyData or {},
+
+        -- Also store generic chart data to ensure diagrams work
+        classData = statsData.classData or {},
+        raceData = statsData.raceData or {},
+        genderData = statsData.genderData or {},
+        levelData = statsData.levelData or {},
+        zoneData = statsData.zoneData or {},
+        npcKillsData = statsData.npcKillsData or {}
     }
 
     PSC_DB.LeaderboardCache[statsData.playerName] = entry
@@ -765,6 +866,9 @@ end
 
 -- Initialize network handler
 function Network:Initialize()
+    -- Validate cache on startup to fix any corrupted data from previous versions
+    self:ValidateLeaderboardCache()
+
     -- Register AceComm prefix and callback
     self:RegisterComm(PREFIX, "OnCommReceived")
 
