@@ -134,6 +134,210 @@ function PSC_GetInfoKeyFromName(playerName)
     end
 end
 
+function PSC_GetPlayerInfo(playerName)
+    if not playerName then return {}, nil end
+
+    -- 1. Try direct lookup
+    local infoKey = PSC_GetInfoKeyFromName(playerName)
+    if PSC_DB.PlayerInfoCache[infoKey] then
+        return PSC_DB.PlayerInfoCache[infoKey], infoKey
+    end
+
+    -- 2. If not found and name has no realm, try to find matches in the cache from other realms
+    -- This is common when importing data from a character on a different realm
+    if not string.find(playerName, "-") then
+        local searchPrefix = playerName .. "-"
+        for key, info in pairs(PSC_DB.PlayerInfoCache) do
+            if string.sub(key, 1, #searchPrefix) == searchPrefix then
+                return info, key
+            end
+        end
+    end
+
+    return {}, nil
+end
+
+local function Helper_MergeKillEntries(destEntry, sourceEntry)
+    destEntry.kills = (destEntry.kills or 0) + (sourceEntry.kills or 0)
+
+    -- Keep the latest timestamp
+    if (sourceEntry.lastKill or 0) > (destEntry.lastKill or 0) then
+        destEntry.lastKill = sourceEntry.lastKill
+        -- Update specific attributes from latest kill
+        destEntry.class = sourceEntry.class
+        destEntry.race = sourceEntry.race
+        destEntry.gender = sourceEntry.gender
+        destEntry.guild = sourceEntry.guild
+        destEntry.rank = sourceEntry.rank
+        destEntry.zone = sourceEntry.zone
+    end
+
+    -- Merge locations
+    if sourceEntry.locations then
+        if not destEntry.locations then destEntry.locations = {} end
+        for _, loc in ipairs(sourceEntry.locations) do
+            table.insert(destEntry.locations, loc)
+        end
+    elseif sourceEntry.killLocations then -- Legacy field support
+        if not destEntry.locations then destEntry.locations = {} end
+        if not destEntry.killLocations and not destEntry.locations then destEntry.killLocations = {} end -- Keep legacy if dest is legacy
+
+        local targetList = destEntry.locations or destEntry.killLocations
+        for _, loc in ipairs(sourceEntry.killLocations) do
+            table.insert(targetList, loc)
+        end
+    end
+end
+
+function PSC_MigrateKillKeys()
+    if PSC_DB.KillKeysMigrated then return end
+    print("[PvPStats]: Migrating database keys to include realm information...")
+
+    local count = 0
+    local characters = PSC_DB.PlayerKillCounts.Characters
+
+    for charKey, charData in pairs(characters) do
+        local newKills = {}
+        if charData.Kills then
+            for oldKey, killEntry in pairs(charData.Kills) do
+                -- Old Key format: "Name:Level" or "Name-Realm:Level"
+                -- we want to ensure it's always "Name-Realm:Level"
+
+                local name = string.match(oldKey, "(.-)%:")
+                local level = string.match(oldKey, ":(%d+)")
+
+                if name and level then
+                    -- Search for existing info key in cache to determine original realm
+                    local infoKey
+                    local _, existingInfoKey = PSC_GetPlayerInfo(name)
+
+                    if existingInfoKey then
+                        -- We found a matching entry in the cache (e.g., "Name-OtherRealm")
+                        -- Use this specific realm instead of defaulting to current realm
+                        infoKey = existingInfoKey
+                    else
+                        -- No cache entry found, or multiple ambiguity (PSC_GetPlayerInfo returns first match)
+                        -- Fallback to standard behavior (appends local realm)
+                        infoKey = PSC_GetInfoKeyFromName(name)
+                    end
+
+                    local newKey = infoKey .. ":" .. level
+
+                    if newKey ~= oldKey then
+                        if newKills[newKey] then
+                            -- Collision detected! Merge entries.
+                            Helper_MergeKillEntries(newKills[newKey], killEntry)
+                        else
+                            newKills[newKey] = killEntry
+                        end
+                        count = count + 1
+                    else
+                        if newKills[oldKey] then
+                             -- Rare case where we processed the "newKey" format first, and now found "oldKey" format same name
+                             Helper_MergeKillEntries(newKills[oldKey], killEntry)
+                        else
+                             newKills[oldKey] = killEntry
+                        end
+                    end
+                else
+                    -- Fallback for malformed keys
+                    newKills[oldKey] = killEntry
+                end
+            end
+            charData.Kills = newKills
+        end
+    end
+
+    PSC_DB.KillKeysMigrated = true
+    print("[PvPStats]: Migration complete. Updated " .. count .. " database entries.")
+end
+
+local function Helper_MergeDeathEntries(destEntry, sourceEntry)
+    destEntry.deaths = (destEntry.deaths or 0) + (sourceEntry.deaths or 0)
+    destEntry.assistKills = (destEntry.assistKills or 0) + (sourceEntry.assistKills or 0)
+    destEntry.soloKills = (destEntry.soloKills or 0) + (sourceEntry.soloKills or 0)
+
+    if (sourceEntry.lastDeath or 0) > (destEntry.lastDeath or 0) then
+        destEntry.lastDeath = sourceEntry.lastDeath
+        destEntry.zone = sourceEntry.zone
+    end
+
+    if sourceEntry.deathLocations then
+        if not destEntry.deathLocations then destEntry.deathLocations = {} end
+        for _, loc in ipairs(sourceEntry.deathLocations) do
+            table.insert(destEntry.deathLocations, loc)
+        end
+    end
+end
+
+function PSC_MigrateLossKeys()
+    if PSC_DB.LossKeysMigrated_v2 then return end
+    print("[PvPStats]: Migrating death records to include realm information (v2)...")
+
+    local count = 0
+    if not PSC_DB.PvPLossCounts then return end
+
+    for charKey, charData in pairs(PSC_DB.PvPLossCounts) do
+        local newDeaths = {}
+        if charData.Deaths then
+            for oldName, deathEntry in pairs(charData.Deaths) do
+                -- Fix assister names within death locations
+                if deathEntry.deathLocations then
+                    for _, loc in ipairs(deathEntry.deathLocations) do
+                        if loc.assisters then
+                            for _, assister in ipairs(loc.assisters) do
+                                local aName = assister.name
+                                if aName and string.find(aName, "-") == nil then
+                                    local _, existingInfoKey = PSC_GetPlayerInfo(aName)
+                                    if existingInfoKey then
+                                        assister.name = existingInfoKey
+                                    else
+                                        assister.name = PSC_GetInfoKeyFromName(aName)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                -- Check if name already has realm info (contains hyphen)
+                local hasRealm = string.find(oldName, "-") ~= nil
+
+                local newName = oldName
+                if not hasRealm then
+                     -- Try to find the correct realm from cache
+                     local _, existingInfoKey = PSC_GetPlayerInfo(oldName)
+
+                     if existingInfoKey then
+                         newName = existingInfoKey
+                     else
+                         -- Default to current realm if not found
+                         newName = PSC_GetInfoKeyFromName(oldName)
+                     end
+                end
+
+                if newName ~= oldName then
+                    if newDeaths[newName] then
+                        Helper_MergeDeathEntries(newDeaths[newName], deathEntry)
+                    else
+                        newDeaths[newName] = deathEntry
+                    end
+                    count = count + 1
+                else
+                    if newDeaths[oldName] then
+                        Helper_MergeDeathEntries(newDeaths[oldName], deathEntry)
+                    else
+                        newDeaths[oldName] = deathEntry
+                    end
+                end
+            end
+            charData.Deaths = newDeaths
+        end
+    end
+
+    PSC_DB.LossKeysMigrated_v2 = true
+end
+
 function PSC_MigratePlayerInfoCache()
     if not PSC_DB.PlayerInfoCacheMigrated then
         print("[PvPStats]: Migrating player cache to support cross-realm players...")
@@ -476,6 +680,14 @@ end
 function PSC_InitializePlayerKillCounts()
     if not PSC_DB.PlayerKillCounts.Characters then
         PSC_DB.PlayerKillCounts.Characters = {}
+    end
+
+    -- Ensure all characters have required fields (sanity check for migration/updates)
+    for key, data in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        if data.HighestKillStreak == nil then data.HighestKillStreak = 0 end
+        if data.HighestMultiKill == nil then data.HighestMultiKill = 0 end
+        if data.CurrentKillStreak == nil then data.CurrentKillStreak = 0 end
+        if data.Kills == nil then data.Kills = {} end
     end
 
     local characterKey = PSC_GetCharacterKey()

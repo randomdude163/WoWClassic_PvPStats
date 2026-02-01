@@ -173,8 +173,14 @@ function PSC_IsPlayerFromDifferentRealm(playerName)
 
     -- Check if player name contains realm information
     local name, realm = playerName:match("^(.+)%-(.+)$")
-    if realm and realm ~= PSC_RealmName then
-        return true, name, realm
+    if realm then
+        if realm ~= PSC_RealmName then
+            return true, name, realm
+        else
+            -- It is the same realm, but we have separated components.
+            -- Return false (not different), but return the clean name.
+            return false, name, realm
+        end
     end
     return false, playerName, PSC_RealmName
 end

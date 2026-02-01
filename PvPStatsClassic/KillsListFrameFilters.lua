@@ -693,10 +693,14 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
             if name then
                 local level = tonumber(string.match(nameWithLevel, ":(%d+)") or "-1") or -1
 
-                local infoKey = PSC_GetInfoKeyFromName(name)
+                -- Get player info from cache if available (supports cross-realm fallback)
+                local playerInfo, infoKey = PSC_GetPlayerInfo(name)
 
-                -- Get player info from cache if available
-                local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
+                -- If we matched a specific info key (which includes realm), use that canonical name
+                if infoKey then
+                    name = infoKey
+                end
+
                 local playerClass = playerInfo.class or "Unknown"
                 local playerRace = playerInfo.race or "Unknown"
                 local playerGender = playerInfo.gender or "Unknown"
@@ -759,9 +763,12 @@ end
 local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
     for killerName, deathData in pairs(deathDataByPlayer) do
         if not playerNameMap[killerName] then
-            local infoKey = PSC_GetInfoKeyFromName(killerName)
+            -- Get player info from cache (supports cross-realm fallback)
+            local playerInfo, infoKey = PSC_GetPlayerInfo(killerName)
 
-            local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
+            -- If we matched a specific info key (which includes realm), use that canonical name
+            local entryName = infoKey or killerName
+
             local playerClass = playerInfo.class or "Unknown"
             local playerRace = playerInfo.race or "Unknown"
             local playerGender = playerInfo.gender or "Unknown"
@@ -786,11 +793,11 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
 
             -- Only add if matches search criteria - only search name and guild
             if searchText == "" or
-               killerName:lower():find(searchText, 1, true) or
+               entryName:lower():find(searchText, 1, true) or
                playerGuild:lower():find(searchText, 1, true) then
 
                 local entry = {
-                    name = killerName,
+                    name = entryName,
                     class = playerClass,
                     race = playerRace,
                     gender = playerGender,
@@ -804,7 +811,7 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
                     deathHistory = deathData.deathLocations or {}
                 }
 
-                playerNameMap[killerName] = entry
+                playerNameMap[entryName] = entry
                 table.insert(entries, entry)
             end
         end
@@ -817,9 +824,12 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assi
     for assisterName, assistCount in pairs(assistCounts) do
         -- Skip if already added from kills or deaths
         if not playerNameMap[assisterName] then
-            local infoKey = PSC_GetInfoKeyFromName(assisterName)
+            -- Get player info from cache (supports cross-realm fallback)
+            local playerInfo, infoKey = PSC_GetPlayerInfo(assisterName)
 
-            local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
+            -- If we matched a specific info key (which includes realm), use that canonical name
+            local entryName = infoKey or assisterName
+
             local playerClass = playerInfo.class or "Unknown"
             local playerRace = playerInfo.race or "Unknown"
             local playerGender = playerInfo.gender or "Unknown"
@@ -829,11 +839,11 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assi
 
             -- Only add if matches search criteria - only search name and guild
             if searchText == "" or
-               assisterName:lower():find(searchText, 1, true) or
+               entryName:lower():find(searchText, 1, true) or
                playerGuild:lower():find(searchText, 1, true) then
 
                 local entry = {
-                    name = assisterName,
+                    name = entryName,
                     class = playerClass,
                     race = playerRace,
                     gender = playerGender,
@@ -847,7 +857,7 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assi
                     lastKill = lastAssistTimestamp[assisterName] or 0
                 }
 
-                playerNameMap[assisterName] = entry
+                playerNameMap[entryName] = entry
                 table.insert(entries, entry)
             end
         end
@@ -1039,9 +1049,8 @@ local function ApplyFiltersToEntries(entries)
 
         -- Note filter
         if match and filterOnlyWithNotes then
-            local infoKey = PSC_GetInfoKeyFromName(entry.name)
-            local playerInfo = PSC_DB and PSC_DB.PlayerInfoCache and PSC_DB.PlayerInfoCache[infoKey]
-            local hasNote = playerInfo and playerInfo.note and playerInfo.note ~= ""
+            local playerInfo = PSC_GetPlayerInfo(entry.name)
+            local hasNote = playerInfo.note and playerInfo.note ~= ""
             match = (hasNote == true)
         end
 
@@ -1184,24 +1193,24 @@ function PSC_CreateSearchBar(frame)
     noteCheckbox:SetPoint("LEFT", zoneSearchBox, "RIGHT", 15, 0)
     noteCheckbox:SetChecked(false)
     filterOnlyWithNotes = false
-    
+
     local noteLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     noteLabel:SetPoint("LEFT", noteCheckbox, "RIGHT", 5, 0)
     noteLabel:SetText("Has Note")
     noteLabel:SetTextColor(1, 0.82, 0)
-    
+
     noteCheckbox:SetScript("OnClick", function(self)
         filterOnlyWithNotes = self:GetChecked()
         RefreshKillsListFrame()
     end)
-    
+
     noteCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Note filter")
         GameTooltip:AddLine("Only show players with notes", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    
+
     noteCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)

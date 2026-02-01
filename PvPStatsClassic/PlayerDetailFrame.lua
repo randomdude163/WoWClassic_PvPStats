@@ -342,12 +342,10 @@ function PSC_CreatePlayerDetailInfo(playerName)
         assistHistory = {}
     }
 
-    -- Convert player name to proper info key format
-    local infoKey = PSC_GetInfoKeyFromName(playerName)
+    -- Try to get player info from the database cache (supports cross-realm fallback)
+    local playerInfo = PSC_GetPlayerInfo(playerName)
 
-    -- Try to get player info from the database cache
-    local playerInfo = PSC_DB.PlayerInfoCache[infoKey]
-    if playerInfo then
+    if playerInfo and next(playerInfo) then
         -- Update with available information
         killHistory.class = playerInfo.class or "Unknown"
         killHistory.race = playerInfo.race or "Unknown"
@@ -440,8 +438,7 @@ function PSC_CreatePlayerDetailInfo(playerName)
                                 assisterLevel = assister.level,      -- Level of this player when they assisted
                                 killerName = killerName,             -- The main killer
                                 killerLevel = location.killerLevel or -1,
-                                killerClass = PSC_DB.PlayerInfoCache[PSC_GetInfoKeyFromName(killerName)] and
-                                             PSC_DB.PlayerInfoCache[PSC_GetInfoKeyFromName(killerName)].class or "Unknown",
+                                killerClass = PSC_GetPlayerInfo(killerName).class or "Unknown",
                                 victimLevel = location.victimLevel or -1, -- Your level when you died
                                 zone = location.zone or "Unknown",
                                 timestamp = location.timestamp or 0,
@@ -681,14 +678,19 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         PSC_PlayerDetailFrame.activeNoteEditBox = noteEditBox
     end
 
-    local infoKey = PSC_GetInfoKeyFromName(playerDetail.name)
     if not PSC_DB then PSC_DB = {} end
     if not PSC_DB.PlayerInfoCache then PSC_DB.PlayerInfoCache = {} end
-    if not PSC_DB.PlayerInfoCache[infoKey] then
-        PSC_DB.PlayerInfoCache[infoKey] = {}
+
+    -- Try to find existing entry (possibly from another realm)
+    local playerCacheEntry, entryKey = PSC_GetPlayerInfo(playerDetail.name)
+
+    -- If no entry found, create one for current realm
+    if not entryKey then
+        entryKey = PSC_GetInfoKeyFromName(playerDetail.name)
+        PSC_DB.PlayerInfoCache[entryKey] = {}
+        playerCacheEntry = PSC_DB.PlayerInfoCache[entryKey]
     end
 
-    local playerCacheEntry = PSC_DB.PlayerInfoCache[infoKey]
     noteEditBox:SetText(playerCacheEntry.note or "")
 
     local function saveNoteFunction(self)
@@ -925,14 +927,21 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
 
     local killerText = killerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     killerText:SetPoint("TOPLEFT", 0, 0)
-    killerText:SetText(assistData.killerName or "Unknown")
+
+    -- Format killer name for display (show asterisk if from different realm)
+    local displayKillerName = assistData.killerName or "Unknown"
+    local isDifferentRealm, cleanName = PSC_IsPlayerFromDifferentRealm(displayKillerName)
+    if cleanName then
+        displayKillerName = cleanName .. (isDifferentRealm and "*" or "")
+    end
+
+    killerText:SetText(displayKillerName)
     killerText:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
     killerText:SetJustifyH("LEFT")
 
     -- Color the killer name based on class if known
-    local killerInfoKey = PSC_GetInfoKeyFromName(assistData.killerName)
-    local killerInfo = PSC_DB.PlayerInfoCache[killerInfoKey]
-    if killerInfo and killerInfo.class and RAID_CLASS_COLORS[killerInfo.class:upper()] then
+    local killerInfo = PSC_GetPlayerInfo(assistData.killerName)
+    if killerInfo.class and RAID_CLASS_COLORS[killerInfo.class:upper()] then
         local color = RAID_CLASS_COLORS[killerInfo.class:upper()]
         killerText:SetTextColor(color.r, color.g, color.b)
     else
@@ -948,9 +957,8 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
         GameTooltip:SetText("Main Killer:", 1, 0.82, 0, 1)
 
         -- Format killer info with class color if available
-        local killerInfoKey = PSC_GetInfoKeyFromName(assistData.killerName)
-        local killerInfo = PSC_DB.PlayerInfoCache[killerInfoKey]
-        if killerInfo then
+        local killerInfo = PSC_GetPlayerInfo(assistData.killerName)
+        if killerInfo.class then
             local killerLevel = killerInfo.level == -1 and "??" or tostring(killerInfo.level)
             local killerClass = killerInfo.class or "Unknown"
             local color = RAID_CLASS_COLORS[killerClass:upper()] or {r=1, g=1, b=1}
@@ -967,9 +975,8 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
             GameTooltip:AddLine("Other Assisters:", 1, 0.82, 0)
 
             for _, assister in ipairs(assistData.otherAssisters) do
-                local assisterInfoKey = PSC_GetInfoKeyFromName(assister.name)
-                local assisterInfo = PSC_DB.PlayerInfoCache[assisterInfoKey]
-                if assisterInfo then
+                local assisterInfo = PSC_GetPlayerInfo(assister.name)
+                if assisterInfo.class then
                     local assisterLevel = assisterInfo.level == -1 and "??" or tostring(assisterInfo.level)
                     local assisterClass = assisterInfo.class or "Unknown"
                     local color = RAID_CLASS_COLORS[assisterClass:upper()] or {r=1, g=1, b=1}
@@ -997,27 +1004,90 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
     return yOffset - 20
 end
 
--- Collect and display assist history
-local function DisplayAssistHistorySection(content, playerDetail, yOffset)
-    yOffset = CreateSection(content, "Assist History", yOffset)
-    yOffset = CreateAssistHistoryHeaderRow(content, yOffset)
+-- Scan all death records to find times this player assisted in killing me
+local function GetAssistHistoryForPlayer(playerName)
+    local assistHistory = {}
+    local characterKey = PSC_GetCharacterKey()
 
-    -- Display assist history entries
-    if playerDetail.assistHistory and #playerDetail.assistHistory > 0 then
-        -- Sort by timestamp descending (most recent first)
-        table.sort(playerDetail.assistHistory, function(a, b)
-            return (a.timestamp or 0) > (b.timestamp or 0)
-        end)
-
-        for i, assistData in ipairs(playerDetail.assistHistory) do
-            yOffset = CreateAssistHistoryEntry(content, assistData, i, yOffset)
+    if PSC_DB.ShowAccountWideStats then
+        -- Scan all characters
+        if PSC_DB.PvPLossCounts then
+            for cKey, charData in pairs(PSC_DB.PvPLossCounts) do
+                if charData.Deaths then
+                    for killerName, deathData in pairs(charData.Deaths) do
+                         if deathData.deathLocations then
+                             for _, loc in ipairs(deathData.deathLocations) do
+                                 if loc.assisters then
+                                     for _, assister in ipairs(loc.assisters) do
+                                         if assister.name == playerName then
+                                             -- Found an assist!
+                                             table.insert(assistHistory, {
+                                                 timestamp = loc.timestamp,
+                                                 zone = loc.zone,
+                                                 killerName = killerName, -- The main killer
+                                                 killerLevel = loc.killerLevel,
+                                                 assisterLevel = assister.level, -- Level of our target player
+                                                 assisterClass = assister.class,
+                                                 otherAssisters = loc.assisters, -- full list
+                                                 assisterName = assister.name
+                                             })
+                                         end
+                                     end
+                                 end
+                             end
+                         end
+                    end
+                end
+            end
         end
     else
-        local noAssistDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        noAssistDataText:SetPoint("TOPLEFT", 25, yOffset - 10)
-        noAssistDataText:SetText("No assists by this player have been recorded.")
-        noAssistDataText:SetTextColor(0.7, 0.7, 0.7)
-        yOffset = yOffset - 30
+        -- Scan current character only
+        local lossData = PSC_DB.PvPLossCounts[characterKey]
+        if lossData and lossData.Deaths then
+            for killerName, deathData in pairs(lossData.Deaths) do
+                 if deathData.deathLocations then
+                     for _, loc in ipairs(deathData.deathLocations) do
+                         if loc.assisters then
+                             for _, assister in ipairs(loc.assisters) do
+                                 if assister.name == playerName then
+                                     table.insert(assistHistory, {
+                                         timestamp = loc.timestamp,
+                                         zone = loc.zone,
+                                         killerName = killerName,
+                                         killerLevel = loc.killerLevel,
+                                         assisterLevel = assister.level,
+                                         assisterClass = assister.class,
+                                         otherAssisters = loc.assisters,
+                                         assisterName = assister.name
+                                     })
+                                 end
+                             end
+                         end
+                     end
+                 end
+            end
+        end
+    end
+
+    return assistHistory
+end
+
+-- Collect and display assist history
+local function DisplayAssistHistorySection(content, playerDetail, yOffset)
+    local assistHistory = GetAssistHistoryForPlayer(playerDetail.name)
+
+    if #assistHistory == 0 then return yOffset end
+
+    yOffset = CreateSection(content, "Assist History (Against You)", yOffset)
+    yOffset = CreateAssistHistoryHeaderRow(content, yOffset)
+
+    -- Sort by timestamp descending (most recent first)
+    table.sort(assistHistory, function(a, b)
+        return (a.timestamp or 0) > (b.timestamp or 0)
+    end)
+
+    for i, assistData in ipairs(assistHistory) do
+        yOffset = CreateAssistHistoryEntry(content, assistData, i, yOffset)
     end
 
     return yOffset - 20

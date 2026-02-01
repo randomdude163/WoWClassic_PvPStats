@@ -10,8 +10,8 @@ local LEADERBOARD_FRAME_HEIGHT = 450
 PSC_LeaderboardFrameInitialSetup = true
 
 local colWidths = {
-    playerName = 90,
-    realm = 135,
+    playerName = 225,
+    -- realm = 135, -- Removed
     level = 30,
     class = 65,
     race = 75,
@@ -176,8 +176,8 @@ local function CreateColumnHeaders(content)
     headerRowBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
 
     local playerNameButton = CreateColumnHeader(content, "Name", colWidths.playerName, nil, 10, 0, "playerName")
-    local realmButton = CreateColumnHeader(content, "Realm", colWidths.realm, playerNameButton, 0, 0, "realm")
-    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, realmButton, 0, 0, "level")
+    -- Realm column removed
+    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, playerNameButton, 0, 0, "level")
     local classButton = CreateColumnHeader(content, "Class", colWidths.class, levelButton, 0, 0, "class")
     local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
     local totalKillsButton = CreateColumnHeader(content, "Kills", colWidths.totalKills, raceButton, 0, 0, "totalKills")
@@ -199,11 +199,11 @@ local function CreatePlayerNameCell(content, playerName, width)
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     nameText:SetPoint("LEFT", content, "LEFT", 4, 0)
 
-    -- Strip realm if present
-    local cleanName = strsplit("-", playerName or "")
-    if not cleanName or cleanName == "" then cleanName = "Unknown" end
+    -- Show full name (Name-Realm)
+    local displayText = playerName
+    if not displayText or displayText == "" then displayText = "Unknown" end
 
-    nameText:SetText(cleanName)
+    nameText:SetText(displayText)
     nameText:SetWidth(width)
     nameText:SetJustifyH("LEFT")
     return nameText
@@ -300,7 +300,12 @@ end
 local function CreateMostKilledCell(content, anchorTo, mostKilled, width)
     local mostKilledText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     mostKilledText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
-    mostKilledText:SetText(mostKilled or "None")
+
+    -- Strip realm info for display
+    local displayData = mostKilled or "None"
+    local cleanName = strsplit("-", displayData)
+
+    mostKilledText:SetText(cleanName)
     mostKilledText:SetWidth(width)
     mostKilledText:SetJustifyH("LEFT")
     return mostKilledText
@@ -374,8 +379,8 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     end
 
     local playerNameCell = CreatePlayerNameCell(rowContainer, entry.playerName, colWidths.playerName)
-    local realmCell = CreateRealmCell(rowContainer, playerNameCell, entry.realm, colWidths.realm)
-    local levelCell = CreateLevelCell(rowContainer, realmCell, entry.level, colWidths.level)
+    -- Realm cell removed
+    local levelCell = CreateLevelCell(rowContainer, playerNameCell, entry.level, colWidths.level)
     local classCell = CreateClassCell(rowContainer, levelCell, entry.class, colWidths.class)
     local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
     local totalKillsCell = CreateTotalKillsCell(rowContainer, raceCell, entry.totalKills, colWidths.totalKills)
@@ -405,7 +410,6 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     if not entry.hasDetailedStats and entry.playerName ~= UnitName("player") then
         local gray = 0.5
         playerNameCell:SetTextColor(gray, gray, gray)
-        realmCell:SetTextColor(gray, gray, gray)
         levelCell:SetTextColor(gray, gray, gray)
         classCell:SetTextColor(gray, gray, gray)
         raceCell:SetTextColor(gray, gray, gray)

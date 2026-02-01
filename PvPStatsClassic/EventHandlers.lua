@@ -601,6 +601,8 @@ local function HandlePlayerEnteringWorld()
 
     PSC_MigratePlayerInfoCache()
     PSC_MigratePlayerInfoToEnglish()
+    PSC_MigrateKillKeys()
+    PSC_MigrateLossKeys()
     PSC_InitializePlayerKillCounts()
     PSC_InitializeLeaderboardCache()
     PSC_InitializePlayerLossCounts()

@@ -254,7 +254,9 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     end
 
     local level = PSC_DB.PlayerInfoCache[infoKey].level
-    local nameWithLevel = playerName .. ":" .. level
+    -- infoKey already includes the realm (Name-Realm)
+    -- This ensures distinct keys for same-named players on different realms
+    local nameWithLevel = infoKey .. ":" .. level
     local characterKey = PSC_GetCharacterKey()
 
     if not PSC_DB.PlayerKillCounts.Characters[characterKey] then

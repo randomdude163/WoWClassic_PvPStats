@@ -773,18 +773,18 @@ local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, char
     end
 
     if PSC_DB.ShowAccountWideStats then
-        if characterData.HighestKillStreak > state.highestKillStreak then
-            state.highestKillStreak = characterData.HighestKillStreak
+        if (characterData.HighestKillStreak or 0) > state.highestKillStreak then
+            state.highestKillStreak = characterData.HighestKillStreak or 0
             state.highestKillStreakCharacter = characterKey
         end
 
-        if characterData.HighestMultiKill > state.highestMultiKill then
-            state.highestMultiKill = characterData.HighestMultiKill
+        if (characterData.HighestMultiKill or 0) > state.highestMultiKill then
+            state.highestMultiKill = characterData.HighestMultiKill or 0
             state.highestMultiKillCharacter = characterKey
         end
     else
-        state.highestMultiKill = characterData.HighestMultiKill
-        state.highestKillStreak = characterData.HighestKillStreak
+        state.highestMultiKill = characterData.HighestMultiKill or 0
+        state.highestKillStreak = characterData.HighestKillStreak or 0
     end
 end
 

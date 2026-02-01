@@ -6,14 +6,58 @@ local addonName, PVPSC = ...
 local function MergeKillData(destKills, sourceKills)
     local importedKills = 0
 
-    for unitName, sourceEntry in pairs(sourceKills) do
-        if not destKills[unitName] then
+    for unitKey, sourceEntry in pairs(sourceKills) do
+        -- Normalize the key to ensure it includes the realm (Name-Realm:Level)
+        local unitName = string.match(unitKey, "(.-)%:")
+        local unitLevel = string.match(unitKey, ":(%d+)")
+
+        local destKey = unitKey
+        if unitName and unitLevel then
+            -- Use smart lookup to find the original realm if possible
+            local infoKey
+            local _, foundInfoKey = PSC_GetPlayerInfo(unitName)
+
+            if foundInfoKey then
+                 -- Found a specific realm match in the *current* DB (or imported DB if we searched that)
+                 -- Wait: PSC_GetPlayerInfo searches PSC_DB (Local).
+                 -- We need to search the SOURCE (PSC_DB_IMPORT) if we are importing!
+            end
+
+            -- Since PSC_GetPlayerInfo uses globals, we can't easily switch it to search Import.
+            -- Instead, let's implement a quick local lookup in the import cache.
+            local importInfoKey = nil
+            if PSC_DB_IMPORT.PlayerInfoCache then
+                 -- try direct lookup first (Name-Realm)
+                 if PSC_DB_IMPORT.PlayerInfoCache[unitName] then
+                      importInfoKey = unitName
+                 else
+                     -- try prefix search
+                     local searchPrefix = unitName .. "-"
+                     for key, info in pairs(PSC_DB_IMPORT.PlayerInfoCache) do
+                        if string.sub(key, 1, #searchPrefix) == searchPrefix then
+                            importInfoKey = key
+                            break
+                        end
+                     end
+                 end
+            end
+
+            if importInfoKey then
+                destKey = importInfoKey .. ":" .. unitLevel
+            else
+                -- Fallback to local logic if not found in import (weird, but possible)
+                local infoKey = PSC_GetInfoKeyFromName(unitName)
+                destKey = infoKey .. ":" .. unitLevel
+            end
+        end
+
+        if not destKills[destKey] then
             -- If entry doesn't exist, just deep copy it
-            destKills[unitName] = CopyTable(sourceEntry)
+            destKills[destKey] = CopyTable(sourceEntry)
             importedKills = importedKills + (sourceEntry.kills or 0)
         else
             -- Entry exists, need to merge killLocations to avoid duplicates
-            local destEntry = destKills[unitName]
+            local destEntry = destKills[destKey]
             local existingTimestamps = {}
 
             if destEntry.killLocations then
@@ -272,14 +316,7 @@ function PSC_CheckForDataMigration()
     text = text .. "Found " .. totalChars .. " character(s):\n"
 
     for _, summary in ipairs(charSummaries) do
-        -- Only show first 3 characters to avoid overflowing popup
-        if _ <= 3 then
-            text = text .. string.format("- %s: %d Kills, %d Achievements\n", summary.name, summary.kills, summary.achievements)
-        end
-    end
-
-    if totalChars > 3 then
-        text = text .. "...and " .. (totalChars - 3) .. " more.\n"
+        text = text .. string.format("- %s: %d Kills, %d Achievements\n", summary.name, summary.kills, summary.achievements)
     end
 
     text = text .. "\n\nIMPORTANT: Confirming will automatically Reload UI to apply changes!"
@@ -343,11 +380,19 @@ function PSC_RunMigrationTests()
     mock_Import.PlayerInfoCache["Note-Target"] = { class = "Rogue", level = 60, note = "Imported Note" }
     mock_DB.PlayerInfoCache["Note-Target"] = { class = "Rogue", level = 60 } -- No note
 
+    -- Case E: Cross-Realm Cache (for resolution tests)
+    mock_Import.PlayerInfoCache["Ambiguous-RemoteRealm"] = { class = "Druid", level = 60 }
+    mock_Import.PlayerInfoCache["LocalHero-TestRealm"] = { class = "Paladin", level = 60 } -- Matches CharKey realm? No, CharKey is "TestChar-TestRealm"
+    -- Note: DataStorage.lua uses PSC_GetInfoKeyFromName which defaults to PSC_RealmName if logic fails.
+    -- In unit tests, we don't control PSC_RealmName easily unless we mock it or rely on caching.
+
     -- Kills: Test dupes and merging
     -- Setup: DB has VictimA with 1 kill
     mock_DB.PlayerKillCounts.Characters[charKey] = {
         Kills = {
-            ["VictimA"] = { kills = 1, lastKill = 100, killLocations = { { timestamp=100, zone="ZoneA" } }}
+            ["VictimA"] = { kills = 1, lastKill = 100, killLocations = { { timestamp=100, zone="ZoneA" } }},
+            -- Setup for Collision Test: DB has CommonName from Local Realm
+            ["CommonName-Local:60"] = { kills = 1, lastKill = 100, killLocations = { { timestamp=100 } } }
         },
         Level1KillTimestamps = { 100 }, -- Sould be cleared on import
         -- Stat merging tests (DB has lower values)
@@ -374,6 +419,17 @@ function PSC_RunMigrationTests()
                 kills = 1,
                 lastKill = 200,
                 killLocations = { { timestamp=200, zone="ZoneB" } }  -- New Victim
+            },
+            -- Cross-Realm Test 1: Ambiguous Key "Ambiguous:60" should become "Ambiguous-RemoteRealm:60"
+            -- because of mock_Import.PlayerInfoCache["Ambiguous-RemoteRealm"]
+            ["Ambiguous:60"] = {
+                kills = 1, lastKill = 300, killLocations = { { timestamp=300 } }
+            },
+            -- Cross-Realm Test 2: Collision Test. Import has "CommonName:60".
+            -- We pretend Import Cache says it's from "Remote".
+            -- Should NOT merge with "CommonName-Local:60".
+            ["CommonName:60"] = {
+                kills = 1, lastKill = 400, killLocations = { { timestamp=400 } }
             }
         },
         -- Stat merging tests (Import has higher values)
@@ -384,6 +440,10 @@ function PSC_RunMigrationTests()
         -- Excluded fields tests
         CurrentKillStreak = 50 -- Should be ignored
     }
+
+    -- Cache entry for Collision Test 2
+    mock_Import.PlayerInfoCache["CommonName-Remote"] = { class = "Hunter", level = 60 }
+
 
     -- Leaderboard Cache Test (Should be ignored)
     mock_Import.LeaderboardCache = { ["SomeEntry"] = true }
@@ -467,6 +527,21 @@ function PSC_RunMigrationTests()
     -- VictimB: 1 new
     local vB = kills["VictimB"]
     Assert(vB and vB.kills == 1, "VictimB count wrong")
+
+    -- Cross-Realm Test 1: Ambiguous Resolution
+    -- Check if "Ambiguous:60" was converted to "Ambiguous-RemoteRealm:60"
+    local vAmbig = kills["Ambiguous-RemoteRealm:60"]
+    Assert(vAmbig, "Cross-Realm 1: Ambiguous name not resolved to cache realm key")
+    Assert(kills["Ambiguous:60"] == nil, "Cross-Realm 1: Old ambiguous key not removed (or still present)")
+
+    -- Cross-Realm Test 2: Collision Avoidance
+    -- "CommonName-Local:60" should remain 1 kill. "CommonName-Remote:60" should be new with 1 kill.
+    local vLocal = kills["CommonName-Local:60"]
+    local vRemote = kills["CommonName-Remote:60"]
+
+    Assert(vLocal and vLocal.kills == 1, "Cross-Realm 2: Local entry modified incorrectly")
+    Assert(vRemote and vRemote.kills == 1, "Cross-Realm 2: Remote entry not imported correctly")
+    Assert(vLocal ~= vRemote, "Cross-Realm 2: Entries are the same object!")
 
     -- Summary Stats
     Assert(charStats.HighestKillStreak == 10, "HighestKillStreak not upgraded")
