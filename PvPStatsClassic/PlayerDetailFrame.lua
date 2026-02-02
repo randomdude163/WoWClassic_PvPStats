@@ -1146,7 +1146,12 @@ function PSC_ShowPlayerDetailFrame(playerName, focusNote)
     end
 
     local content = PSC_PlayerDetailFrame.content
-    local titleText = "Player History - " .. playerName
+    local isFromDifferentRealm, cleanPlayerName, playerRealm = PSC_IsPlayerFromDifferentRealm(playerName)
+    local titleName = cleanPlayerName or playerName
+    if isFromDifferentRealm and playerRealm then
+        titleName = titleName .. "-" .. playerRealm
+    end
+    local titleText = "Player History - " .. titleName
     PSC_PlayerDetailFrame.TitleText:SetText(titleText)
 
     PSC_FrameManager:ShowFrame("PlayerDetail")
