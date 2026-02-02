@@ -261,19 +261,19 @@ local function SerializeDetailedStats(data)
         end
     end
     -- Append EOM marker
-    -- str = str .. "EOM:1;"
+    str = str .. "EOM:1;"
     return str
 end
 
 -- Deserialize detailed stats
 local function DeserializeDetailedStats(payload)
     -- Check for EOM marker to ensure message is complete
-    -- if not string.find(payload, "EOM:1") then
-    --     if PSC_Debug then
-    --         print("|cFFFFD700[PVPSC Network]|r Incomplete payload received (EOM missing). Discarding.")
-    --     end
-    --     return nil
-    -- end
+    if not string.find(payload, "EOM:1") then
+        if PSC_Debug then
+            print("|cFFFFD700[PVPSC Network]|r Incomplete payload received (EOM missing). Discarding.")
+        end
+        return nil
+    end
 
     -- Parse the serialized format back into a table
     local data = {
