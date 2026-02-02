@@ -392,7 +392,20 @@ local function CreateMostKilledCell(content, anchorTo, mostKilled, width)
 
     -- Strip realm info for display
     local displayData = mostKilled or "None"
-    local cleanName = strsplit("-", displayData)
+    local namePart, countPart = displayData:match("^(.-)%s*(%b())$")
+    if not namePart then
+        namePart = displayData
+        countPart = ""
+    end
+
+    local cleanName = namePart
+    if string.find(cleanName, "-") then
+        cleanName = strsplit("-", cleanName)
+    end
+
+    if countPart ~= "" then
+        cleanName = cleanName .. " " .. countPart
+    end
 
     mostKilledText:SetText(cleanName)
     mostKilledText:SetWidth(width)
