@@ -7,7 +7,7 @@ PSC_COLUMN_POSITIONS = {
     LEVEL = 25,     -- Level column
     ZONE = 70,      -- Zone column
     KILLS = 225,    -- Kills/Assisters column
-    TIME = 310      -- Time column
+    TIME = 325      -- Time column
 }
 
 PSC_COLUMN_WIDTHS = {

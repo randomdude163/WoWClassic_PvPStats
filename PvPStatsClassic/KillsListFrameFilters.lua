@@ -696,10 +696,8 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                 -- Get player info from cache if available (supports cross-realm fallback)
                 local playerInfo, infoKey = PSC_GetPlayerInfo(name)
 
-                -- If we matched a specific info key (which includes realm), use that canonical name
-                if infoKey then
-                    name = infoKey
-                end
+                -- Always canonicalize to Name-Realm for consistent keys
+                local canonicalName = infoKey or PSC_GetInfoKeyFromName(name)
 
                 local playerClass = playerInfo.class or "Unknown"
                 local playerRace = playerInfo.race or "Unknown"
@@ -708,9 +706,9 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                 local playerRank = playerInfo.rank or 0
 
                 -- Only add if matches search criteria - only search name and guild for the player/guild filter
-                if searchText == "" or
-                   name:lower():find(searchText, 1, true) or
-                   playerGuild:lower():find(searchText, 1, true) then
+                     if searchText == "" or
+                         canonicalName:lower():find(searchText, 1, true) or
+                         playerGuild:lower():find(searchText, 1, true) then
 
                     -- Convert lastKill to number to ensure it's properly handled
                     local lastKillTimestamp = tonumber(killData.lastKill) or 0
@@ -738,7 +736,7 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                     end
 
                     local entry = {
-                        name = name,
+                        name = canonicalName,
                         class = playerClass,
                         race = playerRace,
                         gender = playerGender,
@@ -752,7 +750,7 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                         originalKillData = killData
                     }
 
-                    AddOrUpdatePlayerEntry(playerNameMap, entries, name, entry)
+                    AddOrUpdatePlayerEntry(playerNameMap, entries, canonicalName, entry)
                 end
             end
         end
@@ -762,12 +760,13 @@ end
 -- Process players who have killed you but you haven't killed
 local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
     for killerName, deathData in pairs(deathDataByPlayer) do
-        if not playerNameMap[killerName] then
-            -- Get player info from cache (supports cross-realm fallback)
-            local playerInfo, infoKey = PSC_GetPlayerInfo(killerName)
+        -- Get player info from cache (supports cross-realm fallback)
+        local playerInfo, infoKey = PSC_GetPlayerInfo(killerName)
 
-            -- If we matched a specific info key (which includes realm), use that canonical name
-            local entryName = infoKey or killerName
+        -- Always canonicalize to Name-Realm for consistent keys
+        local entryName = infoKey or PSC_GetInfoKeyFromName(killerName)
+
+        if not playerNameMap[entryName] then
 
             local playerClass = playerInfo.class or "Unknown"
             local playerRace = playerInfo.race or "Unknown"
@@ -792,9 +791,9 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
             end
 
             -- Only add if matches search criteria - only search name and guild
-            if searchText == "" or
-               entryName:lower():find(searchText, 1, true) or
-               playerGuild:lower():find(searchText, 1, true) then
+                if searchText == "" or
+                    entryName:lower():find(searchText, 1, true) or
+                    playerGuild:lower():find(searchText, 1, true) then
 
                 local entry = {
                     name = entryName,
@@ -822,13 +821,14 @@ end
 local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assistCounts, lastAssistTimestamp, lastAssistZone)
     -- Create entries for players who assisted but never killed you directly
     for assisterName, assistCount in pairs(assistCounts) do
-        -- Skip if already added from kills or deaths
-        if not playerNameMap[assisterName] then
-            -- Get player info from cache (supports cross-realm fallback)
-            local playerInfo, infoKey = PSC_GetPlayerInfo(assisterName)
+        -- Get player info from cache (supports cross-realm fallback)
+        local playerInfo, infoKey = PSC_GetPlayerInfo(assisterName)
 
-            -- If we matched a specific info key (which includes realm), use that canonical name
-            local entryName = infoKey or assisterName
+        -- Always canonicalize to Name-Realm for consistent keys
+        local entryName = infoKey or PSC_GetInfoKeyFromName(assisterName)
+
+        -- Skip if already added from kills or deaths
+        if not playerNameMap[entryName] then
 
             local playerClass = playerInfo.class or "Unknown"
             local playerRace = playerInfo.race or "Unknown"
@@ -838,9 +838,9 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assi
             local playerRank = playerInfo.rank or 0
 
             -- Only add if matches search criteria - only search name and guild
-            if searchText == "" or
-               entryName:lower():find(searchText, 1, true) or
-               playerGuild:lower():find(searchText, 1, true) then
+                if searchText == "" or
+                    entryName:lower():find(searchText, 1, true) or
+                    playerGuild:lower():find(searchText, 1, true) then
 
                 local entry = {
                     name = entryName,

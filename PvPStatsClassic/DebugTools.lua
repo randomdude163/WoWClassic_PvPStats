@@ -7,21 +7,9 @@ local DEBUG_REALM_NAMES = {
     "Hydraxian Waterlords",
 }
 
-local function PSC_DebugGetCurrentRealmName()
-    if PSC_RealmName and PSC_RealmName ~= "" then
-        return PSC_RealmName
-    end
-    if GetRealmName then
-        local ok, realm = pcall(GetRealmName)
-        if ok and realm and realm ~= "" then
-            return realm
-        end
-    end
-    return "Unknown"
-end
 
 local function PSC_DebugPickRealmName()
-    local currentRealm = PSC_DebugGetCurrentRealmName()
+    local currentRealm = PSC_RealmName
     if math.random() <= 0.5 then
         local candidates = {}
         for _, realm in ipairs(DEBUG_REALM_NAMES) do
@@ -268,11 +256,6 @@ local function CreateKillDebugMessage(playerName, nameWithLevel, killerName, kil
     end
 
     debugMsg = debugMsg .. class .. ", " .. race .. ")"
-
-    local rank = PSC_DB.PlayerKillCounts[nameWithLevel].rank or 0
-    if rank > 0 then
-        debugMsg = debugMsg .. " [Rank: " .. rank .. "]"
-    end
 
     local rank = PSC_DB.PlayerKillCounts[nameWithLevel].rank or 0
     if rank > 0 then
@@ -610,13 +593,10 @@ function PSC_SimulatePlayerDeathByEnemy(killerCount, assistCount)
 
         local assistName = PSC_DebugApplyRandomRealm(assistPlayer.name)
 
-        local rndNumber = math.random(100)
-        if rndNumber <= 50 then
-            -- Sometimes don't store assist info because it might happen that we don't mouseover or target a player that assists in a kill
-            print("Storing assist info for " .. assistName)
-            PSC_StorePlayerInfo(assistName, assistPlayer.level, assistPlayer.class,
-                            assistPlayer.race, assistPlayer.gender, assistPlayer.guildName, assistPlayer.guildRankName, assistPlayer.rank)
-        end
+        -- Always store assist info in debug simulation
+        print("Storing assist info for " .. assistName)
+        PSC_StorePlayerInfo(assistName, assistPlayer.level, assistPlayer.class,
+                        assistPlayer.race, assistPlayer.gender, assistPlayer.guildName, assistPlayer.guildRankName, assistPlayer.rank)
         -- Add assist without guid
         table.insert(killerInfo.assists, {
             name = assistName
@@ -696,7 +676,6 @@ function PSC_CreateRoleplayer()
 
         -- Create the enemy player
         local enemyName = "Roleplayer"
-        local enemyNameWithRealm = PSC_DebugApplyRandomRealm(enemyName)
         local enemyGender = combo.gender -- 0 for male, 1 for female
         local enemyRace = combo.race
         local enemyClass = combo.class
@@ -799,9 +778,14 @@ function PSC_CreateRoleplayer()
             return "Elwynn Forest"  -- Fallback
         end
 
+        local lastEncounterName = nil
+
         -- For each encounter, create a realistic interaction
         for i = 1, numEncounters do
             local encounterTime = threeMonthsAgo + (i * timeStep)
+
+            local encounterEnemyName = PSC_DebugApplyRandomRealm(enemyName)
+            lastEncounterName = encounterEnemyName
 
             -- Get pre-determined levels for this encounter
             local currentEnemyLevel = enemyLevels[i]
@@ -813,7 +797,7 @@ function PSC_CreateRoleplayer()
 
             -- Update player info for this encounter
             local enemyGuildRank = enemyGuild == "" and "" or guildRanks[math.random(1, #guildRanks)]
-            PSC_StorePlayerInfo(enemyNameWithRealm, currentEnemyLevel, enemyClass, enemyRace, enemyGender, enemyGuild, enemyGuildRank, enemyRank)
+            PSC_StorePlayerInfo(encounterEnemyName, currentEnemyLevel, enemyClass, enemyRace, enemyGender, enemyGuild, enemyGuildRank, enemyRank)
 
             -- Set up time and zone overrides
             GetRealZoneText = function() return encounterZone end
@@ -835,7 +819,7 @@ function PSC_CreateRoleplayer()
                 -- SIMULATE DEATH: Roleplayer killed you
                 local killerInfo = {
                     killer = {
-                        name = enemyNameWithRealm,
+                        name = encounterEnemyName,
                         guid = "Simulated-Killer-GUID-" .. math.random(1000000),
                         damage = 1000,
                         isPet = false
@@ -865,7 +849,7 @@ function PSC_CreateRoleplayer()
 
                 -- Save for summary report
                 table.insert(deathHistory, {
-                    killer = enemyNameWithRealm,
+                    killer = encounterEnemyName,
                     timestamp = encounterTime,
                     zone = encounterZone,
                     killerLevel = currentEnemyLevel,
@@ -873,11 +857,11 @@ function PSC_CreateRoleplayer()
                 })
             elseif (i % 3 == 1) or (rand >= 30 and rand < 70) then
                 -- SIMULATE KILL: You killed Roleplayer
-                PSC_RegisterPlayerKill(enemyNameWithRealm)
+                PSC_RegisterPlayerKill(encounterEnemyName)
 
                 -- Save for summary report
                 table.insert(killHistory, {
-                    victim = enemyNameWithRealm,
+                    victim = encounterEnemyName,
                     timestamp = encounterTime,
                     zone = encounterZone,
                     level = currentEnemyLevel,
@@ -903,7 +887,7 @@ function PSC_CreateRoleplayer()
                     },
                     assists = {
                         {
-                            name = enemyNameWithRealm,
+                            name = encounterEnemyName,
                             level = currentEnemyLevel,
                             class = enemyClass
                         }
@@ -932,7 +916,7 @@ function PSC_CreateRoleplayer()
 
                 -- Track for summary report
                 local assistEntryMembers = {
-                    enemyNameWithRealm .. " (Level " .. currentEnemyLevel .. " " .. enemyClass .. ")"
+                    encounterEnemyName .. " (Level " .. currentEnemyLevel .. " " .. enemyClass .. ")"
                 }
 
                 -- Add other assister to report if exists
@@ -957,14 +941,15 @@ function PSC_CreateRoleplayer()
         end
 
         -- Generate a summary report
-        PSC_Print("\n== " .. enemyNameWithRealm .. "'s PvP History with You ==")
+        local summaryName = lastEncounterName or enemyName
+        PSC_Print("\n== " .. summaryName .. "'s PvP History with You ==")
         -- Fix: Calculate final level without using enemyLevelStep
         local finalEnemyLevel = enemyLevels[#enemyLevels]
         PSC_Print("Currently Level " .. finalEnemyLevel .. " " .. enemyRace .. " " .. enemyClass .. " <" .. enemyGuild .. ">")
         PSC_Print("First encountered at level " .. enemyStartLevel .. " when you were level " .. playerStartLevel)
 
         -- Format your kills against Roleplayer
-        PSC_Print("\nTimes You Killed " .. enemyNameWithRealm .. ":")
+        PSC_Print("\nTimes You Killed " .. summaryName .. ":")
         for i, kill in ipairs(killHistory) do
             local dateStr = date("%m/%d/%y %H:%M", kill.timestamp)
             PSC_Print(" - " .. dateStr .. " - Level " .. kill.level .. " in " .. kill.zone ..
@@ -972,7 +957,7 @@ function PSC_CreateRoleplayer()
         end
 
         -- Format times Roleplayer killed you
-        PSC_Print("\nTimes " .. enemyNameWithRealm .. " Killed You:")
+        PSC_Print("\nTimes " .. summaryName .. " Killed You:")
         for i, death in ipairs(deathHistory) do
             local dateStr = date("%m/%d/%y %H:%M", death.timestamp)
             PSC_Print(" - " .. dateStr .. " - Level " .. death.killerLevel .. " in " .. death.zone ..
@@ -983,7 +968,7 @@ function PSC_CreateRoleplayer()
         PSC_Print("\nGroup Activity:")
         for i, assist in ipairs(assistHistory) do
             local dateStr = date("%m/%d/%y %H:%M", assist.timestamp)
-            PSC_Print(" - " .. dateStr .. " - " .. enemyNameWithRealm .. " assisted " .. assist.mainKiller ..
+            PSC_Print(" - " .. dateStr .. " - " .. summaryName .. " assisted " .. assist.mainKiller ..
                       " in killing you in " .. assist.zone .. " (You were level " .. assist.playerLevel .. ")")
             PSC_Print("   Group: " .. assist.mainKiller .. ", " .. table.concat(assist.groupMembers, ", "))
         end
@@ -993,7 +978,7 @@ function PSC_CreateRoleplayer()
             PSC_DB.RolePlayers = {}
         end
         table.insert(PSC_DB.RolePlayers, {
-            name = enemyNameWithRealm,
+            name = summaryName,
             level = finalEnemyLevel,
             class = enemyClass,
             race = enemyRace,
