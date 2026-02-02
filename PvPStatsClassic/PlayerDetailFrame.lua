@@ -34,28 +34,28 @@ local PVP_RANK_ICONS = {
 }
 
 local RACE_ICON_IDS = {
-    ["HUMAN_MALE"] = 236448,
-    ["HUMAN_FEMALE"] = 236447,
+    ["HUMAN_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236448_64x64",
+    ["HUMAN_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236447_64x64",
     ["DWARF_MALE"] = 236444,
-    ["DWARF_FEMALE"] = 236443,
-    ["GNOME_MALE"] = 236446,
-    ["GNOME_FEMALE"] = 236445,
-    ["NIGHTELF_MALE"] = 236450,
+    ["DWARF_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236443_64x64",
+    ["GNOME_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236446_64x64",
+    ["GNOME_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236445_64x64",
+    ["NIGHTELF_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236450_64x64",
     ["NIGHTELF_FEMALE"] = 236449,
-    ["ORC_MALE"] = 236452,
-    ["ORC_FEMALE"] = 236451,
-    ["TAUREN_MALE"] = 236454,
-    ["TAUREN_FEMALE"] = 236453,
+    ["ORC_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236452_64x64",
+    ["ORC_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236451_64x64",
+    ["TAUREN_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236454_64x64",
+    ["TAUREN_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236453_64x64",
     ["TROLL_MALE"] = 236456,
-    ["TROLL_FEMALE"] = 236455,
-    ["UNDEAD_MALE"] = 236458,
-    ["UNDEAD_FEMALE"] = 236457,
-    ["SCOURGE_MALE"] = 236458,
-    ["SCOURGE_FEMALE"] = 236457,
-    ["BLOODELF_MALE"] = 236440,
-    ["BLOODELF_FEMALE"] = 236439,
-    ["DRAENEI_MALE"] = 236442,
-    ["DRAENEI_FEMALE"] = 236441
+    ["TROLL_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236455_64x64",
+    ["UNDEAD_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236458_64x64",
+    ["UNDEAD_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236457_64x64",
+    ["SCOURGE_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236458_64x64",
+    ["SCOURGE_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236457_64x64",
+    ["BLOODELF_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236440_64x64",
+    ["BLOODELF_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236439_64x64",
+    ["DRAENEI_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236442_64x64",
+    ["DRAENEI_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236441_64x64"
 }
 
 function PSC_FormatTimestamp(timestamp)
@@ -579,6 +579,14 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
                 raceIcon:SetTexture(raceIconID)
             else
                 raceIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            end
+            
+            -- Add Blizzard's icon border overlay only for custom img icons (not native Blizzard icons)
+            if raceIconID and type(raceIconID) == "string" then
+                local raceIconBorder = iconContainer:CreateTexture(nil, "OVERLAY")
+                raceIconBorder:SetSize(54, 54)
+                raceIconBorder:SetPoint("CENTER", raceIcon, "CENTER")
+                raceIconBorder:SetTexture("Interface\\Buttons\\UI-Quickslot2")
             end
         end
 
