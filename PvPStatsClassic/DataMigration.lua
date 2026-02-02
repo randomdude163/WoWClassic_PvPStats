@@ -217,6 +217,12 @@ function PSC_PerformDataMigration()
     local infoImported = MergePlayerInfoCache(PSC_DB.PlayerInfoCache, PSC_DB_IMPORT.PlayerInfoCache)
     print(string.format("[PvPStats]: Imported %d player info cache entries.", infoImported))
 
+    -- Ensure localized class/race names from imported data are normalized
+    PSC_DB.PlayerInfoEnglishMigrated = nil
+    if PSC_MigratePlayerInfoToEnglish then
+        PSC_MigratePlayerInfoToEnglish()
+    end
+
     -- 2. Merge Kill Counts (Per Character)
     if PSC_DB_IMPORT.PlayerKillCounts and PSC_DB_IMPORT.PlayerKillCounts.Characters then
         if not PSC_DB.PlayerKillCounts then PSC_DB.PlayerKillCounts = {} end
