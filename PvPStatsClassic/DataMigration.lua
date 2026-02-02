@@ -13,10 +13,6 @@ local function ResolveImportInfoKey(unitName)
     end
 
     if PSC_DB_IMPORT and PSC_DB_IMPORT.PlayerInfoCache then
-        if PSC_DB_IMPORT.PlayerInfoCache[unitName] and string.find(unitName, "%-") then
-            return unitName
-        end
-
         local searchPrefix = unitName .. "-"
         for key, _ in pairs(PSC_DB_IMPORT.PlayerInfoCache) do
             if string.sub(key, 1, #searchPrefix) == searchPrefix then
@@ -30,7 +26,7 @@ local function ResolveImportInfoKey(unitName)
         return foundInfoKey
     end
 
-    return PSC_GetInfoKeyFromName(unitName)
+    return nil
 end
 
 local function NormalizeImportedName(unitName)
@@ -63,7 +59,7 @@ local function MergeKillData(destKills, sourceKills)
     for unitKey, sourceEntry in pairs(sourceKills) do
         -- Normalize the key to ensure it includes the realm (Name-Realm:Level)
         local unitName = string.match(unitKey, "(.-)%:")
-        local unitLevel = string.match(unitKey, ":(%d+)")
+        local unitLevel = string.match(unitKey, ":(%-?%d+)")
 
         local destKey = unitKey
         if unitName and unitLevel then
