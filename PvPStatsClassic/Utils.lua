@@ -370,6 +370,41 @@ function PSC_GetCharacterKey()
     return PSC_CharacterName .. "-" .. PSC_RealmName
 end
 
+function PSC_NormalizePlayerName(playerName)
+    if not playerName or playerName == "" then
+        return nil
+    end
+    return PSC_GetInfoKeyFromName(playerName)
+end
+
+function PSC_IsSamePlayerName(candidateName, targetName)
+    if not candidateName or candidateName == "" or not targetName or targetName == "" then
+        return false
+    end
+
+    if candidateName == targetName then
+        return true
+    end
+
+    local candidateKey = PSC_GetInfoKeyFromName(candidateName)
+    local targetKey = PSC_GetInfoKeyFromName(targetName)
+    if candidateKey == targetKey then
+        return true
+    end
+
+    if not string.find(targetName, "%-") then
+        local prefix = targetName .. "-"
+        if candidateKey and string.sub(candidateKey, 1, #prefix) == prefix then
+            return true
+        end
+        if string.sub(candidateName, 1, #prefix) == prefix then
+            return true
+        end
+    end
+
+    return false
+end
+
 function PSC_GetAddonVersion()
     return "4.0.1"
 end

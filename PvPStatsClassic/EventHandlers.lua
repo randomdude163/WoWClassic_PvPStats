@@ -768,11 +768,26 @@ function PSC_CheckBattlegroundStatus()
 end
 
 function PSC_GetTotalsKillsForPlayer(playerName)
+    if not playerName or playerName == "" then
+        return 0
+    end
+
+    local normalizedName = PSC_GetInfoKeyFromName(playerName)
     local total_kills = 0
     for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts.Characters[PSC_GetCharacterKey()].Kills) do
         local storedName = nameWithLevel:match("^(.+):")
-        if storedName == playerName then
+        if storedName == normalizedName then
             total_kills = total_kills + data.kills
+        end
+    end
+
+    if total_kills == 0 and not string.find(playerName, "%-") then
+        local prefix = playerName .. "-"
+        for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts.Characters[PSC_GetCharacterKey()].Kills) do
+            local storedName = nameWithLevel:match("^(.+):")
+            if storedName and string.sub(storedName, 1, #prefix) == prefix then
+                total_kills = total_kills + data.kills
+            end
         end
     end
     return total_kills
@@ -788,10 +803,22 @@ function PSC_SetupMouseoverTooltip()
         local characterKey = PSC_GetCharacterKey()
         local lastKill = 0
 
+        local normalizedName = PSC_GetInfoKeyFromName(playerName)
+        local allowPrefixSearch = not string.find(playerName, "%-")
+        local prefix = allowPrefixSearch and (playerName .. "-") or nil
+
         for nameWithLevel, data in pairs(PSC_DB.PlayerKillCounts.Characters[characterKey].Kills) do
             local storedName = nameWithLevel:match("^(.+):")
-            if storedName == playerName and data.lastKill and data.lastKill > lastKill then
-                lastKill = data.lastKill
+            if storedName then
+                if storedName == normalizedName then
+                    if data.lastKill and data.lastKill > lastKill then
+                        lastKill = data.lastKill
+                    end
+                elseif allowPrefixSearch and string.sub(storedName, 1, #prefix) == prefix then
+                    if data.lastKill and data.lastKill > lastKill then
+                        lastKill = data.lastKill
+                    end
+                end
             end
         end
 
@@ -801,11 +828,29 @@ function PSC_SetupMouseoverTooltip()
     local function GetDeathsByPlayerName(playerName)
         local characterKey = PSC_GetCharacterKey()
         if not PSC_DB.PvPLossCounts or not PSC_DB.PvPLossCounts[characterKey] or
-           not PSC_DB.PvPLossCounts[characterKey].Deaths or not PSC_DB.PvPLossCounts[characterKey].Deaths[playerName] then
+           not PSC_DB.PvPLossCounts[characterKey].Deaths then
             return 0
         end
 
-        return PSC_DB.PvPLossCounts[characterKey].Deaths[playerName].deaths or 0
+        local deathsTable = PSC_DB.PvPLossCounts[characterKey].Deaths
+        local normalizedName = PSC_GetInfoKeyFromName(playerName)
+
+        if deathsTable[normalizedName] then
+            return deathsTable[normalizedName].deaths or 0
+        end
+
+        if not string.find(playerName, "%-") then
+            local prefix = playerName .. "-"
+            local totalDeaths = 0
+            for storedName, deathData in pairs(deathsTable) do
+                if storedName and string.sub(storedName, 1, #prefix) == prefix then
+                    totalDeaths = totalDeaths + (deathData.deaths or 0)
+                end
+            end
+            return totalDeaths
+        end
+
+        return 0
     end
 
     local function AddPvPInfoToTooltip(tooltip, playerName, kills, deaths)

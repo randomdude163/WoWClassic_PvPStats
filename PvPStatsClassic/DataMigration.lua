@@ -3,8 +3,62 @@ local addonName, PVPSC = ...
 -- Data Migration Module
 -- Handles importing data from older addons or manual file copies (PSC_DB_IMPORT)
 
+local function ResolveImportInfoKey(unitName)
+    if not unitName or unitName == "" then
+        return nil
+    end
+
+    if string.find(unitName, "%-") then
+        return unitName
+    end
+
+    if PSC_DB_IMPORT and PSC_DB_IMPORT.PlayerInfoCache then
+        if PSC_DB_IMPORT.PlayerInfoCache[unitName] and string.find(unitName, "%-") then
+            return unitName
+        end
+
+        local searchPrefix = unitName .. "-"
+        for key, _ in pairs(PSC_DB_IMPORT.PlayerInfoCache) do
+            if string.sub(key, 1, #searchPrefix) == searchPrefix then
+                return key
+            end
+        end
+    end
+
+    local _, foundInfoKey = PSC_GetPlayerInfo(unitName)
+    if foundInfoKey then
+        return foundInfoKey
+    end
+
+    return PSC_GetInfoKeyFromName(unitName)
+end
+
+local function NormalizeImportedName(unitName)
+    return ResolveImportInfoKey(unitName)
+end
+
+local function NormalizeImportedAssisters(deathLocations)
+    if not deathLocations then return 0 end
+    local normalizedCount = 0
+    for _, loc in ipairs(deathLocations) do
+        if loc.assisters then
+            for _, assister in ipairs(loc.assisters) do
+                if assister.name then
+                    local normalizedName = NormalizeImportedName(assister.name) or assister.name
+                    if normalizedName ~= assister.name then
+                        normalizedCount = normalizedCount + 1
+                    end
+                    assister.name = normalizedName
+                end
+            end
+        end
+    end
+    return normalizedCount
+end
+
 local function MergeKillData(destKills, sourceKills)
     local importedKills = 0
+    local normalizedKeys = 0
 
     for unitKey, sourceEntry in pairs(sourceKills) do
         -- Normalize the key to ensure it includes the realm (Name-Realm:Level)
@@ -13,42 +67,14 @@ local function MergeKillData(destKills, sourceKills)
 
         local destKey = unitKey
         if unitName and unitLevel then
-            -- Use smart lookup to find the original realm if possible
-            local infoKey
-            local _, foundInfoKey = PSC_GetPlayerInfo(unitName)
-
-            if foundInfoKey then
-                 -- Found a specific realm match in the *current* DB (or imported DB if we searched that)
-                 -- Wait: PSC_GetPlayerInfo searches PSC_DB (Local).
-                 -- We need to search the SOURCE (PSC_DB_IMPORT) if we are importing!
-            end
-
-            -- Since PSC_GetPlayerInfo uses globals, we can't easily switch it to search Import.
-            -- Instead, let's implement a quick local lookup in the import cache.
-            local importInfoKey = nil
-            if PSC_DB_IMPORT.PlayerInfoCache then
-                 -- try direct lookup first (Name-Realm)
-                 if PSC_DB_IMPORT.PlayerInfoCache[unitName] then
-                      importInfoKey = unitName
-                 else
-                     -- try prefix search
-                     local searchPrefix = unitName .. "-"
-                     for key, info in pairs(PSC_DB_IMPORT.PlayerInfoCache) do
-                        if string.sub(key, 1, #searchPrefix) == searchPrefix then
-                            importInfoKey = key
-                            break
-                        end
-                     end
-                 end
-            end
-
+            local importInfoKey = ResolveImportInfoKey(unitName)
             if importInfoKey then
                 destKey = importInfoKey .. ":" .. unitLevel
-            else
-                -- Fallback to local logic if not found in import (weird, but possible)
-                local infoKey = PSC_GetInfoKeyFromName(unitName)
-                destKey = infoKey .. ":" .. unitLevel
             end
+        end
+
+        if destKey ~= unitKey then
+            normalizedKeys = normalizedKeys + 1
         end
 
         if not destKills[destKey] then
@@ -98,20 +124,28 @@ local function MergeKillData(destKills, sourceKills)
         end
     end
 
-    return importedKills
+    return importedKills, normalizedKeys
 end
 
 local function MergeLossData(destLosses, sourceLosses)
     if not sourceLosses then return 0 end
 
     local importedDeaths = 0
+    local normalizedKeys = 0
+    local normalizedAssisters = 0
 
     for unitName, sourceEntry in pairs(sourceLosses) do
-        if not destLosses[unitName] then
-            destLosses[unitName] = CopyTable(sourceEntry)
-            importedDeaths = importedDeaths + (sourceEntry.deaths or 0)
+        local destKey = NormalizeImportedName(unitName) or unitName
+        if destKey ~= unitName then
+            normalizedKeys = normalizedKeys + 1
+        end
+        if not destLosses[destKey] then
+            local copyEntry = CopyTable(sourceEntry)
+            normalizedAssisters = normalizedAssisters + NormalizeImportedAssisters(copyEntry.deathLocations)
+            destLosses[destKey] = copyEntry
+            importedDeaths = importedDeaths + (copyEntry.deaths or 0)
         else
-            local destEntry = destLosses[unitName]
+            local destEntry = destLosses[destKey]
             local existingTimestamps = {}
 
             if destEntry.deathLocations then
@@ -125,6 +159,7 @@ local function MergeLossData(destLosses, sourceLosses)
             end
 
             if sourceEntry.deathLocations then
+                normalizedAssisters = normalizedAssisters + NormalizeImportedAssisters(sourceEntry.deathLocations)
                 for _, sourceLoc in ipairs(sourceEntry.deathLocations) do
                     if sourceLoc.timestamp and not existingTimestamps[sourceLoc.timestamp] then
                         table.insert(destEntry.deathLocations, CopyTable(sourceLoc))
@@ -142,7 +177,7 @@ local function MergeLossData(destLosses, sourceLosses)
         end
     end
 
-    return importedDeaths
+    return importedDeaths, normalizedKeys, normalizedAssisters
 end
 
 local function MergeAchievements(destItems, sourceItems)
@@ -200,8 +235,11 @@ function PSC_PerformDataMigration()
                 }
             end
 
-            if charData.Kills then
-                 MergeKillData(PSC_DB.PlayerKillCounts.Characters[charKey].Kills, charData.Kills)
+              if charData.Kills then
+                  local importedKills, normalizedKillKeys = MergeKillData(PSC_DB.PlayerKillCounts.Characters[charKey].Kills, charData.Kills)
+                  if PSC_Debug and (importedKills or normalizedKillKeys) then
+                     print(string.format("[PvPStats]: Imported %d kills for %s (%d kill keys normalized).", importedKills or 0, charKey, normalizedKillKeys or 0))
+                  end
                  -- Clear derived caches to force rebuild from new complete data
                  PSC_DB.PlayerKillCounts.Characters[charKey].Level1KillTimestamps = nil
             end
@@ -237,7 +275,10 @@ function PSC_PerformDataMigration()
             end
 
             if charData.Deaths then
-                MergeLossData(PSC_DB.PvPLossCounts[charKey].Deaths, charData.Deaths)
+                local importedDeaths, normalizedLossKeys, normalizedAssisters = MergeLossData(PSC_DB.PvPLossCounts[charKey].Deaths, charData.Deaths)
+                if PSC_Debug and (importedDeaths or normalizedLossKeys or normalizedAssisters) then
+                    print(string.format("[PvPStats]: Imported %d deaths for %s (%d loss keys normalized, %d assister names normalized).", importedDeaths or 0, charKey, normalizedLossKeys or 0, normalizedAssisters or 0))
+                end
             end
         end
     end

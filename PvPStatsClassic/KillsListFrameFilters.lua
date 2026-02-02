@@ -897,11 +897,59 @@ end
 
 -- Add assist and death data to all player entries
 local function AddAssistAndDeathData(entries, deathDataByPlayer, assistCounts, lastAssistTimestamp, lastAssistZone)
+    local function GetAggregatedDeathData(targetName)
+        if not targetName or not deathDataByPlayer then
+            return nil
+        end
+
+        if deathDataByPlayer[targetName] then
+            return deathDataByPlayer[targetName]
+        end
+
+        local aggregated = nil
+        for name, deathData in pairs(deathDataByPlayer) do
+            if PSC_IsSamePlayerName(name, targetName) then
+                if not aggregated then
+                    aggregated = { deaths = 0, deathLocations = {} }
+                end
+                aggregated.deaths = aggregated.deaths + (deathData.deaths or 0)
+                if deathData.deathLocations then
+                    for _, location in ipairs(deathData.deathLocations) do
+                        table.insert(aggregated.deathLocations, location)
+                    end
+                end
+            end
+        end
+
+        return aggregated
+    end
+
+    local function GetAggregatedAssistData(targetName)
+        local count = assistCounts[targetName] or 0
+        local timestamp = lastAssistTimestamp[targetName]
+        local zone = lastAssistZone[targetName]
+
+        if count == 0 and not timestamp then
+            for name, assistCount in pairs(assistCounts) do
+                if PSC_IsSamePlayerName(name, targetName) then
+                    count = count + (assistCount or 0)
+                    local ts = lastAssistTimestamp[name]
+                    if ts and (not timestamp or ts > timestamp) then
+                        timestamp = ts
+                        zone = lastAssistZone[name]
+                    end
+                end
+            end
+        end
+
+        return count, timestamp, zone
+    end
+
     for _, entry in ipairs(entries) do
         local playerName = entry.name
 
         -- Add death data
-        local deathData = deathDataByPlayer[playerName]
+        local deathData = GetAggregatedDeathData(playerName)
         entry.deaths = deathData and deathData.deaths or 0
         entry.deathHistory = deathData and deathData.deathLocations or {}
 
@@ -930,15 +978,15 @@ local function AddAssistAndDeathData(entries, deathDataByPlayer, assistCounts, l
 
         -- Add assists data using pre-calculated counts (O(1) lookup instead of O(n) scan)
         -- Only update if not already set (assist-only players have it set already)
+        local assistCount, assistTimestamp, assistZone = GetAggregatedAssistData(playerName)
         if not entry.assists then
-            entry.assists = assistCounts[playerName] or 0
+            entry.assists = assistCount
         end
 
         -- Update lastKill if the most recent assist is more recent
-        local assistTimestamp = lastAssistTimestamp[playerName]
         if assistTimestamp and assistTimestamp > (entry.lastKill or 0) then
             entry.lastKill = assistTimestamp
-            entry.zone = lastAssistZone[playerName] or entry.zone
+            entry.zone = assistZone or entry.zone
         end
     end
 

@@ -361,7 +361,7 @@ function PSC_CreatePlayerDetailInfo(playerName)
     for charKey, charData in pairs(charactersToProcess) do
         for nameWithLevel, killData in pairs(charData.Kills or {}) do
             local name = string.match(nameWithLevel, "(.-)%:")
-            if name and name == playerName then
+            if name and PSC_IsSamePlayerName(name, playerName) then
                 local level = tonumber(string.match(nameWithLevel, ":(%d+)") or "-1") or -1
 
                 -- Update total kills
@@ -416,8 +416,33 @@ function PSC_CreatePlayerDetailInfo(playerName)
 
     -- Get death data from all characters
     local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
-    if deathDataByPlayer[playerName] then
-        local deathData = deathDataByPlayer[playerName]
+    local function CollectDeathDataForPlayer(targetName)
+        local aggregated = {
+            deaths = 0,
+            deathLocations = {}
+        }
+        local found = false
+
+        for killerName, deathData in pairs(deathDataByPlayer) do
+            if PSC_IsSamePlayerName(killerName, targetName) then
+                found = true
+                aggregated.deaths = aggregated.deaths + (deathData.deaths or 0)
+                if deathData.deathLocations then
+                    for _, location in ipairs(deathData.deathLocations) do
+                        table.insert(aggregated.deathLocations, location)
+                    end
+                end
+            end
+        end
+
+        if found then
+            return aggregated
+        end
+        return nil
+    end
+
+    local deathData = CollectDeathDataForPlayer(playerName)
+    if deathData then
         killHistory.deaths = deathData.deaths or 0
         killHistory.deathHistory = deathData.deathLocations or {}
     end
@@ -431,7 +456,7 @@ function PSC_CreatePlayerDetailInfo(playerName)
             for _, location in ipairs(deathData.deathLocations) do
                 if location.assisters then
                     for _, assister in ipairs(location.assisters) do
-                        if assister.name == playerName then
+                        if PSC_IsSamePlayerName(assister.name, playerName) then
                             -- Create assist history entry
                             local assistData = {
                                 assisterName = playerName,           -- The player whose history we're viewing
@@ -447,7 +472,7 @@ function PSC_CreatePlayerDetailInfo(playerName)
 
                             -- Add other assisters (excluding the current player)
                             for _, otherAssister in ipairs(location.assisters) do
-                                if otherAssister.name ~= playerName then
+                                if not PSC_IsSamePlayerName(otherAssister.name, playerName) then
                                     table.insert(assistData.otherAssisters, otherAssister)
                                 end
                             end
@@ -900,7 +925,7 @@ local function CreateAssistHistoryEntry(parent, assistData, index, yOffset)
 
     -- Find the specific level of the assister at the time of the kill, if available
     for _, otherAssister in ipairs(assistData.otherAssisters) do
-        if otherAssister.name == assistData.assisterName then
+        if PSC_IsSamePlayerName(otherAssister.name, assistData.assisterName) then
             levelText:SetText(otherAssister.level == -1 and "??" or tostring(otherAssister.level))
             break
         end
@@ -1019,7 +1044,7 @@ local function GetAssistHistoryForPlayer(playerName)
                              for _, loc in ipairs(deathData.deathLocations) do
                                  if loc.assisters then
                                      for _, assister in ipairs(loc.assisters) do
-                                         if assister.name == playerName then
+                                         if PSC_IsSamePlayerName(assister.name, playerName) then
                                              -- Found an assist!
                                              table.insert(assistHistory, {
                                                  timestamp = loc.timestamp,
@@ -1049,7 +1074,7 @@ local function GetAssistHistoryForPlayer(playerName)
                      for _, loc in ipairs(deathData.deathLocations) do
                          if loc.assisters then
                              for _, assister in ipairs(loc.assisters) do
-                                 if assister.name == playerName then
+                                 if PSC_IsSamePlayerName(assister.name, playerName) then
                                      table.insert(assistHistory, {
                                          timestamp = loc.timestamp,
                                          zone = loc.zone,
