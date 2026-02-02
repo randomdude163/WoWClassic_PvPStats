@@ -34,28 +34,28 @@ local PVP_RANK_ICONS = {
 }
 
 local RACE_ICON_IDS = {
-    ["HUMAN_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236448_64x64",
-    ["HUMAN_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236447_64x64",
+    ["HUMAN_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236448",
+    ["HUMAN_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236447",
     ["DWARF_MALE"] = 236444,
-    ["DWARF_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236443_64x64",
-    ["GNOME_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236446_64x64",
-    ["GNOME_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236445_64x64",
-    ["NIGHTELF_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236450_64x64",
+    ["DWARF_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236443",
+    ["GNOME_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236446",
+    ["GNOME_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236445",
+    ["NIGHTELF_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236450",
     ["NIGHTELF_FEMALE"] = 236449,
-    ["ORC_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236452_64x64",
-    ["ORC_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236451_64x64",
-    ["TAUREN_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236454_64x64",
-    ["TAUREN_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236453_64x64",
+    ["ORC_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236452",
+    ["ORC_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236451",
+    ["TAUREN_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236454",
+    ["TAUREN_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236453",
     ["TROLL_MALE"] = 236456,
-    ["TROLL_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236455_64x64",
-    ["UNDEAD_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236458_64x64",
-    ["UNDEAD_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236457_64x64",
-    ["SCOURGE_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236458_64x64",
-    ["SCOURGE_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236457_64x64",
-    ["BLOODELF_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236440_64x64",
-    ["BLOODELF_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236439_64x64",
-    ["DRAENEI_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236442_64x64",
-    ["DRAENEI_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236441_64x64"
+    ["TROLL_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236455",
+    ["UNDEAD_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236458",
+    ["UNDEAD_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236457",
+    ["SCOURGE_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236458",
+    ["SCOURGE_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236457",
+    ["BLOODELF_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236440",
+    ["BLOODELF_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236439",
+    ["DRAENEI_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236442",
+    ["DRAENEI_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236441"
 }
 
 function PSC_FormatTimestamp(timestamp)
