@@ -53,10 +53,15 @@ local function CreateAchievementPopupFrame()
     frame.title = title
 
 
-    local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(40, 40)
-    icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -40)
+    local iconContainer = CreateFrame("Frame", nil, frame)
+    iconContainer:SetSize(40, 40)
+    iconContainer:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -40)
+
+    local icon = iconContainer:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(36, 36)
+    icon:SetPoint("CENTER", iconContainer, "CENTER")
     frame.icon = icon
+    frame.iconContainer = iconContainer
 
 
     local achievementName = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -136,6 +141,21 @@ function AchievementPopup:DisplayPopup(achievementData)
     popupFrame.icon:SetTexture(achievementData.icon)
     popupFrame.achievementName:SetText(achievementData.title)
     popupFrame.description:SetText(achievementData.description)
+
+    -- Add or hide border based on icon type
+    if achievementData.icon and type(achievementData.icon) == "string" and achievementData.icon:match("Interface\\AddOns") then
+        if not popupFrame.iconBorder then
+            popupFrame.iconBorder = popupFrame.iconContainer:CreateTexture(nil, "OVERLAY")
+            popupFrame.iconBorder:SetSize(54, 54)
+            popupFrame.iconBorder:SetPoint("CENTER", popupFrame.icon, "CENTER")
+            popupFrame.iconBorder:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+        end
+        popupFrame.iconBorder:Show()
+    else
+        if popupFrame.iconBorder then
+            popupFrame.iconBorder:Hide()
+        end
+    end
 
     if achievementData.id and string.match(achievementData.id, "^bonus") and (achievementData.achievementPoints or 0) == 0 then
         popupFrame:SetBackdropBorderColor(1.0, 0.1, 0.1)

@@ -357,11 +357,19 @@ local function CreateAchievementIcon(tile, achievement)
     background:SetVertexColor(0.3, 0.3, 0.3, 0.8)
 
     local icon = iconContainer:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(36, 36)
+    icon:SetSize(32, 32)
     icon:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
     icon:SetTexture(achievement.iconID or "Interface\\Icons\\INV_Misc_QuestionMark")
     if not achievement.unlocked then
         icon:SetDesaturated(true)
+    end
+
+    -- Add Blizzard's icon border overlay only for custom img icons (not native Blizzard icons)
+    if achievement.iconID and type(achievement.iconID) == "string" then
+        local iconBorder = iconContainer:CreateTexture(nil, "OVERLAY")
+        iconBorder:SetSize(54, 54)
+        iconBorder:SetPoint("CENTER", icon, "CENTER")
+        iconBorder:SetTexture("Interface\\Buttons\\UI-Quickslot2")
     end
 
     return icon
