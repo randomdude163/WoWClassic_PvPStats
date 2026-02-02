@@ -189,67 +189,120 @@ local function Helper_MergeKillEntries(destEntry, sourceEntry)
     end
 end
 
-function PSC_MigrateKillKeys()
-    if PSC_DB.KillKeysMigrated then return end
-    print("[PvPStats]: Migrating database keys to include realm information...")
+local KILL_KEY_MIGRATION_BUDGET = 250
+local killMigrationState = nil
 
-    local count = 0
-    local characters = PSC_DB.PlayerKillCounts.Characters
+local function InitKillKeyMigrationState()
+    killMigrationState = {
+        charKeys = {},
+        charIndex = 1,
+        killKeys = nil,
+        killIndex = 1,
+        newKills = nil,
+        count = 0,
+        running = true
+    }
 
-    for charKey, charData in pairs(characters) do
-        local newKills = {}
-        if charData.Kills then
-            for oldKey, killEntry in pairs(charData.Kills) do
-                -- Old Key format: "Name:Level" or "Name-Realm:Level"
-                -- we want to ensure it's always "Name-Realm:Level"
+    local characters = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters
+    if characters then
+        for charKey in pairs(characters) do
+            table.insert(killMigrationState.charKeys, charKey)
+        end
+    end
+end
 
+local function ProcessKillKeyMigrationSlice()
+    local characters = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters
+    if not characters then
+        killMigrationState = nil
+        return
+    end
+
+    local processed = 0
+    while processed < KILL_KEY_MIGRATION_BUDGET do
+        if killMigrationState.charIndex > #killMigrationState.charKeys then
+            PSC_DB.KillKeysMigrated = true
+            print("[PvPStats]: Migration complete. Updated " .. killMigrationState.count .. " database entries.")
+            killMigrationState = nil
+            return
+        end
+
+        local charKey = killMigrationState.charKeys[killMigrationState.charIndex]
+        local charData = characters[charKey]
+
+        if not charData or not charData.Kills then
+            killMigrationState.charIndex = killMigrationState.charIndex + 1
+            killMigrationState.killKeys = nil
+            killMigrationState.killIndex = 1
+            killMigrationState.newKills = nil
+        else
+            if not killMigrationState.killKeys then
+                killMigrationState.killKeys = {}
+                for oldKey in pairs(charData.Kills) do
+                    table.insert(killMigrationState.killKeys, oldKey)
+                end
+                killMigrationState.killIndex = 1
+                killMigrationState.newKills = {}
+            end
+
+            if killMigrationState.killIndex > #killMigrationState.killKeys then
+                charData.Kills = killMigrationState.newKills
+                killMigrationState.charIndex = killMigrationState.charIndex + 1
+                killMigrationState.killKeys = nil
+                killMigrationState.killIndex = 1
+                killMigrationState.newKills = nil
+            else
+                local oldKey = killMigrationState.killKeys[killMigrationState.killIndex]
+                killMigrationState.killIndex = killMigrationState.killIndex + 1
+
+                local killEntry = charData.Kills[oldKey]
                 local name = string.match(oldKey, "(.-)%:")
                 local level = string.match(oldKey, ":(%d+)")
 
                 if name and level then
-                    -- Search for existing info key in cache to determine original realm
                     local infoKey
                     local _, existingInfoKey = PSC_GetPlayerInfo(name)
 
                     if existingInfoKey then
-                        -- We found a matching entry in the cache (e.g., "Name-OtherRealm")
-                        -- Use this specific realm instead of defaulting to current realm
                         infoKey = existingInfoKey
                     else
-                        -- No cache entry found, or multiple ambiguity (PSC_GetPlayerInfo returns first match)
-                        -- Fallback to standard behavior (appends local realm)
                         infoKey = PSC_GetInfoKeyFromName(name)
                     end
 
                     local newKey = infoKey .. ":" .. level
 
                     if newKey ~= oldKey then
-                        if newKills[newKey] then
-                            -- Collision detected! Merge entries.
-                            Helper_MergeKillEntries(newKills[newKey], killEntry)
+                        if killMigrationState.newKills[newKey] then
+                            Helper_MergeKillEntries(killMigrationState.newKills[newKey], killEntry)
                         else
-                            newKills[newKey] = killEntry
+                            killMigrationState.newKills[newKey] = killEntry
                         end
-                        count = count + 1
+                        killMigrationState.count = killMigrationState.count + 1
                     else
-                        if newKills[oldKey] then
-                             -- Rare case where we processed the "newKey" format first, and now found "oldKey" format same name
-                             Helper_MergeKillEntries(newKills[oldKey], killEntry)
+                        if killMigrationState.newKills[oldKey] then
+                            Helper_MergeKillEntries(killMigrationState.newKills[oldKey], killEntry)
                         else
-                             newKills[oldKey] = killEntry
+                            killMigrationState.newKills[oldKey] = killEntry
                         end
                     end
                 else
-                    -- Fallback for malformed keys
-                    newKills[oldKey] = killEntry
+                    killMigrationState.newKills[oldKey] = killEntry
                 end
+
+                processed = processed + 1
             end
-            charData.Kills = newKills
         end
     end
 
-    PSC_DB.KillKeysMigrated = true
-    print("[PvPStats]: Migration complete. Updated " .. count .. " database entries.")
+    C_Timer.After(0, ProcessKillKeyMigrationSlice)
+end
+
+function PSC_MigrateKillKeys()
+    if PSC_DB.KillKeysMigrated then return end
+    if killMigrationState and killMigrationState.running then return end
+    print("[PvPStats]: Performing database update, this will cause your game to stutter for a few seconds...")
+    InitKillKeyMigrationState()
+    C_Timer.After(0, ProcessKillKeyMigrationSlice)
 end
 
 local function Helper_MergeDeathEntries(destEntry, sourceEntry)
@@ -270,19 +323,72 @@ local function Helper_MergeDeathEntries(destEntry, sourceEntry)
     end
 end
 
-function PSC_MigrateLossKeys()
-    if PSC_DB.LossKeysMigrated_v2 then return end
-    print("[PvPStats]: Migrating death records to include realm information (v2)...")
+local LOSS_KEY_MIGRATION_BUDGET = 250
+local lossMigrationState = nil
 
-    local count = 0
-    if not PSC_DB.PvPLossCounts then return end
+local function InitLossKeyMigrationState()
+    lossMigrationState = {
+        charKeys = {},
+        charIndex = 1,
+        deathKeys = nil,
+        deathIndex = 1,
+        newDeaths = nil,
+        count = 0,
+        running = true
+    }
 
-    for charKey, charData in pairs(PSC_DB.PvPLossCounts) do
-        local newDeaths = {}
-        if charData.Deaths then
-            for oldName, deathEntry in pairs(charData.Deaths) do
-                -- Fix assister names within death locations
-                if deathEntry.deathLocations then
+    if PSC_DB.PvPLossCounts then
+        for charKey in pairs(PSC_DB.PvPLossCounts) do
+            table.insert(lossMigrationState.charKeys, charKey)
+        end
+    end
+end
+
+local function ProcessLossKeyMigrationSlice()
+    if not PSC_DB.PvPLossCounts then
+        lossMigrationState = nil
+        return
+    end
+
+    local processed = 0
+    while processed < LOSS_KEY_MIGRATION_BUDGET do
+        if lossMigrationState.charIndex > #lossMigrationState.charKeys then
+            PSC_DB.LossKeysMigrated_v2 = true
+            print("[PvPStats]: Loss migration complete. Updated " .. lossMigrationState.count .. " database entries.")
+            lossMigrationState = nil
+            return
+        end
+
+        local charKey = lossMigrationState.charKeys[lossMigrationState.charIndex]
+        local charData = PSC_DB.PvPLossCounts[charKey]
+
+        if not charData or not charData.Deaths then
+            lossMigrationState.charIndex = lossMigrationState.charIndex + 1
+            lossMigrationState.deathKeys = nil
+            lossMigrationState.deathIndex = 1
+            lossMigrationState.newDeaths = nil
+        else
+            if not lossMigrationState.deathKeys then
+                lossMigrationState.deathKeys = {}
+                for oldName in pairs(charData.Deaths) do
+                    table.insert(lossMigrationState.deathKeys, oldName)
+                end
+                lossMigrationState.deathIndex = 1
+                lossMigrationState.newDeaths = {}
+            end
+
+            if lossMigrationState.deathIndex > #lossMigrationState.deathKeys then
+                charData.Deaths = lossMigrationState.newDeaths
+                lossMigrationState.charIndex = lossMigrationState.charIndex + 1
+                lossMigrationState.deathKeys = nil
+                lossMigrationState.deathIndex = 1
+                lossMigrationState.newDeaths = nil
+            else
+                local oldName = lossMigrationState.deathKeys[lossMigrationState.deathIndex]
+                lossMigrationState.deathIndex = lossMigrationState.deathIndex + 1
+
+                local deathEntry = charData.Deaths[oldName]
+                if deathEntry and deathEntry.deathLocations then
                     for _, loc in ipairs(deathEntry.deathLocations) do
                         if loc.assisters then
                             for _, assister in ipairs(loc.assisters) do
@@ -300,42 +406,47 @@ function PSC_MigrateLossKeys()
                     end
                 end
 
-                -- Check if name already has realm info (contains hyphen)
                 local hasRealm = string.find(oldName, "-") ~= nil
-
                 local newName = oldName
                 if not hasRealm then
-                     -- Try to find the correct realm from cache
-                     local _, existingInfoKey = PSC_GetPlayerInfo(oldName)
-
-                     if existingInfoKey then
-                         newName = existingInfoKey
-                     else
-                         -- Default to current realm if not found
-                         newName = PSC_GetInfoKeyFromName(oldName)
-                     end
+                    local _, existingInfoKey = PSC_GetPlayerInfo(oldName)
+                    if existingInfoKey then
+                        newName = existingInfoKey
+                    else
+                        newName = PSC_GetInfoKeyFromName(oldName)
+                    end
                 end
 
                 if newName ~= oldName then
-                    if newDeaths[newName] then
-                        Helper_MergeDeathEntries(newDeaths[newName], deathEntry)
+                    if lossMigrationState.newDeaths[newName] then
+                        Helper_MergeDeathEntries(lossMigrationState.newDeaths[newName], deathEntry)
                     else
-                        newDeaths[newName] = deathEntry
+                        lossMigrationState.newDeaths[newName] = deathEntry
                     end
-                    count = count + 1
+                    lossMigrationState.count = lossMigrationState.count + 1
                 else
-                    if newDeaths[oldName] then
-                        Helper_MergeDeathEntries(newDeaths[oldName], deathEntry)
+                    if lossMigrationState.newDeaths[oldName] then
+                        Helper_MergeDeathEntries(lossMigrationState.newDeaths[oldName], deathEntry)
                     else
-                        newDeaths[oldName] = deathEntry
+                        lossMigrationState.newDeaths[oldName] = deathEntry
                     end
                 end
+
+                processed = processed + 1
             end
-            charData.Deaths = newDeaths
         end
     end
 
-    PSC_DB.LossKeysMigrated_v2 = true
+    C_Timer.After(0, ProcessLossKeyMigrationSlice)
+end
+
+function PSC_MigrateLossKeys()
+    if PSC_DB.LossKeysMigrated_v2 then return end
+    if lossMigrationState and lossMigrationState.running then return end
+    print("[PvPStats]: Performing database update, this will cause your game to stutter for a few seconds...")
+    if not PSC_DB.PvPLossCounts then return end
+    InitLossKeyMigrationState()
+    C_Timer.After(0, ProcessLossKeyMigrationSlice)
 end
 
 function PSC_MigratePlayerInfoCache()
