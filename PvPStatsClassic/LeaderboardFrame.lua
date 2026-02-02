@@ -9,6 +9,110 @@ local LEADERBOARD_FRAME_HEIGHT = 450
 
 PSC_LeaderboardFrameInitialSetup = true
 
+local PSC_LeaderboardDataCache = nil
+local PSC_LeaderboardRowDropDown = nil
+
+local function GetLeaderboardEntryUniqueName(entry)
+    if not entry then return nil end
+    local name = entry.rawName or entry.playerName
+    if not name or name == "" then return nil end
+    if not string.find(name, "%-") then
+        local realmName = entry.realm or PSC_RealmName
+        if realmName and realmName ~= "" then
+            name = name .. "-" .. realmName
+        end
+    end
+    return name
+end
+
+local function IsLocalLeaderboardEntry(entry)
+    local playerName = UnitName("player")
+    local localRealm = PSC_RealmName
+    local uniqueName = GetLeaderboardEntryUniqueName(entry)
+    if not uniqueName then return false end
+    if uniqueName == playerName then return true end
+    if localRealm and uniqueName == (playerName .. "-" .. localRealm) then return true end
+    return false
+end
+
+local function RemoveLeaderboardEntry(entryOrName)
+    if not entryOrName then return end
+
+    local candidates = {}
+    local function addCandidate(name)
+        if name and name ~= "" then
+            candidates[name] = true
+        end
+    end
+
+    if type(entryOrName) == "table" then
+        local entry = entryOrName
+        addCandidate(entry.rawName)
+        addCandidate(entry.playerName)
+        addCandidate(GetLeaderboardEntryUniqueName(entry))
+
+        if entry.rawName and string.find(entry.rawName, "%-") then
+            local baseName = strsplit("-", entry.rawName)
+            addCandidate(baseName)
+        end
+        if entry.playerName and string.find(entry.playerName, "%-") then
+            local baseName = strsplit("-", entry.playerName)
+            addCandidate(baseName)
+        end
+    else
+        addCandidate(entryOrName)
+    end
+
+    if PVPSC and PVPSC.Network and PVPSC.Network.sharedData then
+        for name, _ in pairs(candidates) do
+            PVPSC.Network.sharedData[name] = nil
+        end
+    end
+
+    if PSC_DB and PSC_DB.LeaderboardCache then
+        for name, _ in pairs(candidates) do
+            PSC_DB.LeaderboardCache[name] = nil
+        end
+    end
+
+    PSC_LeaderboardDataCache = nil
+    RefreshLeaderboardFrame()
+end
+
+local function RemoveOfflineLeaderboardEntries()
+    if not PSC_DB or not PSC_DB.LeaderboardCache then return end
+
+    local localPlayerName = UnitName("player")
+    local localRealm = PSC_RealmName
+    local sharedData = (PVPSC and PVPSC.Network and PVPSC.Network.sharedData) or {}
+
+    for cacheName, _ in pairs(PSC_DB.LeaderboardCache) do
+        local isLocal = cacheName == localPlayerName or (localRealm and cacheName == (localPlayerName .. "-" .. localRealm))
+        local isLive = sharedData[cacheName] ~= nil
+        if not isLocal and not isLive then
+            PSC_DB.LeaderboardCache[cacheName] = nil
+        end
+    end
+
+    PSC_LeaderboardDataCache = nil
+    RefreshLeaderboardFrame()
+end
+
+if not StaticPopupDialogs["PSC_REMOVE_OFFLINE_LEADERBOARD"] then
+    StaticPopupDialogs["PSC_REMOVE_OFFLINE_LEADERBOARD"] = {
+        text = "Do you really want to remove all saved entries for offline players from your leaderboard? This cannot be undone.",
+        button1 = YES,
+        button2 = NO,
+        OnAccept = function()
+            RemoveOfflineLeaderboardEntries()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3
+    }
+end
+
 local colWidths = {
     playerName = 210,
     level = 30,
@@ -440,6 +544,34 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         end
     end)
 
+    -- Register right click for context menu
+    rowContainer:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+    rowContainer:SetScript("OnMouseDown", function(self, button)
+        if button == "RightButton" then
+            if IsLocalLeaderboardEntry(entry) then
+                return
+            end
+
+            if not PSC_LeaderboardRowDropDown then
+                PSC_LeaderboardRowDropDown = CreateFrame("Frame", "PSC_LeaderboardRowDropDown", UIParent, "UIDropDownMenuTemplate")
+            end
+
+            UIDropDownMenu_Initialize(PSC_LeaderboardRowDropDown, function(self, level)
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = "Delete"
+                info.notCheckable = true
+                info.func = function()
+                    RemoveLeaderboardEntry(entry)
+                end
+                UIDropDownMenu_AddButton(info)
+            end, "MENU")
+
+            ToggleDropDownMenu(1, nil, PSC_LeaderboardRowDropDown, self, 0, 0)
+            return
+        end
+    end)
+
     -- Grey out row to indicate reduced functionality if no details available
     -- Actually, don't grey out the whole row as the data is still valid,
     -- just maybe don't highlight as strongly on hover or handle tooltip.
@@ -464,8 +596,6 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     rowContainer:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
     end)
-
-    rowContainer:RegisterForClicks("LeftButtonUp")
 
     return rowContainer
 end
@@ -736,7 +866,6 @@ local function CreateMainFrame()
     return frame
 end
 
-local PSC_LeaderboardDataCache = nil
 
 function RefreshLeaderboardFrame(useCache)
     if PSC_LeaderboardFrameInitialSetup then
@@ -786,6 +915,15 @@ function PSC_CreateLeaderboardFrame()
     infoText:SetTextColor(0.7, 0.7, 0.7)
     infoText:SetJustifyH("CENTER")
     PSC_LeaderboardFrame.infoText = infoText
+
+    local removeOfflineButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
+    removeOfflineButton:SetSize(170, 22)
+    removeOfflineButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -27, 10)
+    removeOfflineButton:SetText("Remove offline players")
+    removeOfflineButton:SetScript("OnClick", function()
+        StaticPopup_Show("PSC_REMOVE_OFFLINE_LEADERBOARD")
+    end)
+    PSC_LeaderboardFrame.removeOfflineButton = removeOfflineButton
 
     PSC_FrameManager:RegisterFrame(PSC_LeaderboardFrame, "Leaderboard")
 
