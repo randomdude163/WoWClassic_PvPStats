@@ -664,7 +664,6 @@ function RefreshKillsListFrame()
     PSC_KillsListFrame.TitleText:SetText(titleText)
 
     CleanupFrameElements(content)
-    collectgarbage("collect")
 
     local yOffset = CreateColumnHeaders(content)
     local sortedEntries = PSC_FilterAndSortEntries()
