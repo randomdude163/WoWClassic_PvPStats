@@ -372,8 +372,14 @@ end
 
 function PSC_NormalizePlayerName(playerName)
     if not playerName or playerName == "" then
-        return nil
+        return playerName
     end
+
+    local _, infoKey = PSC_GetPlayerInfo(playerName)
+    if infoKey then
+        return infoKey
+    end
+
     return PSC_GetInfoKeyFromName(playerName)
 end
 

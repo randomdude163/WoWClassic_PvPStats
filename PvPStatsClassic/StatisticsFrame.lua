@@ -749,7 +749,7 @@ function PSC_CalculateGuildKills()
                 local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
                 local kills = killData.kills or 0
 
-                local infoKey = PSC_GetInfoKeyFromName(playerNameWithoutLevel)
+                local infoKey = PSC_NormalizePlayerName(playerNameWithoutLevel)
 
                 if PSC_DB.PlayerInfoCache[infoKey] then
                     local guild = PSC_DB.PlayerInfoCache[infoKey].guild
@@ -863,6 +863,8 @@ local function PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killD
         playerName = nameWithLevel
         levelPart = nil
     end
+
+    playerName = PSC_NormalizePlayerName(playerName)
 
     if not state.killsPerPlayer[playerName] then
         state.uniqueKills = state.uniqueKills + 1
@@ -1053,13 +1055,19 @@ local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
     local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
 
     local assistsByPlayer = {}
-    for _, deathData in pairs(deathDataByPlayer) do
+    local deathsByPlayer = {}
+
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        local normalizedKiller = PSC_NormalizePlayerName(killerName)
+        deathsByPlayer[normalizedKiller] = (deathsByPlayer[normalizedKiller] or 0) + (deathData.deaths or 0)
+
         if deathData.deathLocations then
             for _, location in ipairs(deathData.deathLocations) do
                 if location.assisters then
                     for _, assister in ipairs(location.assisters) do
                         if assister and assister.name then
-                            assistsByPlayer[assister.name] = (assistsByPlayer[assister.name] or 0) + 1
+                            local normalizedAssister = PSC_NormalizePlayerName(assister.name)
+                            assistsByPlayer[normalizedAssister] = (assistsByPlayer[normalizedAssister] or 0) + 1
                         end
                     end
                 end
@@ -1068,12 +1076,11 @@ local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
     end
 
     local totalDeaths = 0
-    for _, deathData in pairs(deathDataByPlayer) do
-        totalDeaths = totalDeaths + (deathData.deaths or 0)
+    for _, deaths in pairs(deathsByPlayer) do
+        totalDeaths = totalDeaths + (deaths or 0)
     end
 
-    for killerName, deathData in pairs(deathDataByPlayer) do
-        local deaths = deathData.deaths or 0
+    for killerName, deaths in pairs(deathsByPlayer) do
         local assists = assistsByPlayer[killerName] or 0
 
         if deaths > nemesisScore or (deaths == nemesisScore and assists > nemesisAssists) then
@@ -1690,7 +1697,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
 
                     local infoKey = infoKeyCache[nameWithoutLevel]
                     if not infoKey then
-                        infoKey = getInfoKeyFromName(nameWithoutLevel)
+                        infoKey = PSC_NormalizePlayerName(nameWithoutLevel)
                         infoKeyCache[nameWithoutLevel] = infoKey
                     end
 
