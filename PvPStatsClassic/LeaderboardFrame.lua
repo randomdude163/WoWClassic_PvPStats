@@ -572,7 +572,8 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
 
             UIDropDownMenu_Initialize(PSC_LeaderboardRowDropDown, function(self, level)
                 local info = UIDropDownMenu_CreateInfo()
-                info.text = "Delete"
+                local displayName = entry.playerName or entry.rawName or "Player"
+                info.text = "Remove " .. displayName .. " from Leaderboard"
                 info.notCheckable = true
                 info.func = function()
                     RemoveLeaderboardEntry(entry)
@@ -581,6 +582,12 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
             end, "MENU")
 
             ToggleDropDownMenu(1, nil, PSC_LeaderboardRowDropDown, self, 0, 0)
+            PSC_LeaderboardRowDropDown._justOpened = true
+            C_Timer.After(0, function()
+                if PSC_LeaderboardRowDropDown then
+                    PSC_LeaderboardRowDropDown._justOpened = nil
+                end
+            end)
             return
         end
     end)
@@ -849,7 +856,7 @@ end
 local function CreateScrollFrame(parent)
     local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 12, -30)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 15)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 45)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
     content:SetSize(LEADERBOARD_FRAME_WIDTH - 40, LEADERBOARD_FRAME_HEIGHT * 2)
@@ -922,6 +929,30 @@ function PSC_CreateLeaderboardFrame()
     PSC_LeaderboardFrame = CreateMainFrame()
     PSC_LeaderboardFrame.content = CreateScrollFrame(PSC_LeaderboardFrame)
 
+    local function CloseLeaderboardContextMenu()
+        if PSC_LeaderboardRowDropDown and PSC_LeaderboardRowDropDown:IsShown() then
+            if CloseDropDownMenus then
+                CloseDropDownMenus()
+            elseif HideDropDownMenu then
+                HideDropDownMenu(1)
+            end
+        end
+    end
+
+    PSC_LeaderboardFrame:SetScript("OnHide", function()
+        CloseLeaderboardContextMenu()
+    end)
+
+    PSC_LeaderboardFrame:SetScript("OnMouseDown", function()
+        CloseLeaderboardContextMenu()
+    end)
+
+    if PSC_LeaderboardFrame.content then
+        PSC_LeaderboardFrame.content:SetScript("OnMouseDown", function()
+            CloseLeaderboardContextMenu()
+        end)
+    end
+
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", 0, 12)
     infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
@@ -930,7 +961,7 @@ function PSC_CreateLeaderboardFrame()
     PSC_LeaderboardFrame.infoText = infoText
 
     local removeOfflineButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
-    removeOfflineButton:SetSize(170, 22)
+    removeOfflineButton:SetSize(170, 25)
     removeOfflineButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -27, 10)
     removeOfflineButton:SetText("Remove offline players")
     removeOfflineButton:SetScript("OnClick", function()
