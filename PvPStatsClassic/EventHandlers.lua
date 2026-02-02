@@ -640,6 +640,10 @@ local function HandlePlayerEnteringWorld()
     if PSC_CheckForDataMigration then
         C_Timer.After(2, function() PSC_CheckForDataMigration() end)
     end
+
+    if PSC_ShowImportSummaryPopup then
+        C_Timer.After(1.0, function() PSC_ShowImportSummaryPopup() end)
+    end
 end
 
 local function HandlePlayerRegenEnabled()
