@@ -1101,18 +1101,24 @@ end
 local function DisplayAssistHistorySection(content, playerDetail, yOffset)
     local assistHistory = GetAssistHistoryForPlayer(playerDetail.name)
 
-    if #assistHistory == 0 then return yOffset end
-
     yOffset = CreateSection(content, "Assist History (Against You)", yOffset)
     yOffset = CreateAssistHistoryHeaderRow(content, yOffset)
 
-    -- Sort by timestamp descending (most recent first)
-    table.sort(assistHistory, function(a, b)
-        return (a.timestamp or 0) > (b.timestamp or 0)
-    end)
+    if #assistHistory > 0 then
+        -- Sort by timestamp descending (most recent first)
+        table.sort(assistHistory, function(a, b)
+            return (a.timestamp or 0) > (b.timestamp or 0)
+        end)
 
-    for i, assistData in ipairs(assistHistory) do
-        yOffset = CreateAssistHistoryEntry(content, assistData, i, yOffset)
+        for i, assistData in ipairs(assistHistory) do
+            yOffset = CreateAssistHistoryEntry(content, assistData, i, yOffset)
+        end
+    else
+        local noAssistDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        noAssistDataText:SetPoint("TOPLEFT", 25, yOffset - 10)
+        noAssistDataText:SetText("No assists by this player have been recorded.")
+        noAssistDataText:SetTextColor(0.7, 0.7, 0.7)
+        yOffset = yOffset - 30
     end
 
     return yOffset - 20
