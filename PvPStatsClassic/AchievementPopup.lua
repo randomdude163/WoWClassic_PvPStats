@@ -146,7 +146,7 @@ function AchievementPopup:DisplayPopup(achievementData)
     if achievementData.icon and type(achievementData.icon) == "string" and achievementData.icon:match("Interface\\AddOns") then
         if not popupFrame.iconBorder then
             popupFrame.iconBorder = popupFrame.iconContainer:CreateTexture(nil, "OVERLAY")
-            popupFrame.iconBorder:SetSize(54, 54)
+            popupFrame.iconBorder:SetSize(61, 61)
             popupFrame.iconBorder:SetPoint("CENTER", popupFrame.icon, "CENTER")
             popupFrame.iconBorder:SetTexture("Interface\\Buttons\\UI-Quickslot2")
         end
