@@ -507,6 +507,19 @@ function Network:BroadcastStats(providedStats)
         self.lastPlayerStats = providedStats
     end
 
+    -- Defer broadcasts while in combat to avoid spamming message limits
+    if PSC_InCombat then
+        self.pendingCombatBroadcast = true
+        if PSC_Debug then
+            print("|cFFFFD700[PVPSC Network]|r In combat - deferring broadcast until out of combat.")
+        end
+        return
+    end
+
+    if self.pendingCombatBroadcast then
+        self.pendingCombatBroadcast = nil
+    end
+
     local now = GetTime()
 
     -- Check if we are broadcasting too frequently (time-based throttling)
@@ -573,8 +586,8 @@ function Network:BroadcastStats(providedStats)
     end
 
     -- Send with slight staggering to avoid immediate throttling
-    -- Reduced stagger to 0.1s to clearer the queue faster
-    local STAGGER_DELAY = 0.1
+    -- Increased stagger to reduce message bursts across channels
+    local STAGGER_DELAY = 1.0
     for i, channel in ipairs(distributionList) do
         local delay = (i - 1) * STAGGER_DELAY
         if delay == 0 then

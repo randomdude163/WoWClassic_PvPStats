@@ -654,6 +654,10 @@ local function HandlePlayerRegenEnabled()
     PSC_CleanupRecentDamageFromPlayers()
     PSC_CleanupPendingHunterKills()
     PSC_ClearGUIDCache()
+
+    if PVPSC.Network and PVPSC.Network.pendingCombatBroadcast then
+        PVPSC.Network:BroadcastStats()
+    end
 end
 
 local function HandleNamePlateEvent(unit)
