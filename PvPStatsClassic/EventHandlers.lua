@@ -594,9 +594,15 @@ local function HandlePlayerEnteringWorld()
         PSC_DB.AnnounceChannel = "GROUP"
     end
 
-    -- Initialize popup flag
+    -- Initialize what's-new popup tracking
     if PSC_DB.WhatsNewPopupShown == nil then
         PSC_DB.WhatsNewPopupShown = false
+    end
+
+    if PSC_DB.WhatsNewPopupVersion == nil then
+        if PSC_DB.WhatsNewPopupShown then
+            PSC_DB.WhatsNewPopupVersion = PSC_GetAddonVersion()
+        end
     end
 
     PSC_MigratePlayerInfoCache()
@@ -626,13 +632,16 @@ local function HandlePlayerEnteringWorld()
         print("[PvPStats]: Click the minimap button or type /psc to use the addon.")
     end
 
-    if not PSC_DB.WhatsNewPopupShown then
-        local title = "PvP Stats (Classic)"
-        local message = "New Feature: Leaderboard!\n\nYou can access it via the minimap button (Shift-Click) or by typing /psc leaderboard in the chat.\n\nAlso lots of performance optimizations, especially in instances."
-        PSC_ShowWhatsNewPopup(title, message, function()
-            PSC_DB.WhatsNewPopupShown = true
-        end)
-    end
+    local currentVersion = PSC_GetAddonVersion()
+    -- if PSC_DB.WhatsNewPopupVersion ~= currentVersion then
+    local title = "PvP Stats - What's new:"
+    local message = "New Leaderboard feature! Access it via Shift-Click on the minimap button or by typing \"/psc leaderboard\" in the chat.\n\nYou can now import your data from older clients like Classic Era. Use the link below.\n\nEnjoy!"
+    local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
+    PSC_ShowWhatsNewPopup(title, message, function()
+        PSC_DB.WhatsNewPopupShown = true
+        PSC_DB.WhatsNewPopupVersion = currentVersion
+    end, dataImportGuideUrl)
+    -- end
 
     PSC_StartIncrementalAchievementsCalculation()
 

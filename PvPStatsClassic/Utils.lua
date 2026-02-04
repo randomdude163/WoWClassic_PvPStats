@@ -1832,9 +1832,9 @@ function PSC_GetNPCIDFromGUID(guid)
     return npcID
 end
 
-function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback)
+function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
     local frame = CreateFrame("Frame", "PSC_WhatsNewPopup", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(500, 225)
+    frame:SetSize(550, 230)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     frame:SetFrameStrata("DIALOG")
     frame:SetMovable(true)
@@ -1855,24 +1855,50 @@ function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback)
     frame:SetBackdropColor(0, 0, 0, 0.99)
 
     local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(96, 96)
+    icon:SetSize(115, 115)
     icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 25, -20)
     icon:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 15, -10)
+    title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 15, 0)
     title:SetText(titleText)
 
     local text = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     text:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -15)
     text:SetPoint("RIGHT", frame, "RIGHT", -30, 0)
+    text:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -30, 85)
     text:SetJustifyH("LEFT")
     text:SetJustifyV("TOP")
     text:SetText(messageText)
 
+    if linkUrl and linkUrl ~= "" then
+        local linkLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        linkLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 46, 55)
+        linkLabel:SetText("Data import guide\n(CTRL+C to copy):")
+
+        local linkBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+        linkBox:SetSize(350, 22)
+        linkBox:SetPoint("LEFT", linkLabel, "RIGHT", 15, 0)
+        linkBox:SetAutoFocus(false)
+        linkBox:SetText(linkUrl)
+        linkBox:SetCursorPosition(0)
+        linkBox:SetScript("OnEditFocusGained", function(self)
+            self:HighlightText()
+        end)
+        linkBox:SetScript("OnEscapePressed", function(self)
+            self:ClearFocus()
+        end)
+        linkBox:SetScript("OnTextChanged", function(self, userInput)
+            if userInput then
+                self:SetText(linkUrl)
+                self:HighlightText()
+            end
+        end)
+    end
+
     local button = CreateFrame("Button", nil, frame, "GameMenuButtonTemplate")
     button:SetSize(120, 25)
-    button:SetPoint("BOTTOM", frame, "BOTTOM", 0, 25)
+    button:SetPoint("BOTTOM", frame, "BOTTOM", 0, 20)
     button:SetText("Got it!")
     button:SetScript("OnClick", function()
         frame:Hide()
