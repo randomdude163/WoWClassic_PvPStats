@@ -3,25 +3,6 @@ local addonName, PVPSC = ...
 PVPSC.AchievementSystem = PVPSC.AchievementSystem or {}
 local AchievementSystem = PVPSC.AchievementSystem
 
--- Zone name translations (English, German, French, Spanish)
-local ZONE_TRANSLATIONS_TBC = {
-    ["Eversong Woods"] = {"Eversong Woods", "Immersangwald", "Bois des Chants éternels", "Bosque Canción Eterna"},
-    ["Ghostlands"] = {"Ghostlands", "Geisterlande", "Terres fantômes", "Tierras Fantasma"},
-    ["Hellfire Peninsula"] = {"Hellfire Peninsula", "Höllenfeuerhalbinsel", "Péninsule des Flammes infernales", "Península del Fuego Infernal"},
-    ["Zangarmarsh"] = {"Zangarmarsh", "Zangarmarschen", "Marécage de Zangar", "Marisma de Zangar"},
-    ["Terokkar Forest"] = {"Terokkar Forest", "Wälder von Terokkar", "Forêt de Terokkar", "Bosque de Terokkar"},
-    ["Nagrand"] = {"Nagrand", "Nagrand", "Nagrand", "Nagrand"},
-    ["Blade's Edge Mountains"] = {"Blade's Edge Mountains", "Schergrat", "Les Tranchantes", "Montañas Filospada"},
-    ["Netherstorm"] = {"Netherstorm", "Nethersturm", "Raz-de-Néant", "Tormenta Abisal"},
-    ["Shadowmoon Valley"] = {"Shadowmoon Valley", "Schattenmondtal", "Vallée d'Ombrelune", "Valle Sombraluna"},
-    ["Silvermoon City"] = {"Silvermoon City", "Silbermond", "Lune-d'Argent", "Ciudad de Lunargenta"},
-    ["Azuremyst Isle"] = {"Azuremyst Isle", "Azurmythosinsel", "Île de Brume-azur", "Isla Bruma Azur"},
-    ["Bloodmyst Isle"] = {"Bloodmyst Isle", "Blutmythosinsel", "Île de Brume-sang", "Isla Bruma de Sangre"},
-    ["Exodar"] = {"Exodar", "Exodar", "Exodar", "Exodar"},
-    ["Eye of the Storm"] = {"Eye of the Storm", "Auge des Sturms", "L'Œil du cyclone", "Ojo de la Tormenta"}
-}
-
-
 AchievementSystem.achievementsTbc = {
     -- =====================================================
     -- HELLFIRE PENINSULA ACHIEVEMENTS
@@ -43,7 +24,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Hellfire Peninsula")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Hellfire Peninsula")
         end,
     },
     {
@@ -63,7 +44,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Hellfire Peninsula")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Hellfire Peninsula")
         end,
     },
     {
@@ -83,7 +64,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Hellfire Peninsula")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Hellfire Peninsula")
         end,
     },
     {
@@ -103,7 +84,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Hellfire Peninsula")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Hellfire Peninsula")
         end,
     },
 
@@ -127,7 +108,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Zangarmarsh")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Zangarmarsh")
         end,
     },
     {
@@ -147,7 +128,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Zangarmarsh")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Zangarmarsh")
         end,
     },
     {
@@ -167,7 +148,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Zangarmarsh")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Zangarmarsh")
         end,
     },
     {
@@ -187,7 +168,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Zangarmarsh")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Zangarmarsh")
         end,
     },
 
@@ -211,7 +192,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Terokkar Forest")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Terokkar Forest")
         end,
     },
     {
@@ -231,7 +212,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Terokkar Forest")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Terokkar Forest")
         end,
     },
     {
@@ -251,7 +232,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Terokkar Forest")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Terokkar Forest")
         end,
     },
     {
@@ -271,7 +252,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Terokkar Forest")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Terokkar Forest")
         end,
     },
 
@@ -295,7 +276,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Nagrand")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Nagrand")
         end,
     },
     {
@@ -315,7 +296,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Nagrand")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Nagrand")
         end,
     },
     {
@@ -335,7 +316,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Nagrand")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Nagrand")
         end,
     },
     {
@@ -355,7 +336,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Nagrand")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Nagrand")
         end,
     },
 
@@ -379,7 +360,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Blade's Edge Mountains")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Blade's Edge Mountains")
         end,
     },
     {
@@ -399,7 +380,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Blade's Edge Mountains")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Blade's Edge Mountains")
         end,
     },
     {
@@ -419,7 +400,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Blade's Edge Mountains")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Blade's Edge Mountains")
         end,
     },
     {
@@ -439,7 +420,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Blade's Edge Mountains")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Blade's Edge Mountains")
         end,
     },
 
@@ -463,7 +444,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Netherstorm")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Netherstorm")
         end,
     },
     {
@@ -483,7 +464,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Netherstorm")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Netherstorm")
         end,
     },
     {
@@ -503,7 +484,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Netherstorm")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Netherstorm")
         end,
     },
     {
@@ -523,7 +504,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Netherstorm")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Netherstorm")
         end,
     },
 
@@ -547,7 +528,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Shadowmoon Valley")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Shadowmoon Valley")
         end,
     },
     {
@@ -567,7 +548,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Shadowmoon Valley")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Shadowmoon Valley")
         end,
     },
     {
@@ -587,7 +568,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Shadowmoon Valley")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Shadowmoon Valley")
         end,
     },
     {
@@ -607,7 +588,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Shadowmoon Valley")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Shadowmoon Valley")
         end,
     },
 
@@ -631,7 +612,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eversong Woods")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Eversong Woods")
         end,
     },
     {
@@ -651,7 +632,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eversong Woods")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Eversong Woods")
         end,
     },
 
@@ -675,7 +656,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Ghostlands")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Ghostlands")
         end,
     },
     {
@@ -695,7 +676,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Ghostlands")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Ghostlands")
         end,
     },
 
@@ -719,7 +700,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Azuremyst Isle")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Azuremyst Isle")
         end,
     },
     {
@@ -739,7 +720,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Azuremyst Isle")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Azuremyst Isle")
         end,
     },
 
@@ -763,7 +744,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Bloodmyst Isle")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Bloodmyst Isle")
         end,
     },
     {
@@ -783,7 +764,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Bloodmyst Isle")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Bloodmyst Isle")
         end,
     },
 
@@ -1226,7 +1207,7 @@ AchievementSystem.achievementsTbc = {
             return ("%d victims caught in your storm. The floating ruins have tasted their first blood, and the Netherstorm winds carry their screams eternally."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
         end,
     },
     {
@@ -1245,7 +1226,7 @@ AchievementSystem.achievementsTbc = {
             return ("With %d souls claimed amidst the ruins, you've become the tempest itself. Flag bearers flee at your approach, knowing the storm has a name: yours."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
         end,
     },
     {
@@ -1264,7 +1245,7 @@ AchievementSystem.achievementsTbc = {
             return ("%d warriors have fallen from the floating platforms, their bodies lost to the Netherstorm below. You stand at the maelstrom's heart, where chaos bends to your will."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
         end,
     },
     {
@@ -1283,7 +1264,7 @@ AchievementSystem.achievementsTbc = {
             return ("One thousand souls have been consumed by your endless fury. You are the Eye's true master - where others see opportunity, they now see only death. The storm itself trembles at your name."):format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Eye of the Storm")
         end,
     },
 
@@ -1307,7 +1288,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Silvermoon City")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Silvermoon City")
         end,
     },
     {
@@ -1327,7 +1308,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Silvermoon City")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Silvermoon City")
         end,
     },
     {
@@ -1347,7 +1328,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Silvermoon City")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Silvermoon City")
         end,
     },
     {
@@ -1367,7 +1348,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Silvermoon City")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Silvermoon City")
         end,
     },
 
@@ -1391,7 +1372,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Exodar")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Exodar")
         end,
     },
     {
@@ -1411,7 +1392,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Exodar")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Exodar")
         end,
     },
     {
@@ -1431,7 +1412,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Exodar")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Exodar")
         end,
     },
     {
@@ -1451,7 +1432,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, "Exodar")
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Exodar")
         end,
     },
 
@@ -1483,7 +1464,7 @@ AchievementSystem.achievementsTbc = {
             }
 
             for _, zoneName in ipairs(outlandZones) do
-                if PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, zoneName) > 0 then
+                if PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, zoneName) > 0 then
                     return 1
                 end
             end
