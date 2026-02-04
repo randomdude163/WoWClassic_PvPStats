@@ -1,3 +1,9 @@
+-4.1.0:
+- Fixed missing icons
+- Fixed leaderboard layout issues
+- Added feature for data import from previous installations (like Classic Era client)
+- 9 new achievements ("The 16h/24h Ganker" and "First Step into Outland")
+
 v4.0.0:
 - Added Leaderboard that syncs with nearby players and party/raid/guild members.
 - Performance optimizations

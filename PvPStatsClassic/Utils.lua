@@ -103,12 +103,8 @@ function PSC_StartIncrementalAchievementsCalculation()
         end,
         TaskQueueDelayFrame(1),
         function()
-            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
+            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData =
                 PSC_CalculateBarChartStatistics(charactersToProcess)
-        end,
-        TaskQueueDelayFrame(1),
-        function()
-            hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
         end,
         TaskQueueDelayFrame(1),
         function()
@@ -150,6 +146,7 @@ function PSC_StartIncrementalAchievementsCalculation()
                 levelData = levelData,
                 guildStatusData = guildStatusData,
                 guildData = guildData,
+                hourlyData = hourlyData,
                 totalKills = summaryStats.totalKills,
                 uniqueKills = summaryStats.uniqueKills,
                 highestKillStreak = summaryStats.highestKillStreak,
@@ -412,7 +409,7 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.0.1"
+    return "4.1.0"
 end
 
 function GetMultiKillText(count)

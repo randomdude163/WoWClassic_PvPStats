@@ -8360,4 +8360,73 @@ AchievementSystem.achievementsClassic = {
     },
 }
 
+-- Helper function to generate time-based achievements
+local function CreateTimeAchievement(idPrefix, titlePrefix, targetHours, tiers, iconID, subTexts, descriptionFmt)
+    for i, tier in ipairs(tiers) do
+        local achievement = {
+            id = idPrefix .. "_" .. (i - 1),
+            title = titlePrefix .. " " .. ({ "I", "II", "III", "IV" })[i],
+            killsRequired = tier.kills,
+            description = function(a)
+                local text = descriptionFmt:format(a.killsRequired)
+                if a.killsRequired == 1 then
+                    text = text:gsub("kills", "kill")
+                end
+                return text
+            end,
+            iconID = iconID,
+            achievementPoints = tier.points,
+            targetValue = targetHours,
+            condition = function(achievement, stats)
+                return achievement.progress(achievement, stats) >= achievement.targetValue
+            end,
+            unlocked = false,
+            completedDate = nil,
+            subText = subTexts[i],
+            progress = function(achievement, stats)
+                if not stats.hourlyData then return 0 end
+                local hoursCompleted = 0
+                for h = 0, 23 do
+                    local count = stats.hourlyData[h] or 0
+                    if count >= achievement.killsRequired then
+                        hoursCompleted = hoursCompleted + 1
+                    end
+                end
+                return hoursCompleted
+            end,
+        }
+        table.insert(AchievementSystem.achievementsClassic, achievement)
+    end
+end
+
+-- 16h Ganker
+local tiers16h = {
+    { kills = 1, points = 50 },
+    { kills = 10, points = 75 },
+    { kills = 100, points = 100 },
+    { kills = 250, points = 250 },
+}
+local subTexts16h = {
+    "You've filled the waking hours with violence.",
+    "16 hours a day. That's a full-time job plus overtime. Dedication at its finest.",
+    "Sleep is for the weak, and you are proving to be quite strong.",
+    "The casuals log off, but you remain. The dedicated 16-hour shift of doom.",
+}
+CreateTimeAchievement("time_16h_ganker", "The 16h Ganker", 16, tiers16h, 134377, subTexts16h, "Get %d kills during 16 different hours of the day")
+
+-- 24h Ganker
+local tiers24h = {
+    { kills = 1, points = 75 },
+    { kills = 10, points = 100 },
+    { kills = 100, points = 250 },
+    { kills = 250, points = 500 },
+}
+local subTexts24h = {
+    "You have found a victim at every hour of the clock. You exist outside of time.",
+    "Around the clock service. No matter when they log in, they are not safe from you.",
+    "Your sleep schedule is non-existent. You are the server's eternal nightmare.",
+    "The sun rises, you kill. The moon rises, you kill. Do you ever rest?",
+}
+CreateTimeAchievement("time_24h_ganker", "The 24h Ganker", 24, tiers24h, 134376, subTexts24h, "Get %d kills during every single hour of the day (00:00 - 23:59)")
+
 

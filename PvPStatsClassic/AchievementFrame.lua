@@ -198,13 +198,9 @@ local function FilterAchievements(achievements, category)
                 table.insert(filtered, achievement)
 
             elseif prefix == "bonus" then
-                if string.find(achievement.id, "bonus_big_game_") then
-                    table.insert(filtered, achievement)
-                elseif achievement.id == "bonus_horde" and playerFaction == "Horde" then
-                    table.insert(filtered, achievement)
-                elseif string.find(achievement.id, "bonus_points_") then
-                    table.insert(filtered, achievement)
-                elseif string.find(achievement.id, "bonus_unlocked_") then
+                if achievement.id == "bonus_horde" and playerFaction ~= "Horde" then
+                    -- Skip Horde specific bonus for Alliance players
+                else
                     table.insert(filtered, achievement)
                 end
 

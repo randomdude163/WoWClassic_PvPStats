@@ -1650,6 +1650,11 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         ["The Defias Traitor"] = 0,
         ["Defias Messenger"] = 0
     }
+    local hourlyData = {}
+    -- Initialize all hours (0-23) with 0 kills
+    for hour = 0, 23 do
+        hourlyData[hour] = 0
+    end
 
     -- Ensure all classes, races, genders are present with at least 0
     local allClasses = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
@@ -1668,7 +1673,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     if not db.PlayerKillCounts.Characters then
-        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData
+        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData
     end
 
     for _, characterData in pairs(charactersToProcess) do
@@ -1737,6 +1742,16 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                             for _, location in ipairs(killData.killLocations) do
                                 local zone = location.zone or "Unknown"
                                 zoneData[zone] = (zoneData[zone] or 0) + 1
+
+                                if location.timestamp then
+                                    local hourStr = date("%H", location.timestamp)
+                                    if hourStr then
+                                        local hour = tonumber(hourStr)
+                                        if hour then
+                                            hourlyData[hour] = hourlyData[hour] + 1
+                                        end
+                                    end
+                                end
                             end
                         end
 
@@ -1753,7 +1768,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData
 end
 
 function PSC_CalculateHourlyStatistics(charactersToProcess)
@@ -2103,10 +2118,9 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
             end
         end
 
-        classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
+        classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData =
             PSC_CalculateBarChartStatistics(charactersToProcess)
 
-        hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
         weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
         monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
         yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)

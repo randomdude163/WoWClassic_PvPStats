@@ -1455,5 +1455,42 @@ AchievementSystem.achievementsTbc = {
         end,
     },
 
+    -- =====================================================
+    -- BONUS ACHIEVEMENTS
+    -- =====================================================
+    {
+        id = "bonus_outland_first_kill",
+        title = "First Step into Outland",
+        description = "Get your first kill in any Outland zone.",
+        iconID = 255348,
+        achievementPoints = 0,
+        targetValue = 1,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "Welcome to Outland, champion. The legion awaits.",
+        progress = function(achievement, stats)
+            local outlandZones = {
+                "Hellfire Peninsula",
+                "Zangarmarsh",
+                "Terokkar Forest",
+                "Nagrand",
+                "Blade's Edge Mountains",
+                "Netherstorm",
+                "Shadowmoon Valley"
+            }
+
+            for _, zoneName in ipairs(outlandZones) do
+                if PSC_GetZoneKills(stats, ZONE_TRANSLATIONS_TBC, zoneName) > 0 then
+                    return 1
+                end
+            end
+
+            return 0
+        end,
+    },
+
 }
 
