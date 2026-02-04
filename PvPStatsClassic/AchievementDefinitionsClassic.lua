@@ -944,7 +944,7 @@ AchievementSystem.achievementsClassic = {
         description = "Complete both 'Wife Beater' and 'Professional Man-Slayer' achievements",
         iconID = 237446,
         achievementPoints = 50,
-        targetValue = 1,
+        targetValue = 2,
         condition = function(achievement, stats)
             return PSC_IsAchievementUnlocked("gender_gender_female_4") and
                    PSC_IsAchievementUnlocked("gender_gender_male_4")
