@@ -127,59 +127,6 @@ local function MergeKillEntry(destKills, unitKey, sourceEntry, counters)
     end
 end
 
-local function MergeLossData(destLosses, sourceLosses)
-    if not sourceLosses then return 0 end
-
-    local importedDeaths = 0
-    local normalizedKeys = 0
-    local normalizedAssisters = 0
-
-    for unitName, sourceEntry in pairs(sourceLosses) do
-        local destKey = NormalizeImportedName(unitName) or unitName
-        if destKey ~= unitName then
-            normalizedKeys = normalizedKeys + 1
-        end
-        if not destLosses[destKey] then
-            local copyEntry = CopyTable(sourceEntry)
-            normalizedAssisters = normalizedAssisters + NormalizeImportedAssisters(copyEntry.deathLocations)
-            destLosses[destKey] = copyEntry
-            importedDeaths = importedDeaths + (copyEntry.deaths or 0)
-        else
-            local destEntry = destLosses[destKey]
-            local existingTimestamps = {}
-
-            if destEntry.deathLocations then
-                for _, loc in ipairs(destEntry.deathLocations) do
-                    if loc.timestamp then
-                        existingTimestamps[loc.timestamp] = true
-                    end
-                end
-            else
-                destEntry.deathLocations = {}
-            end
-
-            if sourceEntry.deathLocations then
-                normalizedAssisters = normalizedAssisters + NormalizeImportedAssisters(sourceEntry.deathLocations)
-                for _, sourceLoc in ipairs(sourceEntry.deathLocations) do
-                    if sourceLoc.timestamp and not existingTimestamps[sourceLoc.timestamp] then
-                        table.insert(destEntry.deathLocations, CopyTable(sourceLoc))
-                        existingTimestamps[sourceLoc.timestamp] = true
-                    end
-                end
-            end
-
-            destEntry.deaths = #destEntry.deathLocations
-
-            -- Sort death locations by timestamp
-            table.sort(destEntry.deathLocations, function(a, b)
-                return (a.timestamp or 0) < (b.timestamp or 0)
-            end)
-        end
-    end
-
-    return importedDeaths, normalizedKeys, normalizedAssisters
-end
-
 local function MergeLossEntry(destLosses, unitName, sourceEntry, counters)
     if not unitName or not sourceEntry then
         return
