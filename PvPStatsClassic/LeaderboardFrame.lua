@@ -729,32 +729,6 @@ local function GetLeaderboardData()
     return leaderboardData
 end
 
-local function CompareVersions(v1, v2)
-    if v1 == v2 then return 0 end
-    -- Handle nil values
-    if not v1 then return -1 end
-    if not v2 then return 1 end
-
-    -- Convert to string and strip 'v' prefix (e.g. "v3.0" -> "3.0")
-    v1 = tostring(v1):gsub("^v", "")
-    v2 = tostring(v2):gsub("^v", "")
-
-    -- Split by dot
-    local parts1 = { strsplit(".", v1) }
-    local parts2 = { strsplit(".", v2) }
-    local maxParts = math.max(#parts1, #parts2)
-
-    for i = 1, maxParts do
-        local p1 = tonumber(parts1[i]) or 0
-        local p2 = tonumber(parts2[i]) or 0
-
-        if p1 ~= p2 then
-            if p1 < p2 then return -1 else return 1 end
-        end
-    end
-
-    return 0
-end
 
 local function SortLeaderboardData(data)
     local sortedData = {}
@@ -778,7 +752,7 @@ local function SortLeaderboardData(data)
 
         -- Special handling for Addon Version (Semantic Versioning)
         if PSC_SortLeaderboardBy == "addonVersion" then
-            local cmp = CompareVersions(a.addonVersion, b.addonVersion)
+            local cmp = PSC_CompareAddonVersions(a.addonVersion, b.addonVersion)
             if cmp ~= 0 then
                 if PSC_SortLeaderboardAscending then
                     return cmp < 0

@@ -760,6 +760,10 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
             statsData.realm = senderRealm
         end
 
+        if statsData.addonVersion and PSC_IsAddonVersionNewer(statsData.addonVersion) then
+            PSC_ShowAddonUpdatePopup(statsData.addonVersion)
+        end
+
         -- Construct unique identifier (Name-Realm)
         -- We modify the playerName in the stored data to be unique if it's from another realm
         -- This ensures the leaderboard treats "Player-Realm1" and "Player-Realm2" as different entries

@@ -603,6 +603,81 @@ function PSC_ConvertZoneToEnglish(localizedZone)
     return ZONE_TRANSLATION_LOOKUP[localizedZone] or localizedZone
 end
 
+local function NormalizeAddonVersion(version)
+    if version == nil then
+        return nil
+    end
+    return tostring(version):gsub("^v", "")
+end
+
+function PSC_CompareAddonVersions(v1, v2)
+    if v1 == v2 then return 0 end
+    if not v1 then return -1 end
+    if not v2 then return 1 end
+
+    v1 = NormalizeAddonVersion(v1)
+    v2 = NormalizeAddonVersion(v2)
+
+    local parts1 = { strsplit(".", v1) }
+    local parts2 = { strsplit(".", v2) }
+    local maxParts = math.max(#parts1, #parts2)
+
+    for i = 1, maxParts do
+        local p1 = tonumber(parts1[i]) or 0
+        local p2 = tonumber(parts2[i]) or 0
+        if p1 ~= p2 then
+            return (p1 < p2) and -1 or 1
+        end
+    end
+
+    return 0
+end
+
+function PSC_IsAddonVersionNewer(remoteVersion, localVersion)
+    local currentVersion = localVersion
+    if currentVersion == nil and PSC_GetAddonVersion then
+        currentVersion = PSC_GetAddonVersion()
+    end
+
+    if not remoteVersion or remoteVersion == "" then
+        return false
+    end
+
+    return PSC_CompareAddonVersions(remoteVersion, currentVersion) > 0
+end
+
+function PSC_ShowAddonUpdatePopup(remoteVersion)
+    if not remoteVersion or remoteVersion == "" then
+        return
+    end
+
+    if PSC_DB and PSC_DB.LastAddonUpdateNotificationVersion then
+        if PSC_CompareAddonVersions(remoteVersion, PSC_DB.LastAddonUpdateNotificationVersion) <= 0 then
+            return
+        end
+    end
+
+    if not StaticPopupDialogs["PSC_ADDON_UPDATE_AVAILABLE"] then
+        StaticPopupDialogs["PSC_ADDON_UPDATE_AVAILABLE"] = {
+            text = "",
+            button1 = "OK",
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+    end
+
+    StaticPopupDialogs["PSC_ADDON_UPDATE_AVAILABLE"].text =
+        "A newer version " .. remoteVersion .. " of PvP Stats is available. You can download it from CurseForge."
+
+    StaticPopup_Show("PSC_ADDON_UPDATE_AVAILABLE")
+
+    if PSC_DB then
+        PSC_DB.LastAddonUpdateNotificationVersion = remoteVersion
+    end
+end
+
 function PSC_MigratePlayerInfoToEnglish(force)
     if not PSC_DB.PlayerInfoEnglishMigrated or force then
         for _, data in pairs(PSC_DB.PlayerInfoCache) do
