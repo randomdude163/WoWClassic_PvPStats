@@ -1,4 +1,4 @@
--4.1.0:
+-4.1:
 - Fixed missing icons
 - Fixed leaderboard layout issues
 - Added feature for data import from previous installations (like Classic Era client)
