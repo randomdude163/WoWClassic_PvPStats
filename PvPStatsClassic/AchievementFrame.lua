@@ -348,7 +348,7 @@ local function CreateAchievementIcon(tile, achievement)
 
     local background = iconContainer:CreateTexture(nil, "BACKGROUND")
     background:SetPoint("CENTER", iconContainer, "CENTER", 0, 0)
-    background:SetSize(38, 38)
+    background:SetSize(36, 36)
     background:SetTexture("Interface\\Buttons\\UI-EmptySlot")
     background:SetVertexColor(0.3, 0.3, 0.3, 0.8)
 
@@ -359,6 +359,12 @@ local function CreateAchievementIcon(tile, achievement)
     if not achievement.unlocked then
         icon:SetDesaturated(true)
     end
+
+    -- Add icon border overlay for all achievement icons
+    local iconBorder = iconContainer:CreateTexture(nil, "OVERLAY")
+    iconBorder:SetSize(60, 61)
+    iconBorder:SetPoint("CENTER", icon, "CENTER")
+    iconBorder:SetTexture("Interface\\Buttons\\UI-Quickslot2")
 
     return icon
 end
