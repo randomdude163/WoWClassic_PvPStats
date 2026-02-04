@@ -87,14 +87,6 @@ local genderColors = {
     }
 }
 
-local function countOccurrences(items)
-    local counts = {}
-    for _, item in pairs(items) do
-        counts[item] = (counts[item] or 0) + 1
-    end
-    return counts
-end
-
 local function sortByValue(tbl, descending)
     if not tbl then
         return {}
