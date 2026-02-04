@@ -872,7 +872,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.raceData["Blood Elf"] or 0
+            return stats.raceData["Bloodelf"] or 0
         end,
     },
     {
@@ -892,7 +892,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.raceData["Blood Elf"] or 0
+            return stats.raceData["Bloodelf"] or 0
         end,
     },
     {
@@ -912,7 +912,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.raceData["Blood Elf"] or 0
+            return stats.raceData["Bloodelf"] or 0
         end,
     },
     {
@@ -932,7 +932,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.raceData["Blood Elf"] or 0
+            return stats.raceData["Bloodelf"] or 0
         end,
     },
 

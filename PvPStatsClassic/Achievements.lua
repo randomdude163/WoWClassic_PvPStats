@@ -82,7 +82,7 @@ function PSC_GetProgressForHordeRacesTBC(stats)
     local undead = stats.raceData["Undead"] or 0
     local trolls = stats.raceData["Troll"] or 0
     local tauren = stats.raceData["Tauren"] or 0
-    local bloodElves = stats.raceData["Blood Elf"] or 0
+    local bloodElves = stats.raceData["Bloodelf"] or 0
     return math.min(orcs, undead, trolls, tauren, bloodElves)
 end
 

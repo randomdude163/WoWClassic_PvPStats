@@ -10,11 +10,11 @@ local CLASSES_TO_ENGLISH = {
 }
 
 local RACES_TO_ENGLISH = {
-    deDE = { ["Mensch"]="Human", ["Orc"]="Orc", ["Zwerg"]="Dwarf", ["Nachtelf"]="Night Elf", ["Untoter"]="Undead", ["Tauren"]="Tauren", ["Gnom"]="Gnome", ["Troll"]="Troll", ["Blutelf"]="Blood Elf", ["Draenei"]="Draenei" },
-    frFR = { ["Humain"]="Human", ["Orc"]="Orc", ["Nain"]="Dwarf", ["Elfe de la nuit"]="Night Elf", ["Mort-vivant"]="Undead", ["Tauren"]="Tauren", ["Gnome"]="Gnome", ["Troll"]="Troll", ["Elfe de sang"]="Blood Elf", ["Draeneï"]="Draenei" },
-    esES = { ["Humano"]="Human", ["Orco"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["No-muerto"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Blood Elf", ["Draenei"]="Draenei" },
-    esMX = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Blood Elf", ["Draenei"]="Draenei" },
-    ptBR = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Orquisa"]="Orc", ["Anão"]="Dwarf", ["Elfo Noturno"]="Night Elf", ["Renegado"]="Undead", ["Morto-vivo"]="Undead", ["Morta-viva"]="Undead", ["Tauren"]="Tauren", ["Taurena"]="Tauren", ["Gnomo"]="Gnome", ["Troll"]="Troll", ["Trolesa"]="Troll", ["Elfo Sangrento"]="Blood Elf", ["Draenei"]="Draenei" },
+    deDE = { ["Mensch"]="Human", ["Orc"]="Orc", ["Zwerg"]="Dwarf", ["Nachtelf"]="Night Elf", ["Untoter"]="Undead", ["Tauren"]="Tauren", ["Gnom"]="Gnome", ["Troll"]="Troll", ["Blutelf"]="Bloodelf", ["Draenei"]="Draenei" },
+    frFR = { ["Humain"]="Human", ["Orc"]="Orc", ["Nain"]="Dwarf", ["Elfe de la nuit"]="Night Elf", ["Mort-vivant"]="Undead", ["Tauren"]="Tauren", ["Gnome"]="Gnome", ["Troll"]="Troll", ["Elfe de sang"]="Bloodelf", ["Draeneï"]="Draenei" },
+    esES = { ["Humano"]="Human", ["Orco"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["No-muerto"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Bloodelf", ["Draenei"]="Draenei" },
+    esMX = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Bloodelf", ["Draenei"]="Draenei" },
+    ptBR = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Orquisa"]="Orc", ["Anão"]="Dwarf", ["Elfo Noturno"]="Night Elf", ["Renegado"]="Undead", ["Morto-vivo"]="Undead", ["Morta-viva"]="Undead", ["Tauren"]="Tauren", ["Taurena"]="Tauren", ["Gnomo"]="Gnome", ["Troll"]="Troll", ["Trolesa"]="Troll", ["Elfo Sangrento"]="Bloodelf", ["Draenei"]="Draenei" },
 }
 
 -- Zone name translations (English, German, French, Spanish)
