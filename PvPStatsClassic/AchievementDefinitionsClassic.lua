@@ -2870,9 +2870,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local characterKey = PSC_GetCharacterKey()
-            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-            return characterData.UniqueGuildsKilled or 0
+            return stats.uniqueGuildsKilled or 0
         end,
     },
     {
@@ -2892,9 +2890,7 @@ AchievementSystem.achievementsClassic = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            local characterKey = PSC_GetCharacterKey()
-            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
-            return characterData.UniqueGuildsKilled or 0
+            return stats.uniqueGuildsKilled or 0
         end,
     },
     {

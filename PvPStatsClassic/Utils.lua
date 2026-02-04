@@ -137,6 +137,9 @@ function PSC_StartIncrementalAchievementsCalculation()
                 return false
             end
 
+            -- Calculate guild achievement stats
+            local maxSameGuildKills, uniqueGuildsKilled = PSC_CalculateGuildStats(guildData)
+
             achievementStats = {
                 classData = classData,
                 raceData = raceData,
@@ -146,6 +149,8 @@ function PSC_StartIncrementalAchievementsCalculation()
                 levelData = levelData,
                 guildStatusData = guildStatusData,
                 guildData = guildData,
+                maxSameGuildKills = maxSameGuildKills,
+                uniqueGuildsKilled = uniqueGuildsKilled,
                 hourlyData = hourlyData,
                 totalKills = summaryStats.totalKills,
                 uniqueKills = summaryStats.uniqueKills,
