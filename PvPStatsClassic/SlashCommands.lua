@@ -15,6 +15,7 @@ local function PrintSlashCommandUsage()
         PSC_Print("Usage: /psc debug - Show current streak values")
         PSC_Print("Usage: /psc registerkill [number] - Register test kill(s) for testing")
         PSC_Print("Usage: /psc registerlevel1kill [number] - Register test level 1 kill(s) for testing")
+        PSC_Print("Usage: /psc registernpckill <NPC name> - Register NPC kill for testing")
         PSC_Print("Usage: /psc simulatedeath [killers] [assists] - Simulate being killed")
         PSC_Print("Usage: /psc bgmode - Toggle battleground mode manually")
         PSC_Print("Usage: /psc toggledebug - Toggle debug messages")
@@ -27,6 +28,36 @@ local function PrintSlashCommandUsage()
     end
 
 
+end
+
+local function PSC_RegisterNPCKillCommand(arguments)
+    if arguments and arguments ~= "" then
+        local npcName = strtrim(arguments)
+        -- Find matching NPC by name
+        local npcID = nil
+        for id, name in pairs(PSC_TrackedNPCs) do
+            if name == npcName then
+                npcID = id
+                break
+            end
+        end
+
+        if npcID then
+            PSC_RegisterNPCKill(npcName, npcID)
+        else
+            PSC_Print("Error: NPC '" .. npcName .. "' not found in tracked NPCs list.")
+            PSC_Print("Available NPCs:")
+            for id, name in pairs(PSC_TrackedNPCs) do
+                PSC_Print("  - " .. name .. " (ID: " .. id .. ")")
+            end
+        end
+    else
+        PSC_Print("Usage: /psc registernpckill <NPC name>")
+        PSC_Print("Available NPCs:")
+        for id, name in pairs(PSC_TrackedNPCs) do
+            PSC_Print("  - " .. name .. " (ID: " .. id .. ")")
+        end
+    end
 end
 
 local function PrintStatus()
@@ -121,6 +152,9 @@ function PSC_SlashCommandHandler(msg)
                 end
             end
             PSC_SimulateLevel1Kills(testKillCount)
+
+        elseif command == "registernpckill" then
+            PSC_RegisterNPCKillCommand(arguments)
 
         elseif command == "registerstreakkill" then
             local days, killsPerDay, daysAgo = arguments:match("(%d+)%s+(%d+)%s*(%d*)")
