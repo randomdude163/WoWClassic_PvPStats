@@ -2,7 +2,7 @@ PSC_KillsListFrame = nil
 
 PSC_SortKillsListBy = "lastKill"
 PSC_SortKillsListAscending = false
-local KILLS_FRAME_WIDTH = 1080
+local KILLS_FRAME_WIDTH = 1085
 local KILLS_FRAME_HEIGHT = 550
 
 PSC_KillsListFrameInitialSetup = true
@@ -18,7 +18,7 @@ local colWidths = {
     assists = 33, -- New column for assists
     rank = 60,
     guild = 165,
-    zone = 140,
+    zone = 150,
     lastKill = 190
 }
 
