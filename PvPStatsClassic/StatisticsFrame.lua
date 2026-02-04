@@ -1491,9 +1491,8 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         end
     end
 
-    -- Note: Passing 'true' for isKillStreak (6th arg) to make it gold
-    statY = addSummaryStatLine(container, "Highest kill streak:", hkValue, statY, hkTooltip, true, isLocalPlayer)
-    statY = addSummaryStatLine(container, "Highest multi-kill:", mkValue, statY, mkTooltip, true, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Highest kill streak:", hkValue, statY, hkTooltip, false, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Highest multi-kill:", mkValue, statY, mkTooltip, false, isLocalPlayer)
 
     -- 5. Time Periods
     if stats.killsToday or (isLocalPlayer and stats.killsToday ~= nil) then
