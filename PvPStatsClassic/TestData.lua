@@ -328,6 +328,67 @@ local testPlayers = {
         class = "Shaman",
         race = "Tauren",
         gender = "Female",
+    },
+    -- TBC Races
+    {
+        name = "Sunstrider",
+        class = "Paladin",
+        race = "Blood Elf",
+        gender = "Male",
+    },
+    {
+        name = "Felweaver",
+        class = "Warlock",
+        race = "Blood Elf",
+        gender = "Female",
+    },
+    {
+        name = "Phoenixfire",
+        class = "Mage",
+        race = "Blood Elf",
+        gender = "Male",
+    },
+    {
+        name = "Bloodhawk",
+        class = "Hunter",
+        race = "Blood Elf",
+        gender = "Female",
+    },
+    {
+        name = "Shadowstrike",
+        class = "Rogue",
+        race = "Blood Elf",
+        gender = "Male",
+    },
+    {
+        name = "Crystalforge",
+        class = "Paladin",
+        race = "Draenei",
+        gender = "Male",
+    },
+    {
+        name = "Voidcaller",
+        class = "Priest",
+        race = "Draenei",
+        gender = "Female",
+    },
+    {
+        name = "Exodarguard",
+        class = "Warrior",
+        race = "Draenei",
+        gender = "Male",
+    },
+    {
+        name = "Lightseeker",
+        class = "Mage",
+        race = "Draenei",
+        gender = "Female",
+    },
+    {
+        name = "Prophetshand",
+        class = "Shaman",
+        race = "Draenei",
+        gender = "Male",
     }
 }
 

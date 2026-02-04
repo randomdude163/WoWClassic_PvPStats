@@ -287,7 +287,11 @@ local zones = {
     "Alterac Mountains", "Arathi Highlands", "Badlands", "Blasted Lands", "Burning Steppes",
     "Desolace", "Dustwallow Marsh", "Eastern Plaguelands", "Felwood", "Feralas",
     "Hillsbrad Foothills", "Tanaris", "The Hinterlands", "Un'Goro Crater", "Western Plaguelands",
-    "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin", "Alterac Valley"
+    "Winterspring", "Silithus", "Warsong Gulch", "Arathi Basin", "Alterac Valley",
+    --- TBC zones
+    "Hellfire Peninsula", "Zangarmarsh", "Nagrand", "Terokkar Forest", "Blade's Edge Mountains",
+    "Netherstorm", "Shadowmoon Valley", "Isle of Quel'Danas", "Eye of the Storm", "Azuremyst Isle",
+    "Bloodmyst Isle", "Eversong Woods", "Ghostlands", "Exodar", "Silvermoon City"
 }
 
 function PSC_SimulatePlayerKills(killCount)
