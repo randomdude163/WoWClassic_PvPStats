@@ -495,8 +495,8 @@ local function ConvertRaceToEnglish(localizedRace)
     return RACES_TO_ENGLISH[LOCALE][localizedRace] or localizedRace
 end
 
-function PSC_MigratePlayerInfoToEnglish()
-    if not PSC_DB.PlayerInfoEnglishMigrated then
+function PSC_MigratePlayerInfoToEnglish(force)
+    if not PSC_DB.PlayerInfoEnglishMigrated or force then
         for _, data in pairs(PSC_DB.PlayerInfoCache) do
             if data.class then
                 local englishClass = data.class
@@ -530,6 +530,7 @@ function PSC_MigratePlayerInfoToEnglish()
         end
 
         PSC_DB.PlayerInfoEnglishMigrated = true
+        print("[PvPStats]: Data migration to English complete!")
     end
 end
 

@@ -49,14 +49,24 @@ function PSC_SlashCommandHandler(msg)
 
     if command == "stats" then
         PSC_CreateStatisticsFrame()
+
     elseif command == "history" then
         PSC_CreateKillsListFrame()
+
     elseif command == "achievements" then
         PSC_ToggleAchievementFrame()
+
     elseif command == "leaderboard" or command == "lb" then
         PSC_CreateLeaderboardFrame()
+
     elseif command == "options" or command == "settings" then
         PSC_CreateConfigUI()
+
+    elseif command == "migrate_international_data" then
+        PSC_MigratePlayerInfoToEnglish(true)
+        -- reload UI
+        ReloadUI()
+
     elseif PSC_Debug then
         if command == "simulatedeath" then
             local killerCount = 1
