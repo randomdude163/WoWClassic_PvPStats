@@ -600,9 +600,7 @@ local function HandlePlayerEnteringWorld()
     end
 
     if PSC_DB.WhatsNewPopupVersion == nil then
-        if PSC_DB.WhatsNewPopupShown then
-            PSC_DB.WhatsNewPopupVersion = PSC_GetAddonVersion()
-        end
+        PSC_DB.WhatsNewPopupVersion = "v1.0"
     end
 
     PSC_MigratePlayerInfoCache()
