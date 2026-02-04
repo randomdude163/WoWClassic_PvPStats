@@ -684,7 +684,7 @@ local function GetDeathDataFromAllCharacters()
 end
 
 -- Process and collect all players you have killed
-local function ProcessKilledPlayers(searchText, playerNameMap, entries)
+local function ProcessKilledPlayers(searchText, playerNameMap, entries, resolveName, canonicalizeName, getLatestLocation)
     local charactersToProcess = GetCharactersToProcessForStatistics()
 
     for charKey, charData in pairs(charactersToProcess) do
@@ -693,10 +693,12 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
             if name then
                 local level = tonumber(string.match(nameWithLevel, ":(%d+)") or "-1") or -1
 
-                local infoKey = PSC_GetInfoKeyFromName(name)
+                -- Get player info from cache if available (supports cross-realm fallback)
+                local playerInfo, infoKey = resolveName(name)
 
-                -- Get player info from cache if available
-                local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
+                -- Always canonicalize to Name-Realm for consistent keys
+                local canonicalName = canonicalizeName(name, infoKey)
+
                 local playerClass = playerInfo.class or "Unknown"
                 local playerRace = playerInfo.race or "Unknown"
                 local playerGender = playerInfo.gender or "Unknown"
@@ -704,9 +706,9 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                 local playerRank = playerInfo.rank or 0
 
                 -- Only add if matches search criteria - only search name and guild for the player/guild filter
-                if searchText == "" or
-                   name:lower():find(searchText, 1, true) or
-                   playerGuild:lower():find(searchText, 1, true) then
+                     if searchText == "" or
+                         canonicalName:lower():find(searchText, 1, true) or
+                         playerGuild:lower():find(searchText, 1, true) then
 
                     -- Convert lastKill to number to ensure it's properly handled
                     local lastKillTimestamp = tonumber(killData.lastKill) or 0
@@ -714,27 +716,13 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                     -- Make sure we get the zone data properly
                     local killZone = killData.zone
 
-                    -- Check all possible location storage formats
+                    -- Check all possible location storage formats without sorting
                     if killZone == nil then
-                        -- First check the locations array (newer format)
-                        if killData.locations and #killData.locations > 0 then
-                            -- Sort locations by timestamp (most recent first)
-                            table.sort(killData.locations, function(a, b)
-                                return (tonumber(a.timestamp) or 0) > (tonumber(b.timestamp) or 0)
-                            end)
-                            killZone = killData.locations[1].zone
-                        -- Then check killLocations array (original format from KillsTracking.lua)
-                        elseif killData.killLocations and #killData.killLocations > 0 then
-                            -- Sort killLocations by timestamp (most recent first)
-                            table.sort(killData.killLocations, function(a, b)
-                                return (tonumber(a.timestamp) or 0) > (tonumber(b.timestamp) or 0)
-                            end)
-                            killZone = killData.killLocations[1].zone
-                        end
+                        killZone = getLatestLocation(killData)
                     end
 
                     local entry = {
-                        name = name,
+                        name = canonicalName,
                         class = playerClass,
                         race = playerRace,
                         gender = playerGender,
@@ -748,7 +736,7 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
                         originalKillData = killData
                     }
 
-                    AddOrUpdatePlayerEntry(playerNameMap, entries, name, entry)
+                    AddOrUpdatePlayerEntry(playerNameMap, entries, canonicalName, entry)
                 end
             end
         end
@@ -756,12 +744,16 @@ local function ProcessKilledPlayers(searchText, playerNameMap, entries)
 end
 
 -- Process players who have killed you but you haven't killed
-local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
+local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer, resolveName, canonicalizeName)
     for killerName, deathData in pairs(deathDataByPlayer) do
-        if not playerNameMap[killerName] then
-            local infoKey = PSC_GetInfoKeyFromName(killerName)
+        -- Get player info from cache (supports cross-realm fallback)
+        local playerInfo, infoKey = resolveName(killerName)
 
-            local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
+        -- Always canonicalize to Name-Realm for consistent keys
+        local entryName = canonicalizeName(killerName, infoKey)
+
+        if not playerNameMap[entryName] then
+
             local playerClass = playerInfo.class or "Unknown"
             local playerRace = playerInfo.race or "Unknown"
             local playerGender = playerInfo.gender or "Unknown"
@@ -774,23 +766,24 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
             local lastKill = 0
 
             if deathData.deathLocations and #deathData.deathLocations > 0 then
-                -- Sort death locations by timestamp descending (most recent first)
-                table.sort(deathData.deathLocations, function(a, b)
-                    return (a.timestamp or 0) > (b.timestamp or 0)
-                end)
-
-                -- Get zone from most recent death location
-                zone = deathData.deathLocations[1].zone or zone
-                lastKill = deathData.deathLocations[1].timestamp or lastKill
+                local latestTimestamp = 0
+                for _, location in ipairs(deathData.deathLocations) do
+                    local ts = location.timestamp or 0
+                    if ts > latestTimestamp then
+                        latestTimestamp = ts
+                        zone = location.zone or zone
+                        lastKill = ts
+                    end
+                end
             end
 
             -- Only add if matches search criteria - only search name and guild
-            if searchText == "" or
-               killerName:lower():find(searchText, 1, true) or
-               playerGuild:lower():find(searchText, 1, true) then
+                if searchText == "" or
+                    entryName:lower():find(searchText, 1, true) or
+                    playerGuild:lower():find(searchText, 1, true) then
 
                 local entry = {
-                    name = killerName,
+                    name = entryName,
                     class = playerClass,
                     race = playerRace,
                     gender = playerGender,
@@ -804,7 +797,7 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
                     deathHistory = deathData.deathLocations or {}
                 }
 
-                playerNameMap[killerName] = entry
+                playerNameMap[entryName] = entry
                 table.insert(entries, entry)
             end
         end
@@ -812,14 +805,18 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
 end
 
 -- Process players who have only assisted in kills but never directly killed you
-local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assistCounts, lastAssistTimestamp, lastAssistZone)
+local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assistCounts, lastAssistTimestamp, lastAssistZone, resolveName, canonicalizeName)
     -- Create entries for players who assisted but never killed you directly
     for assisterName, assistCount in pairs(assistCounts) do
-        -- Skip if already added from kills or deaths
-        if not playerNameMap[assisterName] then
-            local infoKey = PSC_GetInfoKeyFromName(assisterName)
+        -- Get player info from cache (supports cross-realm fallback)
+        local playerInfo, infoKey = resolveName(assisterName)
 
-            local playerInfo = PSC_DB.PlayerInfoCache[infoKey] or {}
+        -- Always canonicalize to Name-Realm for consistent keys
+        local entryName = canonicalizeName(assisterName, infoKey)
+
+        -- Skip if already added from kills or deaths
+        if not playerNameMap[entryName] then
+
             local playerClass = playerInfo.class or "Unknown"
             local playerRace = playerInfo.race or "Unknown"
             local playerGender = playerInfo.gender or "Unknown"
@@ -828,12 +825,12 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assi
             local playerRank = playerInfo.rank or 0
 
             -- Only add if matches search criteria - only search name and guild
-            if searchText == "" or
-               assisterName:lower():find(searchText, 1, true) or
-               playerGuild:lower():find(searchText, 1, true) then
+                if searchText == "" or
+                    entryName:lower():find(searchText, 1, true) or
+                    playerGuild:lower():find(searchText, 1, true) then
 
                 local entry = {
-                    name = assisterName,
+                    name = entryName,
                     class = playerClass,
                     race = playerRace,
                     gender = playerGender,
@@ -847,7 +844,7 @@ local function ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assi
                     lastKill = lastAssistTimestamp[assisterName] or 0
                 }
 
-                playerNameMap[assisterName] = entry
+                playerNameMap[entryName] = entry
                 table.insert(entries, entry)
             end
         end
@@ -886,12 +883,12 @@ local function PreCalculateAssistCounts(deathDataByPlayer)
 end
 
 -- Add assist and death data to all player entries
-local function AddAssistAndDeathData(entries, deathDataByPlayer, assistCounts, lastAssistTimestamp, lastAssistZone)
+local function AddAssistAndDeathData(entries, deathDataByCanonical, assistCountsByCanonical, lastAssistTimestampByCanonical, lastAssistZoneByCanonical)
     for _, entry in ipairs(entries) do
         local playerName = entry.name
 
         -- Add death data
-        local deathData = deathDataByPlayer[playerName]
+        local deathData = deathDataByCanonical and deathDataByCanonical[playerName] or nil
         entry.deaths = deathData and deathData.deaths or 0
         entry.deathHistory = deathData and deathData.deathLocations or {}
 
@@ -920,15 +917,17 @@ local function AddAssistAndDeathData(entries, deathDataByPlayer, assistCounts, l
 
         -- Add assists data using pre-calculated counts (O(1) lookup instead of O(n) scan)
         -- Only update if not already set (assist-only players have it set already)
+        local assistCount = assistCountsByCanonical and assistCountsByCanonical[playerName] or 0
+        local assistTimestamp = lastAssistTimestampByCanonical and lastAssistTimestampByCanonical[playerName] or nil
+        local assistZone = lastAssistZoneByCanonical and lastAssistZoneByCanonical[playerName] or nil
         if not entry.assists then
-            entry.assists = assistCounts[playerName] or 0
+            entry.assists = assistCount
         end
 
         -- Update lastKill if the most recent assist is more recent
-        local assistTimestamp = lastAssistTimestamp[playerName]
         if assistTimestamp and assistTimestamp > (entry.lastKill or 0) then
             entry.lastKill = assistTimestamp
-            entry.zone = lastAssistZone[playerName] or entry.zone
+            entry.zone = assistZone or entry.zone
         end
     end
 
@@ -976,7 +975,7 @@ local function SortPlayerEntries(entries)
 end
 
 -- Apply all active filters to the entry list
-local function ApplyFiltersToEntries(entries)
+local function ApplyFiltersToEntries(entries, resolveName)
     local filteredEntries = {}
 
     for _, entry in ipairs(entries) do
@@ -1039,9 +1038,8 @@ local function ApplyFiltersToEntries(entries)
 
         -- Note filter
         if match and filterOnlyWithNotes then
-            local infoKey = PSC_GetInfoKeyFromName(entry.name)
-            local playerInfo = PSC_DB and PSC_DB.PlayerInfoCache and PSC_DB.PlayerInfoCache[infoKey]
-            local hasNote = playerInfo and playerInfo.note and playerInfo.note ~= ""
+            local playerInfo = resolveName(entry.name)
+            local hasNote = playerInfo.note and playerInfo.note ~= ""
             match = (hasNote == true)
         end
 
@@ -1060,6 +1058,70 @@ function PSC_FilterAndSortEntries()
     local searchText = PSC_SearchText or ""
     searchText = searchText:lower()
 
+    local infoCache = {}
+    local canonicalCache = {}
+
+    local function ResolveName(name)
+        if not name or name == "" then
+            return {}, nil
+        end
+
+        local cached = infoCache[name]
+        if cached then
+            return cached.info, cached.key
+        end
+
+        local info, infoKey = PSC_GetPlayerInfo(name)
+        infoCache[name] = { info = info or {}, key = infoKey }
+        return info or {}, infoKey
+    end
+
+    local function CanonicalizeName(name, infoKey)
+        if not name or name == "" then
+            return name
+        end
+
+        local cached = canonicalCache[name]
+        if cached then
+            return cached
+        end
+
+        local canonical = infoKey or PSC_GetInfoKeyFromName(name)
+        canonicalCache[name] = canonical
+        return canonical
+    end
+
+    local function GetLatestLocation(killData)
+        if not killData then
+            return nil
+        end
+
+        local latestZone = nil
+        local latestTimestamp = 0
+
+        if killData.locations and #killData.locations > 0 then
+            for _, location in ipairs(killData.locations) do
+                local ts = tonumber(location.timestamp) or 0
+                if ts > latestTimestamp then
+                    latestTimestamp = ts
+                    latestZone = location.zone
+                end
+            end
+        end
+
+        if killData.killLocations and #killData.killLocations > 0 then
+            for _, location in ipairs(killData.killLocations) do
+                local ts = tonumber(location.timestamp) or 0
+                if ts > latestTimestamp then
+                    latestTimestamp = ts
+                    latestZone = location.zone
+                end
+            end
+        end
+
+        return latestZone
+    end
+
     -- Step 1: Get death data from all relevant characters based on account-wide setting
     local deathDataByPlayer = GetDeathDataFromAllCharacters()
 
@@ -1067,19 +1129,65 @@ function PSC_FilterAndSortEntries()
     local assistCounts, lastAssistTimestamp, lastAssistZone = PreCalculateAssistCounts(deathDataByPlayer)
 
     -- Step 3: Process players you've killed
-    ProcessKilledPlayers(searchText, playerNameMap, entries)
+    ProcessKilledPlayers(searchText, playerNameMap, entries, ResolveName, CanonicalizeName, GetLatestLocation)
 
     -- Step 4: Process players who killed you but you haven't killed
-    ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer)
+    ProcessEnemyKillers(searchText, playerNameMap, entries, deathDataByPlayer, ResolveName, CanonicalizeName)
 
     -- Step 5: Process players who have only assisted in kills but never directly killed you
-    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assistCounts, lastAssistTimestamp, lastAssistZone)
+    ProcessAssistOnlyPlayers(searchText, playerNameMap, entries, assistCounts, lastAssistTimestamp, lastAssistZone, ResolveName, CanonicalizeName)
+
+    local function BuildCanonicalDeathData(source)
+        local aggregated = {}
+        for name, deathData in pairs(source or {}) do
+            local _, infoKey = ResolveName(name)
+            local canonical = CanonicalizeName(name, infoKey)
+            local target = aggregated[canonical]
+            if not target then
+                target = { deaths = 0, deathLocations = {} }
+                aggregated[canonical] = target
+            end
+            target.deaths = target.deaths + (deathData.deaths or 0)
+            if deathData.deathLocations then
+                for _, location in ipairs(deathData.deathLocations) do
+                    table.insert(target.deathLocations, location)
+                end
+            end
+        end
+        return aggregated
+    end
+
+    local function BuildCanonicalAssistData(counts, timestamps, zones)
+        local aggregatedCounts = {}
+        local aggregatedTimestamps = {}
+        local aggregatedZones = {}
+
+        for name, count in pairs(counts or {}) do
+            local _, infoKey = ResolveName(name)
+            local canonical = CanonicalizeName(name, infoKey)
+            aggregatedCounts[canonical] = (aggregatedCounts[canonical] or 0) + (count or 0)
+
+            local ts = timestamps and timestamps[name] or nil
+            if ts and (not aggregatedTimestamps[canonical] or ts > aggregatedTimestamps[canonical]) then
+                aggregatedTimestamps[canonical] = ts
+                if zones then
+                    aggregatedZones[canonical] = zones[name]
+                end
+            end
+        end
+
+        return aggregatedCounts, aggregatedTimestamps, aggregatedZones
+    end
+
+    local deathDataByCanonical = BuildCanonicalDeathData(deathDataByPlayer)
+    local assistCountsByCanonical, lastAssistTimestampByCanonical, lastAssistZoneByCanonical =
+        BuildCanonicalAssistData(assistCounts, lastAssistTimestamp, lastAssistZone)
 
     -- Step 6: Add death counts and assists counts to all entries (using pre-calculated data)
-    entries = AddAssistAndDeathData(entries, deathDataByPlayer, assistCounts, lastAssistTimestamp, lastAssistZone)
+    entries = AddAssistAndDeathData(entries, deathDataByCanonical, assistCountsByCanonical, lastAssistTimestampByCanonical, lastAssistZoneByCanonical)
 
     -- Step 7: Apply additional filters
-    local filteredEntries = ApplyFiltersToEntries(entries)
+    local filteredEntries = ApplyFiltersToEntries(entries, ResolveName)
 
     -- Step 8: Sort entries
     return SortPlayerEntries(filteredEntries)
@@ -1184,24 +1292,24 @@ function PSC_CreateSearchBar(frame)
     noteCheckbox:SetPoint("LEFT", zoneSearchBox, "RIGHT", 15, 0)
     noteCheckbox:SetChecked(false)
     filterOnlyWithNotes = false
-    
+
     local noteLabel = searchBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     noteLabel:SetPoint("LEFT", noteCheckbox, "RIGHT", 5, 0)
     noteLabel:SetText("Has Note")
     noteLabel:SetTextColor(1, 0.82, 0)
-    
+
     noteCheckbox:SetScript("OnClick", function(self)
         filterOnlyWithNotes = self:GetChecked()
         RefreshKillsListFrame()
     end)
-    
+
     noteCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Note filter")
         GameTooltip:AddLine("Only show players with notes", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    
+
     noteCheckbox:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)

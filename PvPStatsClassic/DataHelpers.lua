@@ -97,7 +97,7 @@ function PSC_CountPlayerAssists(playerName, deathDataByPlayer)
             for _, location in ipairs(deathData.deathLocations) do
                 if location.assisters then
                     for _, assister in ipairs(location.assisters) do
-                        if assister.name == playerName then
+                        if PSC_IsSamePlayerName(assister.name, playerName) then
                             assistCount = assistCount + 1
                             assistData.assists = assistData.assists + 1
 

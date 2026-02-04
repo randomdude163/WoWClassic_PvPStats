@@ -3,71 +3,149 @@ local addonName, PVPSC = ...
 -- Data Migration Module
 -- Handles importing data from older addons or manual file copies (PSC_DB_IMPORT)
 
-local function MergeKillData(destKills, sourceKills)
-    local importedKills = 0
+local function ResolveImportInfoKey(unitName)
+    if not unitName or unitName == "" then
+        return nil
+    end
 
-    for unitName, sourceEntry in pairs(sourceKills) do
-        if not destKills[unitName] then
-            -- If entry doesn't exist, just deep copy it
-            destKills[unitName] = CopyTable(sourceEntry)
-            importedKills = importedKills + (sourceEntry.kills or 0)
-        else
-            -- Entry exists, need to merge killLocations to avoid duplicates
-            local destEntry = destKills[unitName]
-            local existingTimestamps = {}
+    if string.find(unitName, "%-") then
+        return unitName
+    end
 
-            if destEntry.killLocations then
-                for _, loc in ipairs(destEntry.killLocations) do
-                    if loc.timestamp then
-                        existingTimestamps[loc.timestamp] = true
-                    end
-                end
-            else
-                destEntry.killLocations = {}
+    if PSC_DB_IMPORT and PSC_DB_IMPORT.PlayerInfoCache then
+        local searchPrefix = unitName .. "-"
+        for key, _ in pairs(PSC_DB_IMPORT.PlayerInfoCache) do
+            if string.sub(key, 1, #searchPrefix) == searchPrefix then
+                return key
             end
-
-            if sourceEntry.killLocations then
-                for _, sourceLoc in ipairs(sourceEntry.killLocations) do
-                    if sourceLoc.timestamp and not existingTimestamps[sourceLoc.timestamp] then
-                        table.insert(destEntry.killLocations, CopyTable(sourceLoc))
-                        existingTimestamps[sourceLoc.timestamp] = true
-                    end
-                end
-            end
-
-            -- Recalculate totals
-            destEntry.kills = #destEntry.killLocations
-
-            -- Sort kill locations by timestamp (ascending) to keep history clean
-            table.sort(destEntry.killLocations, function(a, b)
-                return (a.timestamp or 0) < (b.timestamp or 0)
-            end)
-
-            -- Update lastKill timestamp
-            local maxProp = 0
-            for _, loc in ipairs(destEntry.killLocations) do
-                if loc.timestamp and loc.timestamp > maxProp then
-                    maxProp = loc.timestamp
-                end
-            end
-            destEntry.lastKill = maxProp
         end
     end
 
-    return importedKills
+    local _, foundInfoKey = PSC_GetPlayerInfo(unitName)
+    if foundInfoKey then
+        return foundInfoKey
+    end
+
+    return nil
+end
+
+local function NormalizeImportedName(unitName)
+    return ResolveImportInfoKey(unitName)
+end
+
+local function NormalizeImportedAssisters(deathLocations)
+    if not deathLocations then return 0 end
+    local normalizedCount = 0
+    for _, loc in ipairs(deathLocations) do
+        if loc.assisters then
+            for _, assister in ipairs(loc.assisters) do
+                if assister.name then
+                    local normalizedName = NormalizeImportedName(assister.name) or assister.name
+                    if normalizedName ~= assister.name then
+                        normalizedCount = normalizedCount + 1
+                    end
+                    assister.name = normalizedName
+                end
+            end
+        end
+    end
+    return normalizedCount
+end
+
+local function MergeKillEntry(destKills, unitKey, sourceEntry, counters)
+    if not unitKey or not sourceEntry then
+        return 0
+    end
+
+    local unitName = string.match(unitKey, "(.-)%:")
+    local unitLevel = string.match(unitKey, ":(%-?%d+)")
+
+    local destKey = unitKey
+    if unitName and unitLevel then
+        local importInfoKey = ResolveImportInfoKey(unitName)
+        if importInfoKey then
+            destKey = importInfoKey .. ":" .. unitLevel
+        end
+    end
+
+    if destKey ~= unitKey then
+        counters.normalizedKeys = counters.normalizedKeys + 1
+    end
+
+    if not destKills[destKey] then
+        destKills[destKey] = CopyTable(sourceEntry)
+        local added = 0
+        if sourceEntry.killLocations then
+            added = #sourceEntry.killLocations
+        else
+            added = sourceEntry.kills or 0
+        end
+        counters.importedKills = counters.importedKills + added
+        return added
+    else
+        local destEntry = destKills[destKey]
+        local existingTimestamps = {}
+
+        local beforeCount = destEntry.killLocations and #destEntry.killLocations or 0
+
+        if destEntry.killLocations then
+            for _, loc in ipairs(destEntry.killLocations) do
+                if loc.timestamp then
+                    existingTimestamps[loc.timestamp] = true
+                end
+            end
+        else
+            destEntry.killLocations = {}
+        end
+
+        if sourceEntry.killLocations then
+            for _, sourceLoc in ipairs(sourceEntry.killLocations) do
+                if sourceLoc.timestamp and not existingTimestamps[sourceLoc.timestamp] then
+                    table.insert(destEntry.killLocations, CopyTable(sourceLoc))
+                    existingTimestamps[sourceLoc.timestamp] = true
+                end
+            end
+        end
+
+        destEntry.kills = #destEntry.killLocations
+
+        table.sort(destEntry.killLocations, function(a, b)
+            return (a.timestamp or 0) < (b.timestamp or 0)
+        end)
+
+        local maxProp = 0
+        for _, loc in ipairs(destEntry.killLocations) do
+            if loc.timestamp and loc.timestamp > maxProp then
+                maxProp = loc.timestamp
+            end
+        end
+        destEntry.lastKill = maxProp
+        local afterCount = #destEntry.killLocations
+        local added = math.max(0, afterCount - beforeCount)
+        counters.importedKills = counters.importedKills + added
+        return added
+    end
 end
 
 local function MergeLossData(destLosses, sourceLosses)
     if not sourceLosses then return 0 end
 
     local importedDeaths = 0
+    local normalizedKeys = 0
+    local normalizedAssisters = 0
 
     for unitName, sourceEntry in pairs(sourceLosses) do
-        if not destLosses[unitName] then
-            destLosses[unitName] = CopyTable(sourceEntry)
-            importedDeaths = importedDeaths + (sourceEntry.deaths or 0)
+        local destKey = NormalizeImportedName(unitName) or unitName
+        if destKey ~= unitName then
+            normalizedKeys = normalizedKeys + 1
+        end
+        if not destLosses[destKey] then
+            local copyEntry = CopyTable(sourceEntry)
+            normalizedAssisters = normalizedAssisters + NormalizeImportedAssisters(copyEntry.deathLocations)
+            destLosses[destKey] = copyEntry
+            importedDeaths = importedDeaths + (copyEntry.deaths or 0)
         else
-            local destEntry = destLosses[unitName]
+            local destEntry = destLosses[destKey]
             local existingTimestamps = {}
 
             if destEntry.deathLocations then
@@ -81,6 +159,7 @@ local function MergeLossData(destLosses, sourceLosses)
             end
 
             if sourceEntry.deathLocations then
+                normalizedAssisters = normalizedAssisters + NormalizeImportedAssisters(sourceEntry.deathLocations)
                 for _, sourceLoc in ipairs(sourceEntry.deathLocations) do
                     if sourceLoc.timestamp and not existingTimestamps[sourceLoc.timestamp] then
                         table.insert(destEntry.deathLocations, CopyTable(sourceLoc))
@@ -98,7 +177,135 @@ local function MergeLossData(destLosses, sourceLosses)
         end
     end
 
-    return importedDeaths
+    return importedDeaths, normalizedKeys, normalizedAssisters
+end
+
+local function MergeLossEntry(destLosses, unitName, sourceEntry, counters)
+    if not unitName or not sourceEntry then
+        return
+    end
+
+    local destKey = NormalizeImportedName(unitName) or unitName
+    if destKey ~= unitName then
+        counters.normalizedKeys = counters.normalizedKeys + 1
+    end
+
+    if not destLosses[destKey] then
+        local copyEntry = CopyTable(sourceEntry)
+        counters.normalizedAssisters = counters.normalizedAssisters + NormalizeImportedAssisters(copyEntry.deathLocations)
+        destLosses[destKey] = copyEntry
+        counters.importedDeaths = counters.importedDeaths + (copyEntry.deaths or 0)
+    else
+        local destEntry = destLosses[destKey]
+        local existingTimestamps = {}
+
+        if destEntry.deathLocations then
+            for _, loc in ipairs(destEntry.deathLocations) do
+                if loc.timestamp then
+                    existingTimestamps[loc.timestamp] = true
+                end
+            end
+        else
+            destEntry.deathLocations = {}
+        end
+
+        if sourceEntry.deathLocations then
+            counters.normalizedAssisters = counters.normalizedAssisters + NormalizeImportedAssisters(sourceEntry.deathLocations)
+            for _, sourceLoc in ipairs(sourceEntry.deathLocations) do
+                if sourceLoc.timestamp and not existingTimestamps[sourceLoc.timestamp] then
+                    table.insert(destEntry.deathLocations, CopyTable(sourceLoc))
+                    existingTimestamps[sourceLoc.timestamp] = true
+                end
+            end
+        end
+
+        destEntry.deaths = #destEntry.deathLocations
+
+        table.sort(destEntry.deathLocations, function(a, b)
+            return (a.timestamp or 0) < (b.timestamp or 0)
+        end)
+    end
+end
+
+local function PSC_RunMigrationTaskQueue(taskQueue, onDone)
+    local currentTask = 1
+
+    local function runNextTask()
+        if currentTask > #taskQueue then
+            if onDone then
+                onDone()
+            end
+            return
+        end
+
+        local success, result = pcall(taskQueue[currentTask])
+        if not success then
+            print("[PvPStats] Error in migration task " .. currentTask .. ": " .. tostring(result))
+            result = true
+        end
+
+        if result == nil or result == true then
+            currentTask = currentTask + 1
+        end
+
+        C_Timer.After(0, runNextTask)
+    end
+
+    runNextTask()
+end
+
+local function BuildImportSummaryText(summary)
+    if not summary then
+        return nil
+    end
+
+    local lines = {}
+    table.insert(lines, "Import complete!")
+    table.insert(lines, "")
+    table.insert(lines, "Imported kills (total): " .. tostring(summary.totalKills or 0))
+
+    if summary.perCharacter then
+        table.insert(lines, "")
+        table.insert(lines, "Per character:")
+        for _, entry in ipairs(summary.perCharacter) do
+            local name = entry.name or "Unknown"
+            local kills = entry.kills or 0
+            table.insert(lines, string.format("- %s: %d", name, kills))
+        end
+    end
+
+    table.insert(lines, "")
+    table.insert(lines, "Please review your statistics and check if the values are correct.")
+
+    return table.concat(lines, "\n")
+end
+
+function PSC_ShowImportSummaryPopup()
+    if not PSC_DB or not PSC_DB.ImportSummaryPending then
+        return
+    end
+
+    local summary = PSC_DB.ImportSummaryPending
+    local text = BuildImportSummaryText(summary)
+    if not text then
+        PSC_DB.ImportSummaryPending = nil
+        return
+    end
+
+    StaticPopupDialogs["PSC_IMPORT_SUMMARY"] = {
+        text = text,
+        button1 = "Show Statistics",
+        OnAccept = function()
+            PSC_DB.ImportSummaryPending = nil
+            PSC_CreateStatisticsFrame()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = false,
+        preferredIndex = 3,
+    }
+
+    StaticPopup_Show("PSC_IMPORT_SUMMARY")
 end
 
 local function MergeAchievements(destItems, sourceItems)
@@ -133,7 +340,7 @@ local function MergePlayerInfoCache(destCache, sourceCache)
     return count
 end
 
-function PSC_PerformDataMigration()
+function PSC_PerformDataMigration(runSync)
     if not PSC_DB_IMPORT then return end
 
     print("[PvPStats]: Starting data migration...")
@@ -142,12 +349,57 @@ function PSC_PerformDataMigration()
     local infoImported = MergePlayerInfoCache(PSC_DB.PlayerInfoCache, PSC_DB_IMPORT.PlayerInfoCache)
     print(string.format("[PvPStats]: Imported %d player info cache entries.", infoImported))
 
-    -- 2. Merge Kill Counts (Per Character)
-    if PSC_DB_IMPORT.PlayerKillCounts and PSC_DB_IMPORT.PlayerKillCounts.Characters then
+    -- Ensure localized class/race names from imported data are normalized
+    PSC_DB.PlayerInfoEnglishMigrated = nil
+    if PSC_MigratePlayerInfoToEnglish then
+        PSC_MigratePlayerInfoToEnglish()
+    end
+
+    local taskQueue = {}
+    local killState = nil
+    local lossState = nil
+    local killBudget = runSync and math.huge or 250
+    local lossBudget = runSync and math.huge or 250
+
+    local function initKillState()
         if not PSC_DB.PlayerKillCounts then PSC_DB.PlayerKillCounts = {} end
         if not PSC_DB.PlayerKillCounts.Characters then PSC_DB.PlayerKillCounts.Characters = {} end
 
-        for charKey, charData in pairs(PSC_DB_IMPORT.PlayerKillCounts.Characters) do
+        killState = {
+            charKeys = {},
+            charIndex = 1,
+            killKeys = nil,
+            killIndex = 1,
+            counters = { importedKills = 0, normalizedKeys = 0 },
+            perCharacterImported = {},
+            totalImportedKills = 0
+        }
+
+        if PSC_DB_IMPORT.PlayerKillCounts and PSC_DB_IMPORT.PlayerKillCounts.Characters then
+            for charKey, _ in pairs(PSC_DB_IMPORT.PlayerKillCounts.Characters) do
+                table.insert(killState.charKeys, charKey)
+            end
+        end
+    end
+
+    local function processKillSlice()
+        if not PSC_DB_IMPORT.PlayerKillCounts or not PSC_DB_IMPORT.PlayerKillCounts.Characters then
+            return true
+        end
+
+        if not killState then
+            initKillState()
+        end
+
+        local processed = 0
+        while processed < killBudget do
+            if killState.charIndex > #killState.charKeys then
+                return true
+            end
+
+            local charKey = killState.charKeys[killState.charIndex]
+            local charData = PSC_DB_IMPORT.PlayerKillCounts.Characters[charKey]
+
             if not PSC_DB.PlayerKillCounts.Characters[charKey] then
                 PSC_DB.PlayerKillCounts.Characters[charKey] = {
                     Kills = {},
@@ -156,76 +408,217 @@ function PSC_PerformDataMigration()
                 }
             end
 
-            if charData.Kills then
-                 MergeKillData(PSC_DB.PlayerKillCounts.Characters[charKey].Kills, charData.Kills)
-                 -- Clear derived caches to force rebuild from new complete data
-                 PSC_DB.PlayerKillCounts.Characters[charKey].Level1KillTimestamps = nil
+            if not charData or not charData.Kills then
+                killState.charIndex = killState.charIndex + 1
+                killState.killKeys = nil
+                killState.killIndex = 1
+            else
+                if not killState.killKeys then
+                    killState.killKeys = {}
+                    for unitKey in pairs(charData.Kills) do
+                        table.insert(killState.killKeys, unitKey)
+                    end
+                    killState.killIndex = 1
+                end
+
+                if killState.killIndex > #killState.killKeys then
+                    PSC_DB.PlayerKillCounts.Characters[charKey].Level1KillTimestamps = nil
+
+                    local destChar = PSC_DB.PlayerKillCounts.Characters[charKey]
+                    if charData.HighestKillStreak and (charData.HighestKillStreak > (destChar.HighestKillStreak or 0)) then
+                        destChar.HighestKillStreak = charData.HighestKillStreak
+                    end
+                    if charData.HighestMultiKill and (charData.HighestMultiKill > (destChar.HighestMultiKill or 0)) then
+                        destChar.HighestMultiKill = charData.HighestMultiKill
+                    end
+                    if charData.SpawnCamperMaxKills and (charData.SpawnCamperMaxKills > (destChar.SpawnCamperMaxKills or 0)) then
+                        destChar.SpawnCamperMaxKills = charData.SpawnCamperMaxKills
+                    end
+                    if charData.GrayKillsCount and (charData.GrayKillsCount > (destChar.GrayKillsCount or 0)) then
+                        destChar.GrayKillsCount = charData.GrayKillsCount
+                    end
+
+                    killState.charIndex = killState.charIndex + 1
+                    killState.killKeys = nil
+                    killState.killIndex = 1
+                else
+                    local unitKey = killState.killKeys[killState.killIndex]
+                    killState.killIndex = killState.killIndex + 1
+
+                    local sourceEntry = charData.Kills[unitKey]
+                    if sourceEntry then
+                        local added = MergeKillEntry(PSC_DB.PlayerKillCounts.Characters[charKey].Kills, unitKey, sourceEntry, killState.counters)
+                        if added and added > 0 then
+                            killState.perCharacterImported[charKey] = (killState.perCharacterImported[charKey] or 0) + added
+                            killState.totalImportedKills = killState.totalImportedKills + added
+                        end
+                    end
+                    processed = processed + 1
+                end
             end
+        end
 
-            -- Merge simple counters
-            local destChar = PSC_DB.PlayerKillCounts.Characters[charKey]
+        return false
+    end
 
-            if charData.HighestKillStreak and (charData.HighestKillStreak > (destChar.HighestKillStreak or 0)) then
-                destChar.HighestKillStreak = charData.HighestKillStreak
-            end
+    local function initLossState()
+        if not PSC_DB.PvPLossCounts then PSC_DB.PvPLossCounts = {} end
 
-            if charData.HighestMultiKill and (charData.HighestMultiKill > (destChar.HighestMultiKill or 0)) then
-                destChar.HighestMultiKill = charData.HighestMultiKill
-            end
+        lossState = {
+            charKeys = {},
+            charIndex = 1,
+            deathKeys = nil,
+            deathIndex = 1,
+            counters = { importedDeaths = 0, normalizedKeys = 0, normalizedAssisters = 0 }
+        }
 
-            if charData.SpawnCamperMaxKills and (charData.SpawnCamperMaxKills > (destChar.SpawnCamperMaxKills or 0)) then
-                destChar.SpawnCamperMaxKills = charData.SpawnCamperMaxKills
-            end
-
-            if charData.GrayKillsCount and (charData.GrayKillsCount > (destChar.GrayKillsCount or 0)) then
-                destChar.GrayKillsCount = charData.GrayKillsCount
+        if PSC_DB_IMPORT.PvPLossCounts then
+            for charKey, _ in pairs(PSC_DB_IMPORT.PvPLossCounts) do
+                table.insert(lossState.charKeys, charKey)
             end
         end
     end
 
-    -- 3. Merge Loss Counts (Per Character)
-    if PSC_DB_IMPORT.PvPLossCounts then
-        if not PSC_DB.PvPLossCounts then PSC_DB.PvPLossCounts = {} end
+    local function processLossSlice()
+        if not PSC_DB_IMPORT.PvPLossCounts then
+            return true
+        end
 
-        for charKey, charData in pairs(PSC_DB_IMPORT.PvPLossCounts) do
+        if not lossState then
+            initLossState()
+        end
+
+        local processed = 0
+        while processed < lossBudget do
+            if lossState.charIndex > #lossState.charKeys then
+                return true
+            end
+
+            local charKey = lossState.charKeys[lossState.charIndex]
+            local charData = PSC_DB_IMPORT.PvPLossCounts[charKey]
+
             if not PSC_DB.PvPLossCounts[charKey] then
                 PSC_DB.PvPLossCounts[charKey] = { Deaths = {} }
             end
 
-            if charData.Deaths then
-                MergeLossData(PSC_DB.PvPLossCounts[charKey].Deaths, charData.Deaths)
+            if not charData or not charData.Deaths then
+                lossState.charIndex = lossState.charIndex + 1
+                lossState.deathKeys = nil
+                lossState.deathIndex = 1
+            else
+                if not lossState.deathKeys then
+                    lossState.deathKeys = {}
+                    for unitName in pairs(charData.Deaths) do
+                        table.insert(lossState.deathKeys, unitName)
+                    end
+                    lossState.deathIndex = 1
+                end
+
+                if lossState.deathIndex > #lossState.deathKeys then
+                    lossState.charIndex = lossState.charIndex + 1
+                    lossState.deathKeys = nil
+                    lossState.deathIndex = 1
+                else
+                    local unitName = lossState.deathKeys[lossState.deathIndex]
+                    lossState.deathIndex = lossState.deathIndex + 1
+
+                    local sourceEntry = charData.Deaths[unitName]
+                    if sourceEntry then
+                        MergeLossEntry(PSC_DB.PvPLossCounts[charKey].Deaths, unitName, sourceEntry, lossState.counters)
+                    end
+                    processed = processed + 1
+                end
             end
         end
+
+        return false
     end
 
-    -- 4. Merge Achievements
-    if PSC_DB_IMPORT.CharacterAchievements then
-        if not PSC_DB.CharacterAchievements then PSC_DB.CharacterAchievements = {} end
+    local function mergeAchievements()
+        if PSC_DB_IMPORT.CharacterAchievements then
+            if not PSC_DB.CharacterAchievements then PSC_DB.CharacterAchievements = {} end
 
-        for charKey, achievements in pairs(PSC_DB_IMPORT.CharacterAchievements) do
-            if not PSC_DB.CharacterAchievements[charKey] then
-                PSC_DB.CharacterAchievements[charKey] = {}
-            end
-            MergeAchievements(PSC_DB.CharacterAchievements[charKey], achievements)
+            for charKey, achievements in pairs(PSC_DB_IMPORT.CharacterAchievements) do
+                if not PSC_DB.CharacterAchievements[charKey] then
+                    PSC_DB.CharacterAchievements[charKey] = {}
+                end
+                MergeAchievements(PSC_DB.CharacterAchievements[charKey], achievements)
 
-            -- Recalculate points
-            if PSC_UpdateTotalAchievementPoints then
-                -- Temporarily mock GetCharacterKey if needed, but the function uses the global one.
-                -- However, PSC_UpdateTotalAchievementPoints only updates CURRENT character.
-                -- We might need to handle this if we support alt import,
-                -- but recalculation happens on load anyway.
+                if PSC_UpdateTotalAchievementPoints then
+                    -- Recalculation happens on load anyway.
+                end
             end
         end
+        return true
     end
 
-    print("[PvPStats]: Data migration complete!")
-    print("[PvPStats]: Reloading UI to finalize changes...")
+    local function finalizeMigration()
+        if PSC_Debug and killState then
+            print(string.format("[PvPStats]: Imported %d kills (%d kill keys normalized).", killState.totalImportedKills or 0, killState.counters.normalizedKeys or 0))
+        end
+        if PSC_Debug and lossState then
+            print(string.format("[PvPStats]: Imported %d deaths (%d loss keys normalized, %d assister names normalized).", lossState.counters.importedDeaths or 0, lossState.counters.normalizedKeys or 0, lossState.counters.normalizedAssisters or 0))
+        end
 
-    -- Clear the import variable so it doesn't run again or save to disk
-    PSC_DB_IMPORT = nil
+        local perCharacterSummary = {}
+        if killState and killState.perCharacterImported then
+            for charKey, kills in pairs(killState.perCharacterImported) do
+                table.insert(perCharacterSummary, { name = charKey, kills = kills })
+            end
+            table.sort(perCharacterSummary, function(a, b)
+                return tostring(a.name) < tostring(b.name)
+            end)
+        end
 
-    -- Reload UI to ensure separate caches (like Leaderboards/Achievements) are rebuilt with the new data
-    ReloadUI()
+        PSC_DB.ImportSummaryPending = {
+            totalKills = killState and killState.totalImportedKills or 0,
+            perCharacter = perCharacterSummary
+        }
+
+        print("[PvPStats]: Data migration complete!")
+        print("[PvPStats]: Reloading UI to finalize changes...")
+
+        PSC_DB_IMPORT = nil
+
+        StaticPopupDialogs["PSC_IMPORT_RELOAD"] = {
+            text = "PvPStatsClassic: Please reload the UI to complete the import.",
+            button1 = "Reload UI",
+            OnAccept = function()
+                ReloadUI()
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = false,
+            preferredIndex = 3,
+        }
+
+        StaticPopup_Show("PSC_IMPORT_RELOAD")
+    end
+
+    taskQueue = {
+        processKillSlice,
+        processLossSlice,
+        mergeAchievements,
+        function()
+            finalizeMigration()
+            return true
+        end
+    }
+
+    if runSync then
+        local done = false
+        while not done do
+            done = taskQueue[1]()
+        end
+        done = false
+        while not done do
+            done = taskQueue[2]()
+        end
+        taskQueue[3]()
+        taskQueue[4]()
+    else
+        PSC_RunMigrationTaskQueue(taskQueue)
+    end
 end
 
 function PSC_CheckForDataMigration()
@@ -272,24 +665,17 @@ function PSC_CheckForDataMigration()
     text = text .. "Found " .. totalChars .. " character(s):\n"
 
     for _, summary in ipairs(charSummaries) do
-        -- Only show first 3 characters to avoid overflowing popup
-        if _ <= 3 then
-            text = text .. string.format("- %s: %d Kills, %d Achievements\n", summary.name, summary.kills, summary.achievements)
-        end
+        text = text .. string.format("- %s: %d Kills, %d Achievements\n", summary.name, summary.kills, summary.achievements)
     end
 
-    if totalChars > 3 then
-        text = text .. "...and " .. (totalChars - 3) .. " more.\n"
-    end
-
-    text = text .. "\n\nIMPORTANT: Confirming will automatically Reload UI to apply changes!"
+    text = text .. "\n\nDuring the import, your game will stutter and it might take up to a minute, depending on the amount of data. Please be patient and don't do anything until it is done."
 
     StaticPopupDialogs["PSC_IMPORT_CONFIRM"] = {
         text = text,
         button1 = "Yes, Import",
         button2 = "No, Discard data",
         OnAccept = function()
-            PSC_PerformDataMigration()
+            PSC_PerformDataMigration(false)
         end,
         OnCancel = function()
             PSC_DB_IMPORT = nil
@@ -343,11 +729,19 @@ function PSC_RunMigrationTests()
     mock_Import.PlayerInfoCache["Note-Target"] = { class = "Rogue", level = 60, note = "Imported Note" }
     mock_DB.PlayerInfoCache["Note-Target"] = { class = "Rogue", level = 60 } -- No note
 
+    -- Case E: Cross-Realm Cache (for resolution tests)
+    mock_Import.PlayerInfoCache["Ambiguous-RemoteRealm"] = { class = "Druid", level = 60 }
+    mock_Import.PlayerInfoCache["LocalHero-TestRealm"] = { class = "Paladin", level = 60 } -- Matches CharKey realm? No, CharKey is "TestChar-TestRealm"
+    -- Note: DataStorage.lua uses PSC_GetInfoKeyFromName which defaults to PSC_RealmName if logic fails.
+    -- In unit tests, we don't control PSC_RealmName easily unless we mock it or rely on caching.
+
     -- Kills: Test dupes and merging
     -- Setup: DB has VictimA with 1 kill
     mock_DB.PlayerKillCounts.Characters[charKey] = {
         Kills = {
-            ["VictimA"] = { kills = 1, lastKill = 100, killLocations = { { timestamp=100, zone="ZoneA" } }}
+            ["VictimA"] = { kills = 1, lastKill = 100, killLocations = { { timestamp=100, zone="ZoneA" } }},
+            -- Setup for Collision Test: DB has CommonName from Local Realm
+            ["CommonName-Local:60"] = { kills = 1, lastKill = 100, killLocations = { { timestamp=100 } } }
         },
         Level1KillTimestamps = { 100 }, -- Sould be cleared on import
         -- Stat merging tests (DB has lower values)
@@ -374,6 +768,17 @@ function PSC_RunMigrationTests()
                 kills = 1,
                 lastKill = 200,
                 killLocations = { { timestamp=200, zone="ZoneB" } }  -- New Victim
+            },
+            -- Cross-Realm Test 1: Ambiguous Key "Ambiguous:60" should become "Ambiguous-RemoteRealm:60"
+            -- because of mock_Import.PlayerInfoCache["Ambiguous-RemoteRealm"]
+            ["Ambiguous:60"] = {
+                kills = 1, lastKill = 300, killLocations = { { timestamp=300 } }
+            },
+            -- Cross-Realm Test 2: Collision Test. Import has "CommonName:60".
+            -- We pretend Import Cache says it's from "Remote".
+            -- Should NOT merge with "CommonName-Local:60".
+            ["CommonName:60"] = {
+                kills = 1, lastKill = 400, killLocations = { { timestamp=400 } }
             }
         },
         -- Stat merging tests (Import has higher values)
@@ -384,6 +789,10 @@ function PSC_RunMigrationTests()
         -- Excluded fields tests
         CurrentKillStreak = 50 -- Should be ignored
     }
+
+    -- Cache entry for Collision Test 2
+    mock_Import.PlayerInfoCache["CommonName-Remote"] = { class = "Hunter", level = 60 }
+
 
     -- Leaderboard Cache Test (Should be ignored)
     mock_Import.LeaderboardCache = { ["SomeEntry"] = true }
@@ -436,7 +845,7 @@ function PSC_RunMigrationTests()
     -- 3. Run Migration
     -- Note: We do NOT use PSC_CheckForDataMigration because that creates a popup.
     -- We call PSC_PerformDataMigration directly.
-    PSC_PerformDataMigration()
+    PSC_PerformDataMigration(true)
 
     -- 4. Verify Results
     local failed = false
@@ -467,6 +876,21 @@ function PSC_RunMigrationTests()
     -- VictimB: 1 new
     local vB = kills["VictimB"]
     Assert(vB and vB.kills == 1, "VictimB count wrong")
+
+    -- Cross-Realm Test 1: Ambiguous Resolution
+    -- Check if "Ambiguous:60" was converted to "Ambiguous-RemoteRealm:60"
+    local vAmbig = kills["Ambiguous-RemoteRealm:60"]
+    Assert(vAmbig, "Cross-Realm 1: Ambiguous name not resolved to cache realm key")
+    Assert(kills["Ambiguous:60"] == nil, "Cross-Realm 1: Old ambiguous key not removed (or still present)")
+
+    -- Cross-Realm Test 2: Collision Avoidance
+    -- "CommonName-Local:60" should remain 1 kill. "CommonName-Remote:60" should be new with 1 kill.
+    local vLocal = kills["CommonName-Local:60"]
+    local vRemote = kills["CommonName-Remote:60"]
+
+    Assert(vLocal and vLocal.kills == 1, "Cross-Realm 2: Local entry modified incorrectly")
+    Assert(vRemote and vRemote.kills == 1, "Cross-Realm 2: Remote entry not imported correctly")
+    Assert(vLocal ~= vRemote, "Cross-Realm 2: Entries are the same object!")
 
     -- Summary Stats
     Assert(charStats.HighestKillStreak == 10, "HighestKillStreak not upgraded")

@@ -170,7 +170,7 @@ local function UpdateMultiKill()
     if PSC_MultiKillCount > highestMultiKillAlias then
         PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill = PSC_MultiKillCount
 
-        if highestMultiKillAlias >= 3 and PSC_DB.EnableRecordAnnounceMessages then
+        if highestMultiKillAlias >= 3 and PSC_DB.EnableRecordAnnounceMessages and not PSC_CurrentlyInBattleground then
             local newMultiKillRecordMsg = string.gsub(PSC_DB.NewMultiKillRecordMessage, "MULTIKILLTEXT", GetMultiKillText(PSC_MultiKillCount))
             PSC_SendAnnounceMessage(newMultiKillRecordMsg)
         end
@@ -254,7 +254,9 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
     end
 
     local level = PSC_DB.PlayerInfoCache[infoKey].level
-    local nameWithLevel = playerName .. ":" .. level
+    -- infoKey already includes the realm (Name-Realm)
+    -- This ensures distinct keys for same-named players on different realms
+    local nameWithLevel = infoKey .. ":" .. level
     local characterKey = PSC_GetCharacterKey()
 
     if not PSC_DB.PlayerKillCounts.Characters[characterKey] then

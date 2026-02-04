@@ -224,6 +224,8 @@ local function getClassColor(class)
 end
 
 local function calculateChartHeight(data, includeZeroKeys)
+    if not data then return 30 + 15 end -- Minimum height for title + padding
+
     local entries = 0
     for key, numKills in pairs(data) do
         if numKills > 0 then
@@ -250,6 +252,33 @@ local function createContainerWithTitle(parent, title, x, y, width, height)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
     return container
+end
+
+local function NormalizeMonthKey(key)
+    local num = tonumber(key)
+    if num and num >= 1 and num <= 12 then return num end
+
+    local keyLower = string.lower(tostring(key))
+    local months = {
+        january = 1, february = 2, march = 3, april = 4, may = 5, june = 6,
+        july = 7, august = 8, september = 9, october = 10, november = 11, december = 12,
+        jan = 1, feb = 2, mar = 3, apr = 4, jun = 6, jul = 7, aug = 8, sep = 9, oct = 10, nov = 11, dec = 12
+    }
+    if months[keyLower] then return months[keyLower] end
+    return nil
+end
+
+local function NormalizeWeekdayKey(key)
+    local num = tonumber(key)
+    if num and num >= 1 and num <= 7 then return num end
+
+    local keyLower = string.lower(tostring(key))
+    local days = {
+        sunday = 1, monday = 2, tuesday = 3, wednesday = 4, thursday = 5, friday = 6, saturday = 7,
+        sun = 1, mon = 2, tue = 3, wed = 4, thu = 5, fri = 6, sat = 7
+    }
+    if days[keyLower] then return days[keyLower] end
+    return nil
 end
 
 local function createBar(container, entry, index, maxValue, total, titleType, disableClicks)
@@ -518,7 +547,36 @@ end
 local function createBarChart(parent, title, data, colorTable, x, y, width, height, disableClicks)
     local container = createContainerWithTitle(parent, title, x, y, width, height)
 
-    local sortedData = sortByValue(data, true)
+    -- Pre-process data to handle numeric/string key duplication and normalization
+    local processedData = {}
+    if data then
+        for k, v in pairs(data) do
+            local finalKey = k
+
+            if title == "Kills by Month" then
+                local norm = NormalizeMonthKey(k)
+                if norm then finalKey = norm end
+            elseif title == "Kills by Weekday" then
+                local norm = NormalizeWeekdayKey(k)
+                if norm then finalKey = norm end
+            elseif title == "Kills by Hour of Day" or title == "Kills by Year" then
+                local num = tonumber(k)
+                if num then finalKey = num end
+            elseif title == "Kills by Level" then
+                if k ~= "??" then
+                    local num = tonumber(k)
+                    if num then finalKey = num end
+                end
+            end
+
+            -- Ensure we don't valid keys
+            if finalKey then
+                 processedData[finalKey] = (processedData[finalKey] or 0) + v
+            end
+        end
+    end
+
+    local sortedData = sortByValue(processedData, true)
     local filteredData = {}
     for _, entry in ipairs(sortedData) do
         if entry.value > 0 or title == "NPC Kills" then
@@ -691,7 +749,7 @@ function PSC_CalculateGuildKills()
                 local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
                 local kills = killData.kills or 0
 
-                local infoKey = PSC_GetInfoKeyFromName(playerNameWithoutLevel)
+                local infoKey = PSC_NormalizePlayerName(playerNameWithoutLevel)
 
                 if PSC_DB.PlayerInfoCache[infoKey] then
                     local guild = PSC_DB.PlayerInfoCache[infoKey].guild
@@ -773,18 +831,18 @@ local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, char
     end
 
     if PSC_DB.ShowAccountWideStats then
-        if characterData.HighestKillStreak > state.highestKillStreak then
-            state.highestKillStreak = characterData.HighestKillStreak
+        if (characterData.HighestKillStreak or 0) > state.highestKillStreak then
+            state.highestKillStreak = characterData.HighestKillStreak or 0
             state.highestKillStreakCharacter = characterKey
         end
 
-        if characterData.HighestMultiKill > state.highestMultiKill then
-            state.highestMultiKill = characterData.HighestMultiKill
+        if (characterData.HighestMultiKill or 0) > state.highestMultiKill then
+            state.highestMultiKill = characterData.HighestMultiKill or 0
             state.highestMultiKillCharacter = characterKey
         end
     else
-        state.highestMultiKill = characterData.HighestMultiKill
-        state.highestKillStreak = characterData.HighestKillStreak
+        state.highestMultiKill = characterData.HighestMultiKill or 0
+        state.highestKillStreak = characterData.HighestKillStreak or 0
     end
 end
 
@@ -805,6 +863,8 @@ local function PSC_SummaryStats_ProcessKillEntryBase(state, nameWithLevel, killD
         playerName = nameWithLevel
         levelPart = nil
     end
+
+    playerName = PSC_NormalizePlayerName(playerName)
 
     if not state.killsPerPlayer[playerName] then
         state.uniqueKills = state.uniqueKills + 1
@@ -995,13 +1055,19 @@ local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
     local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
 
     local assistsByPlayer = {}
-    for _, deathData in pairs(deathDataByPlayer) do
+    local deathsByPlayer = {}
+
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        local normalizedKiller = PSC_NormalizePlayerName(killerName)
+        deathsByPlayer[normalizedKiller] = (deathsByPlayer[normalizedKiller] or 0) + (deathData.deaths or 0)
+
         if deathData.deathLocations then
             for _, location in ipairs(deathData.deathLocations) do
                 if location.assisters then
                     for _, assister in ipairs(location.assisters) do
                         if assister and assister.name then
-                            assistsByPlayer[assister.name] = (assistsByPlayer[assister.name] or 0) + 1
+                            local normalizedAssister = PSC_NormalizePlayerName(assister.name)
+                            assistsByPlayer[normalizedAssister] = (assistsByPlayer[normalizedAssister] or 0) + 1
                         end
                     end
                 end
@@ -1010,12 +1076,11 @@ local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
     end
 
     local totalDeaths = 0
-    for _, deathData in pairs(deathDataByPlayer) do
-        totalDeaths = totalDeaths + (deathData.deaths or 0)
+    for _, deaths in pairs(deathsByPlayer) do
+        totalDeaths = totalDeaths + (deaths or 0)
     end
 
-    for killerName, deathData in pairs(deathDataByPlayer) do
-        local deaths = deathData.deaths or 0
+    for killerName, deaths in pairs(deathsByPlayer) do
         local assists = assistsByPlayer[killerName] or 0
 
         if deaths > nemesisScore or (deaths == nemesisScore and assists > nemesisAssists) then
@@ -1426,9 +1491,8 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         end
     end
 
-    -- Note: Passing 'true' for isKillStreak (6th arg) to make it gold
-    statY = addSummaryStatLine(container, "Highest kill streak:", hkValue, statY, hkTooltip, true, isLocalPlayer)
-    statY = addSummaryStatLine(container, "Highest multi-kill:", mkValue, statY, mkTooltip, true, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Highest kill streak:", hkValue, statY, hkTooltip, false, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Highest multi-kill:", mkValue, statY, mkTooltip, false, isLocalPlayer)
 
     -- 5. Time Periods
     if stats.killsToday or (isLocalPlayer and stats.killsToday ~= nil) then
@@ -1632,7 +1696,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
 
                     local infoKey = infoKeyCache[nameWithoutLevel]
                     if not infoKey then
-                        infoKey = getInfoKeyFromName(nameWithoutLevel)
+                        infoKey = PSC_NormalizePlayerName(nameWithoutLevel)
                         infoKeyCache[nameWithoutLevel] = infoKey
                     end
 

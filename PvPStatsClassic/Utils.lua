@@ -170,10 +170,10 @@ function PSC_StartIncrementalAchievementsCalculation()
                     genderData = genderData,
                     zoneData = zoneData,
                     levelData = levelData,
-                    hourlyData = TimeStatsCache and TimeStatsCache.hours,
-                    weekdayData = TimeStatsCache and TimeStatsCache.weekdays,
-                    monthlyData = TimeStatsCache and TimeStatsCache.months,
-                    yearlyData = TimeStatsCache and TimeStatsCache.years,
+                    hourlyData = hourlyData,
+                    weekdayData = weekdayData,
+                    monthlyData = monthlyData,
+                    yearlyData = yearlyData,
                     unknownLevelClassData = unknownLevelClassData,
                     guildStatusData = guildStatusData,
                     npcKillsData = npcKillsData
@@ -209,6 +209,11 @@ end
 -- ============================================================================
 
 function PSC_SendAnnounceMessage(message)
+    -- Global suppression of announce messages in Battlegrounds
+    if PSC_CurrentlyInBattleground then
+        return
+    end
+
     local channel = PSC_DB.AnnounceChannel or "GROUP"
 
     if channel == "SELF" then
@@ -363,6 +368,47 @@ end
 
 function PSC_GetCharacterKey()
     return PSC_CharacterName .. "-" .. PSC_RealmName
+end
+
+function PSC_NormalizePlayerName(playerName)
+    if not playerName or playerName == "" then
+        return playerName
+    end
+
+    local _, infoKey = PSC_GetPlayerInfo(playerName)
+    if infoKey then
+        return infoKey
+    end
+
+    return PSC_GetInfoKeyFromName(playerName)
+end
+
+function PSC_IsSamePlayerName(candidateName, targetName)
+    if not candidateName or candidateName == "" or not targetName or targetName == "" then
+        return false
+    end
+
+    if candidateName == targetName then
+        return true
+    end
+
+    local candidateKey = PSC_GetInfoKeyFromName(candidateName)
+    local targetKey = PSC_GetInfoKeyFromName(targetName)
+    if candidateKey == targetKey then
+        return true
+    end
+
+    if not string.find(targetName, "%-") then
+        local prefix = targetName .. "-"
+        if candidateKey and string.sub(candidateKey, 1, #prefix) == prefix then
+            return true
+        end
+        if string.sub(candidateName, 1, #prefix) == prefix then
+            return true
+        end
+    end
+
+    return false
 end
 
 function PSC_GetAddonVersion()

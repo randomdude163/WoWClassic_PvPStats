@@ -134,6 +134,320 @@ function PSC_GetInfoKeyFromName(playerName)
     end
 end
 
+function PSC_GetPlayerInfo(playerName)
+    if not playerName then return {}, nil end
+
+    -- 1. Try direct lookup
+    local infoKey = PSC_GetInfoKeyFromName(playerName)
+    if PSC_DB.PlayerInfoCache[infoKey] then
+        return PSC_DB.PlayerInfoCache[infoKey], infoKey
+    end
+
+    -- 2. If not found and name has no realm, try to find matches in the cache from other realms
+    -- This is common when importing data from a character on a different realm
+    if not string.find(playerName, "-") then
+        local searchPrefix = playerName .. "-"
+        for key, info in pairs(PSC_DB.PlayerInfoCache) do
+            if string.sub(key, 1, #searchPrefix) == searchPrefix then
+                return info, key
+            end
+        end
+    end
+
+    return {}, nil
+end
+
+local function Helper_MergeKillEntries(destEntry, sourceEntry)
+    destEntry.kills = (destEntry.kills or 0) + (sourceEntry.kills or 0)
+
+    -- Keep the latest timestamp
+    if (sourceEntry.lastKill or 0) > (destEntry.lastKill or 0) then
+        destEntry.lastKill = sourceEntry.lastKill
+        -- Update specific attributes from latest kill
+        destEntry.class = sourceEntry.class
+        destEntry.race = sourceEntry.race
+        destEntry.gender = sourceEntry.gender
+        destEntry.guild = sourceEntry.guild
+        destEntry.rank = sourceEntry.rank
+        destEntry.zone = sourceEntry.zone
+    end
+
+    -- Merge locations
+    if sourceEntry.locations then
+        if not destEntry.locations then destEntry.locations = {} end
+        for _, loc in ipairs(sourceEntry.locations) do
+            table.insert(destEntry.locations, loc)
+        end
+    elseif sourceEntry.killLocations then -- Legacy field support
+        if not destEntry.locations then destEntry.locations = {} end
+        if not destEntry.killLocations and not destEntry.locations then destEntry.killLocations = {} end -- Keep legacy if dest is legacy
+
+        local targetList = destEntry.locations or destEntry.killLocations
+        for _, loc in ipairs(sourceEntry.killLocations) do
+            table.insert(targetList, loc)
+        end
+    end
+end
+
+local KILL_KEY_MIGRATION_BUDGET = 250
+local killMigrationState = nil
+
+local function InitKillKeyMigrationState()
+    killMigrationState = {
+        charKeys = {},
+        charIndex = 1,
+        killKeys = nil,
+        killIndex = 1,
+        newKills = nil,
+        count = 0,
+        running = true
+    }
+
+    local characters = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters
+    if characters then
+        for charKey in pairs(characters) do
+            table.insert(killMigrationState.charKeys, charKey)
+        end
+    end
+end
+
+local function ProcessKillKeyMigrationSlice()
+    local characters = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters
+    if not characters then
+        killMigrationState = nil
+        return
+    end
+
+    local processed = 0
+    while processed < KILL_KEY_MIGRATION_BUDGET do
+        if killMigrationState.charIndex > #killMigrationState.charKeys then
+            PSC_DB.KillKeysMigrated = true
+            print("[PvPStats]: Migration step 1 complete. Updated " .. killMigrationState.count .. " database entries.")
+            killMigrationState = nil
+            return
+        end
+
+        local charKey = killMigrationState.charKeys[killMigrationState.charIndex]
+        local charData = characters[charKey]
+
+        if not charData or not charData.Kills then
+            killMigrationState.charIndex = killMigrationState.charIndex + 1
+            killMigrationState.killKeys = nil
+            killMigrationState.killIndex = 1
+            killMigrationState.newKills = nil
+        else
+            if not killMigrationState.killKeys then
+                killMigrationState.killKeys = {}
+                for oldKey in pairs(charData.Kills) do
+                    table.insert(killMigrationState.killKeys, oldKey)
+                end
+                killMigrationState.killIndex = 1
+                killMigrationState.newKills = {}
+            end
+
+            if killMigrationState.killIndex > #killMigrationState.killKeys then
+                charData.Kills = killMigrationState.newKills
+                killMigrationState.charIndex = killMigrationState.charIndex + 1
+                killMigrationState.killKeys = nil
+                killMigrationState.killIndex = 1
+                killMigrationState.newKills = nil
+            else
+                local oldKey = killMigrationState.killKeys[killMigrationState.killIndex]
+                killMigrationState.killIndex = killMigrationState.killIndex + 1
+
+                local killEntry = charData.Kills[oldKey]
+                local name = string.match(oldKey, "(.-)%:")
+                local level = string.match(oldKey, ":(%d+)")
+
+                if name and level then
+                    local infoKey
+                    local _, existingInfoKey = PSC_GetPlayerInfo(name)
+
+                    if existingInfoKey then
+                        infoKey = existingInfoKey
+                    else
+                        infoKey = PSC_GetInfoKeyFromName(name)
+                    end
+
+                    local newKey = infoKey .. ":" .. level
+
+                    if newKey ~= oldKey then
+                        if killMigrationState.newKills[newKey] then
+                            Helper_MergeKillEntries(killMigrationState.newKills[newKey], killEntry)
+                        else
+                            killMigrationState.newKills[newKey] = killEntry
+                        end
+                        killMigrationState.count = killMigrationState.count + 1
+                    else
+                        if killMigrationState.newKills[oldKey] then
+                            Helper_MergeKillEntries(killMigrationState.newKills[oldKey], killEntry)
+                        else
+                            killMigrationState.newKills[oldKey] = killEntry
+                        end
+                    end
+                else
+                    killMigrationState.newKills[oldKey] = killEntry
+                end
+
+                processed = processed + 1
+            end
+        end
+    end
+
+    C_Timer.After(0, ProcessKillKeyMigrationSlice)
+end
+
+function PSC_MigrateKillKeys()
+    if PSC_DB.KillKeysMigrated then return end
+    if killMigrationState and killMigrationState.running then return end
+    print("[PvPStats]: Performing database update, this will cause your game to stutter for a few seconds...")
+    InitKillKeyMigrationState()
+    C_Timer.After(0, ProcessKillKeyMigrationSlice)
+end
+
+local function Helper_MergeDeathEntries(destEntry, sourceEntry)
+    destEntry.deaths = (destEntry.deaths or 0) + (sourceEntry.deaths or 0)
+    destEntry.assistKills = (destEntry.assistKills or 0) + (sourceEntry.assistKills or 0)
+    destEntry.soloKills = (destEntry.soloKills or 0) + (sourceEntry.soloKills or 0)
+
+    if (sourceEntry.lastDeath or 0) > (destEntry.lastDeath or 0) then
+        destEntry.lastDeath = sourceEntry.lastDeath
+        destEntry.zone = sourceEntry.zone
+    end
+
+    if sourceEntry.deathLocations then
+        if not destEntry.deathLocations then destEntry.deathLocations = {} end
+        for _, loc in ipairs(sourceEntry.deathLocations) do
+            table.insert(destEntry.deathLocations, loc)
+        end
+    end
+end
+
+local LOSS_KEY_MIGRATION_BUDGET = 250
+local lossMigrationState = nil
+
+local function InitLossKeyMigrationState()
+    lossMigrationState = {
+        charKeys = {},
+        charIndex = 1,
+        deathKeys = nil,
+        deathIndex = 1,
+        newDeaths = nil,
+        count = 0,
+        running = true
+    }
+
+    if PSC_DB.PvPLossCounts then
+        for charKey in pairs(PSC_DB.PvPLossCounts) do
+            table.insert(lossMigrationState.charKeys, charKey)
+        end
+    end
+end
+
+local function ProcessLossKeyMigrationSlice()
+    if not PSC_DB.PvPLossCounts then
+        lossMigrationState = nil
+        return
+    end
+
+    local processed = 0
+    while processed < LOSS_KEY_MIGRATION_BUDGET do
+        if lossMigrationState.charIndex > #lossMigrationState.charKeys then
+            PSC_DB.LossKeysMigrated_v2 = true
+            print("[PvPStats]: Migration step 2 complete. Updated " .. lossMigrationState.count .. " database entries.")
+            lossMigrationState = nil
+            return
+        end
+
+        local charKey = lossMigrationState.charKeys[lossMigrationState.charIndex]
+        local charData = PSC_DB.PvPLossCounts[charKey]
+
+        if not charData or not charData.Deaths then
+            lossMigrationState.charIndex = lossMigrationState.charIndex + 1
+            lossMigrationState.deathKeys = nil
+            lossMigrationState.deathIndex = 1
+            lossMigrationState.newDeaths = nil
+        else
+            if not lossMigrationState.deathKeys then
+                lossMigrationState.deathKeys = {}
+                for oldName in pairs(charData.Deaths) do
+                    table.insert(lossMigrationState.deathKeys, oldName)
+                end
+                lossMigrationState.deathIndex = 1
+                lossMigrationState.newDeaths = {}
+            end
+
+            if lossMigrationState.deathIndex > #lossMigrationState.deathKeys then
+                charData.Deaths = lossMigrationState.newDeaths
+                lossMigrationState.charIndex = lossMigrationState.charIndex + 1
+                lossMigrationState.deathKeys = nil
+                lossMigrationState.deathIndex = 1
+                lossMigrationState.newDeaths = nil
+            else
+                local oldName = lossMigrationState.deathKeys[lossMigrationState.deathIndex]
+                lossMigrationState.deathIndex = lossMigrationState.deathIndex + 1
+
+                local deathEntry = charData.Deaths[oldName]
+                if deathEntry and deathEntry.deathLocations then
+                    for _, loc in ipairs(deathEntry.deathLocations) do
+                        if loc.assisters then
+                            for _, assister in ipairs(loc.assisters) do
+                                local aName = assister.name
+                                if aName and string.find(aName, "-") == nil then
+                                    local _, existingInfoKey = PSC_GetPlayerInfo(aName)
+                                    if existingInfoKey then
+                                        assister.name = existingInfoKey
+                                    else
+                                        assister.name = PSC_GetInfoKeyFromName(aName)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                local hasRealm = string.find(oldName, "-") ~= nil
+                local newName = oldName
+                if not hasRealm then
+                    local _, existingInfoKey = PSC_GetPlayerInfo(oldName)
+                    if existingInfoKey then
+                        newName = existingInfoKey
+                    else
+                        newName = PSC_GetInfoKeyFromName(oldName)
+                    end
+                end
+
+                if newName ~= oldName then
+                    if lossMigrationState.newDeaths[newName] then
+                        Helper_MergeDeathEntries(lossMigrationState.newDeaths[newName], deathEntry)
+                    else
+                        lossMigrationState.newDeaths[newName] = deathEntry
+                    end
+                    lossMigrationState.count = lossMigrationState.count + 1
+                else
+                    if lossMigrationState.newDeaths[oldName] then
+                        Helper_MergeDeathEntries(lossMigrationState.newDeaths[oldName], deathEntry)
+                    else
+                        lossMigrationState.newDeaths[oldName] = deathEntry
+                    end
+                end
+
+                processed = processed + 1
+            end
+        end
+    end
+
+    C_Timer.After(0, ProcessLossKeyMigrationSlice)
+end
+
+function PSC_MigrateLossKeys()
+    if PSC_DB.LossKeysMigrated_v2 then return end
+    if lossMigrationState and lossMigrationState.running then return end
+    if not PSC_DB.PvPLossCounts then return end
+    InitLossKeyMigrationState()
+    C_Timer.After(0, ProcessLossKeyMigrationSlice)
+end
+
 function PSC_MigratePlayerInfoCache()
     if not PSC_DB.PlayerInfoCacheMigrated then
         print("[PvPStats]: Migrating player cache to support cross-realm players...")
@@ -476,6 +790,14 @@ end
 function PSC_InitializePlayerKillCounts()
     if not PSC_DB.PlayerKillCounts.Characters then
         PSC_DB.PlayerKillCounts.Characters = {}
+    end
+
+    -- Ensure all characters have required fields (sanity check for migration/updates)
+    for key, data in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        if data.HighestKillStreak == nil then data.HighestKillStreak = 0 end
+        if data.HighestMultiKill == nil then data.HighestMultiKill = 0 end
+        if data.CurrentKillStreak == nil then data.CurrentKillStreak = 0 end
+        if data.Kills == nil then data.Kills = {} end
     end
 
     local characterKey = PSC_GetCharacterKey()

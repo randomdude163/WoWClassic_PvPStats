@@ -32,8 +32,10 @@ function UpdateKillStreak(playerName, level, class)
         characterData.HighestKillStreak = characterData.CurrentKillStreak
 
         if characterData.HighestKillStreak > 10 and PSC_DB.EnableRecordAnnounceMessages and characterData.CurrentKillStreak % 10 == 0 then
-            local recordMsg = string.gsub(PSC_DB.NewKillStreakRecordMessage, "STREAKCOUNT", characterData.HighestKillStreak)
-            PSC_SendAnnounceMessage(recordMsg)
+            if not PSC_CurrentlyInBattleground then
+                local recordMsg = string.gsub(PSC_DB.NewKillStreakRecordMessage, "STREAKCOUNT", characterData.HighestKillStreak)
+                PSC_SendAnnounceMessage(recordMsg)
+            end
         end
     end
 end

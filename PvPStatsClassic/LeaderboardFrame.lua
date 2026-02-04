@@ -9,9 +9,112 @@ local LEADERBOARD_FRAME_HEIGHT = 450
 
 PSC_LeaderboardFrameInitialSetup = true
 
+local PSC_LeaderboardDataCache = nil
+local PSC_LeaderboardRowDropDown = nil
+
+local function GetLeaderboardEntryUniqueName(entry)
+    if not entry then return nil end
+    local name = entry.rawName or entry.playerName
+    if not name or name == "" then return nil end
+    if not string.find(name, "%-") then
+        local realmName = entry.realm or PSC_RealmName
+        if realmName and realmName ~= "" then
+            name = name .. "-" .. realmName
+        end
+    end
+    return name
+end
+
+local function IsLocalLeaderboardEntry(entry)
+    local playerName = UnitName("player")
+    local localRealm = PSC_RealmName
+    local uniqueName = GetLeaderboardEntryUniqueName(entry)
+    if not uniqueName then return false end
+    if uniqueName == playerName then return true end
+    if localRealm and uniqueName == (playerName .. "-" .. localRealm) then return true end
+    return false
+end
+
+local function RemoveLeaderboardEntry(entryOrName)
+    if not entryOrName then return end
+
+    local candidates = {}
+    local function addCandidate(name)
+        if name and name ~= "" then
+            candidates[name] = true
+        end
+    end
+
+    if type(entryOrName) == "table" then
+        local entry = entryOrName
+        addCandidate(entry.rawName)
+        addCandidate(entry.playerName)
+        addCandidate(GetLeaderboardEntryUniqueName(entry))
+
+        if entry.rawName and string.find(entry.rawName, "%-") then
+            local baseName = strsplit("-", entry.rawName)
+            addCandidate(baseName)
+        end
+        if entry.playerName and string.find(entry.playerName, "%-") then
+            local baseName = strsplit("-", entry.playerName)
+            addCandidate(baseName)
+        end
+    else
+        addCandidate(entryOrName)
+    end
+
+    if PVPSC and PVPSC.Network and PVPSC.Network.sharedData then
+        for name, _ in pairs(candidates) do
+            PVPSC.Network.sharedData[name] = nil
+        end
+    end
+
+    if PSC_DB and PSC_DB.LeaderboardCache then
+        for name, _ in pairs(candidates) do
+            PSC_DB.LeaderboardCache[name] = nil
+        end
+    end
+
+    PSC_LeaderboardDataCache = nil
+    RefreshLeaderboardFrame()
+end
+
+local function RemoveOfflineLeaderboardEntries()
+    if not PSC_DB or not PSC_DB.LeaderboardCache then return end
+
+    local localPlayerName = UnitName("player")
+    local localRealm = PSC_RealmName
+    local sharedData = (PVPSC and PVPSC.Network and PVPSC.Network.sharedData) or {}
+
+    for cacheName, _ in pairs(PSC_DB.LeaderboardCache) do
+        local isLocal = cacheName == localPlayerName or (localRealm and cacheName == (localPlayerName .. "-" .. localRealm))
+        local isLive = sharedData[cacheName] ~= nil
+        if not isLocal and not isLive then
+            PSC_DB.LeaderboardCache[cacheName] = nil
+        end
+    end
+
+    PSC_LeaderboardDataCache = nil
+    RefreshLeaderboardFrame()
+end
+
+if not StaticPopupDialogs["PSC_REMOVE_OFFLINE_LEADERBOARD"] then
+    StaticPopupDialogs["PSC_REMOVE_OFFLINE_LEADERBOARD"] = {
+        text = "Do you really want to remove all saved entries for offline players from your leaderboard? This cannot be undone.",
+        button1 = YES,
+        button2 = NO,
+        OnAccept = function()
+            RemoveOfflineLeaderboardEntries()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3
+    }
+end
+
 local colWidths = {
-    playerName = 90,
-    realm = 135,
+    playerName = 210,
     level = 30,
     class = 65,
     race = 75,
@@ -176,11 +279,11 @@ local function CreateColumnHeaders(content)
     headerRowBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
 
     local playerNameButton = CreateColumnHeader(content, "Name", colWidths.playerName, nil, 10, 0, "playerName")
-    local realmButton = CreateColumnHeader(content, "Realm", colWidths.realm, playerNameButton, 0, 0, "realm")
-    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, realmButton, 0, 0, "level")
-    local classButton = CreateColumnHeader(content, "Class", colWidths.class, levelButton, 0, 0, "class")
-    local raceButton = CreateColumnHeader(content, "Race", colWidths.race, classButton, 0, 0, "race")
-    local totalKillsButton = CreateColumnHeader(content, "Kills", colWidths.totalKills, raceButton, 0, 0, "totalKills")
+    -- Realm column removed
+    local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, playerNameButton, 0, 0, "level")
+    local raceButton = CreateColumnHeader(content, "Race", colWidths.race, levelButton, 0, 0, "race")
+    local classButton = CreateColumnHeader(content, "Class", colWidths.class, raceButton, 0, 0, "class")
+    local totalKillsButton = CreateColumnHeader(content, "Kills", colWidths.totalKills, classButton, 0, 0, "totalKills")
     local uniqueKillsButton = CreateColumnHeader(content, "Unique", colWidths.uniqueKills, totalKillsButton, 0, 0, "uniqueKills")
     local kdRatioButton = CreateColumnHeader(content, "K/D", colWidths.kdRatio, uniqueKillsButton, 0, 0, "kdRatio")
     local currentStreakButton = CreateColumnHeader(content, "Streak", colWidths.currentStreak, kdRatioButton, 0, 0, "currentStreak")
@@ -199,28 +302,14 @@ local function CreatePlayerNameCell(content, playerName, width)
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     nameText:SetPoint("LEFT", content, "LEFT", 4, 0)
 
-    -- Strip realm if present
-    local cleanName = strsplit("-", playerName or "")
-    if not cleanName or cleanName == "" then cleanName = "Unknown" end
+    -- Show full name (Name-Realm)
+    local displayText = playerName
+    if not displayText or displayText == "" then displayText = "Unknown" end
 
-    nameText:SetText(cleanName)
+    nameText:SetText(displayText)
     nameText:SetWidth(width)
     nameText:SetJustifyH("LEFT")
     return nameText
-end
-
-local function CreateRealmCell(content, anchorTo, realmName, width)
-    local realmText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    realmText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
-
-    realmText:SetText(realmName or "")
-    realmText:SetWidth(width)
-    realmText:SetJustifyH("LEFT")
-
-    -- Truncate if too long (no word wrap + fixed width)
-    realmText:SetWordWrap(false)
-
-    return realmText
 end
 
 local function CreateLevelCell(content, anchorTo, level, width)
@@ -300,7 +389,25 @@ end
 local function CreateMostKilledCell(content, anchorTo, mostKilled, width)
     local mostKilledText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     mostKilledText:SetPoint("TOPLEFT", anchorTo, "TOPRIGHT", 0, 0)
-    mostKilledText:SetText(mostKilled or "None")
+
+    -- Strip realm info for display
+    local displayData = mostKilled or "None"
+    local namePart, countPart = displayData:match("^(.-)%s*(%b())$")
+    if not namePart then
+        namePart = displayData
+        countPart = ""
+    end
+
+    local cleanName = namePart
+    if string.find(cleanName, "-") then
+        cleanName = strsplit("-", cleanName)
+    end
+
+    if countPart ~= "" then
+        cleanName = cleanName .. " " .. countPart
+    end
+
+    mostKilledText:SetText(cleanName)
     mostKilledText:SetWidth(width)
     mostKilledText:SetJustifyH("LEFT")
     return mostKilledText
@@ -374,11 +481,11 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     end
 
     local playerNameCell = CreatePlayerNameCell(rowContainer, entry.playerName, colWidths.playerName)
-    local realmCell = CreateRealmCell(rowContainer, playerNameCell, entry.realm, colWidths.realm)
-    local levelCell = CreateLevelCell(rowContainer, realmCell, entry.level, colWidths.level)
-    local classCell = CreateClassCell(rowContainer, levelCell, entry.class, colWidths.class)
-    local raceCell = CreateRaceCell(rowContainer, classCell, entry.race, colWidths.race)
-    local totalKillsCell = CreateTotalKillsCell(rowContainer, raceCell, entry.totalKills, colWidths.totalKills)
+    -- Realm cell removed
+    local levelCell = CreateLevelCell(rowContainer, playerNameCell, entry.level, colWidths.level)
+    local raceCell = CreateRaceCell(rowContainer, levelCell, entry.race, colWidths.race)
+    local classCell = CreateClassCell(rowContainer, raceCell, entry.class, colWidths.class)
+    local totalKillsCell = CreateTotalKillsCell(rowContainer, classCell, entry.totalKills, colWidths.totalKills)
     local uniqueKillsCell = CreateUniqueKillsCell(rowContainer, totalKillsCell, entry.uniqueKills, colWidths.uniqueKills)
     local kdRatioCell = CreateKDRatioCell(rowContainer, uniqueKillsCell, entry.kdRatio, colWidths.kdRatio)
     local currentStreakCell = CreateCurrentStreakCell(rowContainer, kdRatioCell, entry.currentStreak, colWidths.currentStreak)
@@ -402,10 +509,9 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     -- but for now the text modification in NetworkHandler handles the display requirement.
 
     -- If no detailed stats available (cached only), gray out the text
-    if not entry.hasDetailedStats and entry.playerName ~= UnitName("player") then
+    if not entry.hasDetailedStats and entry.rawName ~= UnitName("player") then
         local gray = 0.5
         playerNameCell:SetTextColor(gray, gray, gray)
-        realmCell:SetTextColor(gray, gray, gray)
         levelCell:SetTextColor(gray, gray, gray)
         classCell:SetTextColor(gray, gray, gray)
         raceCell:SetTextColor(gray, gray, gray)
@@ -425,7 +531,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     -- Add click handler to view player's detailed stats
     rowContainer:SetScript("OnClick", function(self, button)
         if button == "LeftButton" then
-            local playerName = entry.playerName
+            local playerName = entry.rawName or entry.playerName
             if not playerName or playerName == "" then
                 return
             end
@@ -444,10 +550,45 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                     local detailedStats = PVPSC.Network:GetDetailedStatsForPlayer(playerName)
                     if detailedStats then
                         -- Display the detailed stats
-                        PSC_ShowPlayerDetailedStats(playerName, detailedStats)
+                        PSC_ShowPlayerDetailedStats(entry.playerName, detailedStats)
                     end
                 end
             end
+        end
+    end)
+
+    -- Register right click for context menu
+    rowContainer:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+    rowContainer:SetScript("OnMouseDown", function(self, button)
+        if button == "RightButton" then
+            if IsLocalLeaderboardEntry(entry) then
+                return
+            end
+
+            if not PSC_LeaderboardRowDropDown then
+                PSC_LeaderboardRowDropDown = CreateFrame("Frame", "PSC_LeaderboardRowDropDown", UIParent, "UIDropDownMenuTemplate")
+            end
+
+            UIDropDownMenu_Initialize(PSC_LeaderboardRowDropDown, function(self, level)
+                local info = UIDropDownMenu_CreateInfo()
+                local displayName = entry.playerName or entry.rawName or "Player"
+                info.text = "Remove " .. displayName .. " from Leaderboard"
+                info.notCheckable = true
+                info.func = function()
+                    RemoveLeaderboardEntry(entry)
+                end
+                UIDropDownMenu_AddButton(info)
+            end, "MENU")
+
+            ToggleDropDownMenu(1, nil, PSC_LeaderboardRowDropDown, self, 0, 0)
+            PSC_LeaderboardRowDropDown._justOpened = true
+            C_Timer.After(0, function()
+                if PSC_LeaderboardRowDropDown then
+                    PSC_LeaderboardRowDropDown._justOpened = nil
+                end
+            end)
+            return
         end
     end)
 
@@ -461,7 +602,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
         GameTooltip:SetText(entry.playerName or "Unknown", 1, 0.82, 0)
 
-        if entry.playerName == UnitName("player") then
+        if entry.rawName == UnitName("player") then
             GameTooltip:AddLine("Click to view your detailed statistics", 1, 1, 1, true)
         elseif entry.hasDetailedStats then
             GameTooltip:AddLine("Click to view this player's detailed statistics", 1, 1, 1, true)
@@ -475,8 +616,6 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
     rowContainer:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
     end)
-
-    rowContainer:RegisterForClicks("LeftButtonUp")
 
     return rowContainer
 end
@@ -552,13 +691,24 @@ local function GetLeaderboardData()
                  end
              end
 
+             -- Construct display name with realm if missing (for display purposes only)
+             local displayName = data.playerName or "Unknown"
+             local realmName = data.realm or PSC_RealmName
+             if realmName and realmName ~= "" and not string.find(displayName, "-") then
+                 displayName = displayName .. "-" .. realmName
+             end
+
+             local raceVal = data.race or "Unknown"
+             if raceVal == "Scourge" then raceVal = "Undead" end
+
              table.insert(leaderboardData, {
-                 playerName = data.playerName or "Unknown",
+                 playerName = displayName,
+                 rawName = data.playerName, -- Store original name for data lookup
                  -- We now store the true realm in the data object if available, though playerName might be "Name-Realm"
-                 realm = data.realm or PSC_RealmName,
+                 realm = realmName,
                  level = data.level or 0,
                  class = data.class or "Unknown",
-                 race = data.race or "Unknown",
+                 race = raceVal,
                  totalKills = kills,
                  uniqueKills = data.uniqueKills or statsTarget.uniqueKills or 0,
                  kdRatio = kdRatioVal,
@@ -706,7 +856,7 @@ end
 local function CreateScrollFrame(parent)
     local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 12, -30)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 15)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 45)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
     content:SetSize(LEADERBOARD_FRAME_WIDTH - 40, LEADERBOARD_FRAME_HEIGHT * 2)
@@ -736,7 +886,6 @@ local function CreateMainFrame()
     return frame
 end
 
-local PSC_LeaderboardDataCache = nil
 
 function RefreshLeaderboardFrame(useCache)
     if PSC_LeaderboardFrameInitialSetup then
@@ -780,12 +929,45 @@ function PSC_CreateLeaderboardFrame()
     PSC_LeaderboardFrame = CreateMainFrame()
     PSC_LeaderboardFrame.content = CreateScrollFrame(PSC_LeaderboardFrame)
 
+    local function CloseLeaderboardContextMenu()
+        if PSC_LeaderboardRowDropDown and PSC_LeaderboardRowDropDown:IsShown() then
+            if CloseDropDownMenus then
+                CloseDropDownMenus()
+            elseif HideDropDownMenu then
+                HideDropDownMenu(1)
+            end
+        end
+    end
+
+    PSC_LeaderboardFrame:SetScript("OnHide", function()
+        CloseLeaderboardContextMenu()
+    end)
+
+    PSC_LeaderboardFrame:SetScript("OnMouseDown", function()
+        CloseLeaderboardContextMenu()
+    end)
+
+    if PSC_LeaderboardFrame.content then
+        PSC_LeaderboardFrame.content:SetScript("OnMouseDown", function()
+            CloseLeaderboardContextMenu()
+        end)
+    end
+
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", 0, 12)
     infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
     infoText:SetTextColor(0.7, 0.7, 0.7)
     infoText:SetJustifyH("CENTER")
     PSC_LeaderboardFrame.infoText = infoText
+
+    local removeOfflineButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
+    removeOfflineButton:SetSize(170, 25)
+    removeOfflineButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -27, 10)
+    removeOfflineButton:SetText("Remove offline players")
+    removeOfflineButton:SetScript("OnClick", function()
+        StaticPopup_Show("PSC_REMOVE_OFFLINE_LEADERBOARD")
+    end)
+    PSC_LeaderboardFrame.removeOfflineButton = removeOfflineButton
 
     PSC_FrameManager:RegisterFrame(PSC_LeaderboardFrame, "Leaderboard")
 
