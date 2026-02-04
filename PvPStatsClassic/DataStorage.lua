@@ -443,7 +443,6 @@ end
 function PSC_MigrateLossKeys()
     if PSC_DB.LossKeysMigrated_v2 then return end
     if lossMigrationState and lossMigrationState.running then return end
-    print("[PvPStats]: Performing database update, this will cause your game to stutter for a few seconds...")
     if not PSC_DB.PvPLossCounts then return end
     InitLossKeyMigrationState()
     C_Timer.After(0, ProcessLossKeyMigrationSlice)
