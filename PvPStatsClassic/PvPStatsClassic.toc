@@ -3,6 +3,7 @@
 ## Title: PvP Stats Classic
 ## Author: Severussnipe & Hkfarmer <Redridge Police>
 ## Notes: Tracks PvP history and provides detailed statistics.
+## IconTexture: Interface\AddOns\PvPStatsClassic\img\RedridgePoliceLogo.blp
 ## SavedVariables: PSC_DB
 
 Libs\LibStub\LibStub.lua
