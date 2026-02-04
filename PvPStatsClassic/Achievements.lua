@@ -377,34 +377,6 @@ function AchievementSystem:CreateIncrementalAchievementCheckTask(stats)
     end
 end
 
-
-function AchievementSystem:CheckAchievements()
-    local playerName = UnitName("player")
-    local achievementsUnlocked = 0
-
-    local stats = PSC_GetStatsForAchievements()
-
-    local unlockedList = {}
-
-    for _, achievement in ipairs(self.achievements) do
-        if achievement and type(achievement.progress) == "function" then
-            local ok, value = pcall(achievement.progress, achievement, stats)
-            if ok then
-                PSC_SaveAchievementProgressValue(achievement.id, value)
-            end
-        end
-        if achievement and PSC_ProcessSingleAchievement(achievement, stats, playerName, unlockedList) then
-            achievementsUnlocked = achievementsUnlocked + 1
-        end
-    end
-
-    self:SaveAchievementPoints()
-
-    PSC_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
-
-    return achievementsUnlocked
-end
-
 local function GetRarityFromPoints(points)
     if points >= 250 then
         return "legendary"
