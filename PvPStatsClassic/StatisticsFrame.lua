@@ -1580,8 +1580,13 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     -- 8. Footer Note
     if not isLocalPlayer then
         local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -47)
+        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -48)
         noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
+        noteText:SetTextColor(0.7, 0.7, 0.7)
+    elseif PSC_DB.ShowAccountWideStats then
+        local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -48)
+        noteText:SetText("Viewing account-wide stats")
         noteText:SetTextColor(0.7, 0.7, 0.7)
     end
 end
