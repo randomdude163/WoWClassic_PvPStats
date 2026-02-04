@@ -414,7 +414,7 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.1.0"
+    return "4.1"
 end
 
 function GetMultiKillText(count)
@@ -1834,7 +1834,7 @@ end
 
 function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
     local frame = CreateFrame("Frame", "PSC_WhatsNewPopup", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(550, 230)
+    frame:SetSize(640, 270)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     frame:SetFrameStrata("DIALOG")
     frame:SetMovable(true)
@@ -1855,7 +1855,7 @@ function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
     frame:SetBackdropColor(0, 0, 0, 0.99)
 
     local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(115, 115)
+    icon:SetSize(136, 136)
     icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 25, -20)
     icon:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
 
@@ -1873,11 +1873,11 @@ function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
 
     if linkUrl and linkUrl ~= "" then
         local linkLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        linkLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 46, 55)
+        linkLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 67, 55)
         linkLabel:SetText("Data import guide\n(CTRL+C to copy):")
 
         local linkBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-        linkBox:SetSize(350, 22)
+        linkBox:SetSize(430, 22)
         linkBox:SetPoint("LEFT", linkLabel, "RIGHT", 15, 0)
         linkBox:SetAutoFocus(false)
         linkBox:SetText(linkUrl)

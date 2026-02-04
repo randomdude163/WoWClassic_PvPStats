@@ -633,15 +633,15 @@ local function HandlePlayerEnteringWorld()
     end
 
     local currentVersion = PSC_GetAddonVersion()
-    -- if PSC_DB.WhatsNewPopupVersion ~= currentVersion then
-    local title = "PvP Stats - What's new:"
-    local message = "New Leaderboard feature! Access it via Shift-Click on the minimap button or by typing \"/psc leaderboard\" in the chat.\n\nYou can now import your data from older clients like Classic Era. Use the link below.\n\nEnjoy!"
-    local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
-    PSC_ShowWhatsNewPopup(title, message, function()
-        PSC_DB.WhatsNewPopupShown = true
-        PSC_DB.WhatsNewPopupVersion = currentVersion
-    end, dataImportGuideUrl)
-    -- end
+    if PSC_DB.WhatsNewPopupVersion ~= currentVersion then
+        local title = "PvP Stats v" .. currentVersion .. " - What's new:"
+        local message = "New Leaderboard feature! Access it via Shift-Click on the minimap button or by typing \"/psc leaderboard\" in the chat.\n\nNew achievements: \"The 16h/24h Ganker\" and \"First Step into Outland\".\n\nYou can now import your data from older clients like Classic Era. Use the link below.\n\nEnjoy!"
+        local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
+        PSC_ShowWhatsNewPopup(title, message, function()
+            PSC_DB.WhatsNewPopupShown = true
+            PSC_DB.WhatsNewPopupVersion = currentVersion
+        end, dataImportGuideUrl)
+    end
 
     PSC_StartIncrementalAchievementsCalculation()
 
