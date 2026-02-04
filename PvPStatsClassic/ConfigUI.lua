@@ -1053,14 +1053,15 @@ local function CreateTabSystem(parent)
     return tabFrames
 end
 
-local function CreateCopyableField(parent, label, text, anchorTo, xOffset, yOffset)
+local function CreateCopyableField(parent, label, text, anchorTo, xOffset, yOffset, customWidth)
     local labelText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", xOffset, yOffset)
     labelText:SetText(label)
 
     local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     editBox:SetAutoFocus(false)
-    editBox:SetSize(285, 20)
+    local width = customWidth or 285
+    editBox:SetSize(width, 20)
     editBox:SetPoint("TOPLEFT", labelText, "TOPLEFT", labelText:GetStringWidth() + 10, 5)
     editBox:SetText(text)
     editBox:SetTextColor(0.3, 0.6, 1.0)
@@ -1161,6 +1162,8 @@ local function CreateAboutTab(parent)
         "github.com/randomdude163/WoWClassic_PvPStats", discordLabel, 0, -20)
     local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact:", "redridgepolice@outlook.com",
         githubLabel, 0, -20)
+    local curseforgeLabel, curseforgeField = CreateCopyableField(creditsContainer, "CurseForge:", "curseforge.com/wow/addons/pvp-stats-classic",
+        contactLabel, 0, -20, 265)
 
     return parent
 end
