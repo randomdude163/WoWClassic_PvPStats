@@ -1,6 +1,7 @@
 -4.1:
 - Fixed missing icons
 - Fixed leaderboard layout issues
+- Fixed a few of the Guild kills achievements not working
 - Added feature for data import from previous installations (like Classic Era client)
 - 9 new achievements ("The 16h/24h Ganker" and "First Step into Outland")
 - Info popup if a new addon version is available
