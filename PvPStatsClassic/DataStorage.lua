@@ -222,7 +222,7 @@ local function ProcessKillKeyMigrationSlice()
     while processed < KILL_KEY_MIGRATION_BUDGET do
         if killMigrationState.charIndex > #killMigrationState.charKeys then
             PSC_DB.KillKeysMigrated = true
-            print("[PvPStats]: Migration complete. Updated " .. killMigrationState.count .. " database entries.")
+            print("[PvPStats]: Migration step 1 complete. Updated " .. killMigrationState.count .. " database entries.")
             killMigrationState = nil
             return
         end
@@ -354,7 +354,7 @@ local function ProcessLossKeyMigrationSlice()
     while processed < LOSS_KEY_MIGRATION_BUDGET do
         if lossMigrationState.charIndex > #lossMigrationState.charKeys then
             PSC_DB.LossKeysMigrated_v2 = true
-            print("[PvPStats]: Loss migration complete. Updated " .. lossMigrationState.count .. " database entries.")
+            print("[PvPStats]: Migration step 2 complete. Updated " .. lossMigrationState.count .. " database entries.")
             lossMigrationState = nil
             return
         end
