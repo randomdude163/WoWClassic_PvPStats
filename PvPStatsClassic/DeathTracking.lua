@@ -202,7 +202,7 @@ function PSC_RegisterPlayerDeath(killerInfo)
     local deathData = lossData.Deaths[killerName]
     deathData.deaths = deathData.deaths + 1
     deathData.lastDeath = time()
-    deathData.zone = GetRealZoneText() or GetSubZoneText() or "Unknown"
+    deathData.zone = PSC_ConvertZoneToEnglish(GetRealZoneText() or GetSubZoneText() or "Unknown")
 
     if #killerInfo.assists > 0 then
         deathData.assistKills = deathData.assistKills + 1

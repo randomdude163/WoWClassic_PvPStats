@@ -52,6 +52,21 @@ local function NormalizeImportedAssisters(deathLocations)
     return normalizedCount
 end
 
+local function NormalizeImportedLocationZones(locations)
+    if not locations then return 0 end
+    local normalizedCount = 0
+    for _, loc in ipairs(locations) do
+        if loc.zone then
+            local normalized = PSC_ConvertZoneToEnglish(loc.zone)
+            if normalized and normalized ~= loc.zone then
+                loc.zone = normalized
+                normalizedCount = normalizedCount + 1
+            end
+        end
+    end
+    return normalizedCount
+end
+
 local function MergeKillEntry(destKills, unitKey, sourceEntry, counters)
     if not unitKey or not sourceEntry then
         return 0
@@ -74,6 +89,7 @@ local function MergeKillEntry(destKills, unitKey, sourceEntry, counters)
 
     if not destKills[destKey] then
         destKills[destKey] = CopyTable(sourceEntry)
+        NormalizeImportedLocationZones(destKills[destKey].killLocations)
         local added = 0
         if sourceEntry.killLocations then
             added = #sourceEntry.killLocations
@@ -99,6 +115,7 @@ local function MergeKillEntry(destKills, unitKey, sourceEntry, counters)
         end
 
         if sourceEntry.killLocations then
+            NormalizeImportedLocationZones(sourceEntry.killLocations)
             for _, sourceLoc in ipairs(sourceEntry.killLocations) do
                 if sourceLoc.timestamp and not existingTimestamps[sourceLoc.timestamp] then
                     table.insert(destEntry.killLocations, CopyTable(sourceLoc))
@@ -140,6 +157,7 @@ local function MergeLossEntry(destLosses, unitName, sourceEntry, counters)
     if not destLosses[destKey] then
         local copyEntry = CopyTable(sourceEntry)
         counters.normalizedAssisters = counters.normalizedAssisters + NormalizeImportedAssisters(copyEntry.deathLocations)
+        NormalizeImportedLocationZones(copyEntry.deathLocations)
         destLosses[destKey] = copyEntry
         counters.importedDeaths = counters.importedDeaths + (copyEntry.deaths or 0)
     else
@@ -158,6 +176,7 @@ local function MergeLossEntry(destLosses, unitName, sourceEntry, counters)
 
         if sourceEntry.deathLocations then
             counters.normalizedAssisters = counters.normalizedAssisters + NormalizeImportedAssisters(sourceEntry.deathLocations)
+            NormalizeImportedLocationZones(sourceEntry.deathLocations)
             for _, sourceLoc in ipairs(sourceEntry.deathLocations) do
                 if sourceLoc.timestamp and not existingTimestamps[sourceLoc.timestamp] then
                     table.insert(destEntry.deathLocations, CopyTable(sourceLoc))

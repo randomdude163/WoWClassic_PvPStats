@@ -17,75 +17,103 @@ local RACES_TO_ENGLISH = {
     ptBR = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Orquisa"]="Orc", ["Anão"]="Dwarf", ["Elfo Noturno"]="Night Elf", ["Renegado"]="Undead", ["Morto-vivo"]="Undead", ["Morta-viva"]="Undead", ["Tauren"]="Tauren", ["Taurena"]="Tauren", ["Gnomo"]="Gnome", ["Troll"]="Troll", ["Trolesa"]="Troll", ["Elfo Sangrento"]="Blood Elf", ["Draenei"]="Draenei" },
 }
 
+-- Zone name translations (English, German, French, Spanish)
 PSC_ZONE_TRANSLATIONS_CLASSIC = {
-    ["Dun Morogh"] = {"Dun Morogh", "Dun Morogh", "Dun Morogh", "Dun Morogh"},
-    ["Elwynn Forest"] = {"Elwynn Forest", "Wald von Elwynn", "Forêt d'Elwynn", "Bosque de Elwynn"},
-    ["Tirisfal Glades"] = {"Tirisfal Glades", "Tirisfal", "Clairières de Tirisfal", "Claros de Tirisfal"},
-    ["Durotar"] = {"Durotar", "Durotar", "Durotar", "Durotar"},
-    ["Westfall"] = {"Westfall", "Westfall", "Marche de l'Ouest", "Páramos de Poniente"},
-    ["Loch Modan"] = {"Loch Modan", "Loch Modan", "Loch Modan", "Loch Modan"},
-    ["Silverpine Forest"] = {"Silverpine Forest", "Silberwald", "Forêt des Pins argentés", "Bosque de Argénteos"},
-    ["Redridge Mountains"] = {"Redridge Mountains", "Rotkammgebirge", "Les Carmines", "Montañas Crestagrana"},
-    ["Duskwood"] = {"Duskwood", "Dämmerwald", "Bois de la Pénombre", "Bosque del Ocaso"},
-    ["Hillsbrad Foothills"] = {"Hillsbrad Foothills", "Vorgebirge des Hügellands", "Contreforts de Hautebrande", "Laderas de Trabalomas"},
-    ["Wetlands"] = {"Wetlands", "Sumpfland", "Les Paluns", "Los Humedales"},
-    ["Alterac Mountains"] = {"Alterac Mountains", "Alteracgebirge", "Montagnes d'Alterac", "Montañas de Alterac"},
-    ["Arathi Highlands"] = {"Arathi Highlands", "Arathihochland", "Hautes-terres d'Arathi", "Tierras Altas de Arathi"},
-    ["Stranglethorn Vale"] = {"Stranglethorn Vale", "Schlingendorntal", "Vallée de Strangleronce", "Vega de Tuercespina"},
-    ["Badlands"] = {"Badlands", "Ödland", "Terres ingrates", "Tierras Inhóspitas"},
-    ["Searing Gorge"] = {"Searing Gorge", "Sengende Schlucht", "Gorge des Vents brûlants", "La Garganta de Fuego"},
-    ["Burning Steppes"] = {"Burning Steppes", "Brennende Steppe", "Steppes ardentes", "Las Estepas Ardientes"},
-    ["Swamp of Sorrows"] = {"Swamp of Sorrows", "Sumpf der Trauer", "Marais des Chagrins", "Pantano de las Penas"},
-    ["Blasted Lands"] = {"Blasted Lands", "Verwüstete Lande", "Terres foudroyées", "Las Tierras Devastadas"},
-    ["Western Plaguelands"] = {"Western Plaguelands", "Westliche Pestländer", "Maleterres de l'Ouest", "Tierras de la Peste del Oeste"},
-    ["Eastern Plaguelands"] = {"Eastern Plaguelands", "Östliche Pestländer", "Maleterres de l'Est", "Tierras de la Peste del Este"},
-    ["Deadwind Pass"] = {"Deadwind Pass", "Gebirgspass der Totenwinde", "Défilé de Deuillevent", "Paso de la Muerte"},
-    ["Stormwind City"] = {"Stormwind City", "Sturmwind", "Hurlevent", "Ventormenta"},
-    ["Mulgore"] = {"Mulgore", "Mulgore", "Mulgore", "Mulgore"},
-    ["Teldrassil"] = {"Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil"},
-    ["Darkshore"] = {"Darkshore", "Dunkelküste", "Sombrivage", "Costa Oscura"},
-    ["The Barrens"] = {"The Barrens", "Brachland", "Les Tarides", "Los Baldíos"},
-    ["Stonetalon Mountains"] = {"Stonetalon Mountains", "Steinkrallengebirge", "Serres-Rocheuses", "Sierra Espolón"},
-    ["Ashenvale"] = {"Ashenvale", "Eschental", "Orneval", "Vallefresno"},
-    ["Thousand Needles"] = {"Thousand Needles", "Tausend Nadeln", "Mille pointes", "Las Mil Agujas"},
-    ["Desolace"] = {"Desolace", "Desolace", "Désolace", "Desolace"},
-    ["Dustwallow Marsh"] = {"Dustwallow Marsh", "Düstermarschen", "Marécage d'Âprefange", "Marjal Revolcafango"},
-    ["Feralas"] = {"Feralas", "Feralas", "Féralas", "Feralas"},
-    ["Tanaris"] = {"Tanaris", "Tanaris", "Tanaris", "Tanaris"},
-    ["Azshara"] = {"Azshara", "Azshara", "Azshara", "Azshara"},
-    ["Felwood"] = {"Felwood", "Teufelswald", "Gangrebois", "Frondavil"},
-    ["Un'Goro Crater"] = {"Un'Goro Crater", "Krater von Un'Goro", "Cratère d'Un'Goro", "Cráter de Un'Goro"},
-    ["Silithus"] = {"Silithus", "Silithus", "Silithus", "Silithus"},
-    ["Winterspring"] = {"Winterspring", "Winterquell", "Berceau-de-l'Hiver", "Cuna del Invierno"},
-    ["Ironforge"] = {"Ironforge", "Eisenschmiede", "Forgefer", "Forjaz"},
-    ["Orgrimmar"] = {"Orgrimmar", "Orgrimmar", "Orgrimmar", "Orgrimmar"},
-    ["Thunder Bluff"] = {"Thunder Bluff", "Donnerfels", "Pitons-du-Tonnerre", "Cima del Trueno"},
-    ["Darnassus"] = {"Darnassus", "Darnassus", "Darnassus", "Darnassus"},
-    ["Undercity"] = {"Undercity", "Unterstadt", "Fossoyeuse", "Entrañas"},
-    ["The Hinterlands"] = {"The Hinterlands", "Hinterland", "Les Hinterlands", "Tierras del Interior"},
-    ["Arathi Basin"] = {"Arathi Basin", "Arathibecken", "Bassin d'Arathi", "Cuenca de Arathi"},
-    ["Warsong Gulch"] = {"Warsong Gulch", "Warsongschlucht", "Goulet des Warsong", "Garganta Grito de Guerra"},
-    ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac"}
+    ["Dun Morogh"] = {"Dun Morogh", "Dun Morogh", "Dun Morogh", "Dun Morogh", "Dun Morogh"},
+    ["Elwynn Forest"] = {"Elwynn Forest", "Wald von Elwynn", "Forêt d'Elwynn", "Bosque de Elwynn", "Floresta de Elwynn"},
+    ["Tirisfal Glades"] = {"Tirisfal Glades", "Tirisfal", "Clairières de Tirisfal", "Claros de Tirisfal", "Clareiras de Tirisfal"},
+    ["Durotar"] = {"Durotar", "Durotar", "Durotar", "Durotar", "Durotar"},
+    ["Westfall"] = {"Westfall", "Westfall", "Marche de l'Ouest", "Páramos de Poniente", "Cerro Oeste"},
+    ["Loch Modan"] = {"Loch Modan", "Loch Modan", "Loch Modan", "Loch Modan", "Loch Modan"},
+    ["Silverpine Forest"] = {"Silverpine Forest", "Silberwald", "Forêt des Pins argentés", "Bosque de Argénteos", "Floresta de Pinhaprata"},
+    ["Redridge Mountains"] = {"Redridge Mountains", "Rotkammgebirge", "Les Carmines", "Montañas Crestagrana", "Montanhas Cristarrubra"},
+    ["Duskwood"] = {"Duskwood", "Dämmerwald", "Bois de la Pénombre", "Bosque del Ocaso", "Floresta do Crepúsculo"},
+    ["Hillsbrad Foothills"] = {"Hillsbrad Foothills", "Vorgebirge des Hügellands", "Contreforts de Hautebrande", "Laderas de Trabalomas", "Contrafortes de Eira dos Montes"},
+    ["Wetlands"] = {"Wetlands", "Sumpfland", "Les Paluns", "Los Humedales", "Pantanal"},
+    ["Alterac Mountains"] = {"Alterac Mountains", "Alteracgebirge", "Montagnes d'Alterac", "Montañas de Alterac", "Montanhas de Alterac"},
+    ["Arathi Highlands"] = {"Arathi Highlands", "Arathihochland", "Hautes-terres d'Arathi", "Tierras Altas de Arathi", "Planalto Arathi"},
+    ["Stranglethorn Vale"] = {"Stranglethorn Vale", "Schlingendorntal", "Vallée de Strangleronce", "Vega de Tuercespina", "Selva do Espinhaço"},
+    ["Badlands"] = {"Badlands", "Ödland", "Terres ingrates", "Tierras Inhóspitas", "Ermos"},
+    ["Searing Gorge"] = {"Searing Gorge", "Sengende Schlucht", "Gorge des Vents brûlants", "La Garganta de Fuego", "Garganta Abrasadora"},
+    ["Burning Steppes"] = {"Burning Steppes", "Brennende Steppe", "Steppes ardentes", "Las Estepas Ardientes", "Estepes Ardentes"},
+    ["Swamp of Sorrows"] = {"Swamp of Sorrows", "Sumpf der Trauer", "Marais des Chagrins", "Pantano de las Penas", "Pântano das Mágoas"},
+    ["Blasted Lands"] = {"Blasted Lands", "Verwüstete Lande", "Terres foudroyées", "Las Tierras Devastadas", "Barreira do Inferno"},
+    ["Western Plaguelands"] = {"Western Plaguelands", "Westliche Pestländer", "Maleterres de l'Ouest", "Tierras de la Peste del Oeste", "Terras Pestilentas Ocidentais"},
+    ["Eastern Plaguelands"] = {"Eastern Plaguelands", "Östliche Pestländer", "Maleterres de l'Est", "Tierras de la Peste del Este", "Terras Pestilentas Orientais"},
+    ["Deadwind Pass"] = {"Deadwind Pass", "Gebirgspass der Totenwinde", "Défilé de Deuillevent", "Paso de la Muerte", "Trilha do Vento Morto"},
+    ["Stormwind City"] = {"Stormwind City", "Sturmwind", "Hurlevent", "Ventormenta", "Ventobravo"},
+    ["Mulgore"] = {"Mulgore", "Mulgore", "Mulgore", "Mulgore", "Mulgore"},
+    ["Teldrassil"] = {"Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil"},
+    ["Darkshore"] = {"Darkshore", "Dunkelküste", "Sombrivage", "Costa Oscura", "Costa Negra"},
+    ["The Barrens"] = {"The Barrens", "Brachland", "Les Tarides", "Los Baldíos", "Sertões"},
+    ["Stonetalon Mountains"] = {"Stonetalon Mountains", "Steinkrallengebirge", "Serres-Rocheuses", "Sierra Espolón", "Cordilheira das Torres de Pedra"},
+    ["Ashenvale"] = {"Ashenvale", "Eschental", "Orneval", "Vallefresno", "Vale Gris"},
+    ["Thousand Needles"] = {"Thousand Needles", "Tausend Nadeln", "Mille pointes", "Las Mil Agujas", "Mil Agulhas"},
+    ["Desolace"] = {"Desolace", "Desolace", "Désolace", "Desolace", "Desolação"},
+    ["Dustwallow Marsh"] = {"Dustwallow Marsh", "Düstermarschen", "Marécage d'Âprefange", "Marjal Revolcafango", "Pântano Vadeoso"},
+    ["Feralas"] = {"Feralas", "Feralas", "Féralas", "Feralas", "Feralas"},
+    ["Tanaris"] = {"Tanaris", "Tanaris", "Tanaris", "Tanaris", "Tanaris"},
+    ["Azshara"] = {"Azshara", "Azshara", "Azshara", "Azshara", "Azshara"},
+    ["Felwood"] = {"Felwood", "Teufelswald", "Gangrebois", "Frondavil", "Selva Maleva"},
+    ["Un'Goro Crater"] = {"Un'Goro Crater", "Krater von Un'Goro", "Cratère d'Un'Goro", "Cráter de Un'Goro", "Cratera Un'Goro"},
+    ["Silithus"] = {"Silithus", "Silithus", "Silithus", "Silithus", "Silithus"},
+    ["Winterspring"] = {"Winterspring", "Winterquell", "Berceau-de-l'Hiver", "Cuna del Invierno", "Hibérnia"},
+    ["Ironforge"] = {"Ironforge", "Eisenschmiede", "Forgefer", "Forjaz", "Altaforja"},
+    ["Orgrimmar"] = {"Orgrimmar", "Orgrimmar", "Orgrimmar", "Orgrimmar", "Orgrimmar"},
+    ["Thunder Bluff"] = {"Thunder Bluff", "Donnerfels", "Pitons-du-Tonnerre", "Cima del Trueno", "Penhasco do Trovão"},
+    ["Darnassus"] = {"Darnassus", "Darnassus", "Darnassus", "Darnassus", "Darnassus"},
+    ["Undercity"] = {"Undercity", "Unterstadt", "Fossoyeuse", "Entrañas", "Cidade Baixa"},
+    ["The Hinterlands"] = {"The Hinterlands", "Hinterland", "Les Hinterlands", "Tierras del Interior", "Terras Agrestes"},
+    ["Moonglade"] = {"Moonglade", "Mondlichtung", "Reflet-de-Lune", "Claro de la Luna", "Clareira da Lua"},
+    ["Blackrock Mountain"] = {"Blackrock Mountain", "Der Schwarzfels", "Mont Rochenoire", "Montaña Roca Negra", "Montanha Rocha Negra"},
+    ["Arathi Basin"] = {"Arathi Basin", "Arathibecken", "Bassin d'Arathi", "Cuenca de Arathi", "Bacia de Arathi"},
+    ["Warsong Gulch"] = {"Warsong Gulch", "Warsongschlucht", "Goulet des Warsong", "Garganta Grito de Guerra", "Garganta Grito de Guerra"},
+    ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac", "Vale Alterac"}
 }
 
 PSC_ZONE_TRANSLATIONS_TBC = {
-    ["Eversong Woods"] = {"Eversong Woods", "Immersangwald", "Bois des Chants éternels", "Bosque Canción Eterna"},
-    ["Ghostlands"] = {"Ghostlands", "Geisterlande", "Terres fantômes", "Tierras Fantasma"},
-    ["Hellfire Peninsula"] = {"Hellfire Peninsula", "Höllenfeuerhalbinsel", "Péninsule des Flammes infernales", "Península del Fuego Infernal"},
-    ["Zangarmarsh"] = {"Zangarmarsh", "Zangarmarschen", "Marécage de Zangar", "Marisma de Zangar"},
-    ["Terokkar Forest"] = {"Terokkar Forest", "Wälder von Terokkar", "Forêt de Terokkar", "Bosque de Terokkar"},
-    ["Nagrand"] = {"Nagrand", "Nagrand", "Nagrand", "Nagrand"},
-    ["Blade's Edge Mountains"] = {"Blade's Edge Mountains", "Schergrat", "Les Tranchantes", "Montañas Filospada"},
-    ["Netherstorm"] = {"Netherstorm", "Nethersturm", "Raz-de-Néant", "Tormenta Abisal"},
-    ["Shadowmoon Valley"] = {"Shadowmoon Valley", "Schattenmondtal", "Vallée d'Ombrelune", "Valle Sombraluna"},
-    ["Silvermoon City"] = {"Silvermoon City", "Silbermond", "Lune-d'Argent", "Ciudad de Lunargenta"},
-    ["Azuremyst Isle"] = {"Azuremyst Isle", "Azurmythosinsel", "Île de Brume-azur", "Isla Bruma Azur"},
-    ["Bloodmyst Isle"] = {"Bloodmyst Isle", "Blutmythosinsel", "Île de Brume-sang", "Isla Bruma de Sangre"},
-    ["Exodar"] = {"Exodar", "Exodar", "Exodar", "Exodar"},
-    ["Eye of the Storm"] = {"Eye of the Storm", "Auge des Sturms", "L'Œil du cyclone", "Ojo de la Tormenta"}
+    ["Eversong Woods"] = {"Eversong Woods", "Immersangwald", "Bois des Chants éternels", "Bosque Canción Eterna", "Floresta do Canto Eterno"},
+    ["Ghostlands"] = {"Ghostlands", "Geisterlande", "Terres fantômes", "Tierras Fantasma", "Terra Fantasma"},
+    ["Hellfire Peninsula"] = {"Hellfire Peninsula", "Höllenfeuerhalbinsel", "Péninsule des Flammes infernales", "Península del Fuego Infernal", "Península Fogo do Inferno"},
+    ["Zangarmarsh"] = {"Zangarmarsh", "Zangarmarschen", "Marécage de Zangar", "Marisma de Zangar", "Pântano Zíngaro"},
+    ["Terokkar Forest"] = {"Terokkar Forest", "Wälder von Terokkar", "Forêt de Terokkar", "Bosque de Terokkar", "Floresta Terokkar"},
+    ["Nagrand"] = {"Nagrand", "Nagrand", "Nagrand", "Nagrand", "Nagrand"},
+    ["Blade's Edge Mountains"] = {"Blade's Edge Mountains", "Schergrat", "Les Tranchantes", "Montañas Filospada", "Montanhas da Lâmina Afiada"},
+    ["Netherstorm"] = {"Netherstorm", "Nethersturm", "Raz-de-Néant", "Tormenta Abisal", "Eternévoa"},
+    ["Shadowmoon Valley"] = {"Shadowmoon Valley", "Schattenmondtal", "Vallée d'Ombrelune", "Valle Sombraluna", "Vale da Lua Negra"},
+    ["Shattrath City"] = {"Shattrath City", "Shattrath", "Shattrath", "Ciudad de Shattrath", "Shattrath"},
+    ["Silvermoon City"] = {"Silvermoon City", "Silbermond", "Lune-d'Argent", "Ciudad de Lunargenta", "Luaprata"},
+    ["Azuremyst Isle"] = {"Azuremyst Isle", "Azurmythosinsel", "Île de Brume-azur", "Isla Bruma Azur", "Ilha Névoa Lazúli"},
+    ["Bloodmyst Isle"] = {"Bloodmyst Isle", "Blutmythosinsel", "Île de Brume-sang", "Isla Bruma de Sangre", "Ilha Névoa Rubra"},
+    ["Isle of Quel'Danas"] = {"Isle of Quel'Danas", "Insel von Quel'Danas", "Île de Quel'Danas", "Isla de Quel'Danas", "Ilha de Quel'Danas"},
+    ["Exodar"] = {"Exodar", "Exodar", "Exodar", "Exodar", "Exodar"},
+    ["Eye of the Storm"] = {"Eye of the Storm", "Auge des Sturms", "L'Œil du cyclone", "Ojo de la Tormenta", "Olho da Tormenta"}
 }
 
 local LOCALE = GetLocale()
+
+local ZONE_TRANSLATION_LOOKUP = nil
+
+local function BuildZoneTranslationLookup()
+    local lookup = {}
+
+    local function AddTranslations(map)
+        for englishName, translations in pairs(map) do
+            if type(translations) == "table" then
+                for _, localizedName in ipairs(translations) do
+                    if localizedName and localizedName ~= "" then
+                        lookup[localizedName] = englishName
+                    end
+                end
+            end
+        end
+    end
+
+    AddTranslations(PSC_ZONE_TRANSLATIONS_CLASSIC)
+    AddTranslations(PSC_ZONE_TRANSLATIONS_TBC)
+
+    return lookup
+end
 
 
 local function GetHonorRank(unit)
@@ -563,6 +591,18 @@ local function ConvertRaceToEnglish(localizedRace)
     return RACES_TO_ENGLISH[LOCALE][localizedRace] or localizedRace
 end
 
+function PSC_ConvertZoneToEnglish(localizedZone)
+    if not localizedZone or localizedZone == "" then
+        return localizedZone
+    end
+
+    if not ZONE_TRANSLATION_LOOKUP then
+        ZONE_TRANSLATION_LOOKUP = BuildZoneTranslationLookup()
+    end
+
+    return ZONE_TRANSLATION_LOOKUP[localizedZone] or localizedZone
+end
+
 function PSC_MigratePlayerInfoToEnglish(force)
     if not PSC_DB.PlayerInfoEnglishMigrated or force then
         for _, data in pairs(PSC_DB.PlayerInfoCache) do
@@ -593,6 +633,42 @@ function PSC_MigratePlayerInfoToEnglish(force)
 
                 if englishRace ~= data.race then
                     data.race = englishRace
+                end
+            end
+        end
+
+        local function NormalizeLocationZones(locations)
+            if not locations then return end
+            for _, loc in ipairs(locations) do
+                if loc.zone then
+                    loc.zone = PSC_ConvertZoneToEnglish(loc.zone)
+                end
+            end
+        end
+
+        if PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters then
+            for _, charData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+                if charData.Kills then
+                    for _, killData in pairs(charData.Kills) do
+                        if killData.zone then
+                            killData.zone = PSC_ConvertZoneToEnglish(killData.zone)
+                        end
+                        NormalizeLocationZones(killData.killLocations)
+                        NormalizeLocationZones(killData.locations)
+                    end
+                end
+            end
+        end
+
+        if PSC_DB.PvPLossCounts then
+            for _, lossData in pairs(PSC_DB.PvPLossCounts) do
+                if lossData.Deaths then
+                    for _, deathData in pairs(lossData.Deaths) do
+                        if deathData.zone then
+                            deathData.zone = PSC_ConvertZoneToEnglish(deathData.zone)
+                        end
+                        NormalizeLocationZones(deathData.deathLocations)
+                    end
                 end
             end
         end
