@@ -42,7 +42,7 @@ local raceColors = {
         g = 0.85,
         b = 0.20
     },
-    ["NightElf"] = {
+    ["Night Elf"] = {
         r = 0.47,
         g = 0.36,
         b = 0.86
