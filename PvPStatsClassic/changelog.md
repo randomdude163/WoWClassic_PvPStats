@@ -1,3 +1,6 @@
+v4.1.1:
+- Fixed "The number of messages that can be sent is limited" warnings in the chat
+
 -4.1:
 - Fixed missing icons
 - Fixed leaderboard layout issues

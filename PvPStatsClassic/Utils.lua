@@ -414,7 +414,7 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.1"
+    return "4.1.1"
 end
 
 function GetMultiKillText(count)
