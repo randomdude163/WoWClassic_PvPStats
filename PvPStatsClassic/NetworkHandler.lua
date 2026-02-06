@@ -15,7 +15,7 @@ local PREFIX = "PVPSC"  -- Single prefix for all messages
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
 Network.lastPlayerStats = nil -- Cache for own stats to avoid recalculation
-Network.MIN_BROADCAST_INTERVAL = 5
+Network.MIN_BROADCAST_INTERVAL = 10
 
 -- Deduplication cache to prevent processing the same message multiple times
 local recentMessages = {}
@@ -587,7 +587,7 @@ function Network:BroadcastStats(providedStats)
 
     -- Send with slight staggering to avoid immediate throttling
     -- Increased stagger to reduce message bursts across channels
-    local STAGGER_DELAY = 1.0
+    local STAGGER_DELAY = 3.0
     for i, channel in ipairs(distributionList) do
         local delay = (i - 1) * STAGGER_DELAY
         if delay == 0 then
