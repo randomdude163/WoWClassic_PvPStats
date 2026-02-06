@@ -5,6 +5,7 @@ local function PrintSlashCommandUsage()
     PSC_Print("Usage: /psc history - Show PvP history")
     PSC_Print("Usage: /psc achievements - Show PvP achievements")
     PSC_Print("Usage: /psc leaderboard - Show PvP leaderboard")
+    PSC_Print("Usage: /psc sendstats <player name> - Send your stats to a player")
     PSC_Print("Usage: /psc settings - Open addon settings")
 
     if PSC_Debug then
@@ -89,6 +90,26 @@ function PSC_SlashCommandHandler(msg)
 
     elseif command == "leaderboard" or command == "lb" then
         PSC_CreateLeaderboardFrame()
+
+    elseif command == "sendstats" then
+        if not arguments or arguments == "" then
+            PSC_Print("Usage: /psc sendstats <player name>")
+            return
+        end
+
+        local normalized = PVPSC.Network.NormalizeTargetName and PVPSC.Network:NormalizeTargetName(arguments) or strtrim(arguments)
+        if not normalized or normalized == "" then
+            PSC_Print("Usage: /psc sendstats <player name>")
+            return
+        end
+
+        local sent, _, reason = PVPSC.Network:SendStatsToPlayer(normalized)
+        if not sent then
+            PSC_Print("[PvPStats]: " .. (reason or "Unable to send statistics."))
+            return
+        end
+
+        PSC_Print("[PvPStats]: Sent stats to " .. normalized .. ". They will only be able to receive them if they have addon version 4.2 or higher.")
 
     elseif command == "options" or command == "settings" then
         PSC_CreateConfigUI()
