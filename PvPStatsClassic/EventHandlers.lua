@@ -639,6 +639,8 @@ local function HandlePlayerEnteringWorld()
             PSC_DB.WhatsNewPopupShown = true
             PSC_DB.WhatsNewPopupVersion = currentVersion
         end, dataImportGuideUrl)
+        -- Force migration of international data on first run after update
+        PSC_MigratePlayerInfoToEnglish(true)
     end
 
     PSC_StartIncrementalAchievementsCalculation()
