@@ -758,20 +758,20 @@ function PSC_CheckBattlegroundStatus()
         if (currentMapId == bgMapId) then
             if not PSC_lastInBattlegroundValue then
                 local msg = "[PvPStats]: Entered battleground. "
-                -- if PSC_DB.CountKillsInBattlegrounds then
-                --     msg = msg .. "Only your own killing blows "
-                --     if PSC_DB.CountAssistsInBattlegrounds then
-                --         msg = msg .. "and assists "
-                --     end
-                --     msg = msg .. "will be counted, "
-                -- else
-                --     msg = msg .. "No kills will be counted, "
-                -- end
-                -- if PSC_DB.CountDeathsInBattlegrounds then
-                --     msg = msg .. "deaths will be counted."
-                -- else
-                --     msg = msg .. "no deaths will be counted."
-                -- end
+                if PSC_DB.CountKillsInBattlegrounds then
+                    msg = msg .. "Only your own killing blows "
+                    if PSC_DB.CountAssistsInBattlegrounds then
+                        msg = msg .. "and assists "
+                    end
+                    msg = msg .. "will be counted, "
+                else
+                    msg = msg .. "No kills will be counted, "
+                end
+                if PSC_DB.CountDeathsInBattlegrounds then
+                    msg = msg .. "deaths will be counted."
+                else
+                    msg = msg .. "no deaths will be counted."
+                end
                 print(msg)
             end
             PSC_CurrentlyInBattleground = true

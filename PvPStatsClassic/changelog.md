@@ -1,3 +1,7 @@
+v4.2:
+- Added command /psc sendstats <player name>. With it you can directly send your stats to a player that isn't nearby or in your party/raid/guild.
+- Fixed automatic Battleground Mode for Eye of the Storm.
+
 v4.1.1:
 - Fixed "The number of messages that can be sent is limited" warnings in the chat
 
