@@ -811,7 +811,7 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
         self:UpdateLeaderboardCache(statsData)
 
         if distribution == "WHISPER" then
-            PSC_Print("[PvPStats]: Received statistics from " .. uniqueName .. ". Open Leaderboard to view them")
+            PSC_Print("[PvPStats]: " .. uniqueName .. " sent you their stats, open the Leaderboard to view them.")
         end
 
         D("Received detailed stats from", uniqueName, "via", distribution, "- Kills:", statsData.totalKills)
