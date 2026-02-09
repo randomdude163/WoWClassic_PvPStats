@@ -414,7 +414,7 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.1.1"
+    return "4.2"
 end
 
 function GetMultiKillText(count)
@@ -1834,7 +1834,7 @@ end
 
 function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
     local frame = CreateFrame("Frame", "PSC_WhatsNewPopup", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(640, 270)
+    frame:SetSize(700, 280)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     frame:SetFrameStrata("DIALOG")
     frame:SetMovable(true)
@@ -1877,7 +1877,7 @@ function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
         linkLabel:SetText("Data import guide\n(CTRL+C to copy):")
 
         local linkBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-        linkBox:SetSize(430, 22)
+        linkBox:SetSize(490, 22)
         linkBox:SetPoint("LEFT", linkLabel, "RIGHT", 15, 0)
         linkBox:SetAutoFocus(false)
         linkBox:SetText(linkUrl)
