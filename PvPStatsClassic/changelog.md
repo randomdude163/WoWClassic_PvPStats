@@ -1,3 +1,8 @@
+v4.2.1:
+- Added "Send Stats To..." button in leaderboard frame for quick stat sharing
+- Added right-click option to send stats directly to selected players in leaderboard
+- Improved leaderboard UI layout
+
 v4.2:
 - Added command /psc sendstats <player name>. With it you can directly send your stats to a player that isn't nearby or in your party/raid/guild.
 - Fixed automatic Battleground Mode for Eye of the Storm.
