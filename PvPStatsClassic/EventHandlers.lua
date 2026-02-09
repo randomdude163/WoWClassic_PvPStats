@@ -748,6 +748,9 @@ function PSC_CheckBattlegroundStatus()
         -- "Arathi Basin"
         1461,
 
+        -- Eye of the Storm
+        1956,
+
         -- 1433 -- Redridge Mountains
     }
 
