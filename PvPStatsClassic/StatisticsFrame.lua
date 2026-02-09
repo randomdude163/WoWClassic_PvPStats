@@ -2020,6 +2020,7 @@ local function createEmptyStatsFrame()
     return frame
 end
 
+
 function PSC_CreateStatisticsFrame()
     if statisticsFrame then
         statisticsFrame:Hide()
@@ -2246,66 +2247,68 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
     end
 
-    -- Separator line above buttons
-    local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
-    buttonSeparatorLine:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 430, 105)
-    buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 105)
-    buttonSeparatorLine:SetHeight(1)
-    buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
+    if not isExternalPlayer then
+        -- Separator line above buttons
+        local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
+        buttonSeparatorLine:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 430, 105)
+        buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 105)
+        buttonSeparatorLine:SetHeight(1)
+        buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
-    -- Button container at bottom right in 3 rows with 2 columns
-    local buttonContainer = CreateFrame("Frame", nil, frame)
-    local buttonWidth = 140
-    local buttonHeight = 25
-    local buttonSpacing = 5
-    buttonContainer:SetSize((buttonWidth * 2) + buttonSpacing, (buttonHeight * 3) + (buttonSpacing * 2))
-    buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 13)
-    frame.buttonContainer = buttonContainer
+        -- Button container at bottom right in 3 rows with 2 columns
+        local buttonContainer = CreateFrame("Frame", nil, frame)
+        local buttonWidth = 140
+        local buttonHeight = 25
+        local buttonSpacing = 5
+        buttonContainer:SetSize((buttonWidth * 2) + buttonSpacing, (buttonHeight * 3) + (buttonSpacing * 2))
+        buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 13)
+        frame.buttonContainer = buttonContainer
 
-    -- Top left button: Settings
-    local settingsButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    settingsButton:SetSize(buttonWidth, buttonHeight)
-    settingsButton:SetPoint("TOPLEFT", buttonContainer, "TOPLEFT", 0, 0)
-    settingsButton:SetText("Show Settings")
-    settingsButton:SetScript("OnClick", function()
-        PSC_CreateConfigUI()
-    end)
+        -- Top left button: Settings
+        local settingsButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+        settingsButton:SetSize(buttonWidth, buttonHeight)
+        settingsButton:SetPoint("TOPLEFT", buttonContainer, "TOPLEFT", 0, 0)
+        settingsButton:SetText("Show Settings")
+        settingsButton:SetScript("OnClick", function()
+            PSC_CreateConfigUI()
+        end)
 
-    -- Top right button: Achievements
-    local achievementsButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    achievementsButton:SetSize(buttonWidth, buttonHeight)
-    achievementsButton:SetPoint("TOPRIGHT", buttonContainer, "TOPRIGHT", 0, 0)
-    achievementsButton:SetText("Show Achievements")
-    achievementsButton:SetScript("OnClick", function()
-        PSC_ToggleAchievementFrame()
-    end)
+        -- Top right button: Achievements
+        local achievementsButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+        achievementsButton:SetSize(buttonWidth, buttonHeight)
+        achievementsButton:SetPoint("TOPRIGHT", buttonContainer, "TOPRIGHT", 0, 0)
+        achievementsButton:SetText("Show Achievements")
+        achievementsButton:SetScript("OnClick", function()
+            PSC_ToggleAchievementFrame()
+        end)
 
-    -- Middle left button: Kill History
-    local killHistoryButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    killHistoryButton:SetSize(buttonWidth, buttonHeight)
-    killHistoryButton:SetPoint("TOPLEFT", settingsButton, "BOTTOMLEFT", 0, -buttonSpacing)
-    killHistoryButton:SetText("Show Kill History")
-    killHistoryButton:SetScript("OnClick", function()
-        PSC_CreateKillsListFrame()
-    end)
+        -- Middle left button: Kill History
+        local killHistoryButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+        killHistoryButton:SetSize(buttonWidth, buttonHeight)
+        killHistoryButton:SetPoint("TOPLEFT", settingsButton, "BOTTOMLEFT", 0, -buttonSpacing)
+        killHistoryButton:SetText("Show Kill History")
+        killHistoryButton:SetScript("OnClick", function()
+            PSC_CreateKillsListFrame()
+        end)
 
-    -- Middle right button: Kill Streak
-    local killstreakButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    killstreakButton:SetSize(buttonWidth, buttonHeight)
-    killstreakButton:SetPoint("TOPRIGHT", achievementsButton, "BOTTOMRIGHT", 0, -buttonSpacing)
-    killstreakButton:SetText("Show Kill Streak")
-    killstreakButton:SetScript("OnClick", function()
-        PSC_CreateKillStreakPopup()
-    end)
+        -- Middle right button: Kill Streak
+        local killstreakButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+        killstreakButton:SetSize(buttonWidth, buttonHeight)
+        killstreakButton:SetPoint("TOPRIGHT", achievementsButton, "BOTTOMRIGHT", 0, -buttonSpacing)
+        killstreakButton:SetText("Show Kill Streak")
+        killstreakButton:SetScript("OnClick", function()
+            PSC_CreateKillStreakPopup()
+        end)
 
-    -- Bottom button: Leaderboard (Full width)
-    local leaderboardButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    leaderboardButton:SetSize((buttonWidth * 2) + buttonSpacing, buttonHeight)
-    leaderboardButton:SetPoint("TOPLEFT", killHistoryButton, "BOTTOMLEFT", 0, -buttonSpacing)
-    leaderboardButton:SetText("Show Leaderboard")
-    leaderboardButton:SetScript("OnClick", function()
-        PSC_CreateLeaderboardFrame()
-    end)
+        -- Bottom button: Leaderboard (Full width)
+        local leaderboardButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+        leaderboardButton:SetSize((buttonWidth * 2) + buttonSpacing, buttonHeight)
+        leaderboardButton:SetPoint("TOPLEFT", killHistoryButton, "BOTTOMLEFT", 0, -buttonSpacing)
+        leaderboardButton:SetText("Show Leaderboard")
+        leaderboardButton:SetScript("OnClick", function()
+            PSC_CreateLeaderboardFrame()
+        end)
+    end
 end
 
 -- Display another player's detailed statistics

@@ -21,10 +21,21 @@ Network.MIN_BROADCAST_INTERVAL = 10
 local recentMessages = {}
 local RECENT_TTL = 300  -- 5 minutes
 
+
 local function D(...)
     if PSC_Debug then
         print("|cFFFFD700[PVPSC Network]|r", ...)
     end
+end
+
+function Network:NormalizeTargetName(targetName)
+    if not targetName then
+        return nil
+    end
+
+    local trimmed = targetName:gsub("^%s+", ""):gsub("%s+$", "")
+    trimmed = trimmed:gsub("%s*%-%s*", "-")
+    return trimmed
 end
 
 -- Generate a unique key for deduplication
@@ -416,6 +427,17 @@ function Network:BuildDetailedStats()
     return result
 end
 
+-- Build the serialized payload for full stats
+function Network:BuildFullPayload()
+    local detailedStats = self.lastPlayerStats or self:BuildDetailedStats()
+
+    -- Update timestamp to avoid stale data when reusing cached stats
+    detailedStats.timestamp = GetServerTime()
+
+    local payload = SerializeDetailedStats(detailedStats)
+    return "FULL|" .. payload
+end
+
 -- Constructs the standardized broadcast payload from component stats
 function Network:ConstructPayload(components)
     local totalAchievements = 0
@@ -561,16 +583,7 @@ function Network:BroadcastStats(providedStats)
 
     self.lastBroadcastTime = now
 
-    -- Always build full detailed stats
-    local detailedStats = self.lastPlayerStats or self:BuildDetailedStats()
-
-    -- Update timestamp to now, otherwise rebroadcasting cached stats (e.g. on SYNC)
-    -- might result in receivers discarding data as stale (TTL expires)
-    detailedStats.timestamp = GetServerTime()
-
-    -- Serialize
-    local payload = SerializeDetailedStats(detailedStats)
-    payload = "FULL|" .. payload
+    local payload = self:BuildFullPayload()
 
     -- Priority BULK for large data
     local priority = "BULK"
@@ -603,6 +616,18 @@ function Network:BroadcastStats(providedStats)
     if RefreshLeaderboardFrame and PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsShown() then
         RefreshLeaderboardFrame()
     end
+end
+
+function Network:SendStatsToPlayer(targetName)
+    local normalized = self:NormalizeTargetName(targetName)
+    if not normalized or normalized == "" then
+        return false, "invalid", "Please enter a player name."
+    end
+
+    local payload = self:BuildFullPayload()
+    self:SendCommMessageWithDebug(PREFIX, payload, "WHISPER", normalized, "BULK")
+
+    return true
 end
 
 -- Validate and Clean Leaderboard Cache (Run once on startup)
@@ -784,6 +809,10 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
         -- Update caches
         self.sharedData[uniqueName] = statsData
         self:UpdateLeaderboardCache(statsData)
+
+        if distribution == "WHISPER" then
+            PSC_Print("[PvPStats]: " .. uniqueName .. " sent you their stats, open the Leaderboard to view them.")
+        end
 
         D("Received detailed stats from", uniqueName, "via", distribution, "- Kills:", statsData.totalKills)
 
