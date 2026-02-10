@@ -123,7 +123,7 @@ if not StaticPopupDialogs["PSC_SEND_STATS_TO_PLAYER"] then
         OnAccept = function(self)
             local editBox = self.editBox or _G[self:GetName().."EditBox"]
             if not editBox then return end
-            
+
             local playerName = editBox:GetText()
             if playerName and playerName ~= "" then
                 local normalized = PVPSC.Network:NormalizeTargetName(playerName)
@@ -131,7 +131,7 @@ if not StaticPopupDialogs["PSC_SEND_STATS_TO_PLAYER"] then
                     PSC_Print("Invalid player name.")
                     return
                 end
-                
+
                 local sent, _, reason = PVPSC.Network:SendStatsToPlayer(normalized)
                 if not sent then
                     PSC_Print("Failed to send stats: " .. (reason or "Unknown error"))
@@ -145,7 +145,7 @@ if not StaticPopupDialogs["PSC_SEND_STATS_TO_PLAYER"] then
             self:SetFrameStrata("FULLSCREEN_DIALOG")
             self:SetFrameLevel(1000)
             self:Raise()
-            
+
             local editBox = self.editBox or _G[self:GetName().."EditBox"]
             if editBox then
                 editBox:SetFocus()
@@ -628,7 +628,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
             UIDropDownMenu_Initialize(PSC_LeaderboardRowDropDown, function(self, level)
                 local info = UIDropDownMenu_CreateInfo()
                 local displayName = entry.playerName or entry.rawName or "Player"
-                
+
                 -- Add "Send stats to" option
                 info.text = "Send stats to " .. displayName
                 info.notCheckable = true
@@ -647,7 +647,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                     end
                 end
                 UIDropDownMenu_AddButton(info)
-                
+
                 -- Add separator
                 info = UIDropDownMenu_CreateInfo()
                 info.text = ""
@@ -655,7 +655,7 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
                 info.notCheckable = true
                 info.disabled = true
                 UIDropDownMenu_AddButton(info)
-                
+
                 -- Add "Remove from Leaderboard" option
                 info = UIDropDownMenu_CreateInfo()
                 info.text = "Remove " .. displayName .. " from Leaderboard"
@@ -1013,7 +1013,7 @@ function PSC_CreateLeaderboardFrame()
     end
 
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", -85, 12)
+    infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", -165, 12)
     infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
     infoText:SetTextColor(0.7, 0.7, 0.7)
     infoText:SetJustifyH("CENTER")
