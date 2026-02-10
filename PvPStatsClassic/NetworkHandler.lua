@@ -15,7 +15,7 @@ local PREFIX = "PVPSC"  -- Single prefix for all messages
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
 Network.lastPlayerStats = nil -- Cache for own stats to avoid recalculation
-Network.MIN_BROADCAST_INTERVAL = 10
+Network.MIN_BROADCAST_INTERVAL = 15
 
 -- Deduplication cache to prevent processing the same message multiple times
 local recentMessages = {}
@@ -510,12 +510,6 @@ function Network:GetBroadcastChannels()
         table.insert(distributionList, "GUILD")
     end
 
-    -- Send to interactions in instance
-    local inInstance, instanceType = IsInInstance()
-    if instanceType == "pvp" or instanceType == "arena" then
-        table.insert(distributionList, "INSTANCE_CHAT")
-    end
-
     -- Always yell to share with others nearby
     table.insert(distributionList, "YELL")
 
@@ -600,7 +594,7 @@ function Network:BroadcastStats(providedStats)
 
     -- Send with slight staggering to avoid immediate throttling
     -- Increased stagger to reduce message bursts across channels
-    local STAGGER_DELAY = 3.0
+    local STAGGER_DELAY = 6.0
     for i, channel in ipairs(distributionList) do
         local delay = (i - 1) * STAGGER_DELAY
         if delay == 0 then
