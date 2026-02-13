@@ -60,7 +60,7 @@ local function ParseLevelSearch(text)
     if min and max then
         min = tonumber(min)
         max = tonumber(max)
-        if min and max and min <= max and min >= 1 and max <= 60 then
+        if min and max and min <= max and min >= 1 and max <= 70 then
             minLevelSearch = min
             maxLevelSearch = max
             return true
@@ -69,7 +69,7 @@ local function ParseLevelSearch(text)
     end
 
     local level = tonumber(text)
-    if level and level >= 1 and level <= 60 then
+    if level and level >= 1 and level <= 70 then
         minLevelSearch = level
         maxLevelSearch = level
         return true
@@ -162,7 +162,7 @@ local function SetupLevelSearchBoxScripts(levelSearchBox)
     levelSearchBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Level filter")
-        GameTooltip:AddLine("Enter a single level (e.g. 60)", 1, 1, 1, true)
+        GameTooltip:AddLine("Enter a single level (e.g. 70)", 1, 1, 1, true)
         GameTooltip:AddLine("Or a range (e.g. 30-40)", 1, 1, 1, true)
         GameTooltip:AddLine("Or ?? for unknown levels", 1, 1, 1, true)
         GameTooltip:AddLine("Press ESC to clear filter", 0.8, 0.8, 0.8, true)

@@ -446,7 +446,7 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
     local color
     if titleType == "level" and entry.key ~= "??" then
         local level = tonumber(entry.key) or 0
-        local maxLevel = 60
+        local maxLevel = 70
 
         local ratio = level / maxLevel
         color = {
@@ -1726,7 +1726,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                             end
                             levelData["??"] = (levelData["??"] or 0) + kills
                         else
-                            if levelNum > 0 and levelNum <= 60 then
+                            if levelNum > 0 and levelNum <= 70 then
                                 local levelKey = levelPart
                                 if not levelKey or levelKey == "" then
                                     levelKey = tostring(levelNum)
