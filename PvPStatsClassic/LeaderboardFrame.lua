@@ -1050,9 +1050,18 @@ function PSC_CreateLeaderboardFrame()
         end)
     end
 
+    local removeOfflineButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
+    removeOfflineButton:SetSize(170, 25)
+    removeOfflineButton:SetPoint("BOTTOMLEFT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -197, 10)
+    removeOfflineButton:SetText("Remove offline players")
+    removeOfflineButton:SetScript("OnClick", function()
+        StaticPopup_Show("PSC_REMOVE_OFFLINE_LEADERBOARD")
+    end)
+    PSC_LeaderboardFrame.removeOfflineButton = removeOfflineButton
+
     local sendStatsButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
     sendStatsButton:SetSize(130, 25)
-    sendStatsButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -207, 15)
+    sendStatsButton:SetPoint("BOTTOMLEFT", removeOfflineButton, "BOTTOMLEFT", -140, 0)
     sendStatsButton:SetText("Send Stats To...")
     sendStatsButton:SetScript("OnClick", function()
         StaticPopup_Show("PSC_SEND_STATS_TO_PLAYER")
@@ -1070,7 +1079,7 @@ function PSC_CreateLeaderboardFrame()
     recentSyncLabel:SetTextColor(1, 0.82, 0)
 
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    infoText:SetPoint("RIGHT", recentSyncCheckbox, "LEFT", -169, 0)
+    infoText:SetPoint("LEFT", recentSyncCheckbox, "LEFT", -655, 0)
     infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
     infoText:SetTextColor(0.7, 0.7, 0.7)
     infoText:SetJustifyH("RIGHT")
@@ -1107,15 +1116,6 @@ function PSC_CreateLeaderboardFrame()
 
     PSC_LeaderboardFrame.recentSyncCheckbox = recentSyncCheckbox
     PSC_LeaderboardFrame.recentSyncLabel = recentSyncLabel
-
-    local removeOfflineButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
-    removeOfflineButton:SetSize(170, 25)
-    removeOfflineButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -27, 15)
-    removeOfflineButton:SetText("Remove offline players")
-    removeOfflineButton:SetScript("OnClick", function()
-        StaticPopup_Show("PSC_REMOVE_OFFLINE_LEADERBOARD")
-    end)
-    PSC_LeaderboardFrame.removeOfflineButton = removeOfflineButton
 
     PSC_FrameManager:RegisterFrame(PSC_LeaderboardFrame, "Leaderboard")
 
