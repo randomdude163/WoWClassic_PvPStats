@@ -1050,16 +1050,9 @@ function PSC_CreateLeaderboardFrame()
         end)
     end
 
-    local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", 0, 9)
-    infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
-    infoText:SetTextColor(0.7, 0.7, 0.7)
-    infoText:SetJustifyH("CENTER")
-    PSC_LeaderboardFrame.infoText = infoText
-
     local sendStatsButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
     sendStatsButton:SetSize(130, 25)
-    sendStatsButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -207, 18)
+    sendStatsButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -207, 15)
     sendStatsButton:SetText("Send Stats To...")
     sendStatsButton:SetScript("OnClick", function()
         StaticPopup_Show("PSC_SEND_STATS_TO_PLAYER")
@@ -1068,13 +1061,20 @@ function PSC_CreateLeaderboardFrame()
 
     local recentSyncCheckbox = CreateFrame("CheckButton", nil, PSC_LeaderboardFrame, "UICheckButtonTemplate")
     recentSyncCheckbox:SetSize(20, 20)
-    recentSyncCheckbox:SetPoint("RIGHT", sendStatsButton, "LEFT", -150, 0)
+    recentSyncCheckbox:SetPoint("RIGHT", sendStatsButton, "LEFT", -120, 0)
     recentSyncCheckbox:SetChecked(PSC_FilterRecentSyncOnly)
 
     local recentSyncLabel = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     recentSyncLabel:SetPoint("LEFT", recentSyncCheckbox, "RIGHT", 2, 0)
     recentSyncLabel:SetText("Recently synced only")
     recentSyncLabel:SetTextColor(1, 0.82, 0)
+
+    local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    infoText:SetPoint("RIGHT", recentSyncCheckbox, "LEFT", -18, 0)
+    infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
+    infoText:SetTextColor(0.7, 0.7, 0.7)
+    infoText:SetJustifyH("RIGHT")
+    PSC_LeaderboardFrame.infoText = infoText
 
     local function ShowRecentSyncTooltip(owner)
         GameTooltip:SetOwner(owner, "ANCHOR_TOP")
@@ -1110,7 +1110,7 @@ function PSC_CreateLeaderboardFrame()
 
     local removeOfflineButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
     removeOfflineButton:SetSize(170, 25)
-    removeOfflineButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -27, 18)
+    removeOfflineButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -27, 15)
     removeOfflineButton:SetText("Remove offline players")
     removeOfflineButton:SetScript("OnClick", function()
         StaticPopup_Show("PSC_REMOVE_OFFLINE_LEADERBOARD")
