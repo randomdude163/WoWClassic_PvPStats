@@ -4,15 +4,15 @@ PSC_DB = nil
 local CLASSES_TO_ENGLISH = {
     deDE = { ["Druide"]="Druid", ["Druidin"]="Druid", ["Jäger"]="Hunter", ["Jägerin"]="Hunter", ["Magier"]="Mage", ["Magierin"]="Mage", ["Paladin"]="Paladin", ["Priester"]="Priest", ["Priesterin"]="Priest", ["Schurke"]="Rogue", ["Schurkin"]="Rogue", ["Schamane"]="Shaman", ["Schamanin"]="Shaman", ["Hexenmeister"]="Warlock", ["Hexenmeisterin"]="Warlock", ["Krieger"]="Warrior", ["Kriegerin"]="Warrior" },
     frFR = { ["Druide"]="Druid", ["Druidesse"]="Druid", ["Chasseur"]="Hunter", ["Chasseresse"]="Hunter", ["Mage"]="Mage", ["Paladin"]="Paladin", ["Paladine"]="Paladin", ["Prêtre"]="Priest", ["Prêtresse"]="Priest", ["Voleur"]="Rogue", ["Voleuse"]="Rogue", ["Chaman"]="Shaman", ["Chamane"]="Shaman", ["Démoniste"]="Warlock", ["Guerrier"]="Warrior", ["Guerrière"]="Warrior" },
-    esES = { ["Druida"]="Druid", ["Cazador"]="Hunter", ["Mago"]="Mage", ["Paladín"]="Paladin", ["Sacerdote"]="Priest", ["Pícaro"]="Rogue", ["Chamán"]="Shaman", ["Brujo"]="Warlock", ["Guerrero"]="Warrior" },
+    esES = { ["Druida"]="Druid", ["Cazador"]="Hunter", ["Cazadora"]="Hunter", ["Mago"]="Mage", ["Maga"]="Mage", ["Paladín"]="Paladin", ["Paladina"]="Paladin", ["Sacerdote"]="Priest", ["Sacerdotisa"]="Priest", ["Pícaro"]="Rogue", ["Pícara"]="Rogue", ["Chamán"]="Shaman", ["Chamana"]="Shaman", ["Brujo"]="Warlock", ["Bruja"]="Warlock", ["Guerrero"]="Warrior", ["Guerrera"]="Warrior" },
     esMX = { ["Druida"]="Druid", ["Cazador"]="Hunter", ["Cazadora"]="Hunter", ["Mago"]="Mage", ["Maga"]="Mage", ["Paladín"]="Paladin", ["Sacerdote"]="Priest", ["Sacerdotisa"]="Priest", ["Pícaro"]="Rogue", ["Pícara"]="Rogue", ["Chamán"]="Shaman", ["Brujo"]="Warlock", ["Bruja"]="Warlock", ["Guerrero"]="Warrior", ["Guerrera"]="Warrior" },
     ptBR = { ["Druida"]="Druid", ["Druidesa"]="Druid", ["Caçador"]="Hunter", ["Caçadora"]="Hunter", ["Mago"]="Mage", ["Maga"]="Mage", ["Paladino"]="Paladin", ["Paladina"]="Paladin", ["Sacerdote"]="Priest", ["Sacerdotisa"]="Priest", ["Ladino"]="Rogue", ["Ladina"]="Rogue", ["Xamã"]="Shaman", ["Bruxo"]="Warlock", ["Bruxa"]="Warlock", ["Guerreiro"]="Warrior", ["Guerreira"]="Warrior" },
 }
 
 local RACES_TO_ENGLISH = {
-    deDE = { ["Mensch"]="Human", ["Orc"]="Orc", ["Zwerg"]="Dwarf", ["Nachtelf"]="Night Elf", ["Untoter"]="Undead", ["Tauren"]="Tauren", ["Gnom"]="Gnome", ["Troll"]="Troll", ["Blutelf"]="Bloodelf", ["Draenei"]="Draenei" },
-    frFR = { ["Humain"]="Human", ["Orc"]="Orc", ["Nain"]="Dwarf", ["Elfe de la nuit"]="Night Elf", ["Mort-vivant"]="Undead", ["Tauren"]="Tauren", ["Gnome"]="Gnome", ["Troll"]="Troll", ["Elfe de sang"]="Bloodelf", ["Draeneï"]="Draenei" },
-    esES = { ["Humano"]="Human", ["Orco"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["No-muerto"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Bloodelf", ["Draenei"]="Draenei" },
+    deDE = { ["Mensch"]="Human", ["Orc"]="Orc", ["Orcin"]="Orc", ["Zwerg"]="Dwarf", ["Zwergin"]="Dwarf", ["Nachtelf"]="Night Elf", ["Nachtelfe"]="Night Elf", ["Untoter"]="Undead", ["Untote"]="Undead", ["Tauren"]="Tauren", ["Taurin"]="Tauren", ["Gnom"]="Gnome", ["Gnomin"]="Gnome", ["Troll"]="Troll", ["Trollin"]="Troll", ["Blutelf"]="Bloodelf", ["Blutelfe"]="Bloodelf", ["Draenei"]="Draenei" },
+    frFR = { ["Humain"]="Human", ["Humaine"]="Human", ["Orc"]="Orc", ["Orque"]="Orc", ["Nain"]="Dwarf", ["Naine"]="Dwarf", ["Elfe de la nuit"]="Night Elf", ["Mort-vivant"]="Undead", ["Morte-vivante"]="Undead", ["Tauren"]="Tauren", ["Taurène"]="Tauren", ["Gnome"]="Gnome", ["Troll"]="Troll", ["Trollesse"]="Troll", ["Elfe de sang"]="Bloodelf", ["Draeneï"]="Draenei" },
+    esES = { ["Humano"]="Human", ["Humana"]="Human", ["Orco"]="Orc", ["Orca"]="Orc", ["Enano"]="Dwarf", ["Enana"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Gnoma"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Bloodelf", ["Elfa de sangre"]="Bloodelf", ["Draenei"]="Draenei" },
     esMX = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Bloodelf", ["Draenei"]="Draenei" },
     ptBR = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Orquisa"]="Orc", ["Anão"]="Dwarf", ["Elfo Noturno"]="Night Elf", ["Renegado"]="Undead", ["Morto-vivo"]="Undead", ["Morta-viva"]="Undead", ["Tauren"]="Tauren", ["Taurena"]="Tauren", ["Gnomo"]="Gnome", ["Troll"]="Troll", ["Trolesa"]="Troll", ["Elfo Sangrento"]="Bloodelf", ["Draenei"]="Draenei" },
 }
@@ -36,7 +36,7 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Badlands"] = {"Badlands", "Ödland", "Terres ingrates", "Tierras Inhóspitas", "Ermos"},
     ["Searing Gorge"] = {"Searing Gorge", "Sengende Schlucht", "Gorge des Vents brûlants", "La Garganta de Fuego", "Garganta Abrasadora"},
     ["Burning Steppes"] = {"Burning Steppes", "Brennende Steppe", "Steppes ardentes", "Las Estepas Ardientes", "Estepes Ardentes"},
-    ["Swamp of Sorrows"] = {"Swamp of Sorrows", "Sumpf der Trauer", "Marais des Chagrins", "Pantano de las Penas", "Pântano das Mágoas"},
+    ["Swamp of Sorrows"] = {"Swamp of Sorrows", "Sümpfe des Elends", "Marais des Chagrins", "Pantano de las Penas", "Pântano das Mágoas"},
     ["Blasted Lands"] = {"Blasted Lands", "Verwüstete Lande", "Terres foudroyées", "Las Tierras Devastadas", "Barreira do Inferno"},
     ["Western Plaguelands"] = {"Western Plaguelands", "Westliche Pestländer", "Maleterres de l'Ouest", "Tierras de la Peste del Oeste", "Terras Pestilentas Ocidentais"},
     ["Eastern Plaguelands"] = {"Eastern Plaguelands", "Östliche Pestländer", "Maleterres de l'Est", "Tierras de la Peste del Este", "Terras Pestilentas Orientais"},
@@ -46,7 +46,7 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Teldrassil"] = {"Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil"},
     ["Darkshore"] = {"Darkshore", "Dunkelküste", "Sombrivage", "Costa Oscura", "Costa Negra"},
     ["The Barrens"] = {"The Barrens", "Brachland", "Les Tarides", "Los Baldíos", "Sertões"},
-    ["Stonetalon Mountains"] = {"Stonetalon Mountains", "Steinkrallengebirge", "Serres-Rocheuses", "Sierra Espolón", "Cordilheira das Torres de Pedra"},
+    ["Stonetalon Mountains"] = {"Stonetalon Mountains", "Steinkrallengebirge", "Les Serres-Rocheuses", "Sierra Espolón", "Cordilheira das Torres de Pedra"},
     ["Ashenvale"] = {"Ashenvale", "Eschental", "Orneval", "Vallefresno", "Vale Gris"},
     ["Thousand Needles"] = {"Thousand Needles", "Tausend Nadeln", "Mille pointes", "Las Mil Agujas", "Mil Agulhas"},
     ["Desolace"] = {"Desolace", "Desolace", "Désolace", "Desolace", "Desolação"},
@@ -67,26 +67,26 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Moonglade"] = {"Moonglade", "Mondlichtung", "Reflet-de-Lune", "Claro de la Luna", "Clareira da Lua"},
     ["Blackrock Mountain"] = {"Blackrock Mountain", "Der Schwarzfels", "Mont Rochenoire", "Montaña Roca Negra", "Montanha Rocha Negra"},
     ["Arathi Basin"] = {"Arathi Basin", "Arathibecken", "Bassin d'Arathi", "Cuenca de Arathi", "Bacia de Arathi"},
-    ["Warsong Gulch"] = {"Warsong Gulch", "Warsongschlucht", "Goulet des Warsong", "Garganta Grito de Guerra", "Garganta Grito de Guerra"},
+    ["Warsong Gulch"] = {"Warsong Gulch", "Kriegshymnenschlucht", "Goulet des Chanteguerres", "Garganta Grito de Guerra", "Garganta Grito de Guerra"},
     ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac", "Vale Alterac"}
 }
 
 PSC_ZONE_TRANSLATIONS_TBC = {
     ["Eversong Woods"] = {"Eversong Woods", "Immersangwald", "Bois des Chants éternels", "Bosque Canción Eterna", "Floresta do Canto Eterno"},
-    ["Ghostlands"] = {"Ghostlands", "Geisterlande", "Terres fantômes", "Tierras Fantasma", "Terra Fantasma"},
+    ["Ghostlands"] = {"Ghostlands", "Geisterlande", "Les Terres fantômes", "Tierras Fantasma", "Terra Fantasma"},
     ["Hellfire Peninsula"] = {"Hellfire Peninsula", "Höllenfeuerhalbinsel", "Péninsule des Flammes infernales", "Península del Fuego Infernal", "Península Fogo do Inferno"},
     ["Zangarmarsh"] = {"Zangarmarsh", "Zangarmarschen", "Marécage de Zangar", "Marisma de Zangar", "Pântano Zíngaro"},
-    ["Terokkar Forest"] = {"Terokkar Forest", "Wälder von Terokkar", "Forêt de Terokkar", "Bosque de Terokkar", "Floresta Terokkar"},
+    ["Terokkar Forest"] = {"Terokkar Forest", "Wälder von Terokkar", "Forêt de Terokkar", "Bosque de Terokkar", "Mata Terokkar"},
     ["Nagrand"] = {"Nagrand", "Nagrand", "Nagrand", "Nagrand", "Nagrand"},
     ["Blade's Edge Mountains"] = {"Blade's Edge Mountains", "Schergrat", "Les Tranchantes", "Montañas Filospada", "Montanhas da Lâmina Afiada"},
     ["Netherstorm"] = {"Netherstorm", "Nethersturm", "Raz-de-Néant", "Tormenta Abisal", "Eternévoa"},
     ["Shadowmoon Valley"] = {"Shadowmoon Valley", "Schattenmondtal", "Vallée d'Ombrelune", "Valle Sombraluna", "Vale da Lua Negra"},
     ["Shattrath City"] = {"Shattrath City", "Shattrath", "Shattrath", "Ciudad de Shattrath", "Shattrath"},
     ["Silvermoon City"] = {"Silvermoon City", "Silbermond", "Lune-d'Argent", "Ciudad de Lunargenta", "Luaprata"},
-    ["Azuremyst Isle"] = {"Azuremyst Isle", "Azurmythosinsel", "Île de Brume-azur", "Isla Bruma Azur", "Ilha Névoa Lazúli"},
-    ["Bloodmyst Isle"] = {"Bloodmyst Isle", "Blutmythosinsel", "Île de Brume-sang", "Isla Bruma de Sangre", "Ilha Névoa Rubra"},
+    ["Azuremyst Isle"] = {"Azuremyst Isle", "Azurmythosinsel", "Île de Brume-Azur", "Isla Bruma Azur", "Ilha Névoa Lazúli"},
+    ["Bloodmyst Isle"] = {"Bloodmyst Isle", "Blutmythosinsel", "Île de Brume-Sang", "Isla Bruma de Sangre", "Ilha Névoa Rubra"},
     ["Isle of Quel'Danas"] = {"Isle of Quel'Danas", "Insel von Quel'Danas", "Île de Quel'Danas", "Isla de Quel'Danas", "Ilha de Quel'Danas"},
-    ["Exodar"] = {"Exodar", "Exodar", "Exodar", "Exodar", "Exodar"},
+    ["The Exodar"] = {"The Exodar", "Die Exodar", "L'Exodar", "El Exodar", "A Exodar"},
     ["Eye of the Storm"] = {"Eye of the Storm", "Auge des Sturms", "L'Œil du cyclone", "Ojo de la Tormenta", "Olho da Tormenta"}
 }
 
