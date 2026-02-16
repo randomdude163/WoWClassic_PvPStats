@@ -1,6 +1,6 @@
 v4.2.1:
-- Added "Send Stats To..." button in leaderboard frame for quick stat sharing
-- Added right-click option to send stats directly to selected players in leaderboard
+- Fixed "You are not in a raid group messages" while in a BG
+- Added "Send Stats To..." button in leaderboard frame for quick stats sharing
 - Improved leaderboard UI layout
 
 v4.2:
