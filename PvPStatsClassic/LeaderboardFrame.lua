@@ -1070,7 +1070,7 @@ function PSC_CreateLeaderboardFrame()
     recentSyncLabel:SetTextColor(1, 0.82, 0)
 
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    infoText:SetPoint("RIGHT", recentSyncCheckbox, "LEFT", -18, 0)
+    infoText:SetPoint("RIGHT", recentSyncCheckbox, "LEFT", -169, 0)
     infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
     infoText:SetTextColor(0.7, 0.7, 0.7)
     infoText:SetJustifyH("RIGHT")
