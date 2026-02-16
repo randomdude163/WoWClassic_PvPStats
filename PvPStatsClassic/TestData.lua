@@ -422,7 +422,7 @@ end
 function PSC_GetRandomTestPlayer()
     local i = math.random(1, #testPlayers)
     local testPlayer = testPlayers[i]
-    testPlayer.level = math.random(1, 60)
+    testPlayer.level = math.random(1, 70)
     if math.random(100) <= 10 then
         testPlayer.level = -1
     end

@@ -113,6 +113,61 @@ if not StaticPopupDialogs["PSC_REMOVE_OFFLINE_LEADERBOARD"] then
     }
 end
 
+if not StaticPopupDialogs["PSC_SEND_STATS_TO_PLAYER"] then
+    StaticPopupDialogs["PSC_SEND_STATS_TO_PLAYER"] = {
+        text = "Enter the player name to send your stats to:",
+        button1 = "Send",
+        button2 = "Cancel",
+        hasEditBox = true,
+        maxLetters = 50,
+        OnAccept = function(self)
+            local editBox = self.editBox or _G[self:GetName().."EditBox"]
+            if not editBox then return end
+
+            local playerName = editBox:GetText()
+            if playerName and playerName ~= "" then
+                local normalized = PVPSC.Network:NormalizeTargetName(playerName)
+                if not normalized or normalized == "" then
+                    PSC_Print("Invalid player name.")
+                    return
+                end
+
+                local sent, _, reason = PVPSC.Network:SendStatsToPlayer(normalized)
+                if not sent then
+                    PSC_Print("Failed to send stats: " .. (reason or "Unknown error"))
+                else
+                    PSC_Print("Stats sent to " .. normalized .. ". They will only receive them if they have addon version 4.2 or higher.")
+                end
+            end
+        end,
+        OnShow = function(self)
+            -- Bring popup to foreground
+            self:SetFrameStrata("FULLSCREEN_DIALOG")
+            self:SetFrameLevel(1000)
+            self:Raise()
+
+            local editBox = self.editBox or _G[self:GetName().."EditBox"]
+            if editBox then
+                editBox:SetFocus()
+            end
+        end,
+        EditBoxOnEnterPressed = function(self)
+            local parent = self:GetParent()
+            if parent and parent.button1 and parent.button1:IsEnabled() then
+                parent.button1:Click()
+            end
+        end,
+        EditBoxOnEscapePressed = function(self)
+            self:GetParent():Hide()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 1,
+        exclusive = false,
+    }
+end
+
 local colWidths = {
     playerName = 210,
     level = 30,
@@ -573,6 +628,36 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
             UIDropDownMenu_Initialize(PSC_LeaderboardRowDropDown, function(self, level)
                 local info = UIDropDownMenu_CreateInfo()
                 local displayName = entry.playerName or entry.rawName or "Player"
+
+                -- Add "Send stats to" option
+                info.text = "Send stats to " .. displayName
+                info.notCheckable = true
+                info.func = function()
+                    local targetName = entry.rawName or entry.playerName
+                    if targetName and targetName ~= "" then
+                        local normalized = PVPSC.Network:NormalizeTargetName(targetName)
+                        if normalized and normalized ~= "" then
+                            local sent, _, reason = PVPSC.Network:SendStatsToPlayer(normalized)
+                            if not sent then
+                                PSC_Print("Failed to send stats: " .. (reason or "Unknown error"))
+                            else
+                                PSC_Print("Stats sent to " .. normalized .. ". They will only receive them if they have addon version 4.2 or higher.")
+                            end
+                        end
+                    end
+                end
+                UIDropDownMenu_AddButton(info)
+
+                -- Add separator
+                info = UIDropDownMenu_CreateInfo()
+                info.text = ""
+                info.isTitle = true
+                info.notCheckable = true
+                info.disabled = true
+                UIDropDownMenu_AddButton(info)
+
+                -- Add "Remove from Leaderboard" option
+                info = UIDropDownMenu_CreateInfo()
                 info.text = "Remove " .. displayName .. " from Leaderboard"
                 info.notCheckable = true
                 info.func = function()
@@ -928,11 +1013,20 @@ function PSC_CreateLeaderboardFrame()
     end
 
     local infoText = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", 0, 12)
+    infoText:SetPoint("BOTTOM", PSC_LeaderboardFrame, "BOTTOM", -165, 12)
     infoText:SetText("Leaderboard syncs with nearby players and guild/party/raid members who have this addon installed")
     infoText:SetTextColor(0.7, 0.7, 0.7)
     infoText:SetJustifyH("CENTER")
     PSC_LeaderboardFrame.infoText = infoText
+
+    local sendStatsButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
+    sendStatsButton:SetSize(130, 25)
+    sendStatsButton:SetPoint("BOTTOMRIGHT", PSC_LeaderboardFrame, "BOTTOMRIGHT", -207, 10)
+    sendStatsButton:SetText("Send Stats To...")
+    sendStatsButton:SetScript("OnClick", function()
+        StaticPopup_Show("PSC_SEND_STATS_TO_PLAYER")
+    end)
+    PSC_LeaderboardFrame.sendStatsButton = sendStatsButton
 
     local removeOfflineButton = CreateFrame("Button", nil, PSC_LeaderboardFrame, "UIPanelButtonTemplate")
     removeOfflineButton:SetSize(170, 25)
