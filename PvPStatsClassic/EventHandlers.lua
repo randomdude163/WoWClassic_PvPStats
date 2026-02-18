@@ -853,24 +853,15 @@ function PSC_SetupMouseoverTooltip()
         end
 
         local deathsTable = PSC_DB.PvPLossCounts[characterKey].Deaths
-        local normalizedName = PSC_GetInfoKeyFromName(playerName)
+        local totalDeaths = 0
 
-        if deathsTable[normalizedName] then
-            return deathsTable[normalizedName].deaths or 0
-        end
-
-        if not string.find(playerName, "%-") then
-            local prefix = playerName .. "-"
-            local totalDeaths = 0
-            for storedName, deathData in pairs(deathsTable) do
-                if storedName and string.sub(storedName, 1, #prefix) == prefix then
-                    totalDeaths = totalDeaths + (deathData.deaths or 0)
-                end
+        for storedName, deathData in pairs(deathsTable) do
+            if storedName and deathData and PSC_IsSamePlayerName(storedName, playerName) then
+                totalDeaths = totalDeaths + (deathData.deaths or 0)
             end
-            return totalDeaths
         end
 
-        return 0
+        return totalDeaths
     end
 
     local function AddPvPInfoToTooltip(tooltip, playerName, kills, deaths)
