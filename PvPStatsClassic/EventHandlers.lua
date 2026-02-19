@@ -854,9 +854,23 @@ function PSC_SetupMouseoverTooltip()
 
         local deathsTable = PSC_DB.PvPLossCounts[characterKey].Deaths
         local normalizedName = PSC_GetInfoKeyFromName(playerName)
+        local totalDeaths = 0
+        local found = false
 
         if deathsTable[normalizedName] then
-            return deathsTable[normalizedName].deaths or 0
+            totalDeaths = totalDeaths + (deathsTable[normalizedName].deaths or 0)
+            found = true
+        end
+
+        -- Check the raw name as well (for same realm players where realm is omitted in storage)
+        -- Only add if it's different from normalized name (e.g. "Bob" vs "Bob-MyRealm")
+        if playerName ~= normalizedName and deathsTable[playerName] then
+            totalDeaths = totalDeaths + (deathsTable[playerName].deaths or 0)
+            found = true
+        end
+
+        if found then
+            return totalDeaths
         end
 
         if not string.find(playerName, "%-") then
@@ -905,7 +919,12 @@ function PSC_SetupMouseoverTooltip()
 
         if not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then return end
 
-        local playerName = UnitName(unit)
+        local name, realm = UnitName(unit)
+        local playerName = name
+        if realm then
+            playerName = name .. "-" .. realm
+        end
+
         local kills = PSC_GetTotalsKillsForPlayer(playerName)
         local deaths = GetDeathsByPlayerName(playerName)
         AddPvPInfoToTooltip(tooltip, playerName, kills, deaths)

@@ -449,8 +449,8 @@ local function ProcessLossKeyMigrationSlice()
     local processed = 0
     while processed < LOSS_KEY_MIGRATION_BUDGET do
         if lossMigrationState.charIndex > #lossMigrationState.charKeys then
-            PSC_DB.LossKeysMigrated_v2 = true
-            print("[PvPStats]: Migration step 2 complete. Updated " .. lossMigrationState.count .. " database entries.")
+            PSC_DB.LossKeysMigrated_v3 = true
+            print("[PvPStats]: Death history migration complete. Normalized " .. lossMigrationState.count .. " database entries.")
             lossMigrationState = nil
             return
         end
@@ -537,10 +537,11 @@ local function ProcessLossKeyMigrationSlice()
 end
 
 function PSC_MigrateLossKeys()
-    if PSC_DB.LossKeysMigrated_v2 then return end
+    if PSC_DB.LossKeysMigrated_v3 then return end
     if lossMigrationState and lossMigrationState.running then return end
     if not PSC_DB.PvPLossCounts then return end
     InitLossKeyMigrationState()
+    print("[PvPStats]: Migrating death history to normalize player names...")
     C_Timer.After(0, ProcessLossKeyMigrationSlice)
 end
 
