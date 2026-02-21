@@ -68,7 +68,11 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Blackrock Mountain"] = {"Blackrock Mountain", "Der Schwarzfels", "Mont Rochenoire", "Montaña Roca Negra", "Montanha Rocha Negra"},
     ["Arathi Basin"] = {"Arathi Basin", "Arathibecken", "Bassin d'Arathi", "Cuenca de Arathi", "Bacia de Arathi"},
     ["Warsong Gulch"] = {"Warsong Gulch", "Kriegshymnenschlucht", "Goulet des Chanteguerres", "Garganta Grito de Guerra", "Garganta Grito de Guerra"},
-    ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac", "Vale Alterac"}
+    ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac", "Vale Alterac"},
+    ["Wailing Caverns"] = {"Wailing Caverns", "Höhlen des Wehklagens", "Cavernes des Lamentations", "Cuevas de los Lamentos", "Caverna Uivante"},
+    ["Blackfathom Depths"] = {"Blackfathom Depths", "Tiefenschachtmine", "Profondeurs de Brassenoire", "Profundidades de Brazanegra", "Profundezas de Brazanegra"},
+    ["Deadmines"] = {"Deadmines", "Die Todesminen", "Mortemines", "Minas Mortales", "Minas Mortíferas"},
+    ["Scarlet Monastery"] = {"Scarlet Monastery", "Das scharlachrote Kloster", "Monastère écarlate", "Monasterio Escarlata", "Monastério Escarlate"},
 }
 
 PSC_ZONE_TRANSLATIONS_TBC = {
