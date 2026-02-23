@@ -1,3 +1,6 @@
+v4.2.2:
+- Fixed score in mouseover toolip not showing deaths
+
 v4.2.1:
 - Fixed "You are not in a raid group messages" while in a BG
 - Added "Send Stats To..." button in leaderboard frame for quick stats sharing
