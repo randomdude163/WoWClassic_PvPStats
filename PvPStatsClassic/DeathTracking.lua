@@ -188,8 +188,8 @@ function PSC_RegisterPlayerDeath(killerInfo)
         killerLevel = PSC_DB.PlayerInfoCache[killerInfoKey].level
     end
 
-    if not lossData.Deaths[killerName] then
-        lossData.Deaths[killerName] = {
+    if not lossData.Deaths[killerInfoKey] then
+        lossData.Deaths[killerInfoKey] = {
             deaths = 0,
             lastDeath = 0,
             zone = "",
@@ -199,7 +199,7 @@ function PSC_RegisterPlayerDeath(killerInfo)
         }
     end
 
-    local deathData = lossData.Deaths[killerName]
+    local deathData = lossData.Deaths[killerInfoKey]
     deathData.deaths = deathData.deaths + 1
     deathData.lastDeath = time()
     deathData.zone = PSC_ConvertZoneToEnglish(GetRealZoneText() or GetSubZoneText() or "Unknown")

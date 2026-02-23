@@ -23,7 +23,7 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Elwynn Forest"] = {"Elwynn Forest", "Wald von Elwynn", "Forêt d'Elwynn", "Bosque de Elwynn", "Floresta de Elwynn"},
     ["Tirisfal Glades"] = {"Tirisfal Glades", "Tirisfal", "Clairières de Tirisfal", "Claros de Tirisfal", "Clareiras de Tirisfal"},
     ["Durotar"] = {"Durotar", "Durotar", "Durotar", "Durotar", "Durotar"},
-    ["Westfall"] = {"Westfall", "Westfall", "Marche de l'Ouest", "Páramos de Poniente", "Cerro Oeste"},
+    ["Westfall"] = {"Westfall", "Westfall", "Marche de l'Ouest (Westfall)", "Páramos de Poniente", "Cerro Oeste"},
     ["Loch Modan"] = {"Loch Modan", "Loch Modan", "Loch Modan", "Loch Modan", "Loch Modan"},
     ["Silverpine Forest"] = {"Silverpine Forest", "Silberwald", "Forêt des Pins argentés", "Bosque de Argénteos", "Floresta de Pinhaprata"},
     ["Redridge Mountains"] = {"Redridge Mountains", "Rotkammgebirge", "Les Carmines", "Montañas Crestagrana", "Montanhas Cristarrubra"},
@@ -32,20 +32,20 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Wetlands"] = {"Wetlands", "Sumpfland", "Les Paluns", "Los Humedales", "Pantanal"},
     ["Alterac Mountains"] = {"Alterac Mountains", "Alteracgebirge", "Montagnes d'Alterac", "Montañas de Alterac", "Montanhas de Alterac"},
     ["Arathi Highlands"] = {"Arathi Highlands", "Arathihochland", "Hautes-terres d'Arathi", "Tierras Altas de Arathi", "Planalto Arathi"},
-    ["Stranglethorn Vale"] = {"Stranglethorn Vale", "Schlingendorntal", "Vallée de Strangleronce", "Vega de Tuercespina", "Selva do Espinhaço"},
+    ["Stranglethorn Vale"] = {"Stranglethorn Vale", "Schlingendorntal", "Vallée de Strangleronce (Stranglethorn Vale)", "Vega de Tuercespina", "Selva do Espinhaço"},
     ["Badlands"] = {"Badlands", "Ödland", "Terres ingrates", "Tierras Inhóspitas", "Ermos"},
     ["Searing Gorge"] = {"Searing Gorge", "Sengende Schlucht", "Gorge des Vents brûlants", "La Garganta de Fuego", "Garganta Abrasadora"},
     ["Burning Steppes"] = {"Burning Steppes", "Brennende Steppe", "Steppes ardentes", "Las Estepas Ardientes", "Estepes Ardentes"},
     ["Swamp of Sorrows"] = {"Swamp of Sorrows", "Sümpfe des Elends", "Marais des Chagrins", "Pantano de las Penas", "Pântano das Mágoas"},
     ["Blasted Lands"] = {"Blasted Lands", "Verwüstete Lande", "Terres foudroyées", "Las Tierras Devastadas", "Barreira do Inferno"},
-    ["Western Plaguelands"] = {"Western Plaguelands", "Westliche Pestländer", "Maleterres de l'Ouest", "Tierras de la Peste del Oeste", "Terras Pestilentas Ocidentais"},
-    ["Eastern Plaguelands"] = {"Eastern Plaguelands", "Östliche Pestländer", "Maleterres de l'Est", "Tierras de la Peste del Este", "Terras Pestilentas Orientais"},
+    ["Western Plaguelands"] = {"Western Plaguelands", "Westliche Pestländer", "Maleterres de l'ouest", "Tierras de la Peste del Oeste", "Terras Pestilentas Ocidentais"},
+    ["Eastern Plaguelands"] = {"Eastern Plaguelands", "Östliche Pestländer", "Maleterres de l'est", "Tierras de la Peste del Este", "Terras Pestilentas Orientais"},
     ["Deadwind Pass"] = {"Deadwind Pass", "Gebirgspass der Totenwinde", "Défilé de Deuillevent", "Paso de la Muerte", "Trilha do Vento Morto"},
     ["Stormwind City"] = {"Stormwind City", "Sturmwind", "Hurlevent", "Ventormenta", "Ventobravo"},
     ["Mulgore"] = {"Mulgore", "Mulgore", "Mulgore", "Mulgore", "Mulgore"},
     ["Teldrassil"] = {"Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil"},
     ["Darkshore"] = {"Darkshore", "Dunkelküste", "Sombrivage", "Costa Oscura", "Costa Negra"},
-    ["The Barrens"] = {"The Barrens", "Brachland", "Les Tarides", "Los Baldíos", "Sertões"},
+    ["The Barrens"] = {"The Barrens", "Brachland", "Les Tarides (the Barrens)", "Los Baldíos", "Sertões"},
     ["Stonetalon Mountains"] = {"Stonetalon Mountains", "Steinkrallengebirge", "Les Serres-Rocheuses", "Sierra Espolón", "Cordilheira das Torres de Pedra"},
     ["Ashenvale"] = {"Ashenvale", "Eschental", "Orneval", "Vallefresno", "Vale Gris"},
     ["Thousand Needles"] = {"Thousand Needles", "Tausend Nadeln", "Mille pointes", "Las Mil Agujas", "Mil Agulhas"},
@@ -68,7 +68,12 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Blackrock Mountain"] = {"Blackrock Mountain", "Der Schwarzfels", "Mont Rochenoire", "Montaña Roca Negra", "Montanha Rocha Negra"},
     ["Arathi Basin"] = {"Arathi Basin", "Arathibecken", "Bassin d'Arathi", "Cuenca de Arathi", "Bacia de Arathi"},
     ["Warsong Gulch"] = {"Warsong Gulch", "Kriegshymnenschlucht", "Goulet des Chanteguerres", "Garganta Grito de Guerra", "Garganta Grito de Guerra"},
-    ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac", "Vale Alterac"}
+    ["Alterac Valley"] = {"Alterac Valley", "Alteractal", "Vallée d'Alterac", "Valle de Alterac", "Vale Alterac"},
+    ["Wailing Caverns"] = {"Wailing Caverns", "Höhlen des Wehklagens", "Cavernes des Lamentations", "Cuevas de los Lamentos", "Caverna Uivante"},
+    ["Blackfathom Deeps"] = {"Blackfathom Deeps", "Tiefschwarze Grotte", "Profondeurs de Brassenoire", "Cavernas de Brazanegra", "Profundezas Negras"},
+    ["Deadmines"] = {"Deadmines", "Die Todesminen", "Mortemines", "Minas Mortales", "Minas Mortíferas"},
+    ["Scarlet Monastery"] = {"Scarlet Monastery", "Das scharlachrote Kloster", "Monastère écarlate", "Monasterio Escarlata", "Monastério Escarlate"},
+    ["Ruins of Lordaeron"] = {"Ruins of Lordaeron", "Ruinen von Lordaeron", "Ruines de Lordaeron", "Ruinas de Lordaeron", "Ruínas de Lordaeron"},
 }
 
 PSC_ZONE_TRANSLATIONS_TBC = {
@@ -87,7 +92,9 @@ PSC_ZONE_TRANSLATIONS_TBC = {
     ["Bloodmyst Isle"] = {"Bloodmyst Isle", "Blutmythosinsel", "Île de Brume-Sang", "Isla Bruma de Sangre", "Ilha Névoa Rubra"},
     ["Isle of Quel'Danas"] = {"Isle of Quel'Danas", "Insel von Quel'Danas", "Île de Quel'Danas", "Isla de Quel'Danas", "Ilha de Quel'Danas"},
     ["The Exodar"] = {"The Exodar", "Die Exodar", "L'Exodar", "El Exodar", "A Exodar"},
-    ["Eye of the Storm"] = {"Eye of the Storm", "Auge des Sturms", "L'Œil du cyclone", "Ojo de la Tormenta", "Olho da Tormenta"}
+    ["Eye of the Storm"] = {"Eye of the Storm", "Auge des Sturms", "L'Œil du cyclone", "Ojo de la Tormenta", "Olho da Tormenta"},
+    ["Coilfang Reservoir"] = {"Coilfang Reservoir", "Der Echsenkopf", "Réservoir de Glissecroc", "El Reservorio de Glifo", "Reservatório da Serpe"},
+    ["Thrallmar Mine"] = {"Thrallmar Mine", "Thrallmarmine", "Mine de Thrallmar", "Mina de Thrallmar", "Mina do Thrallmar"},
 }
 
 local LOCALE = GetLocale()
@@ -449,8 +456,8 @@ local function ProcessLossKeyMigrationSlice()
     local processed = 0
     while processed < LOSS_KEY_MIGRATION_BUDGET do
         if lossMigrationState.charIndex > #lossMigrationState.charKeys then
-            PSC_DB.LossKeysMigrated_v2 = true
-            print("[PvPStats]: Migration step 2 complete. Updated " .. lossMigrationState.count .. " database entries.")
+            PSC_DB.LossKeysMigrated_v3 = true
+            print("[PvPStats]: Death history migration complete. Normalized " .. lossMigrationState.count .. " database entries.")
             lossMigrationState = nil
             return
         end
@@ -537,10 +544,11 @@ local function ProcessLossKeyMigrationSlice()
 end
 
 function PSC_MigrateLossKeys()
-    if PSC_DB.LossKeysMigrated_v2 then return end
+    if PSC_DB.LossKeysMigrated_v3 then return end
     if lossMigrationState and lossMigrationState.running then return end
     if not PSC_DB.PvPLossCounts then return end
     InitLossKeyMigrationState()
+    print("[PvPStats]: Migrating death history to normalize player names...")
     C_Timer.After(0, ProcessLossKeyMigrationSlice)
 end
 
