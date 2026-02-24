@@ -1,6 +1,43 @@
 -- Common data helper functions for PvPStatsClassic
 -- These functions centralize common data operations used throughout the addon
 
+function PSC_GetCurrentZoneName()
+    local function IsValidZoneName(value)
+        return value and value ~= ""
+    end
+
+    local realZone = GetRealZoneText()
+    if IsValidZoneName(realZone) then
+        return PSC_ConvertZoneToEnglish(realZone)
+    end
+
+    local minimapZone = GetMinimapZoneText()
+    if IsValidZoneName(minimapZone) then
+        return PSC_ConvertZoneToEnglish(minimapZone)
+    end
+
+    local zoneText = GetZoneText()
+    if IsValidZoneName(zoneText) then
+        return PSC_ConvertZoneToEnglish(zoneText)
+    end
+
+    local subZone = GetSubZoneText()
+    if IsValidZoneName(subZone) then
+        return PSC_ConvertZoneToEnglish(subZone)
+    end
+
+    local instanceName, instanceType = GetInstanceInfo()
+    if IsValidZoneName(instanceName) and (instanceType == "arena" or instanceType == "pvp") then
+        return PSC_ConvertZoneToEnglish(instanceName)
+    end
+
+    if IsValidZoneName(instanceName) then
+        return PSC_ConvertZoneToEnglish(instanceName)
+    end
+
+    return "Unknown"
+end
+
 -- Get the list of characters to process based on account-wide setting
 function PSC_GetCharactersToProcessForStatistics()
     local charactersToProcess = {}

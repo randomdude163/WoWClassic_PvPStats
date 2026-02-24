@@ -82,7 +82,7 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     killData.kills = killData.kills + 1
     killData.lastKill = time()
 
-    local currentZone = PSC_ConvertZoneToEnglish(GetRealZoneText() or GetSubZoneText() or "Unknown")
+    local currentZone = PSC_GetCurrentZoneName()
 
     local newKillLocation = {
         zone = currentZone,

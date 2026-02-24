@@ -74,6 +74,8 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Deadmines"] = {"Deadmines", "Die Todesminen", "Mortemines", "Minas Mortales", "Minas Mortíferas"},
     ["Scarlet Monastery"] = {"Scarlet Monastery", "Das scharlachrote Kloster", "Monastère écarlate", "Monasterio Escarlata", "Monastério Escarlate"},
     ["Ruins of Lordaeron"] = {"Ruins of Lordaeron", "Ruinen von Lordaeron", "Ruines de Lordaeron", "Ruinas de Lordaeron", "Ruínas de Lordaeron"},
+    ["Nagrand Arena"] = {"Nagrand Arena", "Arena von Nagrand", "Arène de Nagrand", "Arena de Nagrand", "Arena de Nagrand"},
+    ["Blade's Edge Arena"] = {"Blade's Edge Arena", "Arena des Schergrats", "Arène des Tranchantes", "Arena Filospada", "Arena da Lâmina Afiada"},
 }
 
 PSC_ZONE_TRANSLATIONS_TBC = {
