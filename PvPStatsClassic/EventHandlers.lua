@@ -29,6 +29,10 @@ PSC_PendingHunterKills = {}
 local HUNTER_FEIGN_DEATH_CHECK_WINDOW = 3.0 -- Seconds to wait before confirming kill
 local HUNTER_FEIGN_DEATH_MIN_LEVEL = 30
 
+PSC_RecentlyCountedPriestKills = {}
+local PRIEST_SPIRIT_OF_REDEMPTION_MIN_LEVEL = 30
+local PRIEST_KILL_DEDUP_WINDOW = 20.0 -- 15s Spirit of Redemption + lag margin
+
 local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
     PSC_GetAndStorePlayerInfoFromUnit("targettarget")
@@ -243,6 +247,35 @@ function IsHunterAndCanFeignDeath(destName)
     return true
 end
 
+local function ShouldSuppressPriestKillForSpiritOfRedemption(destName)
+    if not destName or destName == "" then
+        return false
+    end
+
+    local infoKey = PSC_GetInfoKeyFromName(destName)
+    local playerInfo = PSC_DB.PlayerInfoCache[infoKey]
+    if not playerInfo or playerInfo.class ~= "Priest" then
+        return false
+    end
+
+    local level = playerInfo.level
+    if level ~= -1 and level < PRIEST_SPIRIT_OF_REDEMPTION_MIN_LEVEL then
+        return false
+    end
+
+    local now = GetTime()
+    local lastKillTimestamp = PSC_RecentlyCountedPriestKills[infoKey]
+    if lastKillTimestamp and (now - lastKillTimestamp) < PRIEST_KILL_DEDUP_WINDOW then
+        if PSC_Debug then
+            print("Suppressing duplicate priest kill during Spirit of Redemption window for " .. destName)
+        end
+        return true
+    end
+
+    PSC_RecentlyCountedPriestKills[infoKey] = now
+    return false
+end
+
 function PSC_ScheduleHunterKillValidation(destGUID, destName, eventType, validationData)
     if not IsHunterAndCanFeignDeath(destName) then
         return false
@@ -299,6 +332,9 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
         else
             local unitType = strsplit("-", destGUID)
             if unitType == "Player" then
+                if ShouldSuppressPriestKillForSpiritOfRedemption(destName) then
+                    return
+                end
                 PSC_RecentlyCountedKills[destGUID] = GetTime()
                 PSC_RegisterPlayerKill(destName, sourceName, sourceGUID)
             end
@@ -360,6 +396,9 @@ local function HandleUnitDiedEvent(destGUID, destName)
             else
                 local unitType = strsplit("-", destGUID)
                 if unitType == "Player" then
+                    if ShouldSuppressPriestKillForSpiritOfRedemption(destName) then
+                        return
+                    end
                     PSC_RecentlyCountedKills[destGUID] = GetTime()
                     PSC_RegisterPlayerKill(destName, petDamage.petName, petDamage.petGUID)
                 end
@@ -396,6 +435,9 @@ local function HandleUnitDiedEvent(destGUID, destName)
             else
                 local unitType = strsplit("-", destGUID)
                 if unitType == "Player" then
+                    if ShouldSuppressPriestKillForSpiritOfRedemption(destName) then
+                        return
+                    end
                     PSC_RegisterPlayerKill(destName, "Assist", nil)
                 end
             end
@@ -534,6 +576,17 @@ function PSC_CleanupPendingHunterKills()
     end
 end
 
+function PSC_CleanupRecentlyCountedPriestKills()
+    local now = GetTime()
+    local cutoff = now - (PRIEST_KILL_DEDUP_WINDOW * 2)
+
+    for infoKey, timestamp in pairs(PSC_RecentlyCountedPriestKills) do
+        if timestamp < cutoff then
+            PSC_RecentlyCountedPriestKills[infoKey] = nil
+        end
+    end
+end
+
 local function DetermineGameVersion()
     -- Example output of GetBuildInfo()
     -- 1.15.8 64858 Dec  9 2025 11508  Release  11508
@@ -662,6 +715,7 @@ local function HandlePlayerRegenEnabled()
     PSC_CleanupRecentPlayerDamage()
     PSC_CleanupRecentDamageFromPlayers()
     PSC_CleanupPendingHunterKills()
+    PSC_CleanupRecentlyCountedPriestKills()
     PSC_ClearGUIDCache()
 
     if PVPSC.Network and PVPSC.Network.pendingCombatBroadcast then
