@@ -1487,7 +1487,10 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
                 nemesisClass = nemesisClass or ((nemesisInfo and nemesisInfo.class and nemesisInfo.class ~= "") and nemesisInfo.class or "Unknown")
             end
 
-            nemesisTooltip = nemesisRace .. " " .. nemesisGender .. " " .. nemesisClass
+            nemesisTooltip = {
+                text = nemesisRace .. " " .. nemesisGender .. " " .. nemesisClass,
+                color = getClassColor(nemesisClass)
+            }
         end
         statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY, nemesisTooltip, false, isLocalPlayer)
     end
