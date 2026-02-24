@@ -170,7 +170,13 @@ local SUB_KEY_MAPS = {
         killsThisMonth = "ktm",
         killsThisYear = "kty",
         nemesisName = "nn",
-        nemesisScore = "ns"
+        nemesisScore = "ns",
+        mostKilledRace = "mkr",
+        mostKilledGender = "mkg",
+        mostKilledClass = "mkcl",
+        nemesisRace = "nr",
+        nemesisGender = "ng",
+        nemesisClass = "ncl"
     },
     classData = CLASS_KEY_MAP,
     unknownLevelClassData = CLASS_KEY_MAP,
@@ -394,6 +400,26 @@ function Network:BuildDetailedStats()
     end
 
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+
+    local function ApplyPlayerProfile(summaryTable, nameField, raceField, genderField, classField)
+        local playerName = summaryTable and summaryTable[nameField]
+        if not playerName or playerName == "" or playerName == "None" then
+            return
+        end
+
+        local playerInfo, _ = PSC_GetPlayerInfo(playerName)
+        if not playerInfo then
+            return
+        end
+
+        summaryTable[raceField] = (playerInfo.race and playerInfo.race ~= "") and playerInfo.race or "Unknown"
+        summaryTable[genderField] = (playerInfo.gender and playerInfo.gender ~= "") and playerInfo.gender or "Unknown"
+        summaryTable[classField] = (playerInfo.class and playerInfo.class ~= "") and playerInfo.class or "Unknown"
+    end
+
+    ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass")
+    ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass")
+
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
     local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)

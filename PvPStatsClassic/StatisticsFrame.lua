@@ -1435,13 +1435,45 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     -- 2. Most Killed & Nemesis
     if stats.mostKilledPlayer and (stats.mostKilledCount or 0) > 0 and stats.mostKilledPlayer ~= "None" then
         local mostKilledText = stats.mostKilledPlayer .. " (" .. (stats.mostKilledCount or 0) .. ")"
-        local mkTooltip = isLocalPlayer and "Click to show all kills of this player" or "The player killed most often."
+        local mkTooltip
+        if isLocalPlayer then
+            mkTooltip = "Click to show all kills of this player"
+        else
+            local mkRace = (stats.mostKilledRace and stats.mostKilledRace ~= "") and stats.mostKilledRace or nil
+            local mkGender = (stats.mostKilledGender and stats.mostKilledGender ~= "") and stats.mostKilledGender or nil
+            local mkClass = (stats.mostKilledClass and stats.mostKilledClass ~= "") and stats.mostKilledClass or nil
+
+            if not mkRace or not mkGender or not mkClass then
+                local mkInfo, _ = PSC_GetPlayerInfo(stats.mostKilledPlayer)
+                mkRace = mkRace or ((mkInfo and mkInfo.race and mkInfo.race ~= "") and mkInfo.race or "Unknown")
+                mkGender = mkGender or ((mkInfo and mkInfo.gender and mkInfo.gender ~= "") and mkInfo.gender or "Unknown")
+                mkClass = mkClass or ((mkInfo and mkInfo.class and mkInfo.class ~= "") and mkInfo.class or "Unknown")
+            end
+
+            mkTooltip = mkRace .. " " .. mkGender .. " " .. mkClass
+        end
         statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mkTooltip, false, isLocalPlayer)
     end
 
     if stats.nemesisName and stats.nemesisName ~= "None" and (stats.nemesisScore or 0) > 0 then
         local nemesisText = stats.nemesisName .. " (" .. (stats.nemesisScore or 0) .. ")"
-        local nemesisTooltip = isLocalPlayer and "The player who has killed you the most (kills + assists). Click to view details." or "The player who has killed this player the most."
+        local nemesisTooltip
+        if isLocalPlayer then
+            nemesisTooltip = "The player who has killed you the most (kills + assists). Click to view details."
+        else
+            local nemesisRace = (stats.nemesisRace and stats.nemesisRace ~= "") and stats.nemesisRace or nil
+            local nemesisGender = (stats.nemesisGender and stats.nemesisGender ~= "") and stats.nemesisGender or nil
+            local nemesisClass = (stats.nemesisClass and stats.nemesisClass ~= "") and stats.nemesisClass or nil
+
+            if not nemesisRace or not nemesisGender or not nemesisClass then
+                local nemesisInfo, _ = PSC_GetPlayerInfo(stats.nemesisName)
+                nemesisRace = nemesisRace or ((nemesisInfo and nemesisInfo.race and nemesisInfo.race ~= "") and nemesisInfo.race or "Unknown")
+                nemesisGender = nemesisGender or ((nemesisInfo and nemesisInfo.gender and nemesisInfo.gender ~= "") and nemesisInfo.gender or "Unknown")
+                nemesisClass = nemesisClass or ((nemesisInfo and nemesisInfo.class and nemesisInfo.class ~= "") and nemesisInfo.class or "Unknown")
+            end
+
+            nemesisTooltip = nemesisRace .. " " .. nemesisGender .. " " .. nemesisClass
+        end
         statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY, nemesisTooltip, false, isLocalPlayer)
     end
 
