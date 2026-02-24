@@ -27,9 +27,6 @@ function PSC_GetCurrentZoneName()
     end
 
     local instanceName, instanceType = GetInstanceInfo()
-    if IsValidZoneName(instanceName) and (instanceType == "arena" or instanceType == "pvp") then
-        return PSC_ConvertZoneToEnglish(instanceName)
-    end
 
     if IsValidZoneName(instanceName) then
         return PSC_ConvertZoneToEnglish(instanceName)
