@@ -1181,7 +1181,19 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
 
         tooltipFrame:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-            GameTooltip:AddLine(tooltipText, 1, 1, 1, true)
+            local text = tooltipText
+            local r, g, b = 1, 1, 1
+
+            if type(tooltipText) == "table" then
+                text = tooltipText.text or ""
+                if tooltipText.color then
+                    r = tooltipText.color.r or r
+                    g = tooltipText.color.g or g
+                    b = tooltipText.color.b or b
+                end
+            end
+
+            GameTooltip:AddLine(text, r, g, b, true)
             GameTooltip:Show()
         end)
 
@@ -1435,9 +1447,9 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     -- 2. Most Killed & Nemesis
     if stats.mostKilledPlayer and (stats.mostKilledCount or 0) > 0 and stats.mostKilledPlayer ~= "None" then
         local mostKilledText = stats.mostKilledPlayer .. " (" .. (stats.mostKilledCount or 0) .. ")"
-        local mkTooltip
+        local mostKilledTooltip
         if isLocalPlayer then
-            mkTooltip = "Click to show all kills of this player"
+            mostKilledTooltip = "Click to show all kills of this player"
         else
             local mkRace = (stats.mostKilledRace and stats.mostKilledRace ~= "") and stats.mostKilledRace or nil
             local mkGender = (stats.mostKilledGender and stats.mostKilledGender ~= "") and stats.mostKilledGender or nil
@@ -1450,9 +1462,12 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
                 mkClass = mkClass or ((mkInfo and mkInfo.class and mkInfo.class ~= "") and mkInfo.class or "Unknown")
             end
 
-            mkTooltip = mkRace .. " " .. mkGender .. " " .. mkClass
+            mostKilledTooltip = {
+                text = mkRace .. " " .. mkGender .. " " .. mkClass,
+                color = getClassColor(mkClass)
+            }
         end
-        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mkTooltip, false, isLocalPlayer)
+        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mostKilledTooltip, false, isLocalPlayer)
     end
 
     if stats.nemesisName and stats.nemesisName ~= "None" and (stats.nemesisScore or 0) > 0 then
