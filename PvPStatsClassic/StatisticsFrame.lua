@@ -446,19 +446,29 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
     local color
     if titleType == "level" and entry.key ~= "??" then
         local level = tonumber(entry.key) or 0
-        local maxLevel = 70
 
-        local ratio = (level - 1) / (maxLevel - 1)
-        color = {
-            r = math.min(1.0, 0.2 + ratio * 0.8),  -- 0.2 (light blue) → 1.0 (red)
-            g = math.max(0.1, 0.8 - ratio * 0.7),  -- 0.8 → 0.1
-            b = math.max(0.0, 1.0 - ratio)          -- 1.0 → 0.0 across full range
-        }
+        if level <= 60 then
+            -- Levels 1-60: existing blue-to-red gradient (ratio based on /70 for continuity)
+            local ratio = level / 70
+            color = {
+                r = math.min(1.0, ratio * 2),
+                g = 0.1 + math.max(0, 0.7 - ratio * 0.7),
+                b = math.max(0, 1.0 - ratio * 1.5)
+            }
+        else
+            -- Levels 61-70: red of level 60 fading into purple at level 70
+            local subRatio = (level - 60) / 10
+            color = {
+                r = 1.0 - 0.4 * subRatio,
+                g = 0.2 - 0.1 * subRatio,
+                b = 0.9 * subRatio
+            }
+        end
     elseif titleType == "level" and entry.key == "??" then
         color = {
-            r = 0.8,
-            g = 0.3,
-            b = 0.9
+            r = 0.4,
+            g = 0.0,
+            b = 1.0
         }
     elseif titleType == "class" or titleType == "unknownLevelClass" then
         color = getClassColor(entry.key)
