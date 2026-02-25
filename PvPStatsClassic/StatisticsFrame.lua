@@ -448,11 +448,11 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
         local level = tonumber(entry.key) or 0
         local maxLevel = 70
 
-        local ratio = level / maxLevel
+        local ratio = (level - 1) / (maxLevel - 1)
         color = {
-            r = math.min(1.0, ratio * 2),
-            g = 0.1 + math.max(0, 0.7 - ratio * 0.7),
-            b = math.max(0, 1.0 - ratio * 1.5)
+            r = math.min(1.0, 0.2 + ratio * 0.8),  -- 0.2 (light blue) → 1.0 (red)
+            g = math.max(0.1, 0.8 - ratio * 0.7),  -- 0.8 → 0.1
+            b = math.max(0.0, 1.0 - ratio)          -- 1.0 → 0.0 across full range
         }
     elseif titleType == "level" and entry.key == "??" then
         color = {
