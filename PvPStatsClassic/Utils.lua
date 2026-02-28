@@ -417,6 +417,20 @@ function PSC_GetAddonVersion()
     return "4.2.1"
 end
 
+-- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)
+function PSC_IsVersionAtLeast(versionStr, minVersion)
+    if not versionStr or not minVersion then return false end
+    local function parse(v)
+        local a, b, c = v:match("^(%d+)%.(%d+)%.?(%d*)")
+        return tonumber(a) or 0, tonumber(b) or 0, tonumber(c) or 0
+    end
+    local ma, mi, pa = parse(versionStr)
+    local mb, mj, pb = parse(minVersion)
+    if ma ~= mb then return ma > mb end
+    if mi ~= mj then return mi > mj end
+    return pa >= pb
+end
+
 function GetMultiKillText(count)
     if count < 2 then return "" end
 

@@ -81,7 +81,8 @@ local KEY_MAP = {
     achievementsUnlocked = "au",
     totalAchievements = "ta",
     achievementPoints = "ap",
-    realm = "re"
+    realm = "re",
+    accountWideStats = "aws"
 }
 
 -- Shared sub-key mappings
@@ -518,7 +519,8 @@ function Network:ConstructPayload(components)
         addonVersion = PSC_GetAddonVersion(),
         achievementsUnlocked = PSC_GetUnlockedAchievementCount(),
         totalAchievements = totalAchievements,
-        achievementPoints = PSC_GetCurrentAchievementPoints()
+        achievementPoints = PSC_GetCurrentAchievementPoints(),
+        accountWideStats = (PSC_DB and PSC_DB.ShowAccountWideStats) and 1 or 0
     }
 end
 

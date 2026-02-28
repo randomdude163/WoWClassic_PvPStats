@@ -39,5 +39,6 @@ AchievementFrame.lua
 AchievementPopup.lua
 StatisticsFrame.lua
 Utils.lua
+UtilsTest.lua
 TestData.lua
 PvPStatsClassic.lua
