@@ -1639,25 +1639,6 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         end
     end
 
-    -- Account-wide stats flag (external players only, requires addon version >= 4.2.1, soon to be updated to 4.3.)
-    if not isLocalPlayer then
-        local remoteVersion = extraData and extraData.addonVersion
-        if PSC_IsVersionAtLeast(remoteVersion, "4.2.1") then
-            local rawVal = extraData and extraData.accountWideStats
-            local awsOn = (rawVal == 1 or rawVal == true)
-            local displayPlayer = playerName or "this player"
-            local awsTooltip
-            if awsOn then
-                awsTooltip = "The statistics shown represent all of " .. displayPlayer .. "'s characters combined."
-            else
-                awsTooltip = "These are only " .. displayPlayer .. "'s statistics for their current character."
-            end
-            statY = statY - spacing_between_sections
-            local awsText = awsOn and "ON" or "OFF"
-            statY = addSummaryStatLine(container, "Account-wide stats:", awsText, statY, awsTooltip, false, false)
-        end
-    end
-
     -- 8. Footer Note
     if not isLocalPlayer then
         local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
