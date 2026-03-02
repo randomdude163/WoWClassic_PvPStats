@@ -777,6 +777,14 @@ local function ProcessEnemyKillers(searchText, playerNameMap, entries, deathData
                 end
             end
 
+            -- Fallback to top-level fields when deathLocations is empty
+            if lastKill == 0 and (deathData.lastDeath or 0) > 0 then
+                lastKill = deathData.lastDeath
+            end
+            if zone == "Unknown" and deathData.zone and deathData.zone ~= "" and deathData.zone ~= "Unknown" then
+                zone = deathData.zone
+            end
+
             -- Only add if matches search criteria - only search name and guild
                 if searchText == "" or
                     entryName:lower():find(searchText, 1, true) or
@@ -912,6 +920,16 @@ local function AddAssistAndDeathData(entries, deathDataByCanonical, assistCounts
             if mostRecentDeathTimestamp > (entry.lastKill or 0) then
                 entry.lastKill = mostRecentDeathTimestamp
                 entry.zone = mostRecentDeathZone or entry.zone
+            end
+        end
+
+        -- Fallback to top-level death fields when deathLocations is empty
+        if deathData then
+            if (entry.lastKill or 0) == 0 and (deathData.lastDeath or 0) > 0 then
+                entry.lastKill = deathData.lastDeath
+            end
+            if (entry.zone == nil or entry.zone == "Unknown") and deathData.zone and deathData.zone ~= "" and deathData.zone ~= "Unknown" then
+                entry.zone = deathData.zone
             end
         end
 

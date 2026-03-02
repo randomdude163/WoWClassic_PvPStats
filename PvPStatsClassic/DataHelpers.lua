@@ -114,6 +114,15 @@ function PSC_GetPlayerMostRecentDeathInfo(deathData)
         lastKill = deathData.deathLocations[1].timestamp or lastKill
     end
 
+    -- Fallback to top-level fields when deathLocations is absent or empty
+    -- (can happen for legacy records whose location list was never populated)
+    if zone == "Unknown" and deathData.zone and deathData.zone ~= "" and deathData.zone ~= "Unknown" then
+        zone = deathData.zone
+    end
+    if lastKill == 0 and (deathData.lastDeath or 0) > 0 then
+        lastKill = deathData.lastDeath
+    end
+
     return zone, lastKill
 end
 

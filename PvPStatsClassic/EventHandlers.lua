@@ -2,7 +2,7 @@ local addonName, PVPSC = ...
 
 local pvpStatsClassicFrame = CreateFrame("Frame", "PvpStatsClassicFrame", UIParent)
 
-PSC_Debug = false
+PSC_Debug = true
 PSC_PlayerGUID = ""
 PSC_CharacterName = ""
 PSC_RealmName = ""
@@ -660,6 +660,7 @@ local function HandlePlayerEnteringWorld()
     PSC_MigratePlayerInfoToEnglish()
     PSC_MigrateKillKeys()
     PSC_MigrateLossKeys()
+    PSC_MigrateArenaZones()
     PSC_InitializePlayerKillCounts()
     PSC_InitializeLeaderboardCache()
     PSC_InitializePlayerLossCounts()
