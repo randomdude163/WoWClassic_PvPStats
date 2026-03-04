@@ -451,6 +451,11 @@ end
 
 function PSC_GetPlayerCoordinates()
     local mapID = C_Map.GetBestMapForUnit("player")
+    if not mapID then
+        -- Arenas (and some instanced content) return nil for the map ID.
+        -- C_Map.GetPlayerMapPosition would error on a nil mapID, so bail early.
+        return nil, nil
+    end
     local position = C_Map.GetPlayerMapPosition(mapID, "player")
     if not position then
         return nil, nil
