@@ -3058,12 +3058,13 @@ AchievementSystem.achievementsClassic = {
     {
         id = "bonus_anniversary_march_25",
         title = "Happy Death Day",
-        description = function(a) return "Kill 1 player in honor of PvPStats Classic's release" end,
+        description = function(a) return "Kill 1 player on March 25th, PvPStats Classic's anniversary" end,
         iconID = 134142,
         achievementPoints = 0,
         targetValue = 1,
         condition = function(achievement, stats)
-            return achievement.progress(achievement, stats) >= achievement.targetValue
+            local d = date("*t")
+            return d.month == 3 and d.day == 25 and d.year > 2025 and achievement.progress(achievement, stats) >= achievement.targetValue
         end,
         unlocked = false,
         completedDate = nil,
