@@ -3058,9 +3058,9 @@ AchievementSystem.achievementsClassic = {
     {
         id = "bonus_anniversary_march_25",
         title = "Happy Death Day",
-        description = function(a) return ("Kill %d player(s) on March 25th — PvPStats Classic's anniversary"):format(a.targetValue) end,
+        description = function(a) return ("Kill %d player(s) on March 25th — PvP Stats (Classic)'s anniversary"):format(a.targetValue) end,
         iconID = 134142,
-        achievementPoints = 100,
+        achievementPoints = 0,
         targetValue = 1,
         condition = function(achievement, stats)
             return achievement.progress(achievement, stats) >= achievement.targetValue
@@ -3068,7 +3068,7 @@ AchievementSystem.achievementsClassic = {
         unlocked = false,
         completedDate = nil,
         subText = function(a)
-            return "March 25th. The day PvPStats Classic entered the world — and someone else left it. One year older. One more body on the ledger. Blow out the candles, sharpen the blade, and keep the killcount climbing. Many happy returns."
+            return "March 25th. The day PvP Stats (Classic) entered the world — and someone else left it. One year older. One more body on the ledger. Blow out the candles, sharpen the blade, and keep the killcount climbing. Many happy returns."
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsBySpecialCondition("anniversary_march_25_2026plus")
