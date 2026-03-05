@@ -333,31 +333,31 @@ local testPlayers = {
     {
         name = "Sunstrider",
         class = "Paladin",
-        race = "Bloodelf",
+        race = "Blood Elf",
         gender = "Male",
     },
     {
         name = "Felweaver",
         class = "Warlock",
-        race = "Bloodelf",
+        race = "Blood Elf",
         gender = "Female",
     },
     {
         name = "Phoenixfire",
         class = "Mage",
-        race = "Bloodelf",
+        race = "Blood Elf",
         gender = "Male",
     },
     {
         name = "Bloodhawk",
         class = "Hunter",
-        race = "Bloodelf",
+        race = "Blood Elf",
         gender = "Female",
     },
     {
         name = "Shadowstrike",
         class = "Rogue",
-        race = "Bloodelf",
+        race = "Blood Elf",
         gender = "Male",
     },
     {
