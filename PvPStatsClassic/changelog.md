@@ -1,3 +1,9 @@
+v4.3:
+- Added Arena achievements
+- Fixed "Unknown" zone name for kills/deaths in Arena
+- Fixed kills for priests using the talent "Spirit of Redemption" unintentionally being counted twice
+- Various graphical fixes and improvements
+
 v4.2.2:
 - Fixed score in mouseover toolip not showing deaths
 
