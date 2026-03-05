@@ -10,11 +10,11 @@ local CLASSES_TO_ENGLISH = {
 }
 
 local RACES_TO_ENGLISH = {
-    deDE = { ["Mensch"]="Human", ["Orc"]="Orc", ["Orcin"]="Orc", ["Zwerg"]="Dwarf", ["Zwergin"]="Dwarf", ["Nachtelf"]="Night Elf", ["Nachtelfe"]="Night Elf", ["Untoter"]="Undead", ["Untote"]="Undead", ["Tauren"]="Tauren", ["Taurin"]="Tauren", ["Gnom"]="Gnome", ["Gnomin"]="Gnome", ["Troll"]="Troll", ["Trollin"]="Troll", ["Blutelf"]="Bloodelf", ["Blutelfe"]="Bloodelf", ["Draenei"]="Draenei" },
-    frFR = { ["Humain"]="Human", ["Humaine"]="Human", ["Orc"]="Orc", ["Orque"]="Orc", ["Nain"]="Dwarf", ["Naine"]="Dwarf", ["Elfe de la nuit"]="Night Elf", ["Mort-vivant"]="Undead", ["Morte-vivante"]="Undead", ["Tauren"]="Tauren", ["Taurène"]="Tauren", ["Gnome"]="Gnome", ["Troll"]="Troll", ["Trollesse"]="Troll", ["Elfe de sang"]="Bloodelf", ["Draeneï"]="Draenei" },
-    esES = { ["Humano"]="Human", ["Humana"]="Human", ["Orco"]="Orc", ["Orca"]="Orc", ["Enano"]="Dwarf", ["Enana"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Gnoma"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Bloodelf", ["Elfa de sangre"]="Bloodelf", ["Draenei"]="Draenei" },
-    esMX = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Bloodelf", ["Draenei"]="Draenei" },
-    ptBR = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Orquisa"]="Orc", ["Anão"]="Dwarf", ["Elfo Noturno"]="Night Elf", ["Renegado"]="Undead", ["Morto-vivo"]="Undead", ["Morta-viva"]="Undead", ["Tauren"]="Tauren", ["Taurena"]="Tauren", ["Gnomo"]="Gnome", ["Troll"]="Troll", ["Trolesa"]="Troll", ["Elfo Sangrento"]="Bloodelf", ["Draenei"]="Draenei" },
+    deDE = { ["Mensch"]="Human", ["Orc"]="Orc", ["Orcin"]="Orc", ["Zwerg"]="Dwarf", ["Zwergin"]="Dwarf", ["Nachtelf"]="Night Elf", ["Nachtelfe"]="Night Elf", ["Untoter"]="Undead", ["Untote"]="Undead", ["Tauren"]="Tauren", ["Taurin"]="Tauren", ["Gnom"]="Gnome", ["Gnomin"]="Gnome", ["Troll"]="Troll", ["Trollin"]="Troll", ["Blutelf"]="Blood Elf", ["Blutelfe"]="Blood Elf", ["Draenei"]="Draenei" },
+    frFR = { ["Humain"]="Human", ["Humaine"]="Human", ["Orc"]="Orc", ["Orque"]="Orc", ["Nain"]="Dwarf", ["Naine"]="Dwarf", ["Elfe de la nuit"]="Night Elf", ["Mort-vivant"]="Undead", ["Morte-vivante"]="Undead", ["Tauren"]="Tauren", ["Taurène"]="Tauren", ["Gnome"]="Gnome", ["Troll"]="Troll", ["Trollesse"]="Troll", ["Elfe de sang"]="Blood Elf", ["Draeneï"]="Draenei" },
+    esES = { ["Humano"]="Human", ["Humana"]="Human", ["Orco"]="Orc", ["Orca"]="Orc", ["Enano"]="Dwarf", ["Enana"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Gnoma"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Blood Elf", ["Elfa de sangre"]="Blood Elf", ["Draenei"]="Draenei" },
+    esMX = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Enano"]="Dwarf", ["Elfo de la noche"]="Night Elf", ["Elfa de la noche"]="Night Elf", ["No-muerto"]="Undead", ["No-muerta"]="Undead", ["Tauren"]="Tauren", ["Gnomo"]="Gnome", ["Trol"]="Troll", ["Elfo de sangre"]="Blood Elf", ["Draenei"]="Draenei" },
+    ptBR = { ["Humano"]="Human", ["Humana"]="Human", ["Orc"]="Orc", ["Orquisa"]="Orc", ["Anão"]="Dwarf", ["Elfo Noturno"]="Night Elf", ["Renegado"]="Undead", ["Morto-vivo"]="Undead", ["Morta-viva"]="Undead", ["Tauren"]="Tauren", ["Taurena"]="Tauren", ["Gnomo"]="Gnome", ["Troll"]="Troll", ["Trolesa"]="Troll", ["Elfo Sangrento"]="Blood Elf", ["Draenei"]="Draenei" },
 }
 
 -- Zone name translations (English, German, French, Spanish)
@@ -74,6 +74,8 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Deadmines"] = {"Deadmines", "Die Todesminen", "Mortemines", "Minas Mortales", "Minas Mortíferas"},
     ["Scarlet Monastery"] = {"Scarlet Monastery", "Das scharlachrote Kloster", "Monastère écarlate", "Monasterio Escarlata", "Monastério Escarlate"},
     ["Ruins of Lordaeron"] = {"Ruins of Lordaeron", "Ruinen von Lordaeron", "Ruines de Lordaeron", "Ruinas de Lordaeron", "Ruínas de Lordaeron"},
+    ["Nagrand Arena"] = {"Nagrand Arena", "Arena von Nagrand", "Arène de Nagrand", "Arena de Nagrand", "Arena de Nagrand"},
+    ["Blade's Edge Arena"] = {"Blade's Edge Arena", "Arena des Schergrats", "Arène des Tranchantes", "Arena Filospada", "Arena da Lâmina Afiada"},
 }
 
 PSC_ZONE_TRANSLATIONS_TBC = {
@@ -552,6 +554,135 @@ function PSC_MigrateLossKeys()
     C_Timer.After(0, ProcessLossKeyMigrationSlice)
 end
 
+-- Migration: level-70 kills/deaths recorded with empty/unknown zone because the
+-- arena zone could not be captured at event time (bug). Assigns a random TBC arena
+-- name and synthesises missing deathLocations entries where needed.
+function PSC_MigrateArenaZones()
+    if PSC_DB.ArenaZonesMigrated_v1 then return end
+
+    local TBC_ARENAS = {
+        "Ruins of Lordaeron",
+        "Nagrand Arena",
+        "Blade's Edge Arena",
+    }
+
+    local function randomArena()
+        return TBC_ARENAS[math.random(1, #TBC_ARENAS)]
+    end
+
+    local function isUnknownZone(zone)
+        return zone == nil or zone == "" or zone == "Unknown"
+    end
+
+    local migratedKills  = 0
+    local migratedDeaths = 0
+
+    -- ── Kills ────────────────────────────────────────────────────────────────
+    if PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters then
+        for _, charData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+            if charData.Kills then
+                for killKey, killEntry in pairs(charData.Kills) do
+                    local level = tonumber(string.match(killKey, ":(-?%d+)$"))
+                    if level == 70 then
+                        local locations = killEntry.killLocations
+                        if not locations or #locations == 0 then
+                            killEntry.killLocations = {
+                                { timestamp = killEntry.lastKill or 0, zone = randomArena() }
+                            }
+                            migratedKills = migratedKills + 1
+                        else
+                            for _, loc in ipairs(locations) do
+                                if isUnknownZone(loc.zone) then
+                                    loc.zone = randomArena()
+                                    migratedKills = migratedKills + 1
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- ── Deaths & Assists ─────────────────────────────────────────────────────
+    if PSC_DB.PvPLossCounts then
+        for _, charLossData in pairs(PSC_DB.PvPLossCounts) do
+            if charLossData.Deaths then
+                for killerName, deathData in pairs(charLossData.Deaths) do
+                    -- Look up killer level from PlayerInfoCache.
+                    -- killerName may be stored without a realm (e.g. "Cogwhisper"),
+                    -- so fall back to a prefix search when the direct lookup misses.
+                    local killerLevel = -1
+                    if PSC_DB.PlayerInfoCache then
+                        local info = PSC_DB.PlayerInfoCache[killerName]
+                        if not info then
+                            -- Try prefix search ("Cogwhisper" -> "Cogwhisper-Spineshatter")
+                            local prefix = killerName .. "-"
+                            for cacheKey, cacheInfo in pairs(PSC_DB.PlayerInfoCache) do
+                                if string.sub(cacheKey, 1, #prefix) == prefix then
+                                    info = cacheInfo
+                                    break
+                                end
+                            end
+                        end
+                        if info then
+                            killerLevel = info.level or -1
+                        end
+                    end
+
+                    if not deathData.deathLocations or #deathData.deathLocations == 0 then
+                        -- deathLocations is empty – synthesise entries for level-70 killers
+                        if killerLevel == 70 then
+                            local zone = (not isUnknownZone(deathData.zone)) and deathData.zone or randomArena()
+                            deathData.zone = zone
+                            deathData.deathLocations = {}
+                            for _ = 1, (deathData.deaths or 1) do
+                                table.insert(deathData.deathLocations, {
+                                    timestamp   = deathData.lastDeath or 0,
+                                    zone        = zone,
+                                    killerLevel = killerLevel,
+                                })
+                            end
+                            migratedDeaths = migratedDeaths + 1
+                        end
+                    else
+                        -- Fix individual location entries with unknown zone
+                        for _, loc in ipairs(deathData.deathLocations) do
+                            if isUnknownZone(loc.zone) then
+                                local locKillerIs70 = (loc.killerLevel == 70)
+                                local assisterIs70  = false
+                                if not locKillerIs70 and loc.assisters then
+                                    for _, assister in ipairs(loc.assisters) do
+                                        if assister.level == 70 then
+                                            assisterIs70 = true
+                                            break
+                                        end
+                                    end
+                                end
+                                if locKillerIs70 or assisterIs70 then
+                                    loc.zone = randomArena()
+                                    migratedDeaths = migratedDeaths + 1
+                                end
+                            end
+                        end
+
+                        -- Fix top-level summary zone field
+                        if isUnknownZone(deathData.zone) and killerLevel == 70 then
+                            deathData.zone = randomArena()
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    PSC_DB.ArenaZonesMigrated_v1 = true
+    if migratedKills > 0 or migratedDeaths > 0 then
+        print(string.format("[PvPStats]: Arena zone migration complete. Fixed %d kill location(s) and %d death record(s).",
+            migratedKills, migratedDeaths))
+    end
+end
+
 function PSC_MigratePlayerInfoCache()
     if not PSC_DB.PlayerInfoCacheMigrated then
         print("[PvPStats]: Migrating player cache to support cross-realm players...")
@@ -788,7 +919,7 @@ function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, guildR
     PSC_DB.PlayerInfoCache[playerNameWithRealm].rank = rank
 
     -- if PSC_Debug then
-    --     print("Stored player info: " .. infoKey .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
+    --     print("Stored player info: " .. playerNameWithRealm .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
     -- end
 end
 

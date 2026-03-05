@@ -58,16 +58,16 @@ local raceColors = {
         b = 0.26
     },
     ["Troll"] = {
-        r = 0.14,
-        g = 0.39,
-        b = 0.90
+        r = 0.20,
+        g = 0.83,
+        b = 0.76
     },
     ["Tauren"] = {
         r = 0.71,
         g = 0.49,
         b = 0.26
     },
-    ["Bloodelf"] = {
+    ["Blood Elf"] = {
         r = 0.86,
         g = 0.30,
         b = 0.36
@@ -446,19 +446,29 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
     local color
     if titleType == "level" and entry.key ~= "??" then
         local level = tonumber(entry.key) or 0
-        local maxLevel = 70
 
-        local ratio = level / maxLevel
-        color = {
-            r = math.min(1.0, ratio * 2),
-            g = 0.1 + math.max(0, 0.7 - ratio * 0.7),
-            b = math.max(0, 1.0 - ratio * 1.5)
-        }
+        if level <= 60 then
+            -- Levels 1-60: existing blue-to-red gradient (ratio based on /70 for continuity)
+            local ratio = level / 70
+            color = {
+                r = math.min(1.0, ratio * 2),
+                g = 0.1 + math.max(0, 0.7 - ratio * 0.7),
+                b = math.max(0, 1.0 - ratio * 1.5)
+            }
+        else
+            -- Levels 61-70: red of level 60 fading into purple at level 70
+            local subRatio = (level - 60) / 10
+            color = {
+                r = 1.0 - 0.4 * subRatio,
+                g = 0.2 - 0.1 * subRatio,
+                b = 0.9 * subRatio
+            }
+        end
     elseif titleType == "level" and entry.key == "??" then
         color = {
-            r = 0.8,
-            g = 0.3,
-            b = 0.9
+            r = 0.4,
+            g = 0.0,
+            b = 1.0
         }
     elseif titleType == "class" or titleType == "unknownLevelClass" then
         color = getClassColor(entry.key)
@@ -1181,7 +1191,19 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
 
         tooltipFrame:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-            GameTooltip:AddLine(tooltipText, 1, 1, 1, true)
+            local text = tooltipText
+            local r, g, b = 1, 1, 1
+
+            if type(tooltipText) == "table" then
+                text = tooltipText.text or ""
+                if tooltipText.color then
+                    r = tooltipText.color.r or r
+                    g = tooltipText.color.g or g
+                    b = tooltipText.color.b or b
+                end
+            end
+
+            GameTooltip:AddLine(text, r, g, b, true)
             GameTooltip:Show()
         end)
 
@@ -1435,13 +1457,51 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     -- 2. Most Killed & Nemesis
     if stats.mostKilledPlayer and (stats.mostKilledCount or 0) > 0 and stats.mostKilledPlayer ~= "None" then
         local mostKilledText = stats.mostKilledPlayer .. " (" .. (stats.mostKilledCount or 0) .. ")"
-        local mkTooltip = isLocalPlayer and "Click to show all kills of this player" or "The player killed most often."
-        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mkTooltip, false, isLocalPlayer)
+        local mostKilledTooltip
+        if isLocalPlayer then
+            mostKilledTooltip = "Click to show all kills of this player"
+        else
+            local mkRace = (stats.mostKilledRace and stats.mostKilledRace ~= "") and stats.mostKilledRace or nil
+            local mkGender = (stats.mostKilledGender and stats.mostKilledGender ~= "") and stats.mostKilledGender or nil
+            local mkClass = (stats.mostKilledClass and stats.mostKilledClass ~= "") and stats.mostKilledClass or nil
+
+            if not mkRace or not mkGender or not mkClass then
+                local mkInfo, _ = PSC_GetPlayerInfo(stats.mostKilledPlayer)
+                mkRace = mkRace or ((mkInfo and mkInfo.race and mkInfo.race ~= "") and mkInfo.race or "Unknown")
+                mkGender = mkGender or ((mkInfo and mkInfo.gender and mkInfo.gender ~= "") and mkInfo.gender or "Unknown")
+                mkClass = mkClass or ((mkInfo and mkInfo.class and mkInfo.class ~= "") and mkInfo.class or "Unknown")
+            end
+
+            mostKilledTooltip = {
+                text = mkRace .. " " .. mkGender .. " " .. mkClass,
+                color = getClassColor(mkClass)
+            }
+        end
+        statY = addSummaryStatLine(container, "Most killed player:", mostKilledText, statY - spacing_between_sections, mostKilledTooltip, false, isLocalPlayer)
     end
 
     if stats.nemesisName and stats.nemesisName ~= "None" and (stats.nemesisScore or 0) > 0 then
         local nemesisText = stats.nemesisName .. " (" .. (stats.nemesisScore or 0) .. ")"
-        local nemesisTooltip = isLocalPlayer and "The player who has killed you the most (kills + assists). Click to view details." or "The player who has killed this player the most."
+        local nemesisTooltip
+        if isLocalPlayer then
+            nemesisTooltip = "The player who has killed you the most (kills + assists). Click to view details."
+        else
+            local nemesisRace = (stats.nemesisRace and stats.nemesisRace ~= "") and stats.nemesisRace or nil
+            local nemesisGender = (stats.nemesisGender and stats.nemesisGender ~= "") and stats.nemesisGender or nil
+            local nemesisClass = (stats.nemesisClass and stats.nemesisClass ~= "") and stats.nemesisClass or nil
+
+            if not nemesisRace or not nemesisGender or not nemesisClass then
+                local nemesisInfo, _ = PSC_GetPlayerInfo(stats.nemesisName)
+                nemesisRace = nemesisRace or ((nemesisInfo and nemesisInfo.race and nemesisInfo.race ~= "") and nemesisInfo.race or "Unknown")
+                nemesisGender = nemesisGender or ((nemesisInfo and nemesisInfo.gender and nemesisInfo.gender ~= "") and nemesisInfo.gender or "Unknown")
+                nemesisClass = nemesisClass or ((nemesisInfo and nemesisInfo.class and nemesisInfo.class ~= "") and nemesisInfo.class or "Unknown")
+            end
+
+            nemesisTooltip = {
+                text = nemesisRace .. " " .. nemesisGender .. " " .. nemesisClass,
+                color = getClassColor(nemesisClass)
+            }
+        end
         statY = addSummaryStatLine(container, "Nemesis:", nemesisText, statY, nemesisTooltip, false, isLocalPlayer)
     end
 

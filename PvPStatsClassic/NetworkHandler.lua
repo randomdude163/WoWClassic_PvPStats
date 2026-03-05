@@ -170,7 +170,13 @@ local SUB_KEY_MAPS = {
         killsThisMonth = "ktm",
         killsThisYear = "kty",
         nemesisName = "nn",
-        nemesisScore = "ns"
+        nemesisScore = "ns",
+        mostKilledRace = "mkr",
+        mostKilledGender = "mkg",
+        mostKilledClass = "mkcl",
+        nemesisRace = "nr",
+        nemesisGender = "ng",
+        nemesisClass = "ncl"
     },
     classData = CLASS_KEY_MAP,
     unknownLevelClassData = CLASS_KEY_MAP,
@@ -394,6 +400,26 @@ function Network:BuildDetailedStats()
     end
 
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+
+    local function ApplyPlayerProfile(summaryTable, nameField, raceField, genderField, classField)
+        local playerName = summaryTable and summaryTable[nameField]
+        if not playerName or playerName == "" or playerName == "None" then
+            return
+        end
+
+        local playerInfo, _ = PSC_GetPlayerInfo(playerName)
+        if not playerInfo then
+            return
+        end
+
+        summaryTable[raceField] = (playerInfo.race and playerInfo.race ~= "") and playerInfo.race or "Unknown"
+        summaryTable[genderField] = (playerInfo.gender and playerInfo.gender ~= "") and playerInfo.gender or "Unknown"
+        summaryTable[classField] = (playerInfo.class and playerInfo.class ~= "") and playerInfo.class or "Unknown"
+    end
+
+    ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass")
+    ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass")
+
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
     local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
@@ -445,27 +471,6 @@ function Network:ConstructPayload(components)
         totalAchievements = #PVPSC.AchievementSystem.achievements
     end
 
-    local _, classFilename = UnitClass("player")
-    local _, raceFilename = UnitRace("player")
-
-    -- Sanitize/Normalize Class and Race names
-    -- Ideally we want them in Title Case (e.g. "Warrior") instead of UPPERCASE (e.g. "WARRIOR")
-    if classFilename then
-        classFilename = classFilename:gsub("(%w)(%w*)", function(first, rest)
-            return first:upper() .. rest:lower()
-        end)
-    else
-        classFilename = "Unknown"
-    end
-
-    if raceFilename then
-        raceFilename = raceFilename:gsub("(%w)(%w*)", function(first, rest)
-            return first:upper() .. rest:lower()
-        end)
-    else
-        raceFilename = "Unknown"
-    end
-
     return {
         summary = components.summary,
         classData = components.classData,
@@ -483,8 +488,8 @@ function Network:ConstructPayload(components)
 
         playerName = UnitName("player"),
         level = UnitLevel("player"),
-        class = classFilename,
-        race = raceFilename,
+        class = UnitClass("player"),
+        race = UnitRace("player"),
         faction = UnitFactionGroup("player") or "",
         timestamp = GetServerTime(),
         realm = PSC_RealmName,
@@ -493,7 +498,7 @@ function Network:ConstructPayload(components)
         achievementsUnlocked = PSC_GetUnlockedAchievementCount(),
         totalAchievements = totalAchievements,
         achievementPoints = PSC_GetCurrentAchievementPoints()
-    }
+        }
 end
 
 -- Determine the list of channels to broadcast to

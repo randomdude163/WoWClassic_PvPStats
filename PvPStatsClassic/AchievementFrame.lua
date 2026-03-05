@@ -114,6 +114,9 @@ local function FilterAchievements(achievements, category)
             elseif prefix == "bg" then
                 table.insert(filtered, achievement)
 
+            elseif prefix == "arena" then
+                table.insert(filtered, achievement)
+
             elseif prefix == "zone" then
                 -- Show faction-specific zones and contested zones
                 if string.find(achievement.id, string.lower(playerFaction)) or
@@ -642,7 +645,7 @@ local function UpdateAchievementLayout()
 end
 
 local function CreateAchievementTabSystem(parent)
-    local tabNames = {"Class", "Race", "Kills", "NPC", "Time", "Seasonal", "Name", "Gender", "BG", "Zone", "Cities", "Streaks", "Bonus", "Almost", "Latest"}
+    local tabNames = {"Class", "Race", "Kills", "NPC", "Time", "Seasonal", "Name", "Gender", "BG", "Arena", "Zone", "Cities", "Streaks", "Bonus", "Almost", "Latest"}
     local tabs = {}
     local tabWidth, tabHeight = 78, 32
 

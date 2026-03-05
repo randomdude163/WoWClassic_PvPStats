@@ -414,7 +414,21 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.2.1"
+    return "4.3"
+end
+
+-- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)
+function PSC_IsVersionAtLeast(versionStr, minVersion)
+    if not versionStr or not minVersion then return false end
+    local function parse(v)
+        local a, b, c = v:match("^(%d+)%.(%d+)%.?(%d*)")
+        return tonumber(a) or 0, tonumber(b) or 0, tonumber(c) or 0
+    end
+    local ma, mi, pa = parse(versionStr)
+    local mb, mj, pb = parse(minVersion)
+    if ma ~= mb then return ma > mb end
+    if mi ~= mj then return mi > mj end
+    return pa >= pb
 end
 
 function GetMultiKillText(count)
@@ -437,6 +451,11 @@ end
 
 function PSC_GetPlayerCoordinates()
     local mapID = C_Map.GetBestMapForUnit("player")
+    if not mapID then
+        -- Arenas (and some instanced content) return nil for the map ID.
+        -- C_Map.GetPlayerMapPosition would error on a nil mapID, so bail early.
+        return nil, nil
+    end
     local position = C_Map.GetPlayerMapPosition(mapID, "player")
     if not position then
         return nil, nil
@@ -766,6 +785,12 @@ local TimeBasedAchievementConfig = {
                 local isWeekend = dateInfo.wday == WEEKDAY.SUNDAY or dateInfo.wday == WEEKDAY.SATURDAY
                 local isNight = dateInfo.hour >= 22 or dateInfo.hour < 6
                 return isWeekend and isNight
+            end
+        },
+        {
+            name = "anniversary_march_25_2026plus",
+            check = function(dateInfo)
+                return dateInfo.month == 3 and dateInfo.day == 25 and dateInfo.year >= 2026 -- PvPStats Classic anniversary (2026 onwards)
             end
         },
         -- Add more complex conditions here as needed

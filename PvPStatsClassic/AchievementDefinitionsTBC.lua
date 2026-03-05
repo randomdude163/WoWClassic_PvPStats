@@ -872,7 +872,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.raceData["Bloodelf"] or 0
+            return stats.raceData["Blood Elf"] or 0
         end,
     },
     {
@@ -892,7 +892,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.raceData["Bloodelf"] or 0
+            return stats.raceData["Blood Elf"] or 0
         end,
     },
     {
@@ -912,7 +912,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.raceData["Bloodelf"] or 0
+            return stats.raceData["Blood Elf"] or 0
         end,
     },
     {
@@ -932,7 +932,7 @@ AchievementSystem.achievementsTbc = {
                 :format(a.targetValue)
         end,
         progress = function(achievement, stats)
-            return stats.raceData["Bloodelf"] or 0
+            return stats.raceData["Blood Elf"] or 0
         end,
     },
 
@@ -1433,6 +1433,244 @@ AchievementSystem.achievementsTbc = {
         end,
         progress = function(achievement, stats)
             return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_TBC, "Exodar")
+        end,
+    },
+
+    -- =====================================================
+    -- ARENA ACHIEVEMENTS
+    -- =====================================================
+
+    -- RUINS OF LORDAERON
+    {
+        id = "arena_ruins_25",
+        title = "Welcome to the Ruins",
+        description = function(a) return ("Defeat %d players in Ruins of Lordaeron"):format(a.targetValue) end,
+        iconID = 135900,
+        achievementPoints = 10,
+        targetValue = 25,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Ruins of Lordaeron — historic landmark, beloved tourist trap, your personal murder playground. %d down. The ghosts filed a noise complaint."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Ruins of Lordaeron")
+        end,
+    },
+    {
+        id = "arena_ruins_100",
+        title = "King of the Rubble",
+        description = function(a) return ("Defeat %d players in Ruins of Lordaeron"):format(a.targetValue) end,
+        iconID = 135974,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Lordaeron collapsed under the Scourge. Then it had to absorb %d of your kills on top of that. Historians are NOT okay."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Ruins of Lordaeron")
+        end,
+    },
+    {
+        id = "arena_ruins_250",
+        title = "The Lich's Understudy",
+        description = function(a) return ("Defeat %d players in Ruins of Lordaeron"):format(a.targetValue) end,
+        iconID = 136143,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Arthas annihilated an entire kingdom here and got a cool cutscene for it. You've racked up %d kills and don't even have a dramatic monologue. Somehow more terrifying."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Ruins of Lordaeron")
+        end,
+    },
+    {
+        id = "arena_ruins_500",
+        title = "Crowned in Colleague Skulls",
+        description = function(a) return ("Defeat %d players in Ruins of Lordaeron"):format(a.targetValue) end,
+        iconID = 136131,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d corpses. At this point the word 'Ruins' stopped referring to the architecture and started referring to the enemy team's rating, mental health, and desire to ever queue again."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Ruins of Lordaeron")
+        end,
+    },
+
+    -- NAGRAND ARENA
+    {
+        id = "arena_nagrand_25",
+        title = "Grassland Murderer",
+        description = function(a) return ("Defeat %d players in Nagrand Arena"):format(a.targetValue) end,
+        iconID = 134061,
+        achievementPoints = 10,
+        targetValue = 25,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Nothing but open sky, floating islands, and %d people who deeply regret queueing. Nagrand slaps. So do you, apparently."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Nagrand Arena")
+        end,
+    },
+    {
+        id = "arena_nagrand_100",
+        title = "Fury of the Plains",
+        description = function(a) return ("Defeat %d players in Nagrand Arena"):format(a.targetValue) end,
+        iconID = 132243,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The spirits of Nagrand watch over this land with great wisdom. They watched you get %d kills and are now reconsidering the whole 'watching' thing."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Nagrand Arena")
+        end,
+    },
+    {
+        id = "arena_nagrand_250",
+        title = "Spirits? Gone.",
+        description = function(a) return ("Defeat %d players in Nagrand Arena"):format(a.targetValue) end,
+        iconID = 132245,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Sky's blue. Grass is green. %d enemies are dead. You've turned the most scenic arena in Outland into your personal crime scene. No notes. Genuinely no notes."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Nagrand Arena")
+        end,
+    },
+    {
+        id = "arena_nagrand_500",
+        title = "Nagrand's Finest Export",
+        description = function(a) return ("Defeat %d players in Nagrand Arena"):format(a.targetValue) end,
+        iconID = 132244,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Somewhere, a 2400-rated arena team with matching gear sets and a shared macro spreadsheet queued into Nagrand and met you. They have a Discord server now. It is called 'Coping'. %d kills and counting."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Nagrand Arena")
+        end,
+    },
+
+    -- BLADE'S EDGE ARENA
+    {
+        id = "arena_bladesedge_25",
+        title = "Spine Introductory Course",
+        description = function(a) return ("Defeat %d players in Blade's Edge Arena"):format(a.targetValue) end,
+        iconID = 236337,
+        achievementPoints = 10,
+        targetValue = 25,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Your first %d kills in the spikiest arena in Outland. Your opponents arrived nervous. They left horizontal. The spikes were just there for atmosphere — you handled the rest."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Blade's Edge Arena")
+        end,
+    },
+    {
+        id = "arena_bladesedge_100",
+        title = "Edge Lord (Literal)",
+        description = function(a) return ("Defeat %d players in Blade's Edge Arena"):format(a.targetValue) end,
+        iconID = 236340,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Blade's Edge: where the zone name is a warning and you are the reason. %d kills deep and the arena staff have started calling you 'sir' with the voices of people who are very scared."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Blade's Edge Arena")
+        end,
+    },
+    {
+        id = "arena_bladesedge_250",
+        title = "Porcupine Energy",
+        description = function(a) return ("Defeat %d players in Blade's Edge Arena"):format(a.targetValue) end,
+        iconID = 236341,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Blizzard named it Blade's Edge as a design choice. You took it as a personal challenge. %d kills later, it's less of an arena and more of a receipt."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Blade's Edge Arena")
+        end,
+    },
+    {
+        id = "arena_bladesedge_500",
+        title = "Carved into the Scenery",
+        description = function(a) return ("Defeat %d players in Blade's Edge Arena"):format(a.targetValue) end,
+        iconID = 236343,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills in an arena named after sharp things used to hurt people. Every sweaty two-healer team that queued in here thinking they had a gameplan now logs off mid-match, stares at the ceiling, and quietly questions their build choices. You did that."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Blade's Edge Arena")
         end,
     },
 

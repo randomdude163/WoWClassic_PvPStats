@@ -82,7 +82,7 @@ function PSC_GetProgressForHordeRacesTBC(stats)
     local undead = stats.raceData["Undead"] or 0
     local trolls = stats.raceData["Troll"] or 0
     local tauren = stats.raceData["Tauren"] or 0
-    local bloodElves = stats.raceData["Bloodelf"] or 0
+    local bloodElves = stats.raceData["Blood Elf"] or 0
     return math.min(orcs, undead, trolls, tauren, bloodElves)
 end
 
@@ -112,8 +112,23 @@ PSC_GrayLevelThreshods = {
     [37] = 29, [38] = 30, [39] = 31, [40] = 31, [41] = 32, [42] = 33,
     [43] = 34, [44] = 35, [45] = 35, [46] = 36, [47] = 37, [48] = 38,
     [49] = 39, [50] = 39, [51] = 40, [52] = 41, [53] = 42, [54] = 43,
-    [55] = 43, [56] = 44, [57] = 45, [58] = 46, [59] = 47, [60] = 47
+    [55] = 43, [56] = 44, [57] = 45, [58] = 46, [59] = 47
 }
+if PSC_GameVersion == PSC_GAME_VERSIONS.CLASSIC then
+    PSC_GrayLevelThreshods[60] = 47
+elseif PSC_GameVersion == PSC_GAME_VERSIONS.TBC then
+    PSC_GrayLevelThreshods[60] = 51
+    PSC_GrayLevelThreshods[61] = 52
+    PSC_GrayLevelThreshods[62] = 53
+    PSC_GrayLevelThreshods[63] = 54
+    PSC_GrayLevelThreshods[64] = 55
+    PSC_GrayLevelThreshods[65] = 56
+    PSC_GrayLevelThreshods[66] = 57
+    PSC_GrayLevelThreshods[67] = 58
+    PSC_GrayLevelThreshods[68] = 59
+    PSC_GrayLevelThreshods[69] = 60
+    PSC_GrayLevelThreshods[70] = 61
+end
 
 function PSC_InitializeGrayKillsCounter()
     local characterKey = PSC_GetCharacterKey()

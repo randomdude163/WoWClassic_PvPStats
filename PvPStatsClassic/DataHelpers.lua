@@ -1,6 +1,40 @@
 -- Common data helper functions for PvPStatsClassic
 -- These functions centralize common data operations used throughout the addon
 
+function PSC_GetCurrentZoneName()
+    local function IsValidZoneName(value)
+        return value and value ~= ""
+    end
+
+    local realZone = GetRealZoneText()
+    if IsValidZoneName(realZone) then
+        return PSC_ConvertZoneToEnglish(realZone)
+    end
+
+    local minimapZone = GetMinimapZoneText()
+    if IsValidZoneName(minimapZone) then
+        return PSC_ConvertZoneToEnglish(minimapZone)
+    end
+
+    local zoneText = GetZoneText()
+    if IsValidZoneName(zoneText) then
+        return PSC_ConvertZoneToEnglish(zoneText)
+    end
+
+    local subZone = GetSubZoneText()
+    if IsValidZoneName(subZone) then
+        return PSC_ConvertZoneToEnglish(subZone)
+    end
+
+    local instanceName, instanceType = GetInstanceInfo()
+
+    if IsValidZoneName(instanceName) then
+        return PSC_ConvertZoneToEnglish(instanceName)
+    end
+
+    return "Unknown"
+end
+
 -- Get the list of characters to process based on account-wide setting
 function PSC_GetCharactersToProcessForStatistics()
     local charactersToProcess = {}
@@ -78,6 +112,15 @@ function PSC_GetPlayerMostRecentDeathInfo(deathData)
         -- Get zone from most recent death location
         zone = deathData.deathLocations[1].zone or zone
         lastKill = deathData.deathLocations[1].timestamp or lastKill
+    end
+
+    -- Fallback to top-level fields when deathLocations is absent or empty
+    -- (can happen for legacy records whose location list was never populated)
+    if zone == "Unknown" and deathData.zone and deathData.zone ~= "" and deathData.zone ~= "Unknown" then
+        zone = deathData.zone
+    end
+    if lastKill == 0 and (deathData.lastDeath or 0) > 0 then
+        lastKill = deathData.lastDeath
     end
 
     return zone, lastKill
