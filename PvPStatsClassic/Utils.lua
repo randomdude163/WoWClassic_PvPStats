@@ -758,7 +758,6 @@ local TimeBasedAchievementConfig = {
         {22, 7, "july_22_test"}, -- July 22nd Test Date
         {1, 5, "may_day"},
         {23, 11, "wow_anniversary"}, -- WoW Vanilla Release Date
-        {25, 3,  "anniversary_march_25"}, -- PvPStats Classic anniversary
         -- Add more special dates here as needed
     },
 
