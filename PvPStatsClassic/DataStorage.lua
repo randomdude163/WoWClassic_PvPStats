@@ -919,7 +919,7 @@ function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, guildR
     PSC_DB.PlayerInfoCache[playerNameWithRealm].rank = rank
 
     -- if PSC_Debug then
-    --     print("Stored player info: " .. infoKey .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
+    --     print("Stored player info: " .. playerNameWithRealm .. " (" .. level .. " " .. race .. " " .. gender .. " " .. class .. ") in guild " .. guildName .. " rank " .. rank)
     -- end
 end
 

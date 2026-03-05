@@ -471,27 +471,6 @@ function Network:ConstructPayload(components)
         totalAchievements = #PVPSC.AchievementSystem.achievements
     end
 
-    local _, classFilename = UnitClass("player")
-    local _, raceFilename = UnitRace("player")
-
-    -- Sanitize/Normalize Class and Race names
-    -- Ideally we want them in Title Case (e.g. "Warrior") instead of UPPERCASE (e.g. "WARRIOR")
-    if classFilename then
-        classFilename = classFilename:gsub("(%w)(%w*)", function(first, rest)
-            return first:upper() .. rest:lower()
-        end)
-    else
-        classFilename = "Unknown"
-    end
-
-    if raceFilename then
-        raceFilename = raceFilename:gsub("(%w)(%w*)", function(first, rest)
-            return first:upper() .. rest:lower()
-        end)
-    else
-        raceFilename = "Unknown"
-    end
-
     return {
         summary = components.summary,
         classData = components.classData,
@@ -509,8 +488,8 @@ function Network:ConstructPayload(components)
 
         playerName = UnitName("player"),
         level = UnitLevel("player"),
-        class = classFilename,
-        race = raceFilename,
+        class = UnitClass("player"),
+        race = UnitRace("player"),
         faction = UnitFactionGroup("player") or "",
         timestamp = GetServerTime(),
         realm = PSC_RealmName,
