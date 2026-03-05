@@ -758,6 +758,7 @@ local TimeBasedAchievementConfig = {
         {22, 7, "july_22_test"}, -- July 22nd Test Date
         {1, 5, "may_day"},
         {23, 11, "wow_anniversary"}, -- WoW Vanilla Release Date
+        {25, 3,  "anniversary_march_25"}, -- PvPStats Classic anniversary
         -- Add more special dates here as needed
     },
 
@@ -785,6 +786,12 @@ local TimeBasedAchievementConfig = {
                 local isWeekend = dateInfo.wday == WEEKDAY.SUNDAY or dateInfo.wday == WEEKDAY.SATURDAY
                 local isNight = dateInfo.hour >= 22 or dateInfo.hour < 6
                 return isWeekend and isNight
+            end
+        },
+        {
+            name = "anniversary_march_25_2026plus",
+            check = function(dateInfo)
+                return dateInfo.month == 3 and dateInfo.day == 25 and dateInfo.year >= 2026 -- PvPStats Classic anniversary (2026 onwards)
             end
         },
         -- Add more complex conditions here as needed
