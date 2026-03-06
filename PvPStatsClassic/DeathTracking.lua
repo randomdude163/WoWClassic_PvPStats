@@ -354,7 +354,7 @@ function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spe
         -- PvP relevant spell IDs that don't cause damage
         local pvpRelevantSpellIds = {
             -- Pure CC without damage components
-            118, 12826, 12825, 12824, 12825, 12826, -- Polymorph and ranks
+            118, 12826, 12825, 12824, 12825, 12826, 28271, 28272, -- Polymorph and ranks
             6770, 2070, 11297,               -- Sap and ranks
             2094,                            -- Blind
             3355, 14308, 14309,              -- Freezing Trap and ranks
@@ -372,7 +372,7 @@ function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spe
             12494,                           -- Frostbite
 
             -- Pure dispels and utility
-            370, 8012, 8017,                 -- Purge and ranks
+            370, 8012,                       -- Purge and ranks
             19801,                           -- Tranquilizing Shot
 
             -- Silences without damage components
@@ -384,8 +384,8 @@ function PSC_HandleReceivedPlayerDamage(combatEvent, sourceGUID, sourceName, spe
 
             -- Debuffs without direct damage
             1714, 11719,                     -- Curse of Tongues and rank
-            702, 1108, 6205, 7646, 11707, 11708,  -- Curse of Weakness and ranks
-            704, 7658, 7659, 11717,          -- Curse of Recklessness and ranks
+            702, 1108, 6205, 7646, 11707, 11708, 27224, 30909, -- Curse of Weakness and ranks
+            704, 7658, 7659, 11717, 27226    -- Curse of Recklessness and ranks
         }
 
         -- Check if this is a PvP-relevant spell by ID
