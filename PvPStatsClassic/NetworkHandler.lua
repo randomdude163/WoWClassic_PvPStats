@@ -488,8 +488,8 @@ function Network:ConstructPayload(components)
 
         playerName = UnitName("player"),
         level = UnitLevel("player"),
-        class = UnitClass("player"),
-        race = UnitRace("player"),
+        class = PSC_ConvertClassToEnglish(UnitClass("player")),
+        race = PSC_ConvertRaceToEnglish(UnitRace("player")),
         faction = UnitFactionGroup("player") or "",
         timestamp = GetServerTime(),
         realm = PSC_RealmName,

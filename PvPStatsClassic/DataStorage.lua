@@ -710,7 +710,7 @@ function PSC_MigratePlayerInfoCache()
     end
 end
 
-local function ConvertClassToEnglish(localizedClass)
+function PSC_ConvertClassToEnglish(localizedClass)
     if not localizedClass then return "Unknown" end
 
     if LOCALE == "enUS" or not CLASSES_TO_ENGLISH[LOCALE] then
@@ -720,7 +720,7 @@ local function ConvertClassToEnglish(localizedClass)
     return CLASSES_TO_ENGLISH[LOCALE][localizedClass] or localizedClass
 end
 
-local function ConvertRaceToEnglish(localizedRace)
+function PSC_ConvertRaceToEnglish(localizedRace)
     if not localizedRace then return "Unknown" end
 
     if LOCALE == "enUS" or not RACES_TO_ENGLISH[LOCALE] then
@@ -934,8 +934,8 @@ function PSC_GetAndStorePlayerInfoFromUnit(unit)
         end
         return
     end
-    class = ConvertClassToEnglish(class)
-    race = ConvertRaceToEnglish(race)
+    class = PSC_ConvertClassToEnglish(class)
+    race = PSC_ConvertRaceToEnglish(race)
     PSC_StorePlayerInfo(name, level, class, race, gender, guildName, guildRankName, rank)
 end
 
