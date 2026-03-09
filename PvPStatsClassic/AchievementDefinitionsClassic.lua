@@ -8251,6 +8251,23 @@ AchievementSystem.achievementsClassic = {
             return stats.npcKills["The Defias Traitor"] or 0
         end,
     },
+    {
+        id = "bonus_npc_horde_defias_traitor_250",
+        title = "Who's Your Daddy?",
+        description = "Eliminate The Defias Traitor 250 times.",
+        iconID = 132308,
+        achievementPoints = 0,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = "He spawns. He sees you. He dies. He spawns. He sees you. He dies. Two hundred and fifty times. The real traitor was the hope he felt each time he respawned. The Spirit Healer is charging him rent.",
+        progress = function(achievement, stats)
+            return stats.npcKills["The Defias Traitor"] or 0
+        end,
+    },
 
     -- NPC Kills: Defias Messenger
     {
