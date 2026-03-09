@@ -5,13 +5,14 @@ PSC_LeaderboardFrame = nil
 PSC_SortLeaderboardBy = "totalKills"
 PSC_SortLeaderboardAscending = false
 local LEADERBOARD_FRAME_WIDTH = 1150
-local LEADERBOARD_FRAME_HEIGHT = 450
+local LEADERBOARD_FRAME_HEIGHT = 550
 
 PSC_LeaderboardFrameInitialSetup = true
 
 local PSC_LeaderboardDataCache = nil
 local PSC_LeaderboardRowDropDown = nil
 local PSC_FilterRecentSyncOnly = false
+local PSC_ShowOwnAlts = true
 local LEADERBOARD_RECENT_SYNC_WINDOW_SECONDS = 1800 -- 30 minutes
 
 local function GetLeaderboardEntryUniqueName(entry)
@@ -68,6 +69,12 @@ local function RemoveLeaderboardEntry(entryOrName)
     if PVPSC and PVPSC.Network and PVPSC.Network.sharedData then
         for name, _ in pairs(candidates) do
             PVPSC.Network.sharedData[name] = nil
+        end
+    end
+
+    if PVPSC and PVPSC.Network and PVPSC.Network.ownAltData then
+        for name, _ in pairs(candidates) do
+            PVPSC.Network.ownAltData[name] = nil
         end
     end
 
@@ -747,7 +754,7 @@ local function GetLeaderboardData()
     -- Attempt to get data from Network handler
     local netData = nil
     if PVPSC.Network and PVPSC.Network.GetAllLeaderboardData then
-        netData = PVPSC.Network:GetAllLeaderboardData()
+        netData = PVPSC.Network:GetAllLeaderboardData(PSC_ShowOwnAlts)
     end
 
     -- If network didn't return data (or empty), simulate a local-only result
@@ -800,7 +807,10 @@ local function GetLeaderboardData()
              -- Check if we have detailed stats for this player
              -- We can use Network handler to verify if this player is in cache/live or just summary cache
              local isDetailedAvailable = false
-             if data.playerName == UnitName("player") then
+             if data.isOwnAlt then
+                 -- Own alts are intentionally treated as offline entries in the leaderboard.
+                 isDetailedAvailable = false
+             elseif data.playerName == UnitName("player") then
                  isDetailedAvailable = true
              elseif PVPSC.Network and PVPSC.Network.GetDetailedStatsForPlayer then
                  -- GetDetailedStatsForPlayer should support lookup by the unique name (Name-Realm)
@@ -1073,6 +1083,21 @@ function PSC_CreateLeaderboardFrame()
     recentSyncCheckbox:SetPoint("RIGHT", sendStatsButton, "LEFT", -120, 0)
     recentSyncCheckbox:SetChecked(PSC_FilterRecentSyncOnly)
 
+    if PSC_DB.ShowOwnAltsOnLeaderboard == nil then
+        PSC_DB.ShowOwnAltsOnLeaderboard = true
+    end
+    PSC_ShowOwnAlts = PSC_DB.ShowOwnAltsOnLeaderboard
+
+    local showAltsCheckbox = CreateFrame("CheckButton", nil, PSC_LeaderboardFrame, "UICheckButtonTemplate")
+    showAltsCheckbox:SetSize(20, 20)
+    showAltsCheckbox:SetPoint("RIGHT", recentSyncCheckbox, "LEFT", -88, 0)
+    showAltsCheckbox:SetChecked(PSC_ShowOwnAlts)
+
+    local showAltsLabel = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    showAltsLabel:SetPoint("LEFT", showAltsCheckbox, "RIGHT", 2, 0)
+    showAltsLabel:SetText("Show your alts")
+    showAltsLabel:SetTextColor(1, 0.82, 0)
+
     local recentSyncLabel = PSC_LeaderboardFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     recentSyncLabel:SetPoint("LEFT", recentSyncCheckbox, "RIGHT", 2, 0)
     recentSyncLabel:SetText("Recently synced only")
@@ -1092,6 +1117,37 @@ function PSC_CreateLeaderboardFrame()
         GameTooltip:AddLine("Your own character is always shown.", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end
+
+    local function ShowOwnAltsTooltip(owner)
+        GameTooltip:SetOwner(owner, "ANCHOR_TOP")
+        GameTooltip:SetText("Show your alts", 1, 0.82, 0)
+        GameTooltip:AddLine("Show leaderboard entries for your own characters from this account.", 1, 1, 1, true)
+        GameTooltip:AddLine("Only alts that logged in at least once with addon version v4.4 or later are shown.", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end
+
+    showAltsCheckbox:SetScript("OnClick", function(self)
+        PSC_ShowOwnAlts = self:GetChecked()
+        PSC_DB.ShowOwnAltsOnLeaderboard = PSC_ShowOwnAlts
+        PSC_LeaderboardDataCache = nil
+        RefreshLeaderboardFrame()
+    end)
+
+    showAltsCheckbox:SetScript("OnEnter", function(self)
+        ShowOwnAltsTooltip(self)
+    end)
+
+    showAltsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    showAltsLabel:SetScript("OnEnter", function(self)
+        ShowOwnAltsTooltip(self)
+    end)
+
+    showAltsLabel:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     recentSyncCheckbox:SetScript("OnClick", function(self)
         PSC_FilterRecentSyncOnly = self:GetChecked()
@@ -1116,6 +1172,8 @@ function PSC_CreateLeaderboardFrame()
 
     PSC_LeaderboardFrame.recentSyncCheckbox = recentSyncCheckbox
     PSC_LeaderboardFrame.recentSyncLabel = recentSyncLabel
+    PSC_LeaderboardFrame.showAltsCheckbox = showAltsCheckbox
+    PSC_LeaderboardFrame.showAltsLabel = showAltsLabel
 
     PSC_FrameManager:RegisterFrame(PSC_LeaderboardFrame, "Leaderboard")
 

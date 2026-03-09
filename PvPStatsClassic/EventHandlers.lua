@@ -446,7 +446,7 @@ local function HandleUnitDiedEvent(destGUID, destName)
     end
 end
 
-local function HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
+local function HandleCombatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
     if IsPetGUID(sourceGUID) and destGUID then
         local damageAmount = 0
 
@@ -519,7 +519,7 @@ local function HandleCombatLogEvent()
     local isValidTarget = PSC_IsValidTarget(destFlags, destGUID)
 
     if isValidTarget then
-        HandleComatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
+        HandleCombatLogEventPetDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, param1, param4)
         HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
     end
 
@@ -656,6 +656,11 @@ local function HandlePlayerEnteringWorld()
         PSC_DB.WhatsNewPopupVersion = "v1.0"
     end
 
+    if PSC_DB.PlayerInfoCache == nil then
+        PSC_DB.PlayerInfoCache = {}
+    end
+    PSC_GetAndStorePlayerInfoFromUnit("player", true)
+
     PSC_MigratePlayerInfoCache()
     PSC_MigratePlayerInfoToEnglish()
     PSC_MigrateKillKeys()
@@ -664,6 +669,7 @@ local function HandlePlayerEnteringWorld()
     PSC_InitializePlayerKillCounts()
     PSC_InitializeLeaderboardCache()
     PSC_InitializePlayerLossCounts()
+
     PSC_UpdateMinimapButtonPosition()
     PSC_SetupMouseoverTooltip()
     PSC_InCombat = UnitAffectingCombat("player")
@@ -764,6 +770,7 @@ function PSC_RegisterEvents()
         elseif event == "PLAYER_REGEN_ENABLED" then
             HandlePlayerRegenEnabled()
         elseif event == "PLAYER_LOGOUT" then
+            PSC_GetAndStorePlayerInfoFromUnit("player", true)
             PSC_CleanupPlayerInfoCache()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             PSC_CheckBattlegroundStatus()
