@@ -95,10 +95,34 @@ local function RemoveOfflineLeaderboardEntries()
     local localRealm = PSC_RealmName
     local sharedData = (PVPSC and PVPSC.Network and PVPSC.Network.sharedData) or {}
 
+    local ownCharacters = {}
+    if PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters then
+        for characterKey, _ in pairs(PSC_DB.PlayerKillCounts.Characters) do
+            ownCharacters[characterKey] = true
+        end
+    end
+
+    local function IsOwnCharacterEntry(cacheName)
+        if not cacheName or cacheName == "" then
+            return false
+        end
+
+        if ownCharacters[cacheName] then
+            return true
+        end
+
+        if not string.find(cacheName, "%-") and localRealm then
+            return ownCharacters[cacheName .. "-" .. localRealm] == true
+        end
+
+        return false
+    end
+
     for cacheName, _ in pairs(PSC_DB.LeaderboardCache) do
         local isLocal = cacheName == localPlayerName or (localRealm and cacheName == (localPlayerName .. "-" .. localRealm))
         local isLive = sharedData[cacheName] ~= nil
-        if not isLocal and not isLive then
+        local isOwnCharacter = IsOwnCharacterEntry(cacheName)
+        if not isLocal and not isLive and not isOwnCharacter then
             PSC_DB.LeaderboardCache[cacheName] = nil
         end
     end
