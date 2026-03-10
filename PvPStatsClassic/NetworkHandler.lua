@@ -383,20 +383,64 @@ function Network:SendCommMessageWithDebug(prefix, payload, channel, target, prio
     self:SendCommMessage(prefix, payload, channel, target, priority)
 end
 
-local function ApplyPlayerProfile(summaryTable, nameField, raceField, genderField, classField)
+local function HasKnownProfile(info)
+    return info and ((info.race and info.race ~= "") or (info.gender and info.gender ~= "") or (info.class and info.class ~= ""))
+end
+
+local function GetProfileValueOrUnknown(info, field)
+    local value = info and info[field]
+    if value and value ~= "" then
+        return value
+    end
+    return "Unknown"
+end
+
+local function ApplyPlayerProfile(summaryTable, nameField, raceField, genderField, classField, charactersToProcess)
     local playerName = summaryTable and summaryTable[nameField]
     if not playerName or playerName == "" or playerName == "None" then
         return
     end
 
-    local playerInfo, _ = PSC_GetPlayerInfo(playerName)
-    if not playerInfo then
+    local playerInfo = PSC_GetPlayerInfo(playerName)
+
+    if not HasKnownProfile(playerInfo) and string.find(playerName, "%-") then
+        local shortName = playerName:match("^([^-]+)")
+        if shortName and shortName ~= "" then
+            local shortInfo = PSC_GetPlayerInfo(shortName)
+            if HasKnownProfile(shortInfo) then
+                playerInfo = shortInfo
+            end
+        end
+    end
+
+    if not HasKnownProfile(playerInfo) and charactersToProcess then
+        for _, characterData in pairs(charactersToProcess) do
+            if characterData and characterData.Kills then
+                for nameWithLevel, killData in pairs(characterData.Kills) do
+                    local killName = nameWithLevel:match("([^:]+)") or nameWithLevel
+                    if PSC_IsSamePlayerName(killName, playerName) then
+                        playerInfo = {
+                            race = killData.race,
+                            gender = killData.gender,
+                            class = killData.class
+                        }
+                        break
+                    end
+                end
+            end
+            if HasKnownProfile(playerInfo) then
+                break
+            end
+        end
+    end
+
+    if not HasKnownProfile(playerInfo) then
         return
     end
 
-    summaryTable[raceField] = (playerInfo.race and playerInfo.race ~= "") and playerInfo.race or "Unknown"
-    summaryTable[genderField] = (playerInfo.gender and playerInfo.gender ~= "") and playerInfo.gender or "Unknown"
-    summaryTable[classField] = (playerInfo.class and playerInfo.class ~= "") and playerInfo.class or "Unknown"
+    summaryTable[raceField] = GetProfileValueOrUnknown(playerInfo, "race")
+    summaryTable[genderField] = GetProfileValueOrUnknown(playerInfo, "gender")
+    summaryTable[classField] = GetProfileValueOrUnknown(playerInfo, "class")
 end
 
 local function FlattenSummaryForLeaderboard(statsData)
@@ -478,8 +522,8 @@ end
 
 local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enableDebugLog)
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-    ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass")
-    ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass")
+    ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
+    ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
 
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, _, npcKillsData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
