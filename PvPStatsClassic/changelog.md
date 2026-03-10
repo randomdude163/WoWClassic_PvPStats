@@ -1,3 +1,9 @@
+v4.4:
+- Leaderboard now has option to show your own alts
+- Fixed tooltip for Most killed player and Nemesis when viewing another player's stats
+- Fixed leaderboard class and race not in English if the other player is using a non-English WoW client
+- Added achievement to kill the Defias Traitor 250 times.
+
 v4.3:
 - Added Arena achievements
 - Fixed "Unknown" zone name for kills/deaths in Arena
