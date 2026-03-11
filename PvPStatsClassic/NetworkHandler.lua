@@ -692,7 +692,9 @@ end
 function Network:GetBroadcastChannels()
     local distributionList = {}
 
-    if IsInRaid() and not PSC_CurrentlyInBattleground then
+    if PSC_CurrentlyInBattleground then
+        table.insert(distributionList, "INSTANCE_CHAT")
+    elseif IsInRaid() then
         table.insert(distributionList, "RAID")
     elseif IsInGroup() then
         table.insert(distributionList, "PARTY")

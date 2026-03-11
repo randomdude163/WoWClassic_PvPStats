@@ -693,7 +693,7 @@ local function HandlePlayerEnteringWorld()
     local currentVersion = PSC_GetAddonVersion()
     if PSC_DB.WhatsNewPopupVersion ~= currentVersion then
         local title = "PvP Stats v" .. currentVersion .. " - What's new:"
-        local message = "-Leaderboard now has option to show your own alts\n\n-Added achievement to kill the Defias Traitor 250 times\n\n-You can import your data from older clients like Classic Era. Use the link below.\n\nEnjoy!"
+        local message = "-Fixed \"You are not in a party\" messages in BGs\n\n-Leaderboard now has option to show your own alts\n\n-Added achievement to kill the Defias Traitor 250 times\n\n-You can import your data from older clients like Classic Era. Use the link below.\n\nEnjoy!"
         local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
         PSC_ShowWhatsNewPopup(title, message, function()
             PSC_DB.WhatsNewPopupShown = true
