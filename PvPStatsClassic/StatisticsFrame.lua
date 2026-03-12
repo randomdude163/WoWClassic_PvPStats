@@ -97,6 +97,21 @@ local genderColors = {
     }
 }
 
+local ALL_CLASSES = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
+
+local LINE_CHART_UI = {
+    HEIGHT = 235,
+    LEFT_PADDING = 42,
+    RIGHT_PADDING = 8,
+    TOP_PADDING = 28,
+    BOTTOM_PADDING = 36,
+    GRID_LINES = 5,
+    POINT_SIZE = 4,
+    LINE_THICKNESS = 2,
+    LEGEND_COLUMNS = 3,
+    LEGEND_ROW_HEIGHT = 14
+}
+
 local function sortByValue(tbl, descending)
     if not tbl then
         return {}
@@ -681,6 +696,440 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     end
 
     return container
+end
+
+local function PSC_ExtractNameAndLevelKey(nameWithLevel)
+    local colonIndex = string.find(nameWithLevel, ":", 1, true)
+    if colonIndex then
+        return string.sub(nameWithLevel, 1, colonIndex - 1), string.sub(nameWithLevel, colonIndex + 1)
+    end
+
+    return nameWithLevel, nil
+end
+
+local function PSC_GetMonthBucketFromTimestamp(timestamp)
+    if not timestamp then
+        return nil, nil
+    end
+
+    local dateInfo = date("*t", timestamp)
+    if not dateInfo or not dateInfo.year or not dateInfo.month then
+        return nil, nil
+    end
+
+    return (dateInfo.year * 100) + dateInfo.month, dateInfo
+end
+
+local function PSC_FormatMonthBucketLabel(bucket)
+    local year = math.floor(bucket / 100)
+    local month = bucket % 100
+    local monthShort = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+    local monthName = monthShort[month] or tostring(month)
+    return string.format("%s %02d", monthName, year % 100)
+end
+
+function PSC_CalculateMonthlyClassPercentageStatistics(charactersToProcess)
+    local monthlyTotals = {}
+    local monthlyClassKills = {}
+    local monthKeys = {}
+
+    for _, className in ipairs(ALL_CLASSES) do
+        monthlyClassKills[className] = {}
+    end
+
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return monthKeys, monthlyClassKills, monthlyTotals
+    end
+
+    for _, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                if killData.killLocations and #killData.killLocations > 0 then
+                    local enemyName = PSC_ExtractNameAndLevelKey(nameWithLevel)
+                    local infoKey = PSC_NormalizePlayerName(enemyName)
+                    local info = PSC_DB.PlayerInfoCache[infoKey]
+                    local className = info and info.class or nil
+
+                    for _, location in ipairs(killData.killLocations) do
+                        local bucket = PSC_GetMonthBucketFromTimestamp(location.timestamp)
+                        if bucket then
+                            if monthlyTotals[bucket] == nil then
+                                monthlyTotals[bucket] = 0
+                                table.insert(monthKeys, bucket)
+                            end
+
+                            monthlyTotals[bucket] = monthlyTotals[bucket] + 1
+
+                            if className and monthlyClassKills[className] then
+                                monthlyClassKills[className][bucket] = (monthlyClassKills[className][bucket] or 0) + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    table.sort(monthKeys)
+
+    local monthlyClassPercentages = {}
+    for _, className in ipairs(ALL_CLASSES) do
+        monthlyClassPercentages[className] = {}
+        for _, bucket in ipairs(monthKeys) do
+            local total = monthlyTotals[bucket] or 0
+            local classKills = monthlyClassKills[className][bucket] or 0
+            if classKills > 0 and total > 0 then
+                monthlyClassPercentages[className][bucket] = (classKills / total) * 100
+            end
+        end
+    end
+
+    return monthKeys, monthlyClassPercentages, monthlyTotals
+end
+
+local function createLineTexture(parent, x1, y1, x2, y2, color)
+    local dx = x2 - x1
+    local dy = y2 - y1
+    local length = math.sqrt((dx * dx) + (dy * dy))
+    if length <= 0 then
+        return
+    end
+
+    local line = parent:CreateTexture(nil, "ARTWORK")
+    line:SetColorTexture(color.r, color.g, color.b, 0.95)
+    line:SetSize(length, LINE_CHART_UI.LINE_THICKNESS)
+    line:SetPoint("CENTER", parent, "TOPLEFT", x1 + (dx / 2), y1 + (dy / 2))
+
+    local angle
+    if math.atan2 then
+        angle = math.atan2(dy, dx)
+    elseif dx == 0 then
+        angle = (dy >= 0) and (math.pi / 2) or (-math.pi / 2)
+    else
+        angle = math.atan(dy / dx)
+        if dx < 0 then
+            angle = angle + math.pi
+        end
+    end
+
+    line:SetRotation(angle)
+    return line
+end
+
+local function createPointTexture(parent, x, y, color)
+    local point = parent:CreateTexture(nil, "OVERLAY")
+    point:SetColorTexture(color.r, color.g, color.b, 1)
+    point:SetSize(LINE_CHART_UI.POINT_SIZE, LINE_CHART_UI.POINT_SIZE)
+    point:SetPoint("CENTER", parent, "TOPLEFT", x, y)
+    return point
+end
+
+local function createMonthlyClassPercentageChart(parent, x, y, width, disableClicks, monthKeys, monthlyClassPercentages, monthlyTotals)
+    local TBC_RELEASE_BUCKET = 202602
+    local legendRows = math.ceil(#ALL_CLASSES / LINE_CHART_UI.LEGEND_COLUMNS)
+    local legendHeight = legendRows * LINE_CHART_UI.LEGEND_ROW_HEIGHT
+    local height = LINE_CHART_UI.HEIGHT + legendHeight
+    local container = createContainerWithTitle(parent, "Monthly Class Kill Share (%)", x, y, width, height)
+
+    local chartWidth = width - LINE_CHART_UI.LEFT_PADDING - LINE_CHART_UI.RIGHT_PADDING
+    local chartHeight = LINE_CHART_UI.HEIGHT - LINE_CHART_UI.TOP_PADDING - LINE_CHART_UI.BOTTOM_PADDING
+    local chartLeft = LINE_CHART_UI.LEFT_PADDING
+    local chartTop = -LINE_CHART_UI.TOP_PADDING
+    local chartBottom = chartTop - chartHeight
+
+    local monthCount = #monthKeys
+    local classVisuals = {}
+
+    local function ensureClassVisual(className)
+        if not classVisuals[className] then
+            classVisuals[className] = {
+                visible = true,
+                textures = {},
+                buttons = {},
+                legendSwatch = nil,
+                legendText = nil
+            }
+        end
+        return classVisuals[className]
+    end
+
+    local function registerClassTexture(className, texture)
+        if not texture then
+            return
+        end
+        local visuals = ensureClassVisual(className)
+        table.insert(visuals.textures, texture)
+    end
+
+    local function registerClassButton(className, button)
+        if not button then
+            return
+        end
+        local visuals = ensureClassVisual(className)
+        table.insert(visuals.buttons, button)
+    end
+
+    local function applyClassVisibility(className)
+        local visuals = ensureClassVisual(className)
+        local color = getClassColor(className)
+
+        for _, texture in ipairs(visuals.textures) do
+            if visuals.visible then
+                texture:Show()
+            else
+                texture:Hide()
+            end
+        end
+
+        for _, button in ipairs(visuals.buttons) do
+            if visuals.visible then
+                button:Show()
+            else
+                button:Hide()
+            end
+        end
+
+        if visuals.legendSwatch then
+            visuals.legendSwatch:SetAlpha(visuals.visible and 1 or 0.25)
+        end
+
+        if visuals.legendText then
+            if visuals.visible then
+                visuals.legendText:SetTextColor(color.r, color.g, color.b)
+            else
+                visuals.legendText:SetTextColor(0.55, 0.55, 0.55)
+            end
+        end
+    end
+
+    if monthCount == 0 then
+        local emptyText = container:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+        emptyText:SetPoint("TOPLEFT", 0, -40)
+        emptyText:SetText("No timestamped kill data available for monthly class percentages.")
+        return container, height
+    end
+
+    local maxPercent = 0
+    for _, className in ipairs(ALL_CLASSES) do
+        local classSeries = monthlyClassPercentages[className] or {}
+        for _, monthBucket in ipairs(monthKeys) do
+            local value = classSeries[monthBucket]
+            if value and value > maxPercent then
+                maxPercent = value
+            end
+        end
+    end
+
+    maxPercent = math.min(100, math.max(10, math.ceil(maxPercent / 10) * 10))
+
+    local axisColor = {r = 0.6, g = 0.6, b = 0.6}
+    local xAxis = container:CreateTexture(nil, "ARTWORK")
+    xAxis:SetColorTexture(axisColor.r, axisColor.g, axisColor.b, 0.8)
+    xAxis:SetPoint("TOPLEFT", chartLeft, chartBottom)
+    xAxis:SetSize(chartWidth, 1)
+
+    local yAxis = container:CreateTexture(nil, "ARTWORK")
+    yAxis:SetColorTexture(axisColor.r, axisColor.g, axisColor.b, 0.8)
+    yAxis:SetPoint("TOPLEFT", chartLeft, chartTop)
+    yAxis:SetSize(1, chartHeight)
+
+    for i = 0, LINE_CHART_UI.GRID_LINES do
+        local ratio = i / LINE_CHART_UI.GRID_LINES
+        local percent = maxPercent * ratio
+        local yPos = chartBottom + (chartHeight * ratio)
+
+        local gridLine = container:CreateTexture(nil, "BACKGROUND")
+        gridLine:SetColorTexture(0.35, 0.35, 0.35, 0.35)
+        gridLine:SetPoint("TOPLEFT", chartLeft, yPos)
+        gridLine:SetSize(chartWidth, 1)
+
+        local yLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        yLabel:SetPoint("RIGHT", container, "TOPLEFT", chartLeft - 4, yPos)
+        yLabel:SetText(string.format("%.0f%%", percent))
+    end
+
+    local xStep = (monthCount > 1) and (chartWidth / (monthCount - 1)) or 0
+    local labelStep = 1
+    if monthCount > 8 then
+        labelStep = math.ceil(monthCount / 8)
+    end
+
+    local function getPointPosition(monthIndex, percent)
+        local xPos = chartLeft + ((monthIndex - 1) * xStep)
+        local yPos = chartBottom + ((percent / maxPercent) * chartHeight)
+        return xPos, yPos
+    end
+
+    for i, monthBucket in ipairs(monthKeys) do
+        local xPos = chartLeft + ((i - 1) * xStep)
+
+        if i == 1 or i == monthCount or (i - 1) % labelStep == 0 then
+            local xLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            xLabel:SetPoint("TOP", container, "TOPLEFT", xPos, chartBottom - 2)
+            xLabel:SetText(PSC_FormatMonthBucketLabel(monthBucket))
+        end
+    end
+
+    if TBC_RELEASE_BUCKET >= monthKeys[1] and TBC_RELEASE_BUCKET <= monthKeys[monthCount] then
+        local releaseX = nil
+        for idx, bucket in ipairs(monthKeys) do
+            if bucket == TBC_RELEASE_BUCKET then
+                releaseX = chartLeft + ((idx - 1) * xStep)
+                break
+            elseif bucket > TBC_RELEASE_BUCKET then
+                if idx > 1 then
+                    releaseX = chartLeft + (((idx - 2) + 0.5) * xStep)
+                else
+                    releaseX = chartLeft
+                end
+                break
+            end
+        end
+
+        if not releaseX then
+            releaseX = chartLeft + ((monthCount - 1) * xStep)
+        end
+
+        local releaseLine = container:CreateTexture(nil, "OVERLAY")
+        releaseLine:SetColorTexture(1.0, 0.82, 0.0, 0.95)
+        releaseLine:SetPoint("TOPLEFT", releaseX, chartTop)
+        releaseLine:SetSize(1, chartHeight)
+
+        local releaseLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        releaseLabel:SetPoint("BOTTOM", container, "TOPLEFT", releaseX, chartTop + 2)
+        releaseLabel:SetText("TBC")
+        releaseLabel:SetTextColor(1.0, 0.82, 0.0)
+
+        local releaseButton = CreateFrame("Button", nil, container)
+        releaseButton:SetPoint("TOPLEFT", releaseX - 3, chartTop)
+        releaseButton:SetSize(7, chartHeight)
+        releaseButton:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Burning Crusade Release", 1.0, 0.82, 0.0)
+            GameTooltip:AddLine("February 6, 2026", 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        releaseButton:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+    end
+
+    for _, className in ipairs(ALL_CLASSES) do
+        local series = monthlyClassPercentages[className] or {}
+        local color = getClassColor(className)
+        local previousX = nil
+        local previousY = nil
+
+        for i, monthBucket in ipairs(monthKeys) do
+            local value = series[monthBucket]
+            if value and value > 0 then
+                local pointX, pointY = getPointPosition(i, value)
+                local point = createPointTexture(container, pointX, pointY, color)
+                registerClassTexture(className, point)
+
+                if previousX and previousY then
+                    local line = createLineTexture(container, previousX, previousY, pointX, pointY, color)
+                    registerClassTexture(className, line)
+                end
+
+                if not disableClicks then
+                    local pointButton = CreateFrame("Button", nil, container)
+                    pointButton:SetSize(10, 10)
+                    pointButton:SetPoint("CENTER", container, "TOPLEFT", pointX, pointY)
+                    pointButton:SetScript("OnEnter", function(self)
+                        local totalMonthKills = monthlyTotals[monthBucket] or 0
+                        local classMonthKills = math.floor((value / 100) * totalMonthKills + 0.5)
+                        local previousMonthBucket = monthKeys[i - 1]
+                        local previousValue = previousMonthBucket and (series[previousMonthBucket] or 0) or nil
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(className, color.r, color.g, color.b)
+                        GameTooltip:AddLine(PSC_FormatMonthBucketLabel(monthBucket), 1, 1, 1)
+                        GameTooltip:AddLine(string.format("Share: %.1f%%", value), 1, 1, 1)
+                        GameTooltip:AddLine("Kills: " .. classMonthKills .. " / " .. totalMonthKills, 1, 1, 1)
+
+                        if previousValue ~= nil then
+                            local delta = value - previousValue
+                            local deltaAbs = math.abs(delta)
+                            local deltaText = string.format("%.1f", deltaAbs):gsub("%.0$", "")
+                            if delta > 0 then
+                                GameTooltip:AddLine(string.format("Delta vs %s: %s%% increase", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 0.3, 1, 0.3, true)
+                            elseif delta < 0 then
+                                GameTooltip:AddLine(string.format("Delta vs %s: %s%% decrease", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 1, 0.3, 0.3, true)
+                            else
+                                GameTooltip:AddLine(string.format("Delta vs %s: no change", PSC_FormatMonthBucketLabel(previousMonthBucket)), 0.85, 0.85, 0.85, true)
+                            end
+                        else
+                            GameTooltip:AddLine("Delta vs previous month: n/a", 0.85, 0.85, 0.85, true)
+                        end
+
+                        GameTooltip:Show()
+                    end)
+                    pointButton:SetScript("OnLeave", function()
+                        GameTooltip:Hide()
+                    end)
+                    registerClassButton(className, pointButton)
+                end
+
+                previousX = pointX
+                previousY = pointY
+            end
+        end
+    end
+
+    local legendStartY = -(LINE_CHART_UI.HEIGHT - 8)
+    local legendColumnWidth = width / LINE_CHART_UI.LEGEND_COLUMNS
+
+    for classIndex, className in ipairs(ALL_CLASSES) do
+        local zeroBased = classIndex - 1
+        local legendColumn = zeroBased % LINE_CHART_UI.LEGEND_COLUMNS
+        local legendRow = math.floor(zeroBased / LINE_CHART_UI.LEGEND_COLUMNS)
+        local itemX = 6 + (legendColumn * legendColumnWidth)
+        local itemY = legendStartY - (legendRow * LINE_CHART_UI.LEGEND_ROW_HEIGHT)
+        local color = getClassColor(className)
+
+        local swatch = container:CreateTexture(nil, "ARTWORK")
+        swatch:SetColorTexture(color.r, color.g, color.b, 1)
+        swatch:SetSize(10, 10)
+        swatch:SetPoint("TOPLEFT", itemX, itemY)
+
+        local text = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        text:SetPoint("LEFT", swatch, "RIGHT", 4, 0)
+        text:SetText(className)
+
+        local legendButton = CreateFrame("Button", nil, container)
+        legendButton:SetPoint("TOPLEFT", swatch, "TOPLEFT", -2, 1)
+        legendButton:SetPoint("BOTTOMRIGHT", text, "BOTTOMRIGHT", 2, -1)
+        PSC_CreateGoldHighlight(legendButton, 12)
+
+        legendButton:SetScript("OnClick", function()
+            local visuals = ensureClassVisual(className)
+            visuals.visible = not visuals.visible
+            applyClassVisibility(className)
+        end)
+
+        legendButton:SetScript("OnEnter", function(self)
+            local visuals = ensureClassVisual(className)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(className, color.r, color.g, color.b)
+            if visuals.visible then
+                GameTooltip:AddLine("Click to hide this class graph", 1, 1, 1, true)
+            else
+                GameTooltip:AddLine("Click to show this class graph", 1, 1, 1, true)
+            end
+            GameTooltip:Show()
+        end)
+
+        legendButton:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+
+        local visuals = ensureClassVisual(className)
+        visuals.legendSwatch = swatch
+        visuals.legendText = text
+        applyClassVisibility(className)
+    end
+
+    return container, height
 end
 
 local function createGuildTableRow(content, entry, index, firstRowSpacing)
@@ -1724,11 +2173,10 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     -- Ensure all classes, races, genders are present with at least 0
-    local allClasses = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
     local allRaces = {"Human", "Dwarf", "Night Elf", "Gnome", "Orc", "Undead", "Troll", "Tauren"}
     local allGenders = {"MALE", "FEMALE"}
 
-    for _, class in ipairs(allClasses) do
+    for _, class in ipairs(ALL_CLASSES) do
         classData[class] = 0
         unknownLevelClassData[class] = 0
     end
@@ -2156,6 +2604,9 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     -- Get data based on whether we're viewing external or local player
     local classData, raceData, genderData, zoneData, levelData, hourlyData, weekdayData, monthlyData, yearlyData, stats
     local unknownLevelClassData, guildStatusData, guildData, npcKillsData
+    local monthlyClassBuckets = {}
+    local monthlyClassPercentages = {}
+    local monthlyClassTotals = {}
 
     if isExternalPlayer then
         -- Use data from external player
@@ -2174,6 +2625,9 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         guildStatusData = externalPlayerData.guildStatusData or {}
         guildData = {}
         npcKillsData = externalPlayerData.npcKillsData or {}
+        monthlyClassBuckets = externalPlayerData.monthlyClassBuckets or {}
+        monthlyClassPercentages = externalPlayerData.monthlyClassPercentages or {}
+        monthlyClassTotals = externalPlayerData.monthlyClassTotals or {}
     else
         -- Calculate local player data
         local currentCharacterKey = PSC_GetCharacterKey()
@@ -2193,6 +2647,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
         yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
         stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+        monthlyClassBuckets, monthlyClassPercentages, monthlyClassTotals = PSC_CalculateMonthlyClassPercentageStatistics(charactersToProcess)
     end
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
@@ -2272,15 +2727,27 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight, isExternalPlayer)
 
+    yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
+    local _, monthlyClassChartHeight = createMonthlyClassPercentageChart(
+        leftScrollContent,
+        0,
+        yOffset,
+        UI.CHART.WIDTH,
+        isExternalPlayer,
+        monthlyClassBuckets,
+        monthlyClassPercentages,
+        monthlyClassTotals
+    )
+
     -- Add Guild Kills table in left panel after Kills by Zone (only for local player)
     if not isExternalPlayer then
-        yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
+        yOffset = yOffset - monthlyClassChartHeight - UI.CHART.PADDING
         frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
         local totalHeight = -(yOffset) + UI.GUILD_LIST.HEIGHT + 25
         leftScrollContent:SetHeight(totalHeight)
     else
         -- For external players, no guild table
-        local totalHeight = -(yOffset - zoneChartHeight) + 25
+        local totalHeight = -(yOffset - monthlyClassChartHeight) + 25
         leftScrollContent:SetHeight(totalHeight)
 
         -- Extra charts for external players (unknown level / class) if data exists
