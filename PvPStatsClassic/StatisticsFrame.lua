@@ -109,7 +109,9 @@ local LINE_CHART_UI = {
     POINT_SIZE = 4,
     LINE_THICKNESS = 2,
     LEGEND_COLUMNS = 3,
-    LEGEND_ROW_HEIGHT = 14
+    LEGEND_ROW_HEIGHT = 14,
+    LEGEND_ITEM_WIDTH = 78,
+    LEGEND_COLUMN_SPACING = 4
 }
 
 local function sortByValue(tbl, descending)
@@ -836,6 +838,7 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
     local chartLeft = LINE_CHART_UI.LEFT_PADDING
     local chartTop = -LINE_CHART_UI.TOP_PADDING
     local chartBottom = chartTop - chartHeight
+    local showHideAllButton = nil
 
     local monthCount = #monthKeys
     local classVisuals = {}
@@ -902,6 +905,34 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
         end
     end
 
+    local function areAllClassesVisible()
+        for _, className in ipairs(ALL_CLASSES) do
+            if not ensureClassVisual(className).visible then
+                return false
+            end
+        end
+        return true
+    end
+
+    local function updateShowHideAllButtonText()
+        if showHideAllButton then
+            if areAllClassesVisible() then
+                showHideAllButton:SetText("Hide all")
+            else
+                showHideAllButton:SetText("Show all")
+            end
+        end
+    end
+
+    local function setAllClassVisibility(visible)
+        for _, className in ipairs(ALL_CLASSES) do
+            local visuals = ensureClassVisual(className)
+            visuals.visible = visible
+            applyClassVisibility(className)
+        end
+        updateShowHideAllButtonText()
+    end
+
     if monthCount == 0 then
         local emptyText = container:CreateFontString(nil, "OVERLAY", "GameFontDisable")
         emptyText:SetPoint("TOPLEFT", 0, -40)
@@ -944,7 +975,7 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
         gridLine:SetSize(chartWidth, 1)
 
         local yLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        yLabel:SetPoint("RIGHT", container, "TOPLEFT", chartLeft - 4, yPos)
+        yLabel:SetPoint("RIGHT", container, "TOPLEFT", chartLeft - 8, yPos)
         yLabel:SetText(string.format("%.0f%%", percent))
     end
 
@@ -965,7 +996,7 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
 
         if i == 1 or i == monthCount or (i - 1) % labelStep == 0 then
             local xLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-            xLabel:SetPoint("TOP", container, "TOPLEFT", xPos, chartBottom - 2)
+            xLabel:SetPoint("TOP", container, "TOPLEFT", xPos, chartBottom - 6)
             xLabel:SetText(PSC_FormatMonthBucketLabel(monthBucket))
         end
     end
@@ -1077,13 +1108,15 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
     end
 
     local legendStartY = -(LINE_CHART_UI.HEIGHT - 8)
-    local legendColumnWidth = width / LINE_CHART_UI.LEGEND_COLUMNS
+    local legendLeft = 6
+    local legendItemWidth = LINE_CHART_UI.LEGEND_ITEM_WIDTH
+    local legendColumnSpacing = LINE_CHART_UI.LEGEND_COLUMN_SPACING
 
     for classIndex, className in ipairs(ALL_CLASSES) do
         local zeroBased = classIndex - 1
         local legendColumn = zeroBased % LINE_CHART_UI.LEGEND_COLUMNS
         local legendRow = math.floor(zeroBased / LINE_CHART_UI.LEGEND_COLUMNS)
-        local itemX = 6 + (legendColumn * legendColumnWidth)
+        local itemX = legendLeft + (legendColumn * (legendItemWidth + legendColumnSpacing))
         local itemY = legendStartY - (legendRow * LINE_CHART_UI.LEGEND_ROW_HEIGHT)
         local color = getClassColor(className)
 
@@ -1105,6 +1138,7 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
             local visuals = ensureClassVisual(className)
             visuals.visible = not visuals.visible
             applyClassVisibility(className)
+            updateShowHideAllButtonText()
         end)
 
         legendButton:SetScript("OnEnter", function(self)
@@ -1128,6 +1162,30 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
         visuals.legendText = text
         applyClassVisibility(className)
     end
+
+    showHideAllButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    showHideAllButton:SetSize(78, 14)
+    showHideAllButton:SetPoint(
+        "TOPLEFT",
+        legendLeft + (LINE_CHART_UI.LEGEND_COLUMNS * (legendItemWidth + legendColumnSpacing)) + 2,
+        legendStartY
+    )
+    showHideAllButton:SetScript("OnClick", function()
+        setAllClassVisibility(not areAllClassesVisible())
+    end)
+    showHideAllButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        if areAllClassesVisible() then
+            GameTooltip:AddLine("Hide all class graphs", 1, 1, 1, true)
+        else
+            GameTooltip:AddLine("Show all class graphs", 1, 1, 1, true)
+        end
+        GameTooltip:Show()
+    end)
+    showHideAllButton:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    updateShowHideAllButtonText()
 
     return container, height
 end
@@ -2681,6 +2739,18 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight, isExternalPlayer)
     yOffset = yOffset - classChartHeight - UI.CHART.PADDING
 
+    local _, monthlyClassChartHeight = createMonthlyClassPercentageChart(
+        leftScrollContent,
+        0,
+        yOffset,
+        UI.CHART.WIDTH,
+        isExternalPlayer,
+        monthlyClassBuckets,
+        monthlyClassPercentages,
+        monthlyClassTotals
+    )
+    yOffset = yOffset - monthlyClassChartHeight - UI.CHART.PADDING
+
     createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight, isExternalPlayer)
     yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
 
@@ -2726,28 +2796,16 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
 
     yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
     createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight, isExternalPlayer)
-
     yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
-    local _, monthlyClassChartHeight = createMonthlyClassPercentageChart(
-        leftScrollContent,
-        0,
-        yOffset,
-        UI.CHART.WIDTH,
-        isExternalPlayer,
-        monthlyClassBuckets,
-        monthlyClassPercentages,
-        monthlyClassTotals
-    )
 
-    -- Add Guild Kills table in left panel after Kills by Zone (only for local player)
+    -- Add Guild Kills table after the left-side charts (only for local player)
     if not isExternalPlayer then
-        yOffset = yOffset - monthlyClassChartHeight - UI.CHART.PADDING
         frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
         local totalHeight = -(yOffset) + UI.GUILD_LIST.HEIGHT + 25
         leftScrollContent:SetHeight(totalHeight)
     else
         -- For external players, no guild table
-        local totalHeight = -(yOffset - monthlyClassChartHeight) + 25
+        local totalHeight = -(yOffset) + 25
         leftScrollContent:SetHeight(totalHeight)
 
         -- Extra charts for external players (unknown level / class) if data exists
