@@ -923,8 +923,12 @@ function PSC_StorePlayerInfo(name, level, class, race, gender, guildName, guildR
     -- end
 end
 
-function PSC_GetAndStorePlayerInfoFromUnit(unit)
-    if not UnitIsPlayer(unit) or UnitIsFriend("player", unit) then
+function PSC_GetAndStorePlayerInfoFromUnit(unit, allowFriendly)
+    if not UnitIsPlayer(unit) then
+        return
+    end
+
+    if not allowFriendly and UnitIsFriend("player", unit) then
         return
     end
     local name, level, class, race, gender, guildName, guildRankName, rank = GetPlayerInfoFromUnit(unit)
@@ -972,6 +976,8 @@ function PSC_CleanupPlayerInfoCache()
 
     -- Collect names of all players who have been killed by us
     for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        -- Keep player info entries for all own characters on this account.
+        playersToKeep[characterKey] = true
         for nameWithLevel, killData in pairs(characterData.Kills) do
             if killData.kills and killData.kills > 0 then
                 local name = nameWithLevel:match("([^:]+)")
@@ -1126,6 +1132,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.ShowScoreInPlayerTooltip = true
     PSC_DB.ShowExtendedTooltipInfo = true
     PSC_DB.ShowAccountWideStats = false
+    PSC_DB.ShowOwnAltsOnLeaderboard = true
     PSC_DB.CapAchievementProgress = false
 
     PSC_DB.KillAnnounceMessage = "Enemyplayername killed! x#"
@@ -1200,6 +1207,9 @@ function PSC_InitializePlayerKillCounts()
     end
     if PSC_DB.IncludeGuildDetailsInAnnounce == nil then
         PSC_DB.IncludeGuildDetailsInAnnounce = false
+    end
+    if PSC_DB.ShowOwnAltsOnLeaderboard == nil then
+        PSC_DB.ShowOwnAltsOnLeaderboard = true
     end
 end
 

@@ -14,6 +14,7 @@ local PREFIX = "PVPSC"  -- Single prefix for all messages
 
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
+Network.ownAltData = Network.ownAltData or {}
 Network.lastPlayerStats = nil -- Cache for own stats to avoid recalculation
 Network.MIN_BROADCAST_INTERVAL = 15
 
@@ -382,6 +383,240 @@ function Network:SendCommMessageWithDebug(prefix, payload, channel, target, prio
     self:SendCommMessage(prefix, payload, channel, target, priority)
 end
 
+local function HasKnownProfile(info)
+    return info and ((info.race and info.race ~= "") or (info.gender and info.gender ~= "") or (info.class and info.class ~= ""))
+end
+
+local function GetProfileValueOrUnknown(info, field)
+    local value = info and info[field]
+    if value and value ~= "" then
+        return value
+    end
+    return "Unknown"
+end
+
+local function ApplyPlayerProfile(summaryTable, nameField, raceField, genderField, classField, charactersToProcess)
+    local playerName = summaryTable and summaryTable[nameField]
+    if not playerName or playerName == "" or playerName == "None" then
+        return
+    end
+
+    local playerInfo = PSC_GetPlayerInfo(playerName)
+
+    if not HasKnownProfile(playerInfo) and string.find(playerName, "%-") then
+        local shortName = playerName:match("^([^-]+)")
+        if shortName and shortName ~= "" then
+            local shortInfo = PSC_GetPlayerInfo(shortName)
+            if HasKnownProfile(shortInfo) then
+                playerInfo = shortInfo
+            end
+        end
+    end
+
+    if not HasKnownProfile(playerInfo) and charactersToProcess then
+        for _, characterData in pairs(charactersToProcess) do
+            if characterData and characterData.Kills then
+                for nameWithLevel, killData in pairs(characterData.Kills) do
+                    local killName = nameWithLevel:match("([^:]+)") or nameWithLevel
+                    if PSC_IsSamePlayerName(killName, playerName) then
+                        playerInfo = {
+                            race = killData.race,
+                            gender = killData.gender,
+                            class = killData.class
+                        }
+                        break
+                    end
+                end
+            end
+            if HasKnownProfile(playerInfo) then
+                break
+            end
+        end
+    end
+
+    if not HasKnownProfile(playerInfo) then
+        return
+    end
+
+    summaryTable[raceField] = GetProfileValueOrUnknown(playerInfo, "race")
+    summaryTable[genderField] = GetProfileValueOrUnknown(playerInfo, "gender")
+    summaryTable[classField] = GetProfileValueOrUnknown(playerInfo, "class")
+end
+
+local function FlattenSummaryForLeaderboard(statsData)
+    if not statsData or not statsData.summary then
+        return
+    end
+
+    statsData.totalKills = statsData.summary.totalKills
+    statsData.uniqueKills = statsData.summary.uniqueKills
+    statsData.totalDeaths = statsData.summary.totalDeaths
+    statsData.kdRatio = statsData.summary.kdRatio
+    statsData.currentKillStreak = statsData.summary.currentKillStreak
+    statsData.highestKillStreak = statsData.summary.highestKillStreak
+    statsData.mostKilledPlayer = statsData.summary.mostKilledPlayer
+    statsData.mostKilledCount = statsData.summary.mostKilledCount
+    statsData.avgKillsPerDay = statsData.summary.avgKillsPerDay
+end
+
+local function ParseCharacterKey(characterKey)
+    if not characterKey then
+        return nil, nil
+    end
+
+    local name, realm = characterKey:match("^(.+)%-(.+)$")
+    if name and realm then
+        return name, realm
+    end
+
+    return characterKey, PSC_RealmName
+end
+
+local function GetCharacterLastActivityTimestamp(characterKey, characterData)
+    local lastSeen = 0
+
+    if characterData and characterData.Kills then
+        for _, killEntry in pairs(characterData.Kills) do
+            local ts = tonumber(killEntry and killEntry.lastKill) or 0
+            if ts > lastSeen then
+                lastSeen = ts
+            end
+        end
+    end
+
+    if PSC_DB and PSC_DB.PvPLossCounts and PSC_DB.PvPLossCounts[characterKey] and PSC_DB.PvPLossCounts[characterKey].Deaths then
+        for _, deathEntry in pairs(PSC_DB.PvPLossCounts[characterKey].Deaths) do
+            local ts = tonumber(deathEntry and deathEntry.lastDeath) or 0
+            if ts > lastSeen then
+                lastSeen = ts
+            end
+        end
+    end
+
+    if lastSeen <= 0 then
+        lastSeen = GetServerTime()
+    end
+
+    return lastSeen
+end
+
+local function GetCharacterAchievementStats(characterKey)
+    local unlockedCount = 0
+    local points = 0
+
+    if PSC_DB and PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[characterKey] then
+        for _, achievementData in pairs(PSC_DB.CharacterAchievements[characterKey]) do
+            if achievementData and achievementData.unlocked then
+                unlockedCount = unlockedCount + 1
+                points = points + (tonumber(achievementData.points) or 0)
+            end
+        end
+    end
+
+    if PSC_DB and PSC_DB.CharacterAchievementPoints and PSC_DB.CharacterAchievementPoints[characterKey] ~= nil then
+        points = tonumber(PSC_DB.CharacterAchievementPoints[characterKey]) or points
+    end
+
+    return unlockedCount, points
+end
+
+local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enableDebugLog)
+    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+    ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
+    ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
+
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, _, npcKillsData =
+        PSC_CalculateBarChartStatistics(charactersToProcess)
+    local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
+    local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
+    local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
+    local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
+
+    if enableDebugLog then
+        D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
+    end
+
+    local result = self:ConstructPayload({
+        summary = stats,
+        classData = classData,
+        raceData = raceData,
+        genderData = genderData,
+        zoneData = zoneData,
+        levelData = levelData,
+        hourlyData = hourlyData,
+        weekdayData = weekdayData,
+        monthlyData = monthlyData,
+        yearlyData = yearlyData,
+        unknownLevelClassData = unknownLevelClassData,
+        guildStatusData = guildStatusData,
+        npcKillsData = npcKillsData
+        -- Note: guildData intentionally excluded to reduce payload size
+    })
+
+    FlattenSummaryForLeaderboard(result)
+    return result
+end
+
+function Network:BuildDetailedStatsForCharacter(characterKey, characterData)
+    if not characterKey or not characterData then
+        return nil
+    end
+
+    local charactersToProcess = {}
+    charactersToProcess[characterKey] = characterData
+
+    local result = BuildDetailedStatsFromCharacters(self, charactersToProcess, false)
+
+    local charName, charRealm = ParseCharacterKey(characterKey)
+    local infoKey = PSC_GetPlayerInfoKey(charName, charRealm)
+    local charInfo = PSC_DB and PSC_DB.PlayerInfoCache and PSC_DB.PlayerInfoCache[infoKey]
+
+    -- Only include alts that have logged in at least once since PlayerInfoCache tracking for own alts was added.
+    if not charInfo then
+        return nil
+    end
+
+    result.playerName = charName or result.playerName
+    result.realm = charRealm or result.realm
+    result.timestamp = GetCharacterLastActivityTimestamp(characterKey, characterData)
+    result.addonVersion = PSC_GetAddonVersion()
+
+    result.level = tonumber(charInfo.level) or result.level or 0
+    result.class = charInfo.class or result.class or "Unknown"
+    result.race = charInfo.race or result.race or "Unknown"
+
+    local unlockedCount, achievementPoints = GetCharacterAchievementStats(characterKey)
+    result.achievementsUnlocked = unlockedCount
+    result.achievementPoints = achievementPoints
+
+    result.isOwnAlt = true
+    return result
+end
+
+function Network:BuildOwnAltStatsCache()
+    self.ownAltData = {}
+
+    if not PSC_DB or not PSC_DB.PlayerKillCounts or not PSC_DB.PlayerKillCounts.Characters then
+        return
+    end
+
+    local currentCharacterKey = PSC_GetCharacterKey()
+
+    for characterKey, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+        if characterKey ~= currentCharacterKey and characterData then
+            local altStats = self:BuildDetailedStatsForCharacter(characterKey, characterData)
+            if altStats and altStats.playerName and altStats.realm then
+                local uniqueName = altStats.playerName
+                if not string.find(uniqueName, "%-") then
+                    uniqueName = uniqueName .. "-" .. altStats.realm
+                end
+                altStats.playerName = uniqueName
+                self.ownAltData[uniqueName] = altStats
+            end
+        end
+    end
+end
+
 -- Build detailed statistics for a player (all kill data)
 function Network:BuildDetailedStats()
     if self.lastPlayerStats then
@@ -399,55 +634,7 @@ function Network:BuildDetailedStats()
         charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
     end
 
-    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-
-    local function ApplyPlayerProfile(summaryTable, nameField, raceField, genderField, classField)
-        local playerName = summaryTable and summaryTable[nameField]
-        if not playerName or playerName == "" or playerName == "None" then
-            return
-        end
-
-        local playerInfo, _ = PSC_GetPlayerInfo(playerName)
-        if not playerInfo then
-            return
-        end
-
-        summaryTable[raceField] = (playerInfo.race and playerInfo.race ~= "") and playerInfo.race or "Unknown"
-        summaryTable[genderField] = (playerInfo.gender and playerInfo.gender ~= "") and playerInfo.gender or "Unknown"
-        summaryTable[classField] = (playerInfo.class and playerInfo.class ~= "") and playerInfo.class or "Unknown"
-    end
-
-    ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass")
-    ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass")
-
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
-        PSC_CalculateBarChartStatistics(charactersToProcess)
-    local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
-    local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
-    local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
-    local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
-
-    D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
-
-    -- Construct payload using centralized helper
-    local statsComponents = {
-        summary = stats,
-        classData = classData,
-        raceData = raceData,
-        genderData = genderData,
-        zoneData = zoneData,
-        levelData = levelData,
-        hourlyData = hourlyData,
-        weekdayData = weekdayData,
-        monthlyData = monthlyData,
-        yearlyData = yearlyData,
-        unknownLevelClassData = unknownLevelClassData,
-        guildStatusData = guildStatusData,
-        npcKillsData = npcKillsData
-        -- Note: guildData intentionally excluded to reduce payload size
-    }
-
-    local result = self:ConstructPayload(statsComponents)
+    local result = BuildDetailedStatsFromCharacters(self, charactersToProcess, true)
 
     self.lastPlayerStats = result
     return result
@@ -505,7 +692,9 @@ end
 function Network:GetBroadcastChannels()
     local distributionList = {}
 
-    if IsInRaid() and not PSC_CurrentlyInBattleground then
+    if PSC_CurrentlyInBattleground then
+        table.insert(distributionList, "INSTANCE_CHAT")
+    elseif IsInRaid() then
         table.insert(distributionList, "RAID")
     elseif IsInGroup() then
         table.insert(distributionList, "PARTY")
@@ -845,50 +1034,66 @@ function Network:GetDetailedStatsForPlayer(playerName)
     if self.sharedData and self.sharedData[playerName] then
         return self.sharedData[playerName]
     end
+    if self.ownAltData and self.ownAltData[playerName] then
+        return self.ownAltData[playerName]
+    end
     return nil
 end
 
 -- Get all leaderboard data (local + shared + cache)
-function Network:GetAllLeaderboardData()
+function Network:GetAllLeaderboardData(includeOwnAlts)
     local leaderboardData = {}
     local playerName = UnitName("player")
+    local localRealm = PSC_RealmName
     local addedPlayers = {}
+
+    local function MarkAdded(name)
+        if name and name ~= "" then
+            addedPlayers[name] = true
+        end
+    end
+
+    local function IsAdded(name)
+        return name and addedPlayers[name] or false
+    end
 
     -- Add local player's data first
     local localStats = self:BuildDetailedStats()
     if localStats then
-        -- Flatten key stats for display compatibility (most data is inside summary)
-        if localStats.summary then
-             -- Common fields expected at root level
-             localStats.totalKills = localStats.summary.totalKills
-             localStats.uniqueKills = localStats.summary.uniqueKills
-             localStats.totalDeaths = localStats.summary.totalDeaths
-             localStats.kdRatio = localStats.summary.kdRatio
-             localStats.currentKillStreak = localStats.summary.currentKillStreak
-             localStats.highestKillStreak = localStats.summary.highestKillStreak
-             localStats.mostKilledPlayer = localStats.summary.mostKilledPlayer
-             localStats.mostKilledCount = localStats.summary.mostKilledCount
-             localStats.avgKillsPerDay = localStats.summary.avgKillsPerDay
-        end
         table.insert(leaderboardData, localStats)
-        addedPlayers[playerName] = true
+        MarkAdded(playerName)
+        if localRealm and localRealm ~= "" then
+            MarkAdded(playerName .. "-" .. localRealm)
+        end
     end
 
+    -- Add own alt data from local DB
+    if includeOwnAlts and self.ownAltData then
+        if next(self.ownAltData) == nil then
+            self:BuildOwnAltStatsCache()
+        end
+        for name, data in pairs(self.ownAltData) do
+            if not IsAdded(name) then
+                table.insert(leaderboardData, data)
+                MarkAdded(name)
+            end
+        end
+    end
 
     -- Add other players' data
     for name, data in pairs(self.sharedData) do
-        if name ~= playerName then
+        if not IsAdded(name) and name ~= playerName then
             table.insert(leaderboardData, data)
-            addedPlayers[name] = true
+            MarkAdded(name)
         end
     end
 
     -- Add persistent cache data for offline players
     if PSC_DB.LeaderboardCache then
         for name, data in pairs(PSC_DB.LeaderboardCache) do
-            if name ~= playerName and not addedPlayers[name] then
+            if name ~= playerName and not IsAdded(name) then
                 table.insert(leaderboardData, data)
-                addedPlayers[name] = true
+                MarkAdded(name)
             end
         end
     end
@@ -918,6 +1123,7 @@ end
 function Network:Initialize()
     -- Validate cache on startup to fix any corrupted data from previous versions
     self:ValidateLeaderboardCache()
+    self:BuildOwnAltStatsCache()
 
     -- Register AceComm prefix and callback
     self:RegisterComm(PREFIX, "OnCommReceived")
