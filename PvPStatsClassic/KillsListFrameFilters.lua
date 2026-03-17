@@ -10,6 +10,7 @@ local maxLevelSearch = nil
 local minRankSearch = nil
 local maxRankSearch = nil
 local filterOnlyWithNotes = false
+local filterMinDeaths = 0
 
 
 local function CreateBoxBorder(box)
@@ -1061,6 +1062,11 @@ local function ApplyFiltersToEntries(entries, resolveName)
             match = (hasNote == true)
         end
 
+        -- Min deaths filter
+        if match and filterMinDeaths > 0 then
+            match = (entry.deaths or 0) >= filterMinDeaths
+        end
+
         if match then
             table.insert(filteredEntries, entry)
         end
@@ -1361,6 +1367,7 @@ function PSC_SetKillListSearch(text, levelText, classText, raceText, genderText,
             zoneSearchText = ""
             minLevelSearch = nil
             maxLevelSearch = nil
+            filterMinDeaths = 0
         end
 
         if PSC_KillsListFrame.searchBox and text then
@@ -1443,6 +1450,11 @@ function PSC_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
 
         PSC_FrameManager:BringToFront("KillsList")
     end
+end
+
+function PSC_SetKillListMinDeaths(min)
+    filterMinDeaths = min or 0
+    RefreshKillsListFrame()
 end
 
 function PSC_SetKillListRankRange(minRank, maxRank, resetOtherFilters)

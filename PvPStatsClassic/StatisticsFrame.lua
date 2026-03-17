@@ -383,6 +383,10 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
             if isClickable then
                 GameTooltip:AddLine("Click to show all kills for this class", 1, 1, 1, true)
             end
+        elseif titleType == "deathsClass" then
+            if isClickable then
+                GameTooltip:AddLine("Click to show all deaths from this class", 1, 1, 1, true)
+            end
         elseif titleType == "zone" then
             if isClickable then
                 GameTooltip:AddLine("Click to show all kills for this zone", 1, 1, 1, true)
@@ -432,6 +436,9 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
             C_Timer.After(0.05, function()
                 if titleType == "class" or titleType == "unknownLevelClass" then
                     PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
+                elseif titleType == "deathsClass" then
+                    PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
+                    PSC_SetKillListMinDeaths(1)
                 elseif titleType == "zone" then
                     PSC_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
                 elseif titleType == "level" then
@@ -487,7 +494,7 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
             g = 0.0,
             b = 1.0
         }
-    elseif titleType == "class" or titleType == "unknownLevelClass" then
+    elseif titleType == "class" or titleType == "unknownLevelClass" or titleType == "deathsClass" then
         color = getClassColor(entry.key)
     elseif titleType == "hour" then
         -- Light red for hour charts
@@ -673,6 +680,8 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     local titleType
     if title == "Kills by Class" then
         titleType = "class"
+    elseif title == "Deaths by Class" then
+        titleType = "deathsClass"
     elseif title == "Level ?? Kills by Class" then
         titleType = "unknownLevelClass"
     elseif title == "Kills by Zone" then
@@ -1653,6 +1662,26 @@ local function PSC_SummaryStats_BuildResult(state)
         nemesisName = state.nemesisName,
         nemesisScore = state.nemesisScore
     }
+end
+
+function PSC_CalculateDeathsByClass()
+    local deathsByClass = {}
+
+    for _, class in ipairs(ALL_CLASSES) do
+        deathsByClass[class] = 0
+    end
+
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        local infoKey = PSC_NormalizePlayerName(killerName)
+        local info = PSC_DB.PlayerInfoCache[infoKey]
+        if info and info.class then
+            deathsByClass[info.class] = (deathsByClass[info.class] or 0) + (deathData.deaths or 0)
+        end
+    end
+
+    return deathsByClass
 end
 
 local function createGuildTable(parent, x, y, width, height)
@@ -2801,7 +2830,14 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     -- Add Guild Kills table after the left-side charts (only for local player)
     if not isExternalPlayer then
         frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
-        local totalHeight = -(yOffset) + UI.GUILD_LIST.HEIGHT + 25
+        yOffset = yOffset - UI.GUILD_LIST.HEIGHT - UI.CHART.PADDING
+
+        local deathsByClassData = PSC_CalculateDeathsByClass()
+        local deathsByClassChartHeight = calculateChartHeight(deathsByClassData)
+        createBarChart(leftScrollContent, "Deaths by Class", deathsByClassData, nil, 0, yOffset, UI.CHART.WIDTH, deathsByClassChartHeight, false)
+        yOffset = yOffset - deathsByClassChartHeight - UI.CHART.PADDING
+
+        local totalHeight = -(yOffset) + 25
         leftScrollContent:SetHeight(totalHeight)
     else
         -- For external players, no guild table
