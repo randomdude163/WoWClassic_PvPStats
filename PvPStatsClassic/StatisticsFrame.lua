@@ -2768,6 +2768,11 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight, isExternalPlayer)
     yOffset = yOffset - classChartHeight - UI.CHART.PADDING
 
+    local deathsByClassData = PSC_CalculateDeathsByClass()
+    local deathsByClassChartHeight = calculateChartHeight(deathsByClassData)
+    createBarChart(leftScrollContent, "Deaths by Class", deathsByClassData, nil, 0, yOffset, UI.CHART.WIDTH, deathsByClassChartHeight, isExternalPlayer)
+    yOffset = yOffset - deathsByClassChartHeight - UI.CHART.PADDING
+
     local _, monthlyClassChartHeight = createMonthlyClassPercentageChart(
         leftScrollContent,
         0,
@@ -2831,11 +2836,6 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     if not isExternalPlayer then
         frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
         yOffset = yOffset - UI.GUILD_LIST.HEIGHT - UI.CHART.PADDING
-
-        local deathsByClassData = PSC_CalculateDeathsByClass()
-        local deathsByClassChartHeight = calculateChartHeight(deathsByClassData)
-        createBarChart(leftScrollContent, "Deaths by Class", deathsByClassData, nil, 0, yOffset, UI.CHART.WIDTH, deathsByClassChartHeight, false)
-        yOffset = yOffset - deathsByClassChartHeight - UI.CHART.PADDING
 
         local totalHeight = -(yOffset) + 25
         leftScrollContent:SetHeight(totalHeight)
