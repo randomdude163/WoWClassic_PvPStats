@@ -709,6 +709,78 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     return container
 end
 
+local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
+    if not kdData then
+        local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, 45)
+        return container, 45
+    end
+
+    local entries = {}
+    for class, ratio in pairs(kdData) do
+        table.insert(entries, {key = class, value = ratio})
+    end
+    table.sort(entries, function(a, b) return a.value > b.value end)
+
+    if #entries == 0 then
+        local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, 45)
+        return container, 45
+    end
+
+    local height = 30 + (#entries * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
+    local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, height)
+
+    local maxValue = entries[1].value
+    local nameWidth = UI.STANDARD_NAME_WIDTH
+    local barX = 90
+    local maxBarWidth = width - 190
+
+    for i, entry in ipairs(entries) do
+        local barWidth = maxValue > 0 and ((entry.value / maxValue) * maxBarWidth) or 0.5
+        local barY = -(i * (UI.BAR.HEIGHT + UI.BAR.SPACING) + UI.TITLE_SPACING)
+        local displayName = properCase(entry.key)
+        local color = getClassColor(entry.key)
+        local raw = rawData[entry.key] or {kills = 0, deaths = 0}
+
+        local barButton = CreateFrame("Button", nil, container)
+        barButton:SetSize(width, UI.BAR.HEIGHT)
+        barButton:SetPoint("TOPLEFT", 0, barY)
+        PSC_CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
+
+        barButton:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(displayName, color.r, color.g, color.b)
+            GameTooltip:AddLine("Kills: " .. raw.kills, 1, 1, 1)
+            GameTooltip:AddLine("Deaths: " .. raw.deaths, 1, 1, 1)
+            if raw.deaths > 0 then
+                GameTooltip:AddLine(string.format("K/D: %.2f", entry.value), 1, 1, 0.5)
+            else
+                GameTooltip:AddLine(string.format("K/D: %.2f (no deaths recorded)", entry.value), 1, 1, 0.5)
+            end
+            GameTooltip:Show()
+        end)
+        barButton:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+
+        local itemLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        itemLabel:SetPoint("TOPLEFT", 0, barY)
+        itemLabel:SetText(displayName)
+        itemLabel:SetWidth(nameWidth)
+        itemLabel:SetJustifyH("LEFT")
+
+        local bar = container:CreateTexture(nil, "ARTWORK")
+        bar:SetPoint("TOPLEFT", barX, barY)
+        bar:SetSize(barWidth, UI.BAR.HEIGHT)
+        bar:SetColorTexture(color.r, color.g, color.b, 0.9)
+
+        local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
+        valueLabel:SetText(string.format("%.2f", entry.value))
+    end
+
+    return container, height
+end
+
 local function PSC_ExtractNameAndLevelKey(nameWithLevel)
     local colonIndex = string.find(nameWithLevel, ":", 1, true)
     if colonIndex then
@@ -1682,6 +1754,28 @@ function PSC_CalculateDeathsByClass()
     end
 
     return deathsByClass
+end
+
+local function PSC_CalculateKDByClass(killsByClass, deathsByClass)
+    local kdData = {}
+    local rawData = {}
+
+    for _, class in ipairs(ALL_CLASSES) do
+        local kills = killsByClass[class] or 0
+        local deaths = deathsByClass[class] or 0
+        if kills > 0 or deaths > 0 then
+            local ratio
+            if deaths > 0 then
+                ratio = kills / deaths
+            else
+                ratio = kills
+            end
+            kdData[class] = ratio
+            rawData[class] = {kills = kills, deaths = deaths}
+        end
+    end
+
+    return kdData, rawData
 end
 
 local function createGuildTable(parent, x, y, width, height)
@@ -2772,6 +2866,10 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     local deathsByClassChartHeight = calculateChartHeight(deathsByClassData)
     createBarChart(leftScrollContent, "Deaths by Class", deathsByClassData, nil, 0, yOffset, UI.CHART.WIDTH, deathsByClassChartHeight, isExternalPlayer)
     yOffset = yOffset - deathsByClassChartHeight - UI.CHART.PADDING
+
+    local kdByClassData, kdRawData = PSC_CalculateKDByClass(classData, deathsByClassData)
+    local _, kdByClassChartHeight = createKDByClassBarChart(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, kdByClassData, kdRawData)
+    yOffset = yOffset - kdByClassChartHeight - UI.CHART.PADDING
 
     local _, monthlyClassChartHeight = createMonthlyClassPercentageChart(
         leftScrollContent,
