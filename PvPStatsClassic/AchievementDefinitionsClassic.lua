@@ -6484,6 +6484,26 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
+        id = "name_length_2",
+        title = "The Ultra Rare Drop",
+        description = function(a) return ("Eliminate %d players with exactly 2-letter names"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 100,
+        targetValue = 2,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d players with 2-letter names. Two-tally impressive. These brave souls looked at the character creation screen and thought 'less is more.' Turns out less is just... less. Less name, less health, less time alive. You ended their story before it even got past letter three. Some people are just two good for this world.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameLength(2)
+        end,
+    },
+    {
         id = "name_length_3",
         title = "Tri-Letter Terminator",
         description = function(a) return ("Eliminate %d players with exactly 3-letter names"):format(a.targetValue) end,
@@ -6521,6 +6541,46 @@ AchievementSystem.achievementsClassic = {
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsWithNameLength(12)
+        end,
+    },
+    {
+        id = "name_special_chars",
+        title = "The Weird Ones",
+        description = function(a) return ("Eliminate %d players whose names contain ä, ö, ü, ß, ø or æ"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 75,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d players who thought naming their character Björn, Günther or Søren made them sound tough. It didn't. It just made their corpse harder to pronounce. Nobody at the graveyard could spell your name and nobody cared — you still died like everyone else.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithSpecialCharsInName()
+        end,
+    },
+    {
+        id = "name_accent_chars",
+        title = "The Copy-Cats",
+        description = function(a) return ("Eliminate %d players whose names contain accent characters (é, è, ê, á, à, â, ...)"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 75,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d players whose favorite name was already taken, so they just slapped some low-effort accents on it and called it creative. Légolàs. Àrthas. Dragonslàyer. Congratulations on your unique snowflake name — it didn't save you from a very ordinary death.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithAccentCharsInName()
         end,
     },
     {

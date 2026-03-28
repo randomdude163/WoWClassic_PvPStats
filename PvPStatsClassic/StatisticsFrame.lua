@@ -1343,20 +1343,23 @@ end
 function PSC_CalculateGuildKills()
     local guildKills = {}
 
-    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
-        if characterData.Kills then
-            for nameWithLevel, killData in pairs(characterData.Kills) do
-                local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
-                local kills = killData.kills or 0
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
 
-                local infoKey = PSC_NormalizePlayerName(playerNameWithoutLevel)
+    if not characterData or not characterData.Kills then
+        return guildKills
+    end
 
-                if PSC_DB.PlayerInfoCache[infoKey] then
-                    local guild = PSC_DB.PlayerInfoCache[infoKey].guild
-                    if guild ~= "" then
-                        guildKills[guild] = (guildKills[guild] or 0) + kills
-                    end
-                end
+    for nameWithLevel, killData in pairs(characterData.Kills) do
+        local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
+        local kills = killData.kills or 0
+
+        local infoKey = PSC_NormalizePlayerName(playerNameWithoutLevel)
+
+        if PSC_DB.PlayerInfoCache[infoKey] then
+            local guild = PSC_DB.PlayerInfoCache[infoKey].guild
+            if guild ~= "" then
+                guildKills[guild] = (guildKills[guild] or 0) + kills
             end
         end
     end
@@ -2785,6 +2788,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     -- Get data based on whether we're viewing external or local player
     local classData, raceData, genderData, zoneData, levelData, hourlyData, weekdayData, monthlyData, yearlyData, stats
     local unknownLevelClassData, guildStatusData, guildData, npcKillsData
+    local deathsByClassData
     local monthlyClassBuckets = {}
     local monthlyClassPercentages = {}
     local monthlyClassTotals = {}
@@ -2803,6 +2807,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         stats = externalPlayerData.summary or {}
         -- Set defaults for data not available from external players
         unknownLevelClassData = externalPlayerData.unknownLevelClassData or {}
+        deathsByClassData = externalPlayerData.deathsByClassData or {}
         guildStatusData = externalPlayerData.guildStatusData or {}
         guildData = {}
         npcKillsData = externalPlayerData.npcKillsData or {}
@@ -2828,6 +2833,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
         yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
         stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+        deathsByClassData = PSC_CalculateDeathsByClass()
         monthlyClassBuckets, monthlyClassPercentages, monthlyClassTotals = PSC_CalculateMonthlyClassPercentageStatistics(charactersToProcess)
     end
 
@@ -2862,7 +2868,6 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight, isExternalPlayer)
     yOffset = yOffset - classChartHeight - UI.CHART.PADDING
 
-    local deathsByClassData = PSC_CalculateDeathsByClass()
     local deathsByClassChartHeight = calculateChartHeight(deathsByClassData)
     createBarChart(leftScrollContent, "Deaths by Class", deathsByClassData, nil, 0, yOffset, UI.CHART.WIDTH, deathsByClassChartHeight, isExternalPlayer)
     yOffset = yOffset - deathsByClassChartHeight - UI.CHART.PADDING
@@ -2871,17 +2876,19 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     local _, kdByClassChartHeight = createKDByClassBarChart(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, kdByClassData, kdRawData)
     yOffset = yOffset - kdByClassChartHeight - UI.CHART.PADDING
 
-    local _, monthlyClassChartHeight = createMonthlyClassPercentageChart(
-        leftScrollContent,
-        0,
-        yOffset,
-        UI.CHART.WIDTH,
-        isExternalPlayer,
-        monthlyClassBuckets,
-        monthlyClassPercentages,
-        monthlyClassTotals
-    )
-    yOffset = yOffset - monthlyClassChartHeight - UI.CHART.PADDING
+    if not isExternalPlayer then
+        local _, monthlyClassChartHeight = createMonthlyClassPercentageChart(
+            leftScrollContent,
+            0,
+            yOffset,
+            UI.CHART.WIDTH,
+            isExternalPlayer,
+            monthlyClassBuckets,
+            monthlyClassPercentages,
+            monthlyClassTotals
+        )
+        yOffset = yOffset - monthlyClassChartHeight - UI.CHART.PADDING
+    end
 
     createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight, isExternalPlayer)
     yOffset = yOffset - raceChartHeight - UI.CHART.PADDING

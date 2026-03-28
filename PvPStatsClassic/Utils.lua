@@ -4,6 +4,16 @@ local TimeStatsCache = nil
 local streakStatsCache = nil
 local nameStatsCache = nil
 
+local SPECIAL_CHARS = {"ä", "ö", "ü", "ø", "æ", "ß", "Ä", "Ö", "Ü", "Ø", "Æ"}
+local ACCENT_CHARS = {
+    -- acute (é á í ó ú ý ć ń ś ź)
+    "é","É","á","Á","í","Í","ó","Ó","ú","Ú","ý","Ý","ć","Ć","ń","Ń","ś","Ś","ź","Ź",
+    -- grave (è à ì ò ù)
+    "è","È","à","À","ì","Ì","ò","Ò","ù","Ù",
+    -- circumflex (ê â î ô û)
+    "ê","Ê","â","Â","î","Î","ô","Ô","û","Û",
+}
+
 
 -- Helper function for task queue - returns a task that delays N frames.
 -- numberOfFrames=1 preserves the previous behavior (one frame delay before the next task).
@@ -511,7 +521,7 @@ end
 function PSC_FormatKDRatio(totalKills, totalDeaths, kdRatio)
     if totalDeaths and totalDeaths > 0 then
         if not kdRatio then
-            kdRatio = totalKills / totalDeaths
+            kdRatio = (totalKills or 0) / totalDeaths
         end
         return string.format("%.1f", kdRatio)
     else
@@ -1563,13 +1573,16 @@ function PSC_CalculateAllNameBasedStats()
 
     local stats = {
         byFirstLetter = {},
-        byNameLength = {}
+        byNameLength = {},
+        withSpecialChars = 0,
+        withAccentChars = 0
     }
 
     -- Single pass through all kills
     -- Dynamically build letter and length buckets to support any UTF-8 characters
     for playerKey, playerData in pairs(characterData.Kills) do
-        local playerName = string.match(playerKey, "^([^:]+)")
+        -- Key format is "Name-Realm:Level"; strip realm and level to get just the base name
+        local playerName = string.match(playerKey, "^([^%-:]+)")
         if playerName and #playerName > 0 then
             local killCount = playerData.kills or #(playerData.killLocations or {})
 
@@ -1580,6 +1593,22 @@ function PSC_CalculateAllNameBasedStats()
             -- Count by name length (supports any length)
             local nameLen = #playerName
             stats.byNameLength[nameLen] = (stats.byNameLength[nameLen] or 0) + killCount
+
+            -- Count kills where name contains special characters (ä,ö,ü,ø,æ)
+            for _, ch in ipairs(SPECIAL_CHARS) do
+                if string.find(playerName, ch, 1, true) then
+                    stats.withSpecialChars = stats.withSpecialChars + killCount
+                    break
+                end
+            end
+
+            -- Count kills where name contains accent characters (é,è,ê,á,à,â,...)
+            for _, ch in ipairs(ACCENT_CHARS) do
+                if string.find(playerName, ch, 1, true) then
+                    stats.withAccentChars = stats.withAccentChars + killCount
+                    break
+                end
+            end
         end
     end
 
@@ -1614,6 +1643,16 @@ end
 function PSC_CountKillsWithNameLength(length)
     local stats = PSC_GetNameBasedStats()
     return stats.byNameLength[length] or 0
+end
+
+function PSC_CountKillsWithSpecialCharsInName()
+    local stats = PSC_GetNameBasedStats()
+    return stats.withSpecialChars or 0
+end
+
+function PSC_CountKillsWithAccentCharsInName()
+    local stats = PSC_GetNameBasedStats()
+    return stats.withAccentChars or 0
 end
 
 function PSC_GetCurrentAchievementPoints()
