@@ -27,7 +27,7 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Loch Modan"] = {"Loch Modan", "Loch Modan", "Loch Modan", "Loch Modan", "Loch Modan"},
     ["Silverpine Forest"] = {"Silverpine Forest", "Silberwald", "Forêt des Pins argentés", "Bosque de Argénteos", "Floresta de Pinhaprata"},
     ["Redridge Mountains"] = {"Redridge Mountains", "Rotkammgebirge", "Les Carmines", "Montañas Crestagrana", "Montanhas Cristarrubra"},
-    ["Duskwood"] = {"Duskwood", "Dämmerwald", "Bois de la Pénombre", "Bosque del Ocaso", "Floresta do Crepúsculo"},
+    ["Duskwood"] = {"Duskwood", "Dämmerwald", "Bois de la Pénombre (Duskwood)", "Bosque del Ocaso", "Floresta do Crepúsculo"},
     ["Hillsbrad Foothills"] = {"Hillsbrad Foothills", "Vorgebirge des Hügellands", "Contreforts de Hautebrande", "Laderas de Trabalomas", "Contrafortes de Eira dos Montes"},
     ["Wetlands"] = {"Wetlands", "Sumpfland", "Les Paluns", "Los Humedales", "Pantanal"},
     ["Alterac Mountains"] = {"Alterac Mountains", "Alteracgebirge", "Montagnes d'Alterac", "Montañas de Alterac", "Montanhas de Alterac"},
@@ -41,7 +41,7 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Western Plaguelands"] = {"Western Plaguelands", "Westliche Pestländer", "Maleterres de l'ouest", "Tierras de la Peste del Oeste", "Terras Pestilentas Ocidentais"},
     ["Eastern Plaguelands"] = {"Eastern Plaguelands", "Östliche Pestländer", "Maleterres de l'est", "Tierras de la Peste del Este", "Terras Pestilentas Orientais"},
     ["Deadwind Pass"] = {"Deadwind Pass", "Gebirgspass der Totenwinde", "Défilé de Deuillevent", "Paso de la Muerte", "Trilha do Vento Morto"},
-    ["Stormwind City"] = {"Stormwind City", "Sturmwind", "Hurlevent", "Ventormenta", "Ventobravo"},
+    ["Stormwind City"] = {"Stormwind City", "Sturmwind", "Cité de Stormwind", "Ventormenta", "Ventobravo"},
     ["Mulgore"] = {"Mulgore", "Mulgore", "Mulgore", "Mulgore", "Mulgore"},
     ["Teldrassil"] = {"Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil", "Teldrassil"},
     ["Darkshore"] = {"Darkshore", "Dunkelküste", "Sombrivage", "Costa Oscura", "Costa Negra"},
@@ -76,6 +76,9 @@ PSC_ZONE_TRANSLATIONS_CLASSIC = {
     ["Ruins of Lordaeron"] = {"Ruins of Lordaeron", "Ruinen von Lordaeron", "Ruines de Lordaeron", "Ruinas de Lordaeron", "Ruínas de Lordaeron"},
     ["Nagrand Arena"] = {"Nagrand Arena", "Arena von Nagrand", "Arène de Nagrand", "Arena de Nagrand", "Arena de Nagrand"},
     ["Blade's Edge Arena"] = {"Blade's Edge Arena", "Arena des Schergrats", "Arène des Tranchantes", "Arena Filospada", "Arena da Lâmina Afiada"},
+    ["Gurubashi Arena"] = {"Gurubashi Arena", "Arena der Gurubashi", "Arène des Gurubashi", "Arena de Gurubashi", "Arena dos Gurubashi"},
+    ["The Great Arena"] = {"The Great Arena", "Die große Arena", "La Grande arène", "La Gran Arena", "A Grande Arena"},
+    ["Battle Ring"] = {"Battle Ring", "Kampfring", "L'aréne", "El Ring de Batalla", "Ring de Batalha"},
 }
 
 PSC_ZONE_TRANSLATIONS_TBC = {
