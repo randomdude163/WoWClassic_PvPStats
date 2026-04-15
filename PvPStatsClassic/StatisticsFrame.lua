@@ -863,8 +863,10 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     return container
 end
 
-local function PSC_GetWinPercentageColor(pct)
-    if pct >= 70 then
+function PSC_GetWinPercentageColor(pct)
+    if pct == 100 then
+        return { r = 1.0, g = 0.82, b = 0.0 }
+    elseif pct >= 70 then
         return { r = 0.0, g = 1.0, b = 0.0 }
     elseif pct >= 51 then
         return { r = 0.56, g = 1.0, b = 0.56 }

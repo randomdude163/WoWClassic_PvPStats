@@ -671,7 +671,22 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     if kdRatio >= 2.0 then
         kdValue:SetTextColor(1, 0.82, 0)
     end
-    yOffset = yOffset - 15
+    yOffset = yOffset - 20
+
+    local totalEncounters = playerDetail.kills + playerDetail.deaths
+    if totalEncounters > 0 then
+        local winPct = (playerDetail.kills / totalEncounters) * 100
+        local winLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        winLabel:SetPoint("TOPLEFT", 25, yOffset)
+        winLabel:SetText("Win %:")
+        winLabel:SetTextColor(1, 1, 1)
+        local winValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        winValue:SetPoint("TOPLEFT", 120, yOffset)
+        winValue:SetText(string.format("%.1f%%", winPct))
+        local wc = PSC_GetWinPercentageColor(winPct)
+        winValue:SetTextColor(wc.r, wc.g, wc.b)
+        yOffset = yOffset - 20
+    end
 
     local noteLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     noteLabel:SetPoint("TOPLEFT", 25, yOffset - 7)
