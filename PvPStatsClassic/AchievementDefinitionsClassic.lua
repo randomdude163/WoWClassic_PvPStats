@@ -4798,6 +4798,83 @@ AchievementSystem.achievementsClassic = {
             return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Eastern Plaguelands")
         end,
     },
+     -- DEADWIND PASS (Contested) - All 4 tiers
+    {
+        id = "zone_deadwindpass_100",
+        title = "Carrion Caller",
+        description = function(a) return ("Eliminate %d players in Deadwind Pass"):format(a.targetValue) end,
+        iconID = 135506,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Karazhan's front yard just got %d bodies messier. Medivh never had to deal with this."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Deadwind Pass")
+        end,
+    },
+    {
+        id = "zone_deadwindpass_250",
+        title = "Herald of the Dark Tower",
+        description = function(a) return ("Eliminate %d players in Deadwind Pass"):format(a.targetValue) end,
+        iconID = 135506,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The ghosts inside Karazhan are filing noise complaints. Apparently %d deaths outside is disturbing chess night."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Deadwind Pass")
+        end,
+    },
+    {
+        id = "zone_deadwindpass_500",
+        title = "The Arcane Reaper",
+        description = function(a) return ("Eliminate %d players in Deadwind Pass"):format(a.targetValue) end,
+        iconID = 135506,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills on Karazhan's doorstep. The Curator has started logging your massacre as an 'Unauthorized Exhibit.' Moroes is adding %d extra place settings at dinner out of grim respect. The tower's residents haven't seen this much carnage since Medivh went mad - and he was the one causing it last time."):format(a.targetValue, a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Deadwind Pass")
+        end,
+    },
+    {
+        id = "zone_deadwindpass_1000",
+        title = "Karazhan's Worst Nightmare",
+        description = function(a) return ("Eliminate %d players in Deadwind Pass"):format(a.targetValue) end,
+        iconID = 135506,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("One thousand corpses rotting outside the most haunted tower in Azeroth. The Opera House cancelled its show - the audience kept getting killed in the parking lot. Attumen lost his horse again because it refused to step over the bodies. Nightbane lands, sees your handiwork, and quietly flies back to wherever he came from. Even the demons trapped inside Karazhan are petitioning the Dark Portal for asylum. Medivh built his tower to last forever. You're auditioning to replace it."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Deadwind Pass")
+        end,
+    },
 
     -- WINTERSPRING (Contested) - All 4 tiers
     {

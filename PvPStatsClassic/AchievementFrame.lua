@@ -143,6 +143,7 @@ local function FilterAchievements(achievements, category)
                    string.find(achievement.id, "zone_burningsteppes") or
                    string.find(achievement.id, "zone_westernplaguelands") or
                    string.find(achievement.id, "zone_easternplaguelands") or
+                   string.find(achievement.id, "zone_deadwindpass") or
                    string.find(achievement.id, "zone_winterspring") or
                    string.find(achievement.id, "zone_silithus") or
                    -- TBC zones (all contested)

@@ -863,6 +863,20 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     return container
 end
 
+local function PSC_GetWinPercentageColor(pct)
+    if pct >= 70 then
+        return { r = 0.0, g = 1.0, b = 0.0 }
+    elseif pct >= 51 then
+        return { r = 0.56, g = 1.0, b = 0.56 }
+    elseif pct >= 40 then
+        return { r = 1.0, g = 1.0, b = 0.0 }
+    elseif pct >= 30 then
+        return { r = 1.0, g = 0.5, b = 0.0 }
+    else
+        return { r = 1.0, g = 0.0, b = 0.0 }
+    end
+end
+
 local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
     if not kdData then
         local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, 45)
@@ -909,6 +923,12 @@ local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
                 GameTooltip:AddLine(string.format("K/D: %.2f", entry.value), 1, 1, 0.5)
             else
                 GameTooltip:AddLine(string.format("K/D: %.2f (no deaths recorded)", entry.value), 1, 1, 0.5)
+            end
+            local totalEncounters = raw.kills + raw.deaths
+            if totalEncounters > 0 then
+                local winPct = (raw.kills / totalEncounters) * 100
+                local wc = PSC_GetWinPercentageColor(winPct)
+                GameTooltip:AddLine(string.format("Win%%: %.1f%%", winPct), wc.r, wc.g, wc.b)
             end
             GameTooltip:Show()
         end)
@@ -1957,7 +1977,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
-local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak, isLocalPlayer)
+local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak, isLocalPlayer, valueColor)
     local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", 0, yPosition)
     labelText:SetText(label)
@@ -1966,9 +1986,10 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     valueText:SetPoint("TOPLEFT", 150, yPosition)
     valueText:SetText(tostring(value))
 
-    -- Make kill streak value text gold
     if isKillStreak then
-        valueText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
+        valueText:SetTextColor(1.0, 0.82, 0.0)
+    elseif valueColor then
+        valueText:SetTextColor(valueColor.r, valueColor.g, valueColor.b)
     end
 
     if tooltipText then
@@ -2235,6 +2256,17 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     local kdText = kdRatio .. " (" .. (stats.totalKills or 0) .. "/" .. (stats.totalDeaths or 0) .. ")"
     local kdTooltip = isLocalPlayer and "Overall kill/death ratio (total player kills divided by total PvP deaths)." or "Overall kill/death ratio."
     statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY, kdTooltip, false, isLocalPlayer)
+
+    local totalKills = stats.totalKills or 0
+    local totalDeaths = stats.totalDeaths or 0
+    local totalEncounters = totalKills + totalDeaths
+    if totalEncounters > 0 then
+        local winPct = (totalKills / totalEncounters) * 100
+        local winText = string.format("%.1f%%", winPct)
+        local winColor = PSC_GetWinPercentageColor(winPct)
+        local winTooltip = isLocalPlayer and "Win percentage: kills divided by total encounters (kills + deaths)." or "Win percentage: kills divided by total encounters (kills + deaths)."
+        statY = addSummaryStatLine(container, "Win percentage:", winText, statY, winTooltip, false, isLocalPlayer, winColor)
+    end
 
     if (stats.unknownLevelKills and stats.unknownLevelKills > 0) or isLocalPlayer then
         local unknownTooltip = "Total number of times you have killed a level ?? player."
