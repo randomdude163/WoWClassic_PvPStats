@@ -2466,11 +2466,6 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -68)
         noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
         noteText:SetTextColor(0.7, 0.7, 0.7)
-    elseif PSC_DB.ShowAccountWideStats then
-        local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -68)
-        noteText:SetText("Viewing account-wide stats")
-        noteText:SetTextColor(0.7, 0.7, 0.7)
     end
 end
 
@@ -2815,7 +2810,7 @@ end
 
 function GetFrameTitleTextWithCharacterText(titleText)
     if PSC_DB.ShowAccountWideStats then
-        titleText = titleText .. " (All characters)"
+        titleText = titleText .. " (account-wide stats)"
     else
         titleText = titleText .. " (" .. PSC_GetCharacterKey() .. ")"
     end
