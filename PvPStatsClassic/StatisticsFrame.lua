@@ -931,11 +931,7 @@ local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
             GameTooltip:SetText(displayName, color.r, color.g, color.b)
             GameTooltip:AddLine("Kills: " .. raw.kills, 1, 1, 1)
             GameTooltip:AddLine("Deaths: " .. raw.deaths, 1, 1, 1)
-            if raw.deaths > 0 then
-                GameTooltip:AddLine(string.format("K/D: %.2f", entry.value), 1, 1, 0.5)
-            else
-                GameTooltip:AddLine(string.format("K/D: %.2f (no deaths recorded)", entry.value), 1, 1, 0.5)
-            end
+            GameTooltip:AddLine(string.format("K/D: %.2f", entry.value), 1, 1, 0.5)
             local totalEncounters = raw.kills + raw.deaths
             if totalEncounters > 0 then
                 local winPct = (raw.kills / totalEncounters) * 100
