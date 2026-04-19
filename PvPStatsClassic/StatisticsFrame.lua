@@ -2810,7 +2810,7 @@ end
 
 function GetFrameTitleTextWithCharacterText(titleText)
     if PSC_DB.ShowAccountWideStats then
-        titleText = titleText .. " (account-wide stats)"
+        titleText = titleText .. " |cFFFFFFFF(account-wide stats)|r"
     else
         titleText = titleText .. " (" .. PSC_GetCharacterKey() .. ")"
     end
