@@ -1350,24 +1350,37 @@ function PSC_CreateSearchBar(frame)
     return searchBox
 end
 
+function PSC_ResetAllFilters()
+    PSC_SearchText = ""
+    levelSearchText = ""
+    classSearchText = ""
+    raceSearchText = ""
+    genderSearchText = ""
+    zoneSearchText = ""
+    rankSearchText = ""
+    minLevelSearch = nil
+    maxLevelSearch = nil
+    minRankSearch = nil
+    maxRankSearch = nil
+    filterOnlyWithNotes = false
+    filterMinDeaths = 0
+
+    if not PSC_KillsListFrame then return end
+
+    PSC_KillsListFrame.searchBox:SetText("")
+    PSC_KillsListFrame.levelSearchBox:SetText("")
+    PSC_KillsListFrame.classSearchBox:SetText("")
+    PSC_KillsListFrame.raceSearchBox:SetText("")
+    PSC_KillsListFrame.genderSearchBox:SetText("")
+    PSC_KillsListFrame.zoneSearchBox:SetText("")
+    PSC_KillsListFrame.rankSearchBox:SetText("")
+    PSC_KillsListFrame.noteCheckbox:SetChecked(false)
+end
+
 function PSC_SetKillListSearch(text, levelText, classText, raceText, genderText, zoneText, resetOtherFilters)
     if PSC_KillsListFrame then
         if resetOtherFilters then
-            PSC_KillsListFrame.searchBox:SetText("")
-            PSC_SearchText = ""
-            PSC_KillsListFrame.levelSearchBox:SetText("")
-            levelSearchText = ""
-            PSC_KillsListFrame.classSearchBox:SetText("")
-            classSearchText = ""
-            PSC_KillsListFrame.raceSearchBox:SetText("")
-            raceSearchText = ""
-            PSC_KillsListFrame.genderSearchBox:SetText("")
-            genderSearchText = ""
-            PSC_KillsListFrame.zoneSearchBox:SetText("")
-            zoneSearchText = ""
-            minLevelSearch = nil
-            maxLevelSearch = nil
-            filterMinDeaths = 0
+            PSC_ResetAllFilters()
         end
 
         if PSC_KillsListFrame.searchBox and text then
@@ -1408,16 +1421,7 @@ end
 function PSC_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
     if PSC_KillsListFrame then
         if resetOtherFilters then
-            PSC_KillsListFrame.searchBox:SetText("")
-            PSC_SearchText = ""
-            PSC_KillsListFrame.classSearchBox:SetText("")
-            classSearchText = ""
-            PSC_KillsListFrame.raceSearchBox:SetText("")
-            raceSearchText = ""
-            PSC_KillsListFrame.genderSearchBox:SetText("")
-            genderSearchText = ""
-            PSC_KillsListFrame.zoneSearchBox:SetText("")
-            zoneSearchText = ""
+            PSC_ResetAllFilters()
         end
 
         minLevelSearch = minLevel
@@ -1460,20 +1464,7 @@ end
 function PSC_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
     if PSC_KillsListFrame then
         if resetOtherFilters then
-            PSC_KillsListFrame.searchBox:SetText("")
-            PSC_SearchText = ""
-            PSC_KillsListFrame.levelSearchBox:SetText("")
-            levelSearchText = ""
-            minLevelSearch = nil
-            maxLevelSearch = nil
-            PSC_KillsListFrame.classSearchBox:SetText("")
-            classSearchText = ""
-            PSC_KillsListFrame.raceSearchBox:SetText("")
-            raceSearchText = ""
-            PSC_KillsListFrame.genderSearchBox:SetText("")
-            genderSearchText = ""
-            PSC_KillsListFrame.zoneSearchBox:SetText("")
-            zoneSearchText = ""
+            PSC_ResetAllFilters()
         end
 
         minRankSearch = minRank

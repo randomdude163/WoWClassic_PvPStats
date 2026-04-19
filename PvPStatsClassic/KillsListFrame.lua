@@ -643,6 +643,10 @@ local function CreateMainFrame()
         end)
     end
 
+    frame:SetScript("OnHide", function()
+        PSC_ResetAllFilters()
+    end)
+
     return frame
 end
 
