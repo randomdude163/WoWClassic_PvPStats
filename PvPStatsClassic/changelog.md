@@ -1,19 +1,8 @@
 v4.5:
-- Added Deaths by Class chart to the statistics view
-- Added K/D by Class chart to the statistics view
-- Added Class share over time (monthly class percentage) chart
-- Added Win Percentage to the summary statistics and the player detail frame
-- Added Win Percentage display to the K/D by Class tooltip
-- Added Deadwind Pass zone achievements (100/250/500/1000 kills)
-- Added level-range PvP achievements (levels 1-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-70) and a "Full - Spectrum" meta achievement
-- Added name-based achievements (kills of players with 2-letter names, special characters, accent characters)
-- Charts in the statistics view can now be reordered and the order is saved persistently
-- Kills by Month tooltip now shows a per-year breakdown when the same month has kills across multiple years
-- Fixed account-wide stats not applying to Deaths by Class, total deaths, and Kills by Guild
-- Fixed kills list frame now resets all filters when closed
-- Fixed guild column width in the kills list to accommodate long guild names
-- Improved account-wide stats indicator in the statistics window title
-- Added tooltip note that the statistics window must be reopened after toggling account-wide stats
+- Added new charts to the Statistics Window and charts can now be reordered.
+- Added zone achievements (100/250/500/1000 kills)
+- Added achievements for kills in level-ranges (1-9, 10-19, etc.) and Deadwind Pass
+- Various minor layout/text improvements and fixes
 
 v4.4:
 - Fixed "You aren't in a party" messages in BGs.
