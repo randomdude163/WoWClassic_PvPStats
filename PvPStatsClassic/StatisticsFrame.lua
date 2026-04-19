@@ -563,7 +563,6 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
         elseif titleType == "weekday" then
             GameTooltip:AddLine("Kills on " .. displayName, 1, 1, 1, true)
         elseif titleType == "month" then
-            GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
             if extraData then
                 local yearData = extraData[entry.key]
                 if yearData then
