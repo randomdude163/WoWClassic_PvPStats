@@ -1822,7 +1822,7 @@ local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
     end
 end
 
-local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state, characterScope)
     local pairs = pairs
     local ipairs = ipairs
     local math_huge = math.huge
@@ -1831,7 +1831,7 @@ local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
     local nemesisName = "None"
     local nemesisScore = 0
     local nemesisAssists = 0
-    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters(characterScope)
 
     local assistsByPlayer = {}
     local deathsByPlayer = {}
@@ -1915,14 +1915,14 @@ local function PSC_SummaryStats_BuildResult(state)
     }
 end
 
-function PSC_CalculateDeathsByClass()
+function PSC_CalculateDeathsByClass(characterScope)
     local deathsByClass = {}
 
     for _, class in ipairs(ALL_CLASSES) do
         deathsByClass[class] = 0
     end
 
-    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters(characterScope)
 
     for killerName, deathData in pairs(deathDataByPlayer) do
         local infoKey = PSC_NormalizePlayerName(killerName)
@@ -2104,7 +2104,7 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     end
 
     PSC_SummaryStats_FinalizeKillDerivedFields(state)
-    PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+    PSC_SummaryStats_FinalizeNemesisAndDeaths(state, charactersToProcess)
     return PSC_SummaryStats_BuildResult(state)
 end
 
@@ -2153,7 +2153,7 @@ function PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, maxKill
         while processed < sliceBudget do
             if characterIndex > #characterKeys then
                 PSC_SummaryStats_FinalizeKillDerivedFields(state)
-                PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+                PSC_SummaryStats_FinalizeNemesisAndDeaths(state, charactersToProcess)
                 finished = true
                 onComplete(PSC_SummaryStats_BuildResult(state))
                 return true

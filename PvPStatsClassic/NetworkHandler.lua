@@ -534,7 +534,7 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
     local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
     local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
     local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
-    local deathsByClassData = PSC_CalculateDeathsByClass()
+    local deathsByClassData = PSC_CalculateDeathsByClass(charactersToProcess)
 
     if enableDebugLog then
         D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)

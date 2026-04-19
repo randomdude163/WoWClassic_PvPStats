@@ -55,13 +55,18 @@ function PSC_GetCharactersToProcessForStatistics()
     return charactersToProcess
 end
 
--- Get death data from all relevant characters
-function PSC_GetDeathDataFromAllCharacters()
+-- Get death data from all relevant characters.
+-- characterScope: optional table with charKeys as keys; if provided, restricts to those characters
+-- regardless of the ShowAccountWideStats setting (used for network responses scoped to one character).
+function PSC_GetDeathDataFromAllCharacters(characterScope)
     local deathDataByPlayer = {}
 
-    -- Get characters to process based on account-wide setting
     local charactersToProcess = {}
-    if PSC_DB.ShowAccountWideStats then
+    if characterScope then
+        for charKey in pairs(characterScope) do
+            charactersToProcess[charKey] = true
+        end
+    elseif PSC_DB.ShowAccountWideStats then
         for charKey, _ in pairs(PSC_DB.PvPLossCounts) do
             charactersToProcess[charKey] = true
         end
