@@ -454,7 +454,7 @@ local function NormalizeWeekdayKey(key)
     return nil
 end
 
-local function createBar(container, entry, index, maxValue, total, titleType, disableClicks)
+local function createBar(container, entry, index, maxValue, total, titleType, disableClicks, extraData)
     local barWidth
     local nameWidth
     local barX
@@ -564,6 +564,17 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
             GameTooltip:AddLine("Kills on " .. displayName, 1, 1, 1, true)
         elseif titleType == "month" then
             GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
+            if extraData then
+                local yearData = extraData[entry.key]
+                if yearData then
+                    local years = {}
+                    for year in pairs(yearData) do table.insert(years, year) end
+                    table.sort(years)
+                    for _, year in ipairs(years) do
+                        GameTooltip:AddLine(tostring(year) .. ": " .. yearData[year], 0.8, 0.8, 0.8)
+                    end
+                end
+            end
         elseif titleType == "year" then
             GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
         elseif titleType == raceColors then
@@ -734,7 +745,7 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
     end
 end
 
-local function createBarChart(parent, title, data, colorTable, x, y, width, height, disableClicks)
+local function createBarChart(parent, title, data, colorTable, x, y, width, height, disableClicks, extraData)
     local container = createContainerWithTitle(parent, title, x, y, width, height)
 
     -- Pre-process data to handle numeric/string key duplication and normalization
@@ -857,7 +868,7 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     end
 
     for i, entry in ipairs(filteredData) do
-        createBar(container, entry, i, maxValue, total, titleType, disableClicks)
+        createBar(container, entry, i, maxValue, total, titleType, disableClicks, extraData)
     end
 
     return container
@@ -1516,26 +1527,22 @@ local function createScrollFrame(container, width, height)
     return scrollFrame
 end
 
-function PSC_CalculateGuildKills()
+function PSC_CalculateGuildKills(charactersToProcess)
     local guildKills = {}
+    local scope = charactersToProcess or PSC_GetCharactersToProcessForStatistics()
 
-    local characterKey = PSC_GetCharacterKey()
-    local characterData = PSC_DB.PlayerKillCounts and PSC_DB.PlayerKillCounts.Characters and PSC_DB.PlayerKillCounts.Characters[characterKey]
-
-    if not characterData or not characterData.Kills then
-        return guildKills
-    end
-
-    for nameWithLevel, killData in pairs(characterData.Kills) do
-        local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
-        local kills = killData.kills or 0
-
-        local infoKey = PSC_NormalizePlayerName(playerNameWithoutLevel)
-
-        if PSC_DB.PlayerInfoCache[infoKey] then
-            local guild = PSC_DB.PlayerInfoCache[infoKey].guild
-            if guild ~= "" then
-                guildKills[guild] = (guildKills[guild] or 0) + kills
+    for _, characterData in pairs(scope) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
+                local kills = killData.kills or 0
+                local infoKey = PSC_NormalizePlayerName(playerNameWithoutLevel)
+                if PSC_DB.PlayerInfoCache[infoKey] then
+                    local guild = PSC_DB.PlayerInfoCache[infoKey].guild
+                    if guild ~= "" then
+                        guildKills[guild] = (guildKills[guild] or 0) + kills
+                    end
+                end
             end
         end
     end
@@ -1957,10 +1964,10 @@ local function PSC_CalculateKDByClass(killsByClass, deathsByClass)
     return kdData, rawData
 end
 
-local function createGuildTable(parent, x, y, width, height)
+local function createGuildTable(parent, x, y, width, height, precomputedGuildData)
     local container = createContainerWithTitle(parent, "Kills by Guild", x, y, width, height)
 
-    local guildKills = PSC_CalculateGuildKills()
+    local guildKills = precomputedGuildData or PSC_CalculateGuildKills()
     local sortedGuilds = sortByValue(guildKills, true)
 
     local totalContentWidth = 240
@@ -2749,6 +2756,37 @@ function PSC_CalculateMonthlyStatistics(charactersToProcess)
     return monthlyData
 end
 
+function PSC_CalculateMonthlyByYearStatistics(charactersToProcess)
+    local monthlyByYear = {}
+
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return monthlyByYear
+    end
+
+    for _, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for _, killData in pairs(characterData.Kills) do
+                if killData.kills and killData.kills > 0 and killData.killLocations then
+                    for _, location in ipairs(killData.killLocations) do
+                        if location.timestamp then
+                            local dateInfo = date("*t", location.timestamp)
+                            if dateInfo and dateInfo.month and dateInfo.year then
+                                local month = dateInfo.month
+                                if not monthlyByYear[month] then
+                                    monthlyByYear[month] = {}
+                                end
+                                monthlyByYear[month][dateInfo.year] = (monthlyByYear[month][dateInfo.year] or 0) + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return monthlyByYear
+end
+
 function PSC_CalculateYearlyStatistics(charactersToProcess)
     local yearlyData = {}
 
@@ -2973,6 +3011,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     local classData, raceData, genderData, zoneData, levelData, hourlyData, weekdayData, monthlyData, yearlyData, stats
     local unknownLevelClassData, guildStatusData, guildData, npcKillsData
     local deathsByClassData
+    local monthlyByYearData
     local monthlyClassBuckets = {}
     local monthlyClassPercentages = {}
     local monthlyClassTotals = {}
@@ -3016,6 +3055,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
         monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
         yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
+        monthlyByYearData = PSC_CalculateMonthlyByYearStatistics(charactersToProcess)
         stats = PSC_CalculateSummaryStatistics(charactersToProcess)
         deathsByClassData = PSC_CalculateDeathsByClass()
         monthlyClassBuckets, monthlyClassPercentages, monthlyClassTotals = PSC_CalculateMonthlyClassPercentageStatistics(charactersToProcess)
@@ -3137,7 +3177,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
             height = calculateChartHeight(monthlyData),
             localOnly = false,
             render = function(parent, y, height)
-                return createBarChart(parent, "Kills by Month", monthlyData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+                return createBarChart(parent, "Kills by Month", monthlyData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer, monthlyByYearData)
             end,
         },
         kills_by_year = {
@@ -3165,7 +3205,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
             height = UI.GUILD_LIST.HEIGHT,
             localOnly = true,
             render = function(parent, y, height)
-                return createGuildTable(parent, 0, y, UI.CHART.WIDTH, height)
+                return createGuildTable(parent, 0, y, UI.CHART.WIDTH, height, guildData)
             end,
         },
     }
