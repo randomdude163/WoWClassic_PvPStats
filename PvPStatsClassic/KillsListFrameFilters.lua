@@ -10,6 +10,7 @@ local maxLevelSearch = nil
 local minRankSearch = nil
 local maxRankSearch = nil
 local filterOnlyWithNotes = false
+local filterMinDeaths = 0
 
 
 local function CreateBoxBorder(box)
@@ -1061,6 +1062,11 @@ local function ApplyFiltersToEntries(entries, resolveName)
             match = (hasNote == true)
         end
 
+        -- Min deaths filter
+        if match and filterMinDeaths > 0 then
+            match = (entry.deaths or 0) >= filterMinDeaths
+        end
+
         if match then
             table.insert(filteredEntries, entry)
         end
@@ -1344,23 +1350,37 @@ function PSC_CreateSearchBar(frame)
     return searchBox
 end
 
+function PSC_ResetAllFilters()
+    PSC_SearchText = ""
+    levelSearchText = ""
+    classSearchText = ""
+    raceSearchText = ""
+    genderSearchText = ""
+    zoneSearchText = ""
+    rankSearchText = ""
+    minLevelSearch = nil
+    maxLevelSearch = nil
+    minRankSearch = nil
+    maxRankSearch = nil
+    filterOnlyWithNotes = false
+    filterMinDeaths = 0
+
+    if not PSC_KillsListFrame then return end
+
+    PSC_KillsListFrame.searchBox:SetText("")
+    PSC_KillsListFrame.levelSearchBox:SetText("")
+    PSC_KillsListFrame.classSearchBox:SetText("")
+    PSC_KillsListFrame.raceSearchBox:SetText("")
+    PSC_KillsListFrame.genderSearchBox:SetText("")
+    PSC_KillsListFrame.zoneSearchBox:SetText("")
+    PSC_KillsListFrame.rankSearchBox:SetText("")
+    PSC_KillsListFrame.noteCheckbox:SetChecked(false)
+end
+
 function PSC_SetKillListSearch(text, levelText, classText, raceText, genderText, zoneText, resetOtherFilters)
     if PSC_KillsListFrame then
         if resetOtherFilters then
-            PSC_KillsListFrame.searchBox:SetText("")
-            PSC_SearchText = ""
-            PSC_KillsListFrame.levelSearchBox:SetText("")
-            levelSearchText = ""
-            PSC_KillsListFrame.classSearchBox:SetText("")
-            classSearchText = ""
-            PSC_KillsListFrame.raceSearchBox:SetText("")
-            raceSearchText = ""
-            PSC_KillsListFrame.genderSearchBox:SetText("")
-            genderSearchText = ""
-            PSC_KillsListFrame.zoneSearchBox:SetText("")
-            zoneSearchText = ""
-            minLevelSearch = nil
-            maxLevelSearch = nil
+            PSC_ResetAllFilters()
         end
 
         if PSC_KillsListFrame.searchBox and text then
@@ -1401,16 +1421,7 @@ end
 function PSC_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
     if PSC_KillsListFrame then
         if resetOtherFilters then
-            PSC_KillsListFrame.searchBox:SetText("")
-            PSC_SearchText = ""
-            PSC_KillsListFrame.classSearchBox:SetText("")
-            classSearchText = ""
-            PSC_KillsListFrame.raceSearchBox:SetText("")
-            raceSearchText = ""
-            PSC_KillsListFrame.genderSearchBox:SetText("")
-            genderSearchText = ""
-            PSC_KillsListFrame.zoneSearchBox:SetText("")
-            zoneSearchText = ""
+            PSC_ResetAllFilters()
         end
 
         minLevelSearch = minLevel
@@ -1445,23 +1456,15 @@ function PSC_SetKillListLevelRange(minLevel, maxLevel, resetOtherFilters)
     end
 end
 
+function PSC_SetKillListMinDeaths(min)
+    filterMinDeaths = min or 0
+    RefreshKillsListFrame()
+end
+
 function PSC_SetKillListRankRange(minRank, maxRank, resetOtherFilters)
     if PSC_KillsListFrame then
         if resetOtherFilters then
-            PSC_KillsListFrame.searchBox:SetText("")
-            PSC_SearchText = ""
-            PSC_KillsListFrame.levelSearchBox:SetText("")
-            levelSearchText = ""
-            minLevelSearch = nil
-            maxLevelSearch = nil
-            PSC_KillsListFrame.classSearchBox:SetText("")
-            classSearchText = ""
-            PSC_KillsListFrame.raceSearchBox:SetText("")
-            raceSearchText = ""
-            PSC_KillsListFrame.genderSearchBox:SetText("")
-            genderSearchText = ""
-            PSC_KillsListFrame.zoneSearchBox:SetText("")
-            zoneSearchText = ""
+            PSC_ResetAllFilters()
         end
 
         minRankSearch = minRank

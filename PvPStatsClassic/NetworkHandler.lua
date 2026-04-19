@@ -70,6 +70,7 @@ local KEY_MAP = {
     monthlyData = "M",
     yearlyData = "Y",
     unknownLevelClassData = "UL",
+    deathsByClassData = "DC",
     guildStatusData = "GS",
     npcKillsData = "NK",
     playerName = "pn",
@@ -181,6 +182,7 @@ local SUB_KEY_MAPS = {
     },
     classData = CLASS_KEY_MAP,
     unknownLevelClassData = CLASS_KEY_MAP,
+    deathsByClassData = CLASS_KEY_MAP,
     raceData = RACE_KEY_MAP,
     genderData = {
         MALE = "M", FEMALE = "F"
@@ -306,7 +308,8 @@ local function DeserializeDetailedStats(payload)
         levelData = {},
         npcKillsData = {},
         guildStatusData = {},
-        unknownLevelClassData = {}
+        unknownLevelClassData = {},
+        deathsByClassData = {}
     }
     for field in string.gmatch(payload, "([^;]+)") do
         local keyStr, values = string.match(field, "([^:]+):(.*)")
@@ -531,6 +534,7 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
     local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
     local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
     local yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
+    local deathsByClassData = PSC_CalculateDeathsByClass(charactersToProcess)
 
     if enableDebugLog then
         D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
@@ -548,6 +552,7 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
         monthlyData = monthlyData,
         yearlyData = yearlyData,
         unknownLevelClassData = unknownLevelClassData,
+        deathsByClassData = deathsByClassData,
         guildStatusData = guildStatusData,
         npcKillsData = npcKillsData
         -- Note: guildData intentionally excluded to reduce payload size
@@ -670,6 +675,7 @@ function Network:ConstructPayload(components)
         monthlyData = components.monthlyData,
         yearlyData = components.yearlyData,
         unknownLevelClassData = components.unknownLevelClassData,
+        deathsByClassData = components.deathsByClassData,
         guildStatusData = components.guildStatusData,
         npcKillsData = components.npcKillsData,
 

@@ -1333,6 +1333,215 @@ AchievementSystem.achievementsClassic = {
         end,
     },
 
+    -- Level Range Achievements
+    {
+        id = "kills_level_range_1_9",
+        title = "No Mercy for Newbies",
+        description = function(a) return ("Kill at least one player at each level from 1 to 9"):format() end,
+        iconID = 236323,
+        achievementPoints = 25,
+        targetValue = 9,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "They just finished the tutorial. Their bags are empty, their hearthstone is unset, and their corpse is already on the floor. Before they could even pick a hairstyle, you gave them their first PvP death. Some lessons only the graveyard can teach."
+        end,
+        progress = function(achievement, stats)
+            local count = 0
+            for level = 1, 9 do
+                if (stats.levelData[tostring(level)] or 0) > 0 then
+                    count = count + 1
+                end
+            end
+            return count
+        end,
+    },
+    {
+        id = "kills_level_range_10_19",
+        title = "Teen Spirit Crusher",
+        description = function(a) return ("Kill at least one player at each level from 10 to 19"):format() end,
+        iconID = 236324,
+        achievementPoints = 25,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Warsong Gulch. A 10-19 bracket that looked like competitive PvP until you showed up. They queued for the flag. They got a funeral procession. Ten levels of players who thought the gulch was a fair fight — you corrected that assumption, one graveyard run at a time."
+        end,
+        progress = function(achievement, stats)
+            local count = 0
+            for level = 10, 19 do
+                if (stats.levelData[tostring(level)] or 0) > 0 then
+                    count = count + 1
+                end
+            end
+            return count
+        end,
+    },
+    {
+        id = "kills_level_range_20_29",
+        title = "Journeyman Reaper",
+        description = function(a) return ("Kill at least one player at each level from 20 to 29"):format() end,
+        iconID = 236325,
+        achievementPoints = 25,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "The Arathi Basin bracket. They fought over the farm, the mine, the stables — you just fought them. Ten levels of players who thought capping a flag made them safe. It didn't. The blacksmith changes hands. Your kill count only goes up."
+        end,
+        progress = function(achievement, stats)
+            local count = 0
+            for level = 20, 29 do
+                if (stats.levelData[tostring(level)] or 0) > 0 then
+                    count = count + 1
+                end
+            end
+            return count
+        end,
+    },
+    {
+        id = "kills_level_range_30_39",
+        title = "Halfway to Nowhere",
+        description = function(a) return ("Kill at least one player at each level from 30 to 39"):format() end,
+        iconID = 236326,
+        achievementPoints = 25,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Stranglethorn Vale. The most contested jungle on Azeroth, where both factions go to level and neither feels safe doing it. Ten levels of players who thought the dense canopy offered cover. You proved it just makes it harder to see you coming."
+        end,
+        progress = function(achievement, stats)
+            local count = 0
+            for level = 30, 39 do
+                if (stats.levelData[tostring(level)] or 0) > 0 then
+                    count = count + 1
+                end
+            end
+            return count
+        end,
+    },
+    {
+        id = "kills_level_range_40_49",
+        title = "The Penultimate Predator",
+        description = function(a) return ("Kill at least one player at each level from 40 to 49"):format() end,
+        iconID = 236327,
+        achievementPoints = 50,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Tanaris, Azshara, Feralas — desolate zones where the opposite faction grinds alone and hopes nobody notices. You noticed. Ten levels of players saving up for their epic mount, unaware they'd be funding a graveyard run instead."
+        end,
+        progress = function(achievement, stats)
+            local count = 0
+            for level = 40, 49 do
+                if (stats.levelData[tostring(level)] or 0) > 0 then
+                    count = count + 1
+                end
+            end
+            return count
+        end,
+    },
+    {
+        id = "kills_level_range_50_59",
+        title = "Pre-Cap Predator",
+        description = function(a) return ("Kill at least one player at each level from 50 to 59"):format() end,
+        iconID = 236328,
+        achievementPoints = 50,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Felwood, the Plaguelands, Silithus — end-game contested zones where the opposite faction shows up fully committed to leveling. Ten levels of players on the final stretch to 60, grinding through corrupted forests and plague-ridden fields. You made the plague look mild by comparison."
+        end,
+        progress = function(achievement, stats)
+            local count = 0
+            for level = 50, 59 do
+                if (stats.levelData[tostring(level)] or 0) > 0 then
+                    count = count + 1
+                end
+            end
+            return count
+        end,
+    },
+    {
+        id = "kills_level_range_60_70",
+        title = "Peak Season Hunter",
+        description = function(a) return ("Kill at least one player at each level from 60 to 70"):format() end,
+        iconID = 236329,
+        achievementPoints = 75,
+        targetValue = 11,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Hellfire Peninsula, Zangarmarsh, Nagrand — Outland opened its Dark Portal and the opposite faction flooded through right alongside you. Eleven levels of max-or-near-max players in some of the most brutally contested territory in the game. No safe roads. No neutral guards. Just you, them, and the ever-present smell of fel fire."
+        end,
+        progress = function(achievement, stats)
+            local count = 0
+            for level = 60, 70 do
+                if (stats.levelData[tostring(level)] or 0) > 0 then
+                    count = count + 1
+                end
+            end
+            return count
+        end,
+    },
+    {
+        id = "kills_level_full_spectrum",
+        title = "The Full Spectrum",
+        description = function(a) return ("Kill at least one player at every level range (1-70)"):format() end,
+        iconID = 4006481,
+        achievementPoints = 500,
+        targetValue = 7,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return "Newbies in the starting zones. Warsong Gulch hopefuls. Arathi Basin farmers. Stranglethorn survivors. Tanaris grinders. Plaguelands veterans. Outland pioneers. You ended every single bracket. From the first corpse run outside Northshire to the last kill in the Netherstorm — you covered every step of the enemy's journey. The entire spectrum. No escape, no safe level, no neutral ground."
+        end,
+        progress = function(achievement, stats)
+            local characterKey = PSC_GetCharacterKey()
+            local savedAchievements = PSC_DB.CharacterAchievements and PSC_DB.CharacterAchievements[characterKey] or {}
+            local rangeIds = {
+                "kills_level_range_1_9", "kills_level_range_10_19", "kills_level_range_20_29",
+                "kills_level_range_30_39", "kills_level_range_40_49", "kills_level_range_50_59",
+                "kills_level_range_60_70"
+            }
+            local count = 0
+            for _, id in ipairs(rangeIds) do
+                if savedAchievements[id] and savedAchievements[id].unlocked then
+                    count = count + 1
+                end
+            end
+            return count
+        end,
+    },
+
     {
         id = "race_human_0",
         title = "Human Error",
@@ -4798,6 +5007,83 @@ AchievementSystem.achievementsClassic = {
             return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Eastern Plaguelands")
         end,
     },
+     -- DEADWIND PASS (Contested) - All 4 tiers
+    {
+        id = "zone_deadwindpass_100",
+        title = "Carrion Caller",
+        description = function(a) return ("Eliminate %d players in Deadwind Pass"):format(a.targetValue) end,
+        iconID = 135506,
+        achievementPoints = 25,
+        targetValue = 100,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("Karazhan's front yard just got %d bodies messier. Medivh never had to deal with this."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Deadwind Pass")
+        end,
+    },
+    {
+        id = "zone_deadwindpass_250",
+        title = "Herald of the Dark Tower",
+        description = function(a) return ("Eliminate %d players in Deadwind Pass"):format(a.targetValue) end,
+        iconID = 135506,
+        achievementPoints = 50,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("The ghosts inside Karazhan are filing noise complaints. Apparently %d deaths outside is disturbing chess night."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Deadwind Pass")
+        end,
+    },
+    {
+        id = "zone_deadwindpass_500",
+        title = "The Arcane Reaper",
+        description = function(a) return ("Eliminate %d players in Deadwind Pass"):format(a.targetValue) end,
+        iconID = 135506,
+        achievementPoints = 100,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills on Karazhan's doorstep. The Curator has started logging your massacre as an 'Unauthorized Exhibit.' Moroes is adding %d extra place settings at dinner out of grim respect. The tower's residents haven't seen this much carnage since Medivh went mad - and he was the one causing it last time."):format(a.targetValue, a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Deadwind Pass")
+        end,
+    },
+    {
+        id = "zone_deadwindpass_1000",
+        title = "Karazhan's Worst Nightmare",
+        description = function(a) return ("Eliminate %d players in Deadwind Pass"):format(a.targetValue) end,
+        iconID = 135506,
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("One thousand corpses rotting outside the most haunted tower in Azeroth. The Opera House cancelled its show - the audience kept getting killed in the parking lot. Attumen lost his horse again because it refused to step over the bodies. Nightbane lands, sees your handiwork, and quietly flies back to wherever he came from. Even the demons trapped inside Karazhan are petitioning the Dark Portal for asylum. Medivh built his tower to last forever. You're auditioning to replace it."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Deadwind Pass")
+        end,
+    },
 
     -- WINTERSPRING (Contested) - All 4 tiers
     {
@@ -6484,6 +6770,26 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
+        id = "name_length_2",
+        title = "The Ultra Rare Drop",
+        description = function(a) return ("Eliminate %d players with exactly 2-letter names"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 100,
+        targetValue = 2,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d players with 2-letter names. Two-tally impressive. These brave souls looked at the character creation screen and thought 'less is more.' Turns out less is just... less. Less name, less health, less time alive. You ended their story before it even got past letter three. Some people are just two good for this world.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithNameLength(2)
+        end,
+    },
+    {
         id = "name_length_3",
         title = "Tri-Letter Terminator",
         description = function(a) return ("Eliminate %d players with exactly 3-letter names"):format(a.targetValue) end,
@@ -6521,6 +6827,46 @@ AchievementSystem.achievementsClassic = {
         end,
         progress = function(achievement, stats)
             return PSC_CountKillsWithNameLength(12)
+        end,
+    },
+    {
+        id = "name_special_chars",
+        title = "The Weird Ones",
+        description = function(a) return ("Eliminate %d players whose names contain ä, ö, ü, ß, ø or æ"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 75,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d players who thought naming their character Björn, Günther or Søren made them sound tough. It didn't. It just made their corpse harder to pronounce. Nobody at the graveyard could spell your name and nobody cared — you still died like everyone else.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithSpecialCharsInName()
+        end,
+    },
+    {
+        id = "name_accent_chars",
+        title = "The Copy-Cats",
+        description = function(a) return ("Eliminate %d players whose names contain accent characters (é, è, ê, á, à, â, ...)"):format(a.targetValue) end,
+        iconID = 134938,
+        achievementPoints = 75,
+        targetValue = 500,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("You've killed %d players whose favorite name was already taken, so they just slapped some low-effort accents on it and called it creative. Légolàs. Àrthas. Dragonslàyer. Congratulations on your unique snowflake name — it didn't save you from a very ordinary death.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsWithAccentCharsInName()
         end,
     },
     {

@@ -602,7 +602,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
             else
                 raceIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
             end
-            
+
             -- Add Blizzard's icon border overlay only for custom img icons (not native Blizzard icons)
             if raceIconID and type(raceIconID) == "string" then
                 local raceIconBorder = iconContainer:CreateTexture(nil, "OVERLAY")
@@ -652,9 +652,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     local killsValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     killsValue:SetPoint("TOPLEFT", 120, yOffset)
     killsValue:SetText(tostring(playerDetail.kills))
-    if playerDetail.kills > playerDetail.deaths then
-        killsValue:SetTextColor(1, 0.82, 0)
-    end
+    killsValue:SetTextColor(1, 1, 1)
     yOffset = yOffset - 20
 
     yOffset = CreateDetailRow(content, "Total deaths:", tostring(playerDetail.deaths), yOffset)
@@ -668,10 +666,25 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
     kdValue:SetPoint("TOPLEFT", 120, yOffset)
     local kdRatio = playerDetail.deaths > 0 and playerDetail.kills / playerDetail.deaths or playerDetail.kills
     kdValue:SetText(string.format("%.1f", kdRatio))
-    if kdRatio >= 2.0 then
-        kdValue:SetTextColor(1, 0.82, 0)
+    kdValue:SetTextColor(1, 1, 1)
+    yOffset = yOffset - 20
+
+    local totalEncounters = playerDetail.kills + playerDetail.deaths
+    if totalEncounters > 0 then
+        local winPct = (playerDetail.kills / totalEncounters) * 100
+        local winLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        winLabel:SetPoint("TOPLEFT", 25, yOffset)
+        winLabel:SetText("Win %:")
+        winLabel:SetTextColor(1, 1, 1)
+        local winValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        winValue:SetPoint("TOPLEFT", 120, yOffset)
+        winValue:SetText(string.format("%.1f%%", winPct))
+        local winPercentageColor = PSC_GetWinPercentageColor(winPct)
+        winValue:SetTextColor(winPercentageColor.r, winPercentageColor.g, winPercentageColor.b)
+        -- Also set K/D ratio to the same color
+        kdValue:SetTextColor(winPercentageColor.r, winPercentageColor.g, winPercentageColor.b)
+        yOffset = yOffset - 20
     end
-    yOffset = yOffset - 15
 
     local noteLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     noteLabel:SetPoint("TOPLEFT", 25, yOffset - 7)

@@ -97,6 +97,177 @@ local genderColors = {
     }
 }
 
+local ALL_CLASSES = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
+
+local DEFAULT_CHART_ORDER = {
+    "kills_by_class",
+    "deaths_by_class",
+    "kd_by_class",
+    "monthly_class_percentage",
+    "kills_by_race",
+    "npc_kills",
+    "kills_by_gender",
+    "kills_by_guild_status",
+    "kills_by_hour",
+    "kills_by_weekday",
+    "kills_by_month",
+    "kills_by_year",
+    "kills_by_level",
+    "kills_by_zone",
+    "kills_by_guild",
+}
+
+local function copyArray(arr)
+    local copy = {}
+    for i = 1, #arr do
+        copy[i] = arr[i]
+    end
+    return copy
+end
+
+local function getChartOrder()
+    if not PSC_DB or not PSC_DB.StatisticsChartOrder then
+        return copyArray(DEFAULT_CHART_ORDER)
+    end
+    local present = {}
+    for _, id in ipairs(PSC_DB.StatisticsChartOrder) do
+        present[id] = true
+    end
+    local order = copyArray(PSC_DB.StatisticsChartOrder)
+    for _, id in ipairs(DEFAULT_CHART_ORDER) do
+        if not present[id] then
+            table.insert(order, id)
+        end
+    end
+    return order
+end
+
+local function saveChartOrder(order)
+    PSC_DB.StatisticsChartOrder = order
+end
+
+local reorderButtonCleanups = {}
+
+local function clearReorderButtonScripts()
+    GameTooltip:Hide()
+    for _, btn in ipairs(reorderButtonCleanups) do
+        btn:SetScript("OnClick", nil)
+        btn:SetScript("OnEnter", nil)
+        btn:SetScript("OnLeave", nil)
+    end
+    reorderButtonCleanups = {}
+end
+
+local reorderChartContainers
+
+local function makeChartSwapCallback(idA, idB)
+    return function()
+        local order = copyArray(getChartOrder())
+        local posA, posB
+        for j, id in ipairs(order) do
+            if id == idA then posA = j
+            elseif id == idB then posB = j end
+        end
+        if posA and posB then
+            order[posA], order[posB] = order[posB], order[posA]
+        end
+        saveChartOrder(order)
+        reorderChartContainers(statisticsFrame)
+    end
+end
+
+local function createScrollArrowButton(parent, isUp)
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(16, 16)
+    if isUp then
+        btn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Up")
+        btn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Down")
+        btn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Highlight", "ADD")
+    else
+        btn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up")
+        btn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Down")
+        btn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Highlight", "ADD")
+    end
+    btn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(isUp and "Move chart up" or "Move chart down", 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    table.insert(reorderButtonCleanups, btn)
+    return btn
+end
+
+local function addChartReorderButtonsOnce(container)
+    local downBtn = createScrollArrowButton(container, false)
+    downBtn:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, -1)
+    downBtn:Hide()
+    container.moveDownBtn = downBtn
+
+    local upBtn = createScrollArrowButton(container, true)
+    upBtn:SetPoint("TOPRIGHT", container, "TOPRIGHT", -18, -1)
+    upBtn:Hide()
+    container.moveUpBtn = upBtn
+end
+
+local function updateChartReorderButtons(orderedCharts)
+    for i, rendered in ipairs(orderedCharts) do
+        local container = rendered.container
+        if i > 1 then
+            container.moveUpBtn:SetScript("OnClick", makeChartSwapCallback(rendered.id, orderedCharts[i - 1].id))
+            container.moveUpBtn:Show()
+        else
+            container.moveUpBtn:SetScript("OnClick", nil)
+            container.moveUpBtn:Hide()
+        end
+        if i < #orderedCharts then
+            container.moveDownBtn:SetScript("OnClick", makeChartSwapCallback(rendered.id, orderedCharts[i + 1].id))
+            container.moveDownBtn:Show()
+        else
+            container.moveDownBtn:SetScript("OnClick", nil)
+            container.moveDownBtn:Hide()
+        end
+    end
+end
+
+reorderChartContainers = function(frame)
+    local chartOrder = getChartOrder()
+    local yOffset = 0
+    local orderedCharts = {}
+    for _, chartId in ipairs(chartOrder) do
+        local entry = frame.chartContainers and frame.chartContainers[chartId]
+        if entry then
+            entry.container:ClearAllPoints()
+            entry.container:SetPoint("TOPLEFT", 0, yOffset)
+            table.insert(orderedCharts, { id = chartId, container = entry.container })
+            yOffset = yOffset - entry.height - UI.CHART.PADDING
+        end
+    end
+    if frame.resetOrderBtn then
+        frame.resetOrderBtn:ClearAllPoints()
+        frame.resetOrderBtn:SetPoint("TOPLEFT", 0, yOffset - 10)
+        frame.leftScrollContent:SetHeight(-yOffset + 57)
+    else
+        frame.leftScrollContent:SetHeight(-yOffset + 25)
+    end
+    updateChartReorderButtons(orderedCharts)
+end
+
+local LINE_CHART_UI = {
+    HEIGHT = 235,
+    LEFT_PADDING = 42,
+    RIGHT_PADDING = 8,
+    TOP_PADDING = 28,
+    BOTTOM_PADDING = 36,
+    GRID_LINES = 5,
+    POINT_SIZE = 4,
+    LINE_THICKNESS = 2,
+    LEGEND_COLUMNS = 3,
+    LEGEND_ROW_HEIGHT = 14,
+    LEGEND_ITEM_WIDTH = 78,
+    LEGEND_COLUMN_SPACING = 4
+}
+
 local function sortByValue(tbl, descending)
     if not tbl then
         return {}
@@ -283,7 +454,7 @@ local function NormalizeWeekdayKey(key)
     return nil
 end
 
-local function createBar(container, entry, index, maxValue, total, titleType, disableClicks)
+local function createBar(container, entry, index, maxValue, total, titleType, disableClicks, extraData)
     local barWidth
     local nameWidth
     local barX
@@ -366,6 +537,10 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
             if isClickable then
                 GameTooltip:AddLine("Click to show all kills for this class", 1, 1, 1, true)
             end
+        elseif titleType == "deathsClass" then
+            if isClickable then
+                GameTooltip:AddLine("Click to show all deaths from this class", 1, 1, 1, true)
+            end
         elseif titleType == "zone" then
             if isClickable then
                 GameTooltip:AddLine("Click to show all kills for this zone", 1, 1, 1, true)
@@ -388,7 +563,17 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
         elseif titleType == "weekday" then
             GameTooltip:AddLine("Kills on " .. displayName, 1, 1, 1, true)
         elseif titleType == "month" then
-            GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
+            if extraData then
+                local yearData = extraData[entry.key]
+                if yearData then
+                    local years = {}
+                    for year in pairs(yearData) do table.insert(years, year) end
+                    table.sort(years)
+                    for _, year in ipairs(years) do
+                        GameTooltip:AddLine(tostring(year) .. ": " .. yearData[year], 0.8, 0.8, 0.8)
+                    end
+                end
+            end
         elseif titleType == "year" then
             GameTooltip:AddLine("Kills in " .. displayName, 1, 1, 1, true)
         elseif titleType == raceColors then
@@ -415,6 +600,9 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
             C_Timer.After(0.05, function()
                 if titleType == "class" or titleType == "unknownLevelClass" then
                     PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
+                elseif titleType == "deathsClass" then
+                    PSC_SetKillListSearch("", nil, entry.key, nil, nil, nil, true)
+                    PSC_SetKillListMinDeaths(1)
                 elseif titleType == "zone" then
                     PSC_SetKillListSearch("", nil, nil, nil, nil, entry.key, true)
                 elseif titleType == "level" then
@@ -470,7 +658,7 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
             g = 0.0,
             b = 1.0
         }
-    elseif titleType == "class" or titleType == "unknownLevelClass" then
+    elseif titleType == "class" or titleType == "unknownLevelClass" or titleType == "deathsClass" then
         color = getClassColor(entry.key)
     elseif titleType == "hour" then
         -- Light red for hour charts
@@ -556,7 +744,7 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
     end
 end
 
-local function createBarChart(parent, title, data, colorTable, x, y, width, height, disableClicks)
+local function createBarChart(parent, title, data, colorTable, x, y, width, height, disableClicks, extraData)
     local container = createContainerWithTitle(parent, title, x, y, width, height)
 
     -- Pre-process data to handle numeric/string key duplication and normalization
@@ -656,6 +844,8 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     local titleType
     if title == "Kills by Class" then
         titleType = "class"
+    elseif title == "Deaths by Class" then
+        titleType = "deathsClass"
     elseif title == "Level ?? Kills by Class" then
         titleType = "unknownLevelClass"
     elseif title == "Kills by Zone" then
@@ -677,10 +867,590 @@ local function createBarChart(parent, title, data, colorTable, x, y, width, heig
     end
 
     for i, entry in ipairs(filteredData) do
-        createBar(container, entry, i, maxValue, total, titleType, disableClicks)
+        createBar(container, entry, i, maxValue, total, titleType, disableClicks, extraData)
     end
 
     return container
+end
+
+function PSC_GetWinPercentageColor(pct)
+    if pct == 100 then
+        return { r = 1.0, g = 0.82, b = 0.0 }
+    elseif pct >= 70 then
+        return { r = 0.0, g = 1.0, b = 0.0 }
+    elseif pct >= 51 then
+        return { r = 0.56, g = 1.0, b = 0.56 }
+    elseif pct >= 40 then
+        return { r = 1.0, g = 1.0, b = 0.0 }
+    elseif pct >= 30 then
+        return { r = 1.0, g = 0.5, b = 0.0 }
+    else
+        return { r = 1.0, g = 0.0, b = 0.0 }
+    end
+end
+
+local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
+    if not kdData then
+        local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, 45)
+        return container, 45
+    end
+
+    local entries = {}
+    for class, ratio in pairs(kdData) do
+        table.insert(entries, {key = class, value = ratio})
+    end
+    table.sort(entries, function(a, b) return a.value > b.value end)
+
+    if #entries == 0 then
+        local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, 45)
+        return container, 45
+    end
+
+    local height = 30 + (#entries * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
+    local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, height)
+
+    local maxValue = entries[1].value
+    local nameWidth = UI.STANDARD_NAME_WIDTH
+    local barX = 90
+    local maxBarWidth = width - 190
+
+    for i, entry in ipairs(entries) do
+        local barWidth = maxValue > 0 and ((entry.value / maxValue) * maxBarWidth) or 0.5
+        local barY = -(i * (UI.BAR.HEIGHT + UI.BAR.SPACING) + UI.TITLE_SPACING)
+        local displayName = properCase(entry.key)
+        local color = getClassColor(entry.key)
+        local raw = rawData[entry.key] or {kills = 0, deaths = 0}
+
+        local barButton = CreateFrame("Button", nil, container)
+        barButton:SetSize(width, UI.BAR.HEIGHT)
+        barButton:SetPoint("TOPLEFT", 0, barY)
+        PSC_CreateGoldHighlight(barButton, UI.BAR.HEIGHT)
+
+        barButton:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(displayName, color.r, color.g, color.b)
+            GameTooltip:AddLine("Kills: " .. raw.kills, 1, 1, 1)
+            GameTooltip:AddLine("Deaths: " .. raw.deaths, 1, 1, 1)
+            GameTooltip:AddLine(string.format("K/D: %.2f", entry.value), 1, 1, 0.5)
+            local totalEncounters = raw.kills + raw.deaths
+            if totalEncounters > 0 then
+                local winPct = (raw.kills / totalEncounters) * 100
+                local wc = PSC_GetWinPercentageColor(winPct)
+                GameTooltip:AddLine(string.format("Win%%: %.1f%%", winPct), wc.r, wc.g, wc.b)
+            end
+            GameTooltip:Show()
+        end)
+        barButton:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+
+        local itemLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        itemLabel:SetPoint("TOPLEFT", 0, barY)
+        itemLabel:SetText(displayName)
+        itemLabel:SetWidth(nameWidth)
+        itemLabel:SetJustifyH("LEFT")
+
+        local bar = container:CreateTexture(nil, "ARTWORK")
+        bar:SetPoint("TOPLEFT", barX, barY)
+        bar:SetSize(barWidth, UI.BAR.HEIGHT)
+        bar:SetColorTexture(color.r, color.g, color.b, 0.9)
+
+        local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
+        valueLabel:SetText(string.format("%.2f", entry.value))
+    end
+
+    return container, height
+end
+
+local function PSC_ExtractNameAndLevelKey(nameWithLevel)
+    local colonIndex = string.find(nameWithLevel, ":", 1, true)
+    if colonIndex then
+        return string.sub(nameWithLevel, 1, colonIndex - 1), string.sub(nameWithLevel, colonIndex + 1)
+    end
+
+    return nameWithLevel, nil
+end
+
+local function PSC_GetMonthBucketFromTimestamp(timestamp)
+    if not timestamp then
+        return nil, nil
+    end
+
+    local dateInfo = date("*t", timestamp)
+    if not dateInfo or not dateInfo.year or not dateInfo.month then
+        return nil, nil
+    end
+
+    return (dateInfo.year * 100) + dateInfo.month, dateInfo
+end
+
+local function PSC_FormatMonthBucketLabel(bucket)
+    local year = math.floor(bucket / 100)
+    local month = bucket % 100
+    local monthShort = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+    local monthName = monthShort[month] or tostring(month)
+    return string.format("%s %02d", monthName, year % 100)
+end
+
+function PSC_CalculateMonthlyClassPercentageStatistics(charactersToProcess)
+    local monthlyTotals = {}
+    local monthlyClassKills = {}
+    local monthKeys = {}
+
+    for _, className in ipairs(ALL_CLASSES) do
+        monthlyClassKills[className] = {}
+    end
+
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return monthKeys, monthlyClassKills, monthlyTotals
+    end
+
+    for _, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for nameWithLevel, killData in pairs(characterData.Kills) do
+                if killData.killLocations and #killData.killLocations > 0 then
+                    local enemyName = PSC_ExtractNameAndLevelKey(nameWithLevel)
+                    local infoKey = PSC_NormalizePlayerName(enemyName)
+                    local info = PSC_DB.PlayerInfoCache[infoKey]
+                    local className = info and info.class or nil
+
+                    for _, location in ipairs(killData.killLocations) do
+                        local bucket = PSC_GetMonthBucketFromTimestamp(location.timestamp)
+                        if bucket then
+                            if monthlyTotals[bucket] == nil then
+                                monthlyTotals[bucket] = 0
+                                table.insert(monthKeys, bucket)
+                            end
+
+                            monthlyTotals[bucket] = monthlyTotals[bucket] + 1
+
+                            if className and monthlyClassKills[className] then
+                                monthlyClassKills[className][bucket] = (monthlyClassKills[className][bucket] or 0) + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    table.sort(monthKeys)
+
+    local monthlyClassPercentages = {}
+    for _, className in ipairs(ALL_CLASSES) do
+        monthlyClassPercentages[className] = {}
+        for _, bucket in ipairs(monthKeys) do
+            local total = monthlyTotals[bucket] or 0
+            local classKills = monthlyClassKills[className][bucket] or 0
+            if classKills > 0 and total > 0 then
+                monthlyClassPercentages[className][bucket] = (classKills / total) * 100
+            end
+        end
+    end
+
+    return monthKeys, monthlyClassPercentages, monthlyTotals
+end
+
+local function createLineTexture(parent, x1, y1, x2, y2, color)
+    local dx = x2 - x1
+    local dy = y2 - y1
+    local length = math.sqrt((dx * dx) + (dy * dy))
+    if length <= 0 then
+        return
+    end
+
+    local line = parent:CreateTexture(nil, "ARTWORK")
+    line:SetColorTexture(color.r, color.g, color.b, 0.95)
+    line:SetSize(length, LINE_CHART_UI.LINE_THICKNESS)
+    line:SetPoint("CENTER", parent, "TOPLEFT", x1 + (dx / 2), y1 + (dy / 2))
+
+    local angle
+    if math.atan2 then
+        angle = math.atan2(dy, dx)
+    elseif dx == 0 then
+        angle = (dy >= 0) and (math.pi / 2) or (-math.pi / 2)
+    else
+        angle = math.atan(dy / dx)
+        if dx < 0 then
+            angle = angle + math.pi
+        end
+    end
+
+    line:SetRotation(angle)
+    return line
+end
+
+local function createPointTexture(parent, x, y, color)
+    local point = parent:CreateTexture(nil, "OVERLAY")
+    point:SetColorTexture(color.r, color.g, color.b, 1)
+    point:SetSize(LINE_CHART_UI.POINT_SIZE, LINE_CHART_UI.POINT_SIZE)
+    point:SetPoint("CENTER", parent, "TOPLEFT", x, y)
+    return point
+end
+
+local function createMonthlyClassPercentageChart(parent, x, y, width, disableClicks, monthKeys, monthlyClassPercentages, monthlyTotals)
+    local TBC_RELEASE_BUCKET = 202602
+    local legendRows = math.ceil(#ALL_CLASSES / LINE_CHART_UI.LEGEND_COLUMNS)
+    local legendHeight = legendRows * LINE_CHART_UI.LEGEND_ROW_HEIGHT
+    local height = LINE_CHART_UI.HEIGHT + legendHeight
+    local container = createContainerWithTitle(parent, "Monthly Class Kill Share (%)", x, y, width, height)
+
+    local chartWidth = width - LINE_CHART_UI.LEFT_PADDING - LINE_CHART_UI.RIGHT_PADDING
+    local chartHeight = LINE_CHART_UI.HEIGHT - LINE_CHART_UI.TOP_PADDING - LINE_CHART_UI.BOTTOM_PADDING
+    local chartLeft = LINE_CHART_UI.LEFT_PADDING
+    local chartTop = -LINE_CHART_UI.TOP_PADDING
+    local chartBottom = chartTop - chartHeight
+    local showHideAllButton = nil
+
+    local monthCount = #monthKeys
+    local classVisuals = {}
+
+    local function ensureClassVisual(className)
+        if not classVisuals[className] then
+            classVisuals[className] = {
+                visible = true,
+                textures = {},
+                buttons = {},
+                legendSwatch = nil,
+                legendText = nil
+            }
+        end
+        return classVisuals[className]
+    end
+
+    local function registerClassTexture(className, texture)
+        if not texture then
+            return
+        end
+        local visuals = ensureClassVisual(className)
+        table.insert(visuals.textures, texture)
+    end
+
+    local function registerClassButton(className, button)
+        if not button then
+            return
+        end
+        local visuals = ensureClassVisual(className)
+        table.insert(visuals.buttons, button)
+    end
+
+    local function applyClassVisibility(className)
+        local visuals = ensureClassVisual(className)
+        local color = getClassColor(className)
+
+        for _, texture in ipairs(visuals.textures) do
+            if visuals.visible then
+                texture:Show()
+            else
+                texture:Hide()
+            end
+        end
+
+        for _, button in ipairs(visuals.buttons) do
+            if visuals.visible then
+                button:Show()
+            else
+                button:Hide()
+            end
+        end
+
+        if visuals.legendSwatch then
+            visuals.legendSwatch:SetAlpha(visuals.visible and 1 or 0.25)
+        end
+
+        if visuals.legendText then
+            if visuals.visible then
+                visuals.legendText:SetTextColor(color.r, color.g, color.b)
+            else
+                visuals.legendText:SetTextColor(0.55, 0.55, 0.55)
+            end
+        end
+    end
+
+    local function areAllClassesVisible()
+        for _, className in ipairs(ALL_CLASSES) do
+            if not ensureClassVisual(className).visible then
+                return false
+            end
+        end
+        return true
+    end
+
+    local function updateShowHideAllButtonText()
+        if showHideAllButton then
+            if areAllClassesVisible() then
+                showHideAllButton:SetText("Hide all")
+            else
+                showHideAllButton:SetText("Show all")
+            end
+        end
+    end
+
+    local function setAllClassVisibility(visible)
+        for _, className in ipairs(ALL_CLASSES) do
+            local visuals = ensureClassVisual(className)
+            visuals.visible = visible
+            applyClassVisibility(className)
+        end
+        updateShowHideAllButtonText()
+    end
+
+    if monthCount == 0 then
+        local emptyText = container:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+        emptyText:SetPoint("TOPLEFT", 0, -40)
+        emptyText:SetText("No timestamped kill data available for monthly class percentages.")
+        return container, height
+    end
+
+    local maxPercent = 0
+    for _, className in ipairs(ALL_CLASSES) do
+        local classSeries = monthlyClassPercentages[className] or {}
+        for _, monthBucket in ipairs(monthKeys) do
+            local value = classSeries[monthBucket]
+            if value and value > maxPercent then
+                maxPercent = value
+            end
+        end
+    end
+
+    maxPercent = math.min(100, math.max(10, math.ceil(maxPercent / 10) * 10))
+
+    local axisColor = {r = 0.6, g = 0.6, b = 0.6}
+    local xAxis = container:CreateTexture(nil, "ARTWORK")
+    xAxis:SetColorTexture(axisColor.r, axisColor.g, axisColor.b, 0.8)
+    xAxis:SetPoint("TOPLEFT", chartLeft, chartBottom)
+    xAxis:SetSize(chartWidth, 1)
+
+    local yAxis = container:CreateTexture(nil, "ARTWORK")
+    yAxis:SetColorTexture(axisColor.r, axisColor.g, axisColor.b, 0.8)
+    yAxis:SetPoint("TOPLEFT", chartLeft, chartTop)
+    yAxis:SetSize(1, chartHeight)
+
+    for i = 0, LINE_CHART_UI.GRID_LINES do
+        local ratio = i / LINE_CHART_UI.GRID_LINES
+        local percent = maxPercent * ratio
+        local yPos = chartBottom + (chartHeight * ratio)
+
+        local gridLine = container:CreateTexture(nil, "BACKGROUND")
+        gridLine:SetColorTexture(0.35, 0.35, 0.35, 0.35)
+        gridLine:SetPoint("TOPLEFT", chartLeft, yPos)
+        gridLine:SetSize(chartWidth, 1)
+
+        local yLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        yLabel:SetPoint("RIGHT", container, "TOPLEFT", chartLeft - 8, yPos)
+        yLabel:SetText(string.format("%.0f%%", percent))
+    end
+
+    local xStep = (monthCount > 1) and (chartWidth / (monthCount - 1)) or 0
+    local labelStep = 1
+    if monthCount > 8 then
+        labelStep = math.ceil(monthCount / 8)
+    end
+
+    local function getPointPosition(monthIndex, percent)
+        local xPos = chartLeft + ((monthIndex - 1) * xStep)
+        local yPos = chartBottom + ((percent / maxPercent) * chartHeight)
+        return xPos, yPos
+    end
+
+    for i, monthBucket in ipairs(monthKeys) do
+        local xPos = chartLeft + ((i - 1) * xStep)
+
+        if i == 1 or i == monthCount or (i - 1) % labelStep == 0 then
+            local xLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            xLabel:SetPoint("TOP", container, "TOPLEFT", xPos, chartBottom - 6)
+            xLabel:SetText(PSC_FormatMonthBucketLabel(monthBucket))
+        end
+    end
+
+    if TBC_RELEASE_BUCKET >= monthKeys[1] and TBC_RELEASE_BUCKET <= monthKeys[monthCount] then
+        local releaseX = nil
+        for idx, bucket in ipairs(monthKeys) do
+            if bucket == TBC_RELEASE_BUCKET then
+                releaseX = chartLeft + ((idx - 1) * xStep)
+                break
+            elseif bucket > TBC_RELEASE_BUCKET then
+                if idx > 1 then
+                    releaseX = chartLeft + (((idx - 2) + 0.5) * xStep)
+                else
+                    releaseX = chartLeft
+                end
+                break
+            end
+        end
+
+        if not releaseX then
+            releaseX = chartLeft + ((monthCount - 1) * xStep)
+        end
+
+        local releaseLine = container:CreateTexture(nil, "OVERLAY")
+        releaseLine:SetColorTexture(1.0, 0.82, 0.0, 0.95)
+        releaseLine:SetPoint("TOPLEFT", releaseX, chartTop)
+        releaseLine:SetSize(1, chartHeight)
+
+        local releaseLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        releaseLabel:SetPoint("BOTTOM", container, "TOPLEFT", releaseX, chartTop + 2)
+        releaseLabel:SetText("TBC")
+        releaseLabel:SetTextColor(1.0, 0.82, 0.0)
+
+        local releaseButton = CreateFrame("Button", nil, container)
+        releaseButton:SetPoint("TOPLEFT", releaseX - 3, chartTop)
+        releaseButton:SetSize(7, chartHeight)
+        releaseButton:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Burning Crusade Release", 1.0, 0.82, 0.0)
+            GameTooltip:AddLine("February 6, 2026", 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        releaseButton:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+    end
+
+    for _, className in ipairs(ALL_CLASSES) do
+        local series = monthlyClassPercentages[className] or {}
+        local color = getClassColor(className)
+        local previousX = nil
+        local previousY = nil
+
+        for i, monthBucket in ipairs(monthKeys) do
+            local value = series[monthBucket]
+            if value and value > 0 then
+                local pointX, pointY = getPointPosition(i, value)
+                local point = createPointTexture(container, pointX, pointY, color)
+                registerClassTexture(className, point)
+
+                if previousX and previousY then
+                    local line = createLineTexture(container, previousX, previousY, pointX, pointY, color)
+                    registerClassTexture(className, line)
+                end
+
+                if not disableClicks then
+                    local pointButton = CreateFrame("Button", nil, container)
+                    pointButton:SetSize(10, 10)
+                    pointButton:SetPoint("CENTER", container, "TOPLEFT", pointX, pointY)
+                    pointButton:SetScript("OnEnter", function(self)
+                        local totalMonthKills = monthlyTotals[monthBucket] or 0
+                        local classMonthKills = math.floor((value / 100) * totalMonthKills + 0.5)
+                        local previousMonthBucket = monthKeys[i - 1]
+                        local previousValue = previousMonthBucket and (series[previousMonthBucket] or 0) or nil
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(className, color.r, color.g, color.b)
+                        GameTooltip:AddLine(PSC_FormatMonthBucketLabel(monthBucket), 1, 1, 1)
+                        GameTooltip:AddLine(string.format("Share: %.1f%%", value), 1, 1, 1)
+                        GameTooltip:AddLine("Kills: " .. classMonthKills .. " / " .. totalMonthKills, 1, 1, 1)
+
+                        if previousValue ~= nil then
+                            local delta = value - previousValue
+                            local deltaAbs = math.abs(delta)
+                            local deltaText = string.format("%.1f", deltaAbs):gsub("%.0$", "")
+                            if delta > 0 then
+                                GameTooltip:AddLine(string.format("Delta vs %s: %s%% increase", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 0.3, 1, 0.3, true)
+                            elseif delta < 0 then
+                                GameTooltip:AddLine(string.format("Delta vs %s: %s%% decrease", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 1, 0.3, 0.3, true)
+                            else
+                                GameTooltip:AddLine(string.format("Delta vs %s: no change", PSC_FormatMonthBucketLabel(previousMonthBucket)), 0.85, 0.85, 0.85, true)
+                            end
+                        else
+                            GameTooltip:AddLine("Delta vs previous month: n/a", 0.85, 0.85, 0.85, true)
+                        end
+
+                        GameTooltip:Show()
+                    end)
+                    pointButton:SetScript("OnLeave", function()
+                        GameTooltip:Hide()
+                    end)
+                    registerClassButton(className, pointButton)
+                end
+
+                previousX = pointX
+                previousY = pointY
+            end
+        end
+    end
+
+    local legendStartY = -(LINE_CHART_UI.HEIGHT - 8)
+    local legendLeft = 6
+    local legendItemWidth = LINE_CHART_UI.LEGEND_ITEM_WIDTH
+    local legendColumnSpacing = LINE_CHART_UI.LEGEND_COLUMN_SPACING
+
+    for classIndex, className in ipairs(ALL_CLASSES) do
+        local zeroBased = classIndex - 1
+        local legendColumn = zeroBased % LINE_CHART_UI.LEGEND_COLUMNS
+        local legendRow = math.floor(zeroBased / LINE_CHART_UI.LEGEND_COLUMNS)
+        local itemX = legendLeft + (legendColumn * (legendItemWidth + legendColumnSpacing))
+        local itemY = legendStartY - (legendRow * LINE_CHART_UI.LEGEND_ROW_HEIGHT)
+        local color = getClassColor(className)
+
+        local swatch = container:CreateTexture(nil, "ARTWORK")
+        swatch:SetColorTexture(color.r, color.g, color.b, 1)
+        swatch:SetSize(10, 10)
+        swatch:SetPoint("TOPLEFT", itemX, itemY)
+
+        local text = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        text:SetPoint("LEFT", swatch, "RIGHT", 4, 0)
+        text:SetText(className)
+
+        local legendButton = CreateFrame("Button", nil, container)
+        legendButton:SetPoint("TOPLEFT", swatch, "TOPLEFT", -2, 1)
+        legendButton:SetPoint("BOTTOMRIGHT", text, "BOTTOMRIGHT", 2, -1)
+        PSC_CreateGoldHighlight(legendButton, 12)
+
+        legendButton:SetScript("OnClick", function()
+            local visuals = ensureClassVisual(className)
+            visuals.visible = not visuals.visible
+            applyClassVisibility(className)
+            updateShowHideAllButtonText()
+        end)
+
+        legendButton:SetScript("OnEnter", function(self)
+            local visuals = ensureClassVisual(className)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(className, color.r, color.g, color.b)
+            if visuals.visible then
+                GameTooltip:AddLine("Click to hide this class graph", 1, 1, 1, true)
+            else
+                GameTooltip:AddLine("Click to show this class graph", 1, 1, 1, true)
+            end
+            GameTooltip:Show()
+        end)
+
+        legendButton:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+
+        local visuals = ensureClassVisual(className)
+        visuals.legendSwatch = swatch
+        visuals.legendText = text
+        applyClassVisibility(className)
+    end
+
+    showHideAllButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    showHideAllButton:SetSize(78, 14)
+    showHideAllButton:SetPoint(
+        "TOPLEFT",
+        legendLeft + (LINE_CHART_UI.LEGEND_COLUMNS * (legendItemWidth + legendColumnSpacing)) + 2,
+        legendStartY
+    )
+    showHideAllButton:SetScript("OnClick", function()
+        setAllClassVisibility(not areAllClassesVisible())
+    end)
+    showHideAllButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        if areAllClassesVisible() then
+            GameTooltip:AddLine("Hide all class graphs", 1, 1, 1, true)
+        else
+            GameTooltip:AddLine("Show all class graphs", 1, 1, 1, true)
+        end
+        GameTooltip:Show()
+    end)
+    showHideAllButton:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    updateShowHideAllButtonText()
+
+    return container, height
 end
 
 local function createGuildTableRow(content, entry, index, firstRowSpacing)
@@ -752,17 +1522,16 @@ local function createScrollFrame(container, width, height)
     return scrollFrame
 end
 
-function PSC_CalculateGuildKills()
+function PSC_CalculateGuildKills(charactersToProcess)
     local guildKills = {}
+    local scope = charactersToProcess or PSC_GetCharactersToProcessForStatistics()
 
-    for _, characterData in pairs(PSC_DB.PlayerKillCounts.Characters) do
+    for _, characterData in pairs(scope) do
         if characterData.Kills then
             for nameWithLevel, killData in pairs(characterData.Kills) do
                 local playerNameWithoutLevel = nameWithLevel:match("([^:]+)")
                 local kills = killData.kills or 0
-
                 local infoKey = PSC_NormalizePlayerName(playerNameWithoutLevel)
-
                 if PSC_DB.PlayerInfoCache[infoKey] then
                     local guild = PSC_DB.PlayerInfoCache[infoKey].guild
                     if guild ~= "" then
@@ -1055,7 +1824,7 @@ local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
     end
 end
 
-local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state, characterScope)
     local pairs = pairs
     local ipairs = ipairs
     local math_huge = math.huge
@@ -1064,7 +1833,7 @@ local function PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
     local nemesisName = "None"
     local nemesisScore = 0
     local nemesisAssists = 0
-    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters()
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters(characterScope)
 
     local assistsByPlayer = {}
     local deathsByPlayer = {}
@@ -1148,10 +1917,52 @@ local function PSC_SummaryStats_BuildResult(state)
     }
 end
 
-local function createGuildTable(parent, x, y, width, height)
+function PSC_CalculateDeathsByClass(characterScope)
+    local deathsByClass = {}
+
+    for _, class in ipairs(ALL_CLASSES) do
+        deathsByClass[class] = 0
+    end
+
+    local deathDataByPlayer = PSC_GetDeathDataFromAllCharacters(characterScope)
+
+    for killerName, deathData in pairs(deathDataByPlayer) do
+        local infoKey = PSC_NormalizePlayerName(killerName)
+        local info = PSC_DB.PlayerInfoCache[infoKey]
+        if info and info.class then
+            deathsByClass[info.class] = (deathsByClass[info.class] or 0) + (deathData.deaths or 0)
+        end
+    end
+
+    return deathsByClass
+end
+
+local function PSC_CalculateKDByClass(killsByClass, deathsByClass)
+    local kdData = {}
+    local rawData = {}
+
+    for _, class in ipairs(ALL_CLASSES) do
+        local kills = killsByClass[class] or 0
+        local deaths = deathsByClass[class] or 0
+        if kills > 0 or deaths > 0 then
+            local ratio
+            if deaths > 0 then
+                ratio = kills / deaths
+            else
+                ratio = kills
+            end
+            kdData[class] = ratio
+            rawData[class] = {kills = kills, deaths = deaths}
+        end
+    end
+
+    return kdData, rawData
+end
+
+local function createGuildTable(parent, x, y, width, height, precomputedGuildData)
     local container = createContainerWithTitle(parent, "Kills by Guild", x, y, width, height)
 
-    local guildKills = PSC_CalculateGuildKills()
+    local guildKills = precomputedGuildData or PSC_CalculateGuildKills()
     local sortedGuilds = sortByValue(guildKills, true)
 
     local totalContentWidth = 240
@@ -1170,7 +1981,7 @@ local function createGuildTable(parent, x, y, width, height)
     return container
 end
 
-local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak, isLocalPlayer)
+local function addSummaryStatLine(container, label, value, yPosition, tooltipText, isKillStreak, isLocalPlayer, valueColor)
     local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     labelText:SetPoint("TOPLEFT", 0, yPosition)
     labelText:SetText(label)
@@ -1179,9 +1990,10 @@ local function addSummaryStatLine(container, label, value, yPosition, tooltipTex
     valueText:SetPoint("TOPLEFT", 150, yPosition)
     valueText:SetText(tostring(value))
 
-    -- Make kill streak value text gold
     if isKillStreak then
-        valueText:SetTextColor(1.0, 0.82, 0.0) -- WoW gold color
+        valueText:SetTextColor(1.0, 0.82, 0.0)
+    elseif valueColor then
+        valueText:SetTextColor(valueColor.r, valueColor.g, valueColor.b)
     end
 
     if tooltipText then
@@ -1294,7 +2106,7 @@ function PSC_CalculateSummaryStatistics(charactersToProcess)
     end
 
     PSC_SummaryStats_FinalizeKillDerivedFields(state)
-    PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+    PSC_SummaryStats_FinalizeNemesisAndDeaths(state, charactersToProcess)
     return PSC_SummaryStats_BuildResult(state)
 end
 
@@ -1343,7 +2155,7 @@ function PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, maxKill
         while processed < sliceBudget do
             if characterIndex > #characterKeys then
                 PSC_SummaryStats_FinalizeKillDerivedFields(state)
-                PSC_SummaryStats_FinalizeNemesisAndDeaths(state)
+                PSC_SummaryStats_FinalizeNemesisAndDeaths(state, charactersToProcess)
                 finished = true
                 onComplete(PSC_SummaryStats_BuildResult(state))
                 return true
@@ -1448,6 +2260,17 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     local kdText = kdRatio .. " (" .. (stats.totalKills or 0) .. "/" .. (stats.totalDeaths or 0) .. ")"
     local kdTooltip = isLocalPlayer and "Overall kill/death ratio (total player kills divided by total PvP deaths)." or "Overall kill/death ratio."
     statY = addSummaryStatLine(container, "K/D ratio:", kdText, statY, kdTooltip, false, isLocalPlayer)
+
+    local totalKills = stats.totalKills or 0
+    local totalDeaths = stats.totalDeaths or 0
+    local totalEncounters = totalKills + totalDeaths
+    if totalEncounters > 0 then
+        local winPct = (totalKills / totalEncounters) * 100
+        local winText = string.format("%.1f%%", winPct)
+        local winColor = PSC_GetWinPercentageColor(winPct)
+        local winTooltip = isLocalPlayer and "Win percentage: kills divided by total encounters (kills + deaths)." or "Win percentage: kills divided by total encounters (kills + deaths)."
+        statY = addSummaryStatLine(container, "Win percentage:", winText, statY, winTooltip, false, isLocalPlayer, winColor)
+    end
 
     if (stats.unknownLevelKills and stats.unknownLevelKills > 0) or isLocalPlayer then
         local unknownTooltip = "Total number of times you have killed a level ?? player."
@@ -1642,13 +2465,8 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     -- 8. Footer Note
     if not isLocalPlayer then
         local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -48)
+        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -68)
         noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
-        noteText:SetTextColor(0.7, 0.7, 0.7)
-    elseif PSC_DB.ShowAccountWideStats then
-        local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        noteText:SetPoint("BOTTOM", container, "BOTTOM", 0, -48)
-        noteText:SetText("Viewing account-wide stats")
         noteText:SetTextColor(0.7, 0.7, 0.7)
     end
 end
@@ -1724,11 +2542,10 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     -- Ensure all classes, races, genders are present with at least 0
-    local allClasses = {"Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid"}
     local allRaces = {"Human", "Dwarf", "Night Elf", "Gnome", "Orc", "Undead", "Troll", "Tauren"}
     local allGenders = {"MALE", "FEMALE"}
 
-    for _, class in ipairs(allClasses) do
+    for _, class in ipairs(ALL_CLASSES) do
         classData[class] = 0
         unknownLevelClassData[class] = 0
     end
@@ -1934,6 +2751,37 @@ function PSC_CalculateMonthlyStatistics(charactersToProcess)
     return monthlyData
 end
 
+function PSC_CalculateMonthlyByYearStatistics(charactersToProcess)
+    local monthlyByYear = {}
+
+    if not PSC_DB.PlayerKillCounts.Characters then
+        return monthlyByYear
+    end
+
+    for _, characterData in pairs(charactersToProcess) do
+        if characterData.Kills then
+            for _, killData in pairs(characterData.Kills) do
+                if killData.kills and killData.kills > 0 and killData.killLocations then
+                    for _, location in ipairs(killData.killLocations) do
+                        if location.timestamp then
+                            local dateInfo = date("*t", location.timestamp)
+                            if dateInfo and dateInfo.month and dateInfo.year then
+                                local month = dateInfo.month
+                                if not monthlyByYear[month] then
+                                    monthlyByYear[month] = {}
+                                end
+                                monthlyByYear[month][dateInfo.year] = (monthlyByYear[month][dateInfo.year] or 0) + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return monthlyByYear
+end
+
 function PSC_CalculateYearlyStatistics(charactersToProcess)
     local yearlyData = {}
 
@@ -1995,7 +2843,7 @@ end
 
 function GetFrameTitleTextWithCharacterText(titleText)
     if PSC_DB.ShowAccountWideStats then
-        titleText = titleText .. " (All characters)"
+        titleText = titleText .. " |cFFFFFFFF(account-wide stats)|r"
     else
         titleText = titleText .. " (" .. PSC_GetCharacterKey() .. ")"
     end
@@ -2130,6 +2978,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     frame.TitleText:SetText(titleText)
 
     if frame.leftScrollContent then
+        clearReorderButtonScripts()
         frame.leftScrollContent:SetParent(nil)
         frame.leftScrollContent = nil
     end
@@ -2156,6 +3005,11 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     -- Get data based on whether we're viewing external or local player
     local classData, raceData, genderData, zoneData, levelData, hourlyData, weekdayData, monthlyData, yearlyData, stats
     local unknownLevelClassData, guildStatusData, guildData, npcKillsData
+    local deathsByClassData
+    local monthlyByYearData
+    local monthlyClassBuckets = {}
+    local monthlyClassPercentages = {}
+    local monthlyClassTotals = {}
 
     if isExternalPlayer then
         -- Use data from external player
@@ -2171,9 +3025,13 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         stats = externalPlayerData.summary or {}
         -- Set defaults for data not available from external players
         unknownLevelClassData = externalPlayerData.unknownLevelClassData or {}
+        deathsByClassData = externalPlayerData.deathsByClassData or {}
         guildStatusData = externalPlayerData.guildStatusData or {}
         guildData = {}
         npcKillsData = externalPlayerData.npcKillsData or {}
+        monthlyClassBuckets = externalPlayerData.monthlyClassBuckets or {}
+        monthlyClassPercentages = externalPlayerData.monthlyClassPercentages or {}
+        monthlyClassTotals = externalPlayerData.monthlyClassTotals or {}
     else
         -- Calculate local player data
         local currentCharacterKey = PSC_GetCharacterKey()
@@ -2192,109 +3050,196 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
         monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
         yearlyData = PSC_CalculateYearlyStatistics(charactersToProcess)
+        monthlyByYearData = PSC_CalculateMonthlyByYearStatistics(charactersToProcess)
         stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+        deathsByClassData = PSC_CalculateDeathsByClass()
+        monthlyClassBuckets, monthlyClassPercentages, monthlyClassTotals = PSC_CalculateMonthlyClassPercentageStatistics(charactersToProcess)
     end
 
     local leftScrollContent, leftScrollFrame = createScrollableLeftPanel(frame)
     frame.leftScrollContent = leftScrollContent
     frame.leftScrollFrame = leftScrollFrame
 
-    local classChartHeight = calculateChartHeight(classData)
-    local raceChartHeight = calculateChartHeight(raceData)
-    local genderChartHeight = calculateChartHeight(genderData)
-    local hourlyChartHeight = calculateChartHeight(hourlyData)
-    local weekdayChartHeight = calculateChartHeight(weekdayData)
-    local monthlyChartHeight = calculateChartHeight(monthlyData)
-    local yearlyChartHeight = calculateChartHeight(yearlyData)
-    local levelChartHeight = calculateChartHeight(levelData)
-    local zoneChartHeight = calculateChartHeight(zoneData)
     local fixedNPCs = {}
     if UnitFactionGroup("player") == "Horde" then
         fixedNPCs["Corporal Keeshan"] = true
         fixedNPCs["The Defias Traitor"] = true
         fixedNPCs["Defias Messenger"] = true
-        -- Ensure keys exist for display even if 0 (due to network compression skipping them)
         if npcKillsData then
             npcKillsData["Corporal Keeshan"] = npcKillsData["Corporal Keeshan"] or 0
             npcKillsData["The Defias Traitor"] = npcKillsData["The Defias Traitor"] or 0
             npcKillsData["Defias Messenger"] = npcKillsData["Defias Messenger"] or 0
         end
     end
+
+    local kdByClassData, kdRawData = PSC_CalculateKDByClass(classData, deathsByClassData)
+
+    local function getKDChartHeight()
+        local count = 0
+        for _ in pairs(kdByClassData) do count = count + 1 end
+        if count == 0 then return 45 end
+        return 30 + (count * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
+    end
+
+    local function getMonthlyClassChartHeight()
+        local legendRows = math.ceil(#ALL_CLASSES / LINE_CHART_UI.LEGEND_COLUMNS)
+        return LINE_CHART_UI.HEIGHT + (legendRows * LINE_CHART_UI.LEGEND_ROW_HEIGHT)
+    end
+
+    local guildStatusColors = {
+        ["In Guild"] = { r = 0.2, g = 0.8, b = 0.2 },
+        ["No Guild"] = { r = 0.8, g = 0.2, b = 0.2 },
+    }
+
     local npcChartHeight = calculateChartHeight(npcKillsData, fixedNPCs)
 
-    local yOffset = 0
-    createBarChart(leftScrollContent, "Kills by Class", classData, nil, 0, yOffset, UI.CHART.WIDTH, classChartHeight, isExternalPlayer)
-    yOffset = yOffset - classChartHeight - UI.CHART.PADDING
-
-    createBarChart(leftScrollContent, "Kills by Race", raceData, raceColors, 0, yOffset, UI.CHART.WIDTH, raceChartHeight, isExternalPlayer)
-    yOffset = yOffset - raceChartHeight - UI.CHART.PADDING
-
-    if npcChartHeight > 45 then
-        createBarChart(leftScrollContent, "NPC Kills", npcKillsData, nil, 0, yOffset, UI.CHART.WIDTH, npcChartHeight, isExternalPlayer)
-    end
-    yOffset = yOffset - npcChartHeight - UI.CHART.PADDING
-
-    createBarChart(leftScrollContent, "Kills by Gender", genderData, genderColors, 0, yOffset, UI.CHART.WIDTH,
-        genderChartHeight, isExternalPlayer)
-    yOffset = yOffset - genderChartHeight - UI.CHART.PADDING
-
-    local guildStatusChartHeight = calculateChartHeight(guildStatusData)
-    local guildStatusColors = {
-        ["In Guild"] = {
-            r = 0.2,
-            g = 0.8,
-            b = 0.2
+    local chartDefs = {
+        kills_by_class = {
+            height = calculateChartHeight(classData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Class", classData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
         },
-        ["No Guild"] = {
-            r = 0.8,
-            g = 0.2,
-            b = 0.2
-        }
+        deaths_by_class = {
+            height = calculateChartHeight(deathsByClassData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Deaths by Class", deathsByClassData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kd_by_class = {
+            height = getKDChartHeight(),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createKDByClassBarChart(parent, 0, y, UI.CHART.WIDTH, kdByClassData, kdRawData)
+            end,
+        },
+        monthly_class_percentage = {
+            height = getMonthlyClassChartHeight(),
+            localOnly = true,
+            render = function(parent, y, height)
+                return createMonthlyClassPercentageChart(
+                    parent, 0, y, UI.CHART.WIDTH, isExternalPlayer,
+                    monthlyClassBuckets, monthlyClassPercentages, monthlyClassTotals
+                )
+            end,
+        },
+        kills_by_race = {
+            height = calculateChartHeight(raceData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Race", raceData, raceColors, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        npc_kills = {
+            height = npcChartHeight,
+            localOnly = false,
+            render = function(parent, y, height)
+                if height <= 45 then return nil end
+                return createBarChart(parent, "NPC Kills", npcKillsData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kills_by_gender = {
+            height = calculateChartHeight(genderData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Gender", genderData, genderColors, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kills_by_guild_status = {
+            height = calculateChartHeight(guildStatusData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Guild Status", guildStatusData, guildStatusColors, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kills_by_hour = {
+            height = calculateChartHeight(hourlyData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Hour of Day", hourlyData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kills_by_weekday = {
+            height = calculateChartHeight(weekdayData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Weekday", weekdayData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kills_by_month = {
+            height = calculateChartHeight(monthlyData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Month", monthlyData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer, monthlyByYearData)
+            end,
+        },
+        kills_by_year = {
+            height = calculateChartHeight(yearlyData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Year", yearlyData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kills_by_level = {
+            height = calculateChartHeight(levelData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Level", levelData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kills_by_zone = {
+            height = calculateChartHeight(zoneData),
+            localOnly = false,
+            render = function(parent, y, height)
+                return createBarChart(parent, "Kills by Zone", zoneData, nil, 0, y, UI.CHART.WIDTH, height, isExternalPlayer)
+            end,
+        },
+        kills_by_guild = {
+            height = UI.GUILD_LIST.HEIGHT,
+            localOnly = true,
+            render = function(parent, y, height)
+                return createGuildTable(parent, 0, y, UI.CHART.WIDTH, height, guildData)
+            end,
+        },
     }
-    createBarChart(leftScrollContent, "Kills by Guild Status", guildStatusData, guildStatusColors, 0, yOffset,
-        UI.CHART.WIDTH, guildStatusChartHeight, isExternalPlayer)
 
-    yOffset = yOffset - guildStatusChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Hour of Day", hourlyData, nil, 0, yOffset, UI.CHART.WIDTH, hourlyChartHeight, isExternalPlayer)
+    local chartOrder = getChartOrder()
+    local yOffset = 0
+    local renderedCharts = {}
 
-    yOffset = yOffset - hourlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Weekday", weekdayData, nil, 0, yOffset, UI.CHART.WIDTH, weekdayChartHeight, isExternalPlayer)
-
-    yOffset = yOffset - weekdayChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Month", monthlyData, nil, 0, yOffset, UI.CHART.WIDTH, monthlyChartHeight, isExternalPlayer)
-
-    yOffset = yOffset - monthlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Year", yearlyData, nil, 0, yOffset, UI.CHART.WIDTH, yearlyChartHeight, isExternalPlayer)
-
-    yOffset = yOffset - yearlyChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Level", levelData, nil, 0, yOffset, UI.CHART.WIDTH, levelChartHeight, isExternalPlayer)
-
-    yOffset = yOffset - levelChartHeight - UI.CHART.PADDING
-    createBarChart(leftScrollContent, "Kills by Zone", zoneData, nil, 0, yOffset, UI.CHART.WIDTH, zoneChartHeight, isExternalPlayer)
-
-    -- Add Guild Kills table in left panel after Kills by Zone (only for local player)
-    if not isExternalPlayer then
-        yOffset = yOffset - zoneChartHeight - UI.CHART.PADDING
-        frame.guildTable = createGuildTable(leftScrollContent, 0, yOffset, UI.CHART.WIDTH, UI.GUILD_LIST.HEIGHT)
-        local totalHeight = -(yOffset) + UI.GUILD_LIST.HEIGHT + 25
-        leftScrollContent:SetHeight(totalHeight)
-    else
-        -- For external players, no guild table
-        local totalHeight = -(yOffset - zoneChartHeight) + 25
-        leftScrollContent:SetHeight(totalHeight)
-
-        -- Extra charts for external players (unknown level / class) if data exists
-        if calculateChartHeight(unknownLevelClassData) > 50 then
-            -- We don't display this specifically in separate charts usually,
-            -- but the 'Kills by Class' chart usually covers it if 'Unknown' is a valid key.
-            -- However, 'Level ??' kills often come from 'unknownLevelClassData' processing in standard flow.
-            -- The standard 'Kills by Class' chart function uses 'classData'.
-            -- 'unknownLevelClassData' is separate, often tracking kills where level/class was missing
-            -- but standard logic merges them into main counts usually.
-
-            -- If the user wants to see "Level ?? kills" specifically,
-            -- usually that's just part of "Kills by Level" where key is "-1".
+    frame.chartContainers = {}
+    for _, chartId in ipairs(chartOrder) do
+        local def = chartDefs[chartId]
+        if def and (not def.localOnly or not isExternalPlayer) then
+            local container = def.render(leftScrollContent, yOffset, def.height)
+            if container then
+                frame.chartContainers[chartId] = { container = container, height = def.height }
+                table.insert(renderedCharts, { id = chartId, container = container })
+                yOffset = yOffset - def.height - UI.CHART.PADDING
+            end
         end
+    end
+
+    if not isExternalPlayer then
+        for _, rendered in ipairs(renderedCharts) do
+            addChartReorderButtonsOnce(rendered.container)
+        end
+        updateChartReorderButtons(renderedCharts)
+
+        local resetBtn = CreateFrame("Button", nil, leftScrollContent, "UIPanelButtonTemplate")
+        resetBtn:SetSize(UI.CHART.WIDTH, 22)
+        resetBtn:SetPoint("TOPLEFT", 0, yOffset - 10)
+        resetBtn:SetText("Reset Chart Order")
+        resetBtn:SetScript("OnClick", function()
+            saveChartOrder(copyArray(DEFAULT_CHART_ORDER))
+            reorderChartContainers(statisticsFrame)
+        end)
+        frame.resetOrderBtn = resetBtn
+        leftScrollContent:SetHeight(-(yOffset) + 57)
+    else
+        leftScrollContent:SetHeight(-(yOffset) + 25)
     end
 
     local summaryStatsWidth = 380
@@ -2308,23 +3253,21 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     end
 
     if not isExternalPlayer then
-        -- Separator line above buttons
         local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
         buttonSeparatorLine:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 430, 105)
         buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 105)
         buttonSeparatorLine:SetHeight(1)
         buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
-        -- Button container at bottom right in 3 rows with 2 columns
         local buttonContainer = CreateFrame("Frame", nil, frame)
         local buttonWidth = 140
         local buttonHeight = 25
         local buttonSpacing = 5
-        buttonContainer:SetSize((buttonWidth * 2) + buttonSpacing, (buttonHeight * 3) + (buttonSpacing * 2))
+        local fullWidth = (buttonWidth * 2) + buttonSpacing
+        buttonContainer:SetSize(fullWidth, (buttonHeight * 3) + (buttonSpacing * 2))
         buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 13)
         frame.buttonContainer = buttonContainer
 
-        -- Top left button: Settings
         local settingsButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
         settingsButton:SetSize(buttonWidth, buttonHeight)
         settingsButton:SetPoint("TOPLEFT", buttonContainer, "TOPLEFT", 0, 0)
@@ -2333,7 +3276,6 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
             PSC_CreateConfigUI()
         end)
 
-        -- Top right button: Achievements
         local achievementsButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
         achievementsButton:SetSize(buttonWidth, buttonHeight)
         achievementsButton:SetPoint("TOPRIGHT", buttonContainer, "TOPRIGHT", 0, 0)
@@ -2342,7 +3284,6 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
             PSC_ToggleAchievementFrame()
         end)
 
-        -- Middle left button: Kill History
         local killHistoryButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
         killHistoryButton:SetSize(buttonWidth, buttonHeight)
         killHistoryButton:SetPoint("TOPLEFT", settingsButton, "BOTTOMLEFT", 0, -buttonSpacing)
@@ -2351,7 +3292,6 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
             PSC_CreateKillsListFrame()
         end)
 
-        -- Middle right button: Kill Streak
         local killstreakButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
         killstreakButton:SetSize(buttonWidth, buttonHeight)
         killstreakButton:SetPoint("TOPRIGHT", achievementsButton, "BOTTOMRIGHT", 0, -buttonSpacing)
@@ -2360,9 +3300,8 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
             PSC_CreateKillStreakPopup()
         end)
 
-        -- Bottom button: Leaderboard (Full width)
         local leaderboardButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-        leaderboardButton:SetSize((buttonWidth * 2) + buttonSpacing, buttonHeight)
+        leaderboardButton:SetSize(fullWidth, buttonHeight)
         leaderboardButton:SetPoint("TOPLEFT", killHistoryButton, "BOTTOMLEFT", 0, -buttonSpacing)
         leaderboardButton:SetText("Show Leaderboard")
         leaderboardButton:SetScript("OnClick", function()
