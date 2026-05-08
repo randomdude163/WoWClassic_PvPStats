@@ -188,6 +188,19 @@ function PSC_RegisterPlayerDeath(killerInfo)
         killerLevel = PSC_DB.PlayerInfoCache[killerInfoKey].level
     end
 
+    local cachedInfo = PSC_DB.PlayerInfoCache[killerInfoKey]
+    if not cachedInfo or not cachedInfo.class then
+        local damageRecord = PSC_RecentDamageFromPlayers[killerName]
+        if damageRecord and damageRecord.class and damageRecord.class ~= "Unknown" then
+            local classToken = damageRecord.class
+            local killerClass = classToken:sub(1, 1):upper() .. classToken:sub(2):lower()
+            if not PSC_DB.PlayerInfoCache[killerInfoKey] then
+                PSC_DB.PlayerInfoCache[killerInfoKey] = {}
+            end
+            PSC_DB.PlayerInfoCache[killerInfoKey].class = killerClass
+        end
+    end
+
     if not lossData.Deaths[killerInfoKey] then
         lossData.Deaths[killerInfoKey] = {
             deaths = 0,
