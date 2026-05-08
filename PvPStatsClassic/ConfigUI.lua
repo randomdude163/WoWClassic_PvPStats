@@ -378,7 +378,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local forceEnableBGModeCheckbox, _ = CreateCheckbox(parent, "Force enable",
+    local forceEnableBGModeCheckbox, _ = CreateCheckbox(parent, "Always enabled",
         PSC_DB.ForceBattlegroundMode, function(checked)
             PSC_DB.ForceBattlegroundMode = checked
             PSC_CheckBattlegroundStatus()
