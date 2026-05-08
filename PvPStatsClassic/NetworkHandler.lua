@@ -922,7 +922,8 @@ function Network:UpdateLeaderboardCache(statsData)
         genderData = statsData.genderData or {},
         levelData = statsData.levelData or {},
         zoneData = statsData.zoneData or {},
-        npcKillsData = statsData.npcKillsData or {}
+        npcKillsData = statsData.npcKillsData or {},
+        deathsByClassData = statsData.deathsByClassData or {}
     }
 
     PSC_DB.LeaderboardCache[statsData.playerName] = entry
