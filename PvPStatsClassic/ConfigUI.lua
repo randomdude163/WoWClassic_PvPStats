@@ -388,7 +388,7 @@ local function CreateAnnouncementSection(parent, yOffset)
 
     forceEnableBGModeCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Force enable Battleground Mode")
+        GameTooltip:AddLine("Enable Battleground Mode everywhere")
         GameTooltip:AddLine("Enable BG mode until you turn it off again.", 1, 1, 1, false)
         GameTooltip:Show()
     end)
