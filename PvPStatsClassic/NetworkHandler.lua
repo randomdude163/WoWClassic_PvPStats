@@ -311,6 +311,14 @@ local function DeserializeDetailedStats(payload)
         unknownLevelClassData = {},
         deathsByClassData = {}
     }
+    
+    -- Initialize class charts with 0 to prevent missing chart data
+    for class, _ in pairs(CLASS_KEY_MAP) do
+        data.classData[class] = 0
+        data.unknownLevelClassData[class] = 0
+        data.deathsByClassData[class] = 0
+    end
+    
     for field in string.gmatch(payload, "([^;]+)") do
         local keyStr, values = string.match(field, "([^:]+):(.*)")
         if keyStr and values then
@@ -398,7 +406,7 @@ local function GetProfileValueOrUnknown(info, field)
     return "Unknown"
 end
 
-local function ApplyPlayerProfile(summaryTable, nameField, raceField, genderField, classField, charactersToProcess)
+function Network:ApplyPlayerProfile(summaryTable, nameField, raceField, genderField, classField, charactersToProcess)
     local playerName = summaryTable and summaryTable[nameField]
     if not playerName or playerName == "" or playerName == "None" then
         return
@@ -435,10 +443,6 @@ local function ApplyPlayerProfile(summaryTable, nameField, raceField, genderFiel
                 break
             end
         end
-    end
-
-    if not HasKnownProfile(playerInfo) then
-        return
     end
 
     summaryTable[raceField] = GetProfileValueOrUnknown(playerInfo, "race")
@@ -525,8 +529,8 @@ end
 
 local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enableDebugLog)
     local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
-    ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
-    ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
+    self:ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
+    self:ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
 
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, _, npcKillsData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
@@ -903,6 +907,14 @@ function Network:UpdateLeaderboardCache(statsData)
         highestKillStreak = statsData.highestKillStreak,
         mostKilledPlayer = statsData.mostKilledPlayer,
         mostKilledCount = statsData.mostKilledCount,
+        mostKilledRace = statsData.mostKilledRace,
+        mostKilledGender = statsData.mostKilledGender,
+        mostKilledClass = statsData.mostKilledClass,
+        nemesisName = statsData.nemesisName,
+        nemesisScore = statsData.nemesisScore,
+        nemesisRace = statsData.nemesisRace,
+        nemesisGender = statsData.nemesisGender,
+        nemesisClass = statsData.nemesisClass,
         avgKillsPerDay = statsData.avgKillsPerDay,
 
         achievementsUnlocked = statsData.achievementsUnlocked,
@@ -1043,6 +1055,9 @@ function Network:GetDetailedStatsForPlayer(playerName)
     end
     if self.ownAltData and self.ownAltData[playerName] then
         return self.ownAltData[playerName]
+    end
+    if PSC_DB and PSC_DB.LeaderboardCache and PSC_DB.LeaderboardCache[playerName] then
+        return PSC_DB.LeaderboardCache[playerName]
     end
     return nil
 end

@@ -84,7 +84,7 @@ function PSC_StartIncrementalAchievementsCalculation()
     local charactersToProcess = {}
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, deathsByClassData
     local hourlyData, weekdayData, monthlyData, yearlyData
     local summaryStats = nil
     local achievementStats = nil
@@ -130,8 +130,21 @@ function PSC_StartIncrementalAchievementsCalculation()
         end,
         TaskQueueDelayFrame(1),
         function()
+            deathsByClassData = PSC_CalculateDeathsByClass(charactersToProcess)
+        end,
+        TaskQueueDelayFrame(1),
+        function()
             local task = PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, killLocationsPerSlice, function(result)
                 summaryStats = result
+                
+                -- Apply player profiles to summary stats (Most Killed & Nemesis)
+                if PVPSC.Network and PVPSC.Network.ApplyPlayerProfile then
+                    PVPSC.Network:ApplyPlayerProfile(summaryStats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
+                    PVPSC.Network:ApplyPlayerProfile(summaryStats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
+                elseif ApplyPlayerProfile then
+                    ApplyPlayerProfile(summaryStats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
+                    ApplyPlayerProfile(summaryStats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
+                end
             end)
             job._summaryTask = task
             return true
@@ -187,6 +200,7 @@ function PSC_StartIncrementalAchievementsCalculation()
                     monthlyData = monthlyData,
                     yearlyData = yearlyData,
                     unknownLevelClassData = unknownLevelClassData,
+                    deathsByClassData = deathsByClassData,
                     guildStatusData = guildStatusData,
                     npcKillsData = npcKillsData
                 }
