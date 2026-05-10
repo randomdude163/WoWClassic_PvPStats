@@ -1056,9 +1056,6 @@ function Network:GetDetailedStatsForPlayer(playerName)
     if self.ownAltData and self.ownAltData[playerName] then
         return self.ownAltData[playerName]
     end
-    if PSC_DB and PSC_DB.LeaderboardCache and PSC_DB.LeaderboardCache[playerName] then
-        return PSC_DB.LeaderboardCache[playerName]
-    end
     return nil
 end
 
