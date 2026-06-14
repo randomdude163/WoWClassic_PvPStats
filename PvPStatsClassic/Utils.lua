@@ -136,7 +136,7 @@ function PSC_StartIncrementalAchievementsCalculation()
         function()
             local task = PSC_CreateIncrementalSummaryStatisticsTask(charactersToProcess, killLocationsPerSlice, function(result)
                 summaryStats = result
-                
+
                 -- Apply player profiles to summary stats (Most Killed & Nemesis)
                 if PVPSC.Network and PVPSC.Network.ApplyPlayerProfile then
                     PVPSC.Network:ApplyPlayerProfile(summaryStats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
@@ -438,7 +438,7 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.5"
+    return "4.5.1"
 end
 
 -- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)

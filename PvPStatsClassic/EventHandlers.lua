@@ -693,7 +693,7 @@ local function HandlePlayerEnteringWorld()
     local currentVersion = PSC_GetAddonVersion()
     if PSC_DB.WhatsNewPopupVersion ~= currentVersion then
         local title = "PvP Stats v" .. currentVersion .. " - What's new:"
-        local message = "-Added new charts to the Statistics Window and charts can now be reordered.\n\n-Added win percentage to Statistics and Player Detail Windows.\n\n-New achievements for level ranges kills (1-9, 10-19, etc.) and Deadwind Pass.\n\nEnjoy!"
+        local message = "-Fixed bug where the K/D of other players was incorrect when you view their detailed stats in the leaderboard\n\nEnjoy!"
         local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
         PSC_ShowWhatsNewPopup(title, message, function()
             PSC_DB.WhatsNewPopupShown = true

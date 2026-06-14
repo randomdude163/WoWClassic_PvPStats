@@ -1,3 +1,6 @@
+v4.5.1:
+- Fixed bug where the K/D of other players was incorrect when you view their detailed stats in the leaderboard.
+
 v4.5:
 - Added new charts to the Statistics Window and charts can now be reordered.
 - Added zone achievements (100/250/500/1000 kills)
