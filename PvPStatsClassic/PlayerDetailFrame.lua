@@ -1,13 +1,15 @@
 PSC_PlayerDetailFrame = nil
 local DETAIL_FRAME_WIDTH = 500
 local DETAIL_FRAME_HEIGHT = 600
+local MAX_VISIBLE_ROWS = 5
+local ROW_HEIGHT = 20
 
 -- Layout constants for column positioning
 PSC_COLUMN_POSITIONS = {
     LEVEL = 25,     -- Level column
     ZONE = 70,      -- Zone column
     KILLS = 225,    -- Kills/Assisters column
-    TIME = 325      -- Time column
+    TIME = 300      -- Time column
 }
 
 PSC_COLUMN_WIDTHS = {
@@ -150,6 +152,60 @@ local function CreateSection(parent, title, yOffset)
     line:SetColorTexture(1, 0.82, 0, 0.5)
 
     return yOffset - 25
+end
+
+-- Helper function to create a scrollable container for tables
+local function CreateScrollableTableContainer(parent, numEntries, yOffset)
+    local needsScrolling = numEntries > MAX_VISIBLE_ROWS
+    local containerHeight = needsScrolling and (MAX_VISIBLE_ROWS * ROW_HEIGHT) or (numEntries * ROW_HEIGHT)
+    
+    if needsScrolling then
+        -- Create a scrollable frame
+        local scrollFrame = CreateFrame("ScrollFrame", nil, parent)
+        scrollFrame:SetPoint("TOPLEFT", 0, yOffset)
+        scrollFrame:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -30, 0)
+        scrollFrame:SetHeight(containerHeight)
+        
+        -- Create the scroll child content frame
+        local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+        scrollChild:SetWidth(DETAIL_FRAME_WIDTH - 60)
+        scrollChild:SetHeight(numEntries * ROW_HEIGHT)
+        scrollFrame:SetScrollChild(scrollChild)
+        
+        -- Add scroll bar
+        local scrollBar = CreateFrame("Slider", nil, scrollFrame, "UIPanelScrollBarTemplate")
+        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", 0, -16)
+        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", 0, 16)
+        scrollBar:SetMinMaxValues(0, math.max(0, (numEntries * ROW_HEIGHT) - containerHeight))
+        scrollBar:SetValueStep(ROW_HEIGHT)
+        scrollBar:SetValue(0)
+        scrollBar:SetWidth(16)
+        scrollBar:Show()
+        
+        scrollBar:SetScript("OnValueChanged", function(self, value)
+            scrollFrame:SetVerticalScroll(value)
+        end)
+        
+        -- Enable mouse wheel scrolling
+        scrollFrame:EnableMouseWheel(true)
+        scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+            local current = scrollBar:GetValue()
+            local minVal, maxVal = scrollBar:GetMinMaxValues()
+            local newValue = current - (delta * ROW_HEIGHT)
+            newValue = math.max(minVal, math.min(maxVal, newValue))
+            scrollBar:SetValue(newValue)
+        end)
+        
+        return scrollChild, yOffset - containerHeight - 5
+    else
+        -- No scrolling needed, create a simple container frame
+        local container = CreateFrame("Frame", nil, parent)
+        container:SetPoint("TOPLEFT", 0, yOffset)
+        container:SetWidth(DETAIL_FRAME_WIDTH - 30)
+        container:SetHeight(containerHeight)
+        
+        return container, yOffset - containerHeight - 5
+    end
 end
 
 local function CreateDetailRow(parent, leftText, rightText, yOffset)
@@ -823,10 +879,16 @@ local function DisplayKillHistorySection(content, playerDetail, yOffset)
             return (a.timestamp or 0) > (b.timestamp or 0)
         end)
 
+        -- Create scrollable container if needed
+        local tableParent, newYOffset = CreateScrollableTableContainer(content, #playerDetail.killHistory, yOffset)
+        local entryYOffset = 0  -- Start from top of the container
+        
         -- Display each kill history entry
         for i, killData in ipairs(playerDetail.killHistory) do
-            yOffset = CreateKillHistoryEntry(content, killData, i, yOffset)
+            entryYOffset = CreateKillHistoryEntry(tableParent, killData, i, entryYOffset)
         end
+        
+        yOffset = newYOffset
     else
         local noDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         noDataText:SetPoint("TOPLEFT", 25, yOffset - 10)
@@ -881,9 +943,15 @@ local function DisplayDeathHistorySection(content, playerDetail, yOffset)
         -- Sort by timestamp descending (most recent first)
         local sortedDeathHistory = SortDeathHistoryByTimestamp(playerDetail.deathHistory)
 
+        -- Create scrollable container if needed
+        local tableParent, newYOffset = CreateScrollableTableContainer(content, #sortedDeathHistory, yOffset)
+        local entryYOffset = 0  -- Start from top of the container
+        
         for i, deathData in ipairs(sortedDeathHistory) do
-            yOffset = CreateDeathHistoryEntry(content, deathData, i, yOffset)
+            entryYOffset = CreateDeathHistoryEntry(tableParent, deathData, i, entryYOffset)
         end
+        
+        yOffset = newYOffset
     else
         local noDeathDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         noDeathDataText:SetPoint("TOPLEFT", 25, yOffset - 10)
@@ -1131,9 +1199,15 @@ local function DisplayAssistHistorySection(content, playerDetail, yOffset)
             return (a.timestamp or 0) > (b.timestamp or 0)
         end)
 
+        -- Create scrollable container if needed
+        local tableParent, newYOffset = CreateScrollableTableContainer(content, #assistHistory, yOffset)
+        local entryYOffset = 0  -- Start from top of the container
+        
         for i, assistData in ipairs(assistHistory) do
-            yOffset = CreateAssistHistoryEntry(content, assistData, i, yOffset)
+            entryYOffset = CreateAssistHistoryEntry(tableParent, assistData, i, entryYOffset)
         end
+        
+        yOffset = newYOffset
     else
         local noAssistDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         noAssistDataText:SetPoint("TOPLEFT", 25, yOffset - 10)
