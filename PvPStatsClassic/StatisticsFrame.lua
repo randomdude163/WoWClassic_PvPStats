@@ -891,7 +891,7 @@ end
 
 local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
     if not kdData then
-        local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, 45)
+        local container = createContainerWithTitle(parent, "Win Rate by Class", x, y, width, 45)
         return container, 45
     end
 
@@ -902,14 +902,14 @@ local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
     table.sort(entries, function(a, b) return a.value > b.value end)
 
     if #entries == 0 then
-        local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, 45)
+        local container = createContainerWithTitle(parent, "Win Rate by Class", x, y, width, 45)
         return container, 45
     end
 
     local height = 30 + (#entries * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
-    local container = createContainerWithTitle(parent, "K/D by Class", x, y, width, height)
+    local container = createContainerWithTitle(parent, "Win Rate by Class", x, y, width, height)
 
-    local maxValue = entries[1].value
+    local maxValue = 1.0
     local nameWidth = UI.STANDARD_NAME_WIDTH
     local barX = 90
     local maxBarWidth = width - 190
@@ -931,12 +931,10 @@ local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
             GameTooltip:SetText(displayName, color.r, color.g, color.b)
             GameTooltip:AddLine("Kills: " .. raw.kills, 1, 1, 1)
             GameTooltip:AddLine("Deaths: " .. raw.deaths, 1, 1, 1)
-            GameTooltip:AddLine(string.format("K/D: %.2f", entry.value), 1, 1, 0.5)
-            local totalEncounters = raw.kills + raw.deaths
-            if totalEncounters > 0 then
-                local winPct = (raw.kills / totalEncounters) * 100
-                local wc = PSC_GetWinPercentageColor(winPct)
-                GameTooltip:AddLine(string.format("Win%%: %.1f%%", winPct), wc.r, wc.g, wc.b)
+            if raw.deaths > 0 then
+                GameTooltip:AddLine(string.format("K/D: %.2f", raw.kills / raw.deaths), 1, 1, 0.5)
+            else
+                GameTooltip:AddLine("K/D: -", 1, 1, 0.5)
             end
             GameTooltip:Show()
         end)
@@ -957,7 +955,7 @@ local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
 
         local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
-        valueLabel:SetText(string.format("%.2f", entry.value))
+        valueLabel:SetText(string.format("%.2f%%", entry.value * 100))
     end
 
     return container, height
@@ -1937,26 +1935,20 @@ function PSC_CalculateDeathsByClass(characterScope)
     return deathsByClass
 end
 
-local function PSC_CalculateKDByClass(killsByClass, deathsByClass)
-    local kdData = {}
+local function PSC_CalculateWinRateByClass(killsByClass, deathsByClass)
+    local winRateData = {}
     local rawData = {}
 
     for _, class in ipairs(ALL_CLASSES) do
         local kills = killsByClass[class] or 0
         local deaths = deathsByClass[class] or 0
-        if kills > 0 or deaths > 0 then
-            local ratio
-            if deaths > 0 then
-                ratio = kills / deaths
-            else
-                ratio = kills
-            end
-            kdData[class] = ratio
+        if deaths > 0 then
+            winRateData[class] = kills / (kills + deaths)
             rawData[class] = {kills = kills, deaths = deaths}
         end
     end
 
-    return kdData, rawData
+    return winRateData, rawData
 end
 
 local function createGuildTable(parent, x, y, width, height, precomputedGuildData)
@@ -1964,6 +1956,11 @@ local function createGuildTable(parent, x, y, width, height, precomputedGuildDat
 
     local guildKills = precomputedGuildData or PSC_CalculateGuildKills()
     local sortedGuilds = sortByValue(guildKills, true)
+    if #sortedGuilds > 50 then
+        local trimmed = {}
+        for i = 1, 50 do trimmed[i] = sortedGuilds[i] end
+        sortedGuilds = trimmed
+    end
 
     local totalContentWidth = 240
     local scrollFrame = createScrollFrame(container, totalContentWidth, height)
@@ -2266,7 +2263,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     local totalEncounters = totalKills + totalDeaths
     if totalEncounters > 0 then
         local winPct = (totalKills / totalEncounters) * 100
-        local winText = string.format("%.1f%%", winPct)
+        local winText = string.format("%.2f%%", winPct)
         local winColor = PSC_GetWinPercentageColor(winPct)
         local winTooltip = isLocalPlayer and "Win percentage: kills divided by total encounters (kills + deaths)." or "Win percentage: kills divided by total encounters (kills + deaths)."
         statY = addSummaryStatLine(container, "Win percentage:", winText, statY, winTooltip, false, isLocalPlayer, winColor)
@@ -3072,7 +3069,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         end
     end
 
-    local kdByClassData, kdRawData = PSC_CalculateKDByClass(classData, deathsByClassData)
+    local kdByClassData, kdRawData = PSC_CalculateWinRateByClass(classData, deathsByClassData)
 
     local function getKDChartHeight()
         local count = 0
