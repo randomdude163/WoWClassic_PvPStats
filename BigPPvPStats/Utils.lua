@@ -1935,7 +1935,7 @@ function BPP_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetSize(136, 136)
     icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 25, -20)
-    icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BigPPvPLogo.png")
+    icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BigPPvPLogo.blp")
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 15, 0)
