@@ -73,6 +73,7 @@ local KEY_MAP = {
     deathsByClassData = "DC",
     guildStatusData = "GS",
     npcKillsData = "NK",
+    topGuildKills = "TGK",
     playerName = "pn",
     level = "l",
     class = "c",
@@ -309,7 +310,8 @@ local function DeserializeDetailedStats(payload)
         npcKillsData = {},
         guildStatusData = {},
         unknownLevelClassData = {},
-        deathsByClassData = {}
+        deathsByClassData = {},
+        topGuildKills = {}
     }
     
     -- Initialize class charts with 0 to prevent missing chart data
@@ -532,7 +534,7 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
     self:ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
     self:ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, _, npcKillsData =
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
         BPP_CalculateBarChartStatistics(charactersToProcess)
     local hourlyData = BPP_CalculateHourlyStatistics(charactersToProcess)
     local weekdayData = BPP_CalculateWeekdayStatistics(charactersToProcess)
@@ -558,8 +560,11 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
         unknownLevelClassData = unknownLevelClassData,
         deathsByClassData = deathsByClassData,
         guildStatusData = guildStatusData,
-        npcKillsData = npcKillsData
-        -- Note: guildData intentionally excluded to reduce payload size
+        npcKillsData = npcKillsData,
+        -- Only the top 10 by kill count are sent (not the full breakdown)
+        -- to keep the payload bounded regardless of how many guilds a
+        -- player has fought - see BPP_GetTopGuildKills in GuildRivalry.lua.
+        topGuildKills = BPP_GetTopGuildKills(guildData, 10)
     })
 
     FlattenSummaryForLeaderboard(result)
@@ -682,6 +687,7 @@ function Network:ConstructPayload(components)
         deathsByClassData = components.deathsByClassData,
         guildStatusData = components.guildStatusData,
         npcKillsData = components.npcKillsData,
+        topGuildKills = components.topGuildKills,
 
         playerName = UnitName("player"),
         level = UnitLevel("player"),
@@ -935,7 +941,8 @@ function Network:UpdateLeaderboardCache(statsData)
         levelData = statsData.levelData or {},
         zoneData = statsData.zoneData or {},
         npcKillsData = statsData.npcKillsData or {},
-        deathsByClassData = statsData.deathsByClassData or {}
+        deathsByClassData = statsData.deathsByClassData or {},
+        topGuildKills = statsData.topGuildKills or {}
     }
 
     BPP_DB.LeaderboardCache[statsData.playerName] = entry

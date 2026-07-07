@@ -1,3 +1,9 @@
+v4.8.0:
+- Replaced the per-guild kill milestone achievement system with lightweight rivalry tracking (GuildRivalry.lua): milestones now show a highlight popup instead of an Achievement Frame entry, so tracking hundreds of rival guilds doesn't bloat the achievement UI or your saved achievement points
+- Added a guild-chat callout when a milestone of 100+ kills against a guild is reached
+- Added /bpp rivals - a "Most Hated Guilds" board combining kills across every online guild/group member running the addon (each contributes their own top 10 rival guilds, broadcast alongside your other stats)
+- Added /bpp rivals digest - a weekly summary of rival guild kills, computed from kill history; also shown automatically at most once per real week on login
+
 v4.7.0:
 - Replaced the fixed 10-guild kill milestone list with a dynamic system: every guild you kill a member of gets its own 9-tier ladder (10/25/50/75/100/200/300/400/500) automatically, generated the first time you kill someone from that guild - no name list to maintain
 - Renamed remaining "PvP Stats (Classic)" text (settings window, minimap tooltip, leaderboard, What's New popup) to BigPPvP Stats

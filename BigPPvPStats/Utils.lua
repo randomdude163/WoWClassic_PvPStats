@@ -186,7 +186,7 @@ function BPP_StartIncrementalAchievementsCalculation()
                 unlockedAchievements = BPP_GetUnlockedAchievementCount()
             }
 
-            BPP_SyncDynamicGuildAchievements(achievementStats)
+            BPP_CheckGuildRivalryMilestones(achievementStats)
 
             -- Broadcast calculated stats to network
             if PVPSC.Network and PVPSC.Network.initialized then
@@ -440,7 +440,7 @@ function BPP_IsSamePlayerName(candidateName, targetName)
 end
 
 function BPP_GetAddonVersion()
-    return "4.7.0"
+    return "4.8.0"
 end
 
 -- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)

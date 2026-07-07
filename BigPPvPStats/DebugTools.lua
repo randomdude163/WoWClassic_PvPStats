@@ -329,9 +329,8 @@ function BPP_SimulatePlayerKills(killCount)
 end
 
 -- Same as BPP_SimulatePlayerKills but forces a specific guild name, so the
--- dynamic per-guild kill milestones (kills_anyguild_*, see
--- GuildKillMilestones.lua) can be tested without waiting to actually fight
--- that guild.
+-- guild rivalry milestones (see GuildRivalry.lua) can be tested without
+-- waiting to actually fight that guild.
 function BPP_SimulateGuildKills(guildName, killCount)
     if not guildName or guildName == "" then
         BPP_Print("Usage: /bpp registerguildkill <guild name> [count]")
