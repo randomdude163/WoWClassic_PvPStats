@@ -10,7 +10,7 @@ local Network = PVPSC.Network
 AceComm:Embed(Network)
 
 -- Network configuration
-local PREFIX = "PVPSC"  -- Single prefix for all messages
+local PREFIX = "BPP"  -- Single prefix for all messages
 
 -- Shared data cache: stores other players' stats
 Network.sharedData = Network.sharedData or {}
@@ -1138,6 +1138,58 @@ function Network:CleanupDeduplicationCache()
     end
 end
 
+-- Sends a SYNC request over every applicable channel (GUILD/PARTY/RAID/YELL),
+-- asking everyone listening to (re-)broadcast their stats immediately, then
+-- broadcasts our own stats once those requests have gone out. Used both for
+-- the automatic login handshake and for the manual /bpp sync command.
+Network.MIN_MANUAL_SYNC_INTERVAL = 30
+
+function Network:RequestSync(alsoBroadcastAfter)
+    local syncRequest = "SYNC|" .. UnitName("player")
+    local distributionList = self:GetBroadcastChannels()
+
+    -- Send with staggering to avoid immediate throttling
+    local SYNC_STAGGER = 0.5
+    for i, channel in ipairs(distributionList) do
+        local delay = (i - 1) * SYNC_STAGGER
+        if delay == 0 then
+            self:SendCommMessageWithDebug(PREFIX, syncRequest, channel, nil, "NORMAL")
+        else
+            C_Timer.After(delay, function()
+                self:SendCommMessageWithDebug(PREFIX, syncRequest, channel, nil, "NORMAL")
+            end)
+        end
+    end
+
+    if alsoBroadcastAfter then
+        -- Wait for sync requests to finish sending to avoid bandwidth congestion
+        local broadcastDelay = #distributionList * SYNC_STAGGER + 1.0
+        C_Timer.After(broadcastDelay, function()
+            self:BroadcastStats()
+            D("Sent sync-triggered broadcast")
+        end)
+    end
+end
+
+-- Manually triggered version of RequestSync, rate-limited so it can't be
+-- spammed. Guild/party members currently online with the addon will respond
+-- with their own broadcast within a couple seconds - not proximity-limited
+-- for GUILD/PARTY/RAID, since those channels reach everyone online in that
+-- group regardless of location. Only the YELL channel (used to reach nearby
+-- non-group players) is limited to normal yell range (~100 yards).
+function Network:RequestManualSync()
+    local now = GetTime()
+    if self.lastManualSyncTime and (now - self.lastManualSyncTime < self.MIN_MANUAL_SYNC_INTERVAL) then
+        local remaining = math.ceil(self.MIN_MANUAL_SYNC_INTERVAL - (now - self.lastManualSyncTime))
+        BPP_Print("Please wait " .. remaining .. "s before syncing again.")
+        return
+    end
+
+    self.lastManualSyncTime = now
+    self:RequestSync(true)
+    BPP_Print("Requesting stats from nearby/guild/group players with the addon...")
+end
+
 -- Initialize network handler
 function Network:Initialize()
     -- Validate cache on startup to fix any corrupted data from previous versions
@@ -1156,33 +1208,7 @@ function Network:Initialize()
 
     -- Send sync request and immediate broadcast on login
     C_Timer.After(2, function()
-        -- Request all other players to broadcast their stats
-        local syncRequest = "SYNC|" .. UnitName("player")
-
-        -- Use centralized channel list
-        local distributionList = self:GetBroadcastChannels()
-
-        -- Send with staggering to avoid immediate throttling
-        local SYNC_STAGGER = 0.5
-        for i, channel in ipairs(distributionList) do
-            local delay = (i - 1) * SYNC_STAGGER
-            if delay == 0 then
-                self:SendCommMessageWithDebug(PREFIX, syncRequest, channel, nil, "NORMAL")
-            else
-                C_Timer.After(delay, function()
-                    self:SendCommMessageWithDebug(PREFIX, syncRequest, channel, nil, "NORMAL")
-                end)
-            end
-        end
-
-        -- Also broadcast our own stats immediately
-        -- Wait for sync requests to finish to avoid bandwidth congestion
-        local initialBroadcastDelay = #distributionList * SYNC_STAGGER + 1.0
-        C_Timer.After(initialBroadcastDelay, function()
-            Network:BroadcastStats()
-            D("Sent initial broadcast on login")
-        end)
-
+        self:RequestSync(true)
         self.initialized = true
     end)
 end

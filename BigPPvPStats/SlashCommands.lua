@@ -6,6 +6,7 @@ local function PrintSlashCommandUsage()
     BPP_Print("Usage: /bpp achievements - Show PvP achievements")
     BPP_Print("Usage: /bpp leaderboard - Show PvP leaderboard")
     BPP_Print("Usage: /bpp sendstats <player name> - Send your stats to a player")
+    BPP_Print("Usage: /bpp sync - Ask nearby/guild/group players with the addon to refresh your leaderboard")
     BPP_Print("Usage: /bpp settings - Open addon settings")
     BPP_Print("Usage: /bpp export - Open a copyable text backup of your stats/achievements")
     BPP_Print("Usage: /bpp import - Paste a previously exported backup back in")
@@ -115,6 +116,9 @@ function BPP_SlashCommandHandler(msg)
         end
 
         BPP_Print("[PvPStats]: Sent stats to " .. normalized .. ". They will only be able to receive them if they have addon version 4.2 or higher.")
+
+    elseif command == "sync" then
+        PVPSC.Network:RequestManualSync()
 
     elseif command == "options" or command == "settings" then
         BPP_CreateConfigUI()

@@ -5,6 +5,8 @@ v4.6.0:
 - Added /bpp export and /bpp import for a copy-pasteable text backup that survives outside the SavedVariables file
 - Added /bpp registerguildkill debug command to test the new rival-guild achievements without needing to fight that guild
 - Fixed /bpp toggledebug, which previously had no handler and was unreachable
+- Changed the addon-comm protocol prefix from PVPSC to BPP, so this fork no longer talks to the original PvPStatsClassic addon over the network layer either
+- Added /bpp sync to manually request an immediate stats refresh from nearby/guild/group players running the addon
 
 v4.5.1:
 - Fixed bug where the K/D of other players was incorrect when you view their detailed stats in the leaderboard.
