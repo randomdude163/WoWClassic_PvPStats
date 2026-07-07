@@ -3,7 +3,7 @@
 ## Title: PvP Stats Classic
 ## Author: Severussnipe & Hkfarmer <BIGPPvP> (customized by Oomkill)
 ## Notes: Tracks PvP history and provides detailed statistics.
-## IconTexture: Interface\AddOns\PvPStatsClassic\img\BigPPvPLogo.blp
+## IconTexture: Interface\AddOns\PvPStatsClassic\img\BigPPvPLogo.png
 ## SavedVariables: PSC_DB
 
 Libs\LibStub\LibStub.lua
