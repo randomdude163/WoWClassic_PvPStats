@@ -1105,7 +1105,7 @@ local function CreateAboutTab(parent)
     local logo = parent:CreateTexture(nil, "ARTWORK")
     logo:SetSize(240, 240)
     logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
-    logo:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\RedridgePoliceLogo.blp")
+    logo:SetTexture("Interface\\AddOns\\PvPStatsClassic\\img\\BigPPvPLogo.blp")
 
     local hunterColor = RAID_CLASS_COLORS["HUNTER"] or {
         r = 0.67,
@@ -1137,14 +1137,23 @@ local function CreateAboutTab(parent)
     secondAuthorText:SetText("Hkfarmer")
     secondAuthorText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
 
+    local customizedByLabel = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    customizedByLabel:SetPoint("TOPLEFT", devsLabel, "BOTTOMLEFT", 0, -10)
+    customizedByLabel:SetText("Customized by:")
+
+    local customizedByText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    customizedByText:SetPoint("TOPLEFT", customizedByLabel, "TOPRIGHT", 5, 0)
+    customizedByText:SetText("Oomkill")
+    customizedByText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
+
     local guildText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    guildText:SetPoint("TOPLEFT", devsLabel, "BOTTOMLEFT", 0, -10)
+    guildText:SetPoint("TOPLEFT", customizedByLabel, "BOTTOMLEFT", 0, -10)
     guildText:SetText("Guild: ")
     guildText:SetTextColor(PSC_CONFIG_HEADER_R, PSC_CONFIG_HEADER_G, PSC_CONFIG_HEADER_B)
 
     local guildNameText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     guildNameText:SetPoint("TOPLEFT", guildText, "TOPRIGHT", 0, 0)
-    guildNameText:SetText("<Redridge Police>")
+    guildNameText:SetText("<BIGPPvP>")
     guildNameText:SetTextColor(1, 1, 1) -- Set color to white
 
     local realmText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -1154,16 +1163,16 @@ local function CreateAboutTab(parent)
 
     local realmNameText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     realmNameText:SetPoint("TOPLEFT", realmText, "TOPRIGHT", 0, 0)
-    realmNameText:SetText("Spineshatter (EU)")
+    realmNameText:SetText("Nightslayer (US)")
     realmNameText:SetTextColor(1, 1, 1) -- Set color to white
 
-    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord:", "https://discord.gg/ZBaN2xk5h3",
+    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord:", "",
         realmText, -60, -50)
     local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub: ",
-        "github.com/randomdude163/WoWClassic_PvPStats", discordLabel, 0, -20)
-    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact:", "redridgepolice@outlook.com",
+        "github.com/oneeyedglocker/bigppvp", discordLabel, 0, -20)
+    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact:", "",
         githubLabel, 0, -20)
-    local curseforgeLabel, curseforgeField = CreateCopyableField(creditsContainer, "CurseForge:", "curseforge.com/wow/addons/pvp-stats-classic",
+    local curseforgeLabel, curseforgeField = CreateCopyableField(creditsContainer, "CurseForge:", "",
         contactLabel, 0, -20, 265)
 
     return parent

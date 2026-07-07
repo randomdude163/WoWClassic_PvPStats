@@ -79,4 +79,4 @@ Click **Yes** to merge the data.
 ## Step 11: Verify merged data
 Open the statistics window (left click on the minimap button or type */psc statistics* in the chat) and look at all the numbers and charts. Do they look plausible? If yes, you are done. If no, close the game, delete the `PvPStatsClassic.lua` file in the TBC Anniversary `SavedVariables` folder, copy your backup file and name it `PvPStatsClassic.lua`, then start again from Step 1.
 
-If after a second try you still encounter issues, join the *\<Redridge Police\>* Discord at https://discord.gg/ZBaN2xk5h3 and ask Severussnipe for help.
+If after a second try you still encounter issues, reach out to *\<BIGPPvP\>* for help.
