@@ -111,11 +111,11 @@ function BPP_SlashCommandHandler(msg)
 
         local sent, _, reason = PVPSC.Network:SendStatsToPlayer(normalized)
         if not sent then
-            BPP_Print("[PvPStats]: " .. (reason or "Unable to send statistics."))
+            BPP_Print("[BigPPvP]: " .. (reason or "Unable to send statistics."))
             return
         end
 
-        BPP_Print("[PvPStats]: Sent stats to " .. normalized .. ". They will only be able to receive them if they have addon version 4.2 or higher.")
+        BPP_Print("[BigPPvP]: Sent stats to " .. normalized .. ". They will only be able to receive them if they have addon version 4.2 or higher.")
 
     elseif command == "sync" then
         PVPSC.Network:RequestManualSync()

@@ -72,26 +72,31 @@ faster for "I just broke something 5 minutes ago."
 These feed the exact same code path as a real kill, so kill-streak popups,
 milestone popups, announce messages, and achievement unlocks all fire normally.
 
-## 6. Testing the rival-guild achievements specifically
+## 6. Testing the per-guild kill milestones specifically
 
-The random guild pool used by `/bpp registerkill` doesn't include your rival
-guilds (see `BPP_TARGET_GUILDS` in `AchievementDefinitionsClassic.lua`), so use
-the dedicated command instead:
+Kill milestones (10/25/50/75/100/200/300/400/500 kills against a single guild)
+are generated automatically for *any* guild you fight - there's no name list to
+maintain. The random guild pool used by `/bpp registerkill` picks from a small
+set of fake test guild names, so to test a specific one, use the dedicated
+command instead:
 
 ```
 /bpp registerguildkill <guild name> [count]
 ```
 
-For example, to walk up to the first tier:
+For example, to walk up to the first tier against a made-up rival:
 
 ```
 /bpp registerguildkill The Red Empire 10
 ```
 
-This should pop the "The Red Empire Hunter I" achievement immediately (progress
-is recalculated after every registered kill). Repeat with higher counts to walk
-through the other tiers, or run it once at a high count (e.g. `500`) to jump
-straight to the top tier and confirm the whole chain unlocks in order.
+This should pop "The Red Empire Menace I" immediately (progress is recalculated
+after every registered kill) - and the achievement entry itself only appears
+the first time you've registered a kill against that guild, since it's created
+on the fly rather than pre-declared. Repeat with higher counts to walk through
+the other tiers, or run it once at a high count (e.g. `500`) to jump straight to
+the top tier and confirm the whole chain unlocks in order. Try a second,
+different guild name too, to confirm each guild tracks independently.
 
 Open `/bpp achievements` and the "Kills" tab to watch progress bars update live
 without needing to close/reopen the window.
@@ -109,11 +114,13 @@ step 4 via `/bpp import`. Either way, follow up with `/reload` so any open
 windows (achievements, statistics, leaderboard) refresh against the restored
 data.
 
-## 8. Adding your real rival guild names
+## 8. How the per-guild kill milestones work
 
-`BPP_TARGET_GUILDS` near the bottom of `AchievementDefinitionsClassic.lua`
-currently has `The Red Empire` plus 9 `PLACEHOLDER GUILD n` entries. Replace the
-placeholders with the exact in-game guild names (spelling and capitalization
-matter - progress is matched as a literal string against the guild name the
-game reports). All 90 achievements (9 tiers x 10 guilds) regenerate from that
-one list; no other file needs to change.
+There's nothing to configure - every guild you kill a member of automatically
+gets its own 9-tier ladder (10/25/50/75/100/200/300/400/500), generated the
+first time `stats.guildData` shows a kill against a name it hasn't seen before
+(see `GuildKillMilestones.lua`). Guild name matching is exact (spelling and
+capitalization, as reported by the game), so two guilds with near-identical
+names are tracked separately. There's no cap on how many guilds can accumulate
+milestones - if your roster fights a lot of different enemy guilds over time,
+expect the Kills tab to grow accordingly.
