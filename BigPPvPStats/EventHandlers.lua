@@ -692,7 +692,7 @@ local function HandlePlayerEnteringWorld()
 
     local currentVersion = BPP_GetAddonVersion()
     if BPP_DB.WhatsNewPopupVersion ~= currentVersion then
-        local title = "PvP Stats v" .. currentVersion .. " - What's new:"
+        local title = "BigPPvP Stats v" .. currentVersion .. " - What's new:"
         local message = "-Fixed bug where the K/D of other players was incorrect when you view their detailed stats in the leaderboard\n\nEnjoy!"
         local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
         BPP_ShowWhatsNewPopup(title, message, function()

@@ -811,7 +811,7 @@ function BPP_ShowAddonUpdatePopup(remoteVersion)
     end
 
     StaticPopupDialogs["BPP_ADDON_UPDATE_AVAILABLE"].text =
-        "A newer version " .. remoteVersion .. " of PvP Stats is available. You can download it from CurseForge."
+        "A newer version " .. remoteVersion .. " of BigPPvP Stats is available. You can get it from github.com/oneeyedglocker/bigppvp."
 
     StaticPopup_Show("BPP_ADDON_UPDATE_AVAILABLE")
 

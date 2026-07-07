@@ -3,7 +3,7 @@ local addonName, PVPSC = ...
 -- Create LibDataBroker data object
 local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("BigPPvPStats", {
     type = "data source",
-    text = "PvP Stats",
+    text = "BigPPvP Stats",
     icon = "Interface\\AddOns\\BigPPvPStats\\img\\minimap",
     OnClick = function(self, button)
         if button == "LeftButton" then
@@ -23,7 +23,7 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("BigPPvPStats", {
         end
     end,
     OnTooltipShow = function(tooltip)
-        tooltip:AddLine("PvP Stats (Classic)")
+        tooltip:AddLine("BigPPvP Stats")
         tooltip:AddLine(" ")
         tooltip:AddLine("|cff87ceebLeft-Click:|r Statistics", 1, 1, 1)
         tooltip:AddLine("|cff87ceebRight-Click:|r History", 1, 1, 1)
