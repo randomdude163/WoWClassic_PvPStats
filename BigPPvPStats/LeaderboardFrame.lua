@@ -365,7 +365,7 @@ local function CreateColumnHeader(parent, text, width, anchor, xOffset, yOffset,
         elseif columnId == "addonVersion" then
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
             GameTooltip:SetText("Addon Version", 1, 0.82, 0)
-            GameTooltip:AddLine("The version of PvP Stats Classic this player is using", 1, 1, 1, true)
+            GameTooltip:AddLine("The version of BigPPvP Stats this player is using", 1, 1, 1, true)
             GameTooltip:Show()
         elseif columnId == "lastSeen" then
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -1004,7 +1004,7 @@ local function CreateMainFrame()
     frame:RegisterForDrag("LeftButton")
 
     table.insert(UISpecialFrames, "BPP_LeaderboardStatsFrame")
-    frame.TitleText:SetText("PvP Stats Leaderboard")
+    frame.TitleText:SetText("BigPPvP Stats Leaderboard")
 
     -- Override close button to work in combat
     if frame.CloseButton then

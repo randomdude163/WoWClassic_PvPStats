@@ -877,7 +877,7 @@ local function CreateMainFrame()
 
     tinsert(UISpecialFrames, "BPP_ConfigFrame")
 
-    frame.TitleText:SetText("PvP Stats Settings")
+    frame.TitleText:SetText("BigPPvP Stats Settings")
 
     return frame
 end
@@ -1089,7 +1089,7 @@ end
 local function CreateAboutTab(parent)
     local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     header:SetPoint("TOP", parent, "TOP", 0, -20)
-    header:SetText("PvP Stats (Classic)")
+    header:SetText("BigPPvP Stats")
     header:SetTextColor(BPP_CONFIG_HEADER_R, BPP_CONFIG_HEADER_G, BPP_CONFIG_HEADER_B)
 
     local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
