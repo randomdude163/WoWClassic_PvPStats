@@ -1,0 +1,45 @@
+## Interface: 11508, 20505
+## Version: 4.6.0
+## Title: BigPPvP Stats
+## Author: Severussnipe & Hkfarmer <BIGPPvP> (customized by Oomkill)
+## Notes: Tracks PvP history and provides detailed statistics.
+## IconTexture: Interface\AddOns\BigPPvPStats\img\BigPPvPLogo.png
+## SavedVariables: BPP_DB
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\AceComm-3.0\AceComm-3.0.xml
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+
+ConfigUI.lua
+DataHelpers.lua
+DataStorage.lua
+DataMigration.lua
+BackupTools.lua
+DeathTracking.lua
+DebugTools.lua
+EventHandlers.lua
+FrameManager.lua
+KillMilestones.lua
+PlayerDetailFrame.lua
+KillsListFrameFilters.lua
+KillsListFrame.lua
+NetworkHandler.lua
+LeaderboardFrame.lua
+KillsTracking.lua
+Killstreaks.lua
+KillStreakPopup.lua
+MinimapButton.lua
+SlashCommands.lua
+Achievements.lua
+AchievementDefinitionsClassic.lua
+AchievementDefinitionsTBC.lua
+AchievementDefinitions.lua
+AchievementFrame.lua
+AchievementPopup.lua
+StatisticsFrame.lua
+Utils.lua
+UtilsTest.lua
+TestData.lua
+BigPPvPStats.lua
