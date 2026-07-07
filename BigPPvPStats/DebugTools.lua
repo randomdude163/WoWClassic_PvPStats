@@ -328,6 +328,45 @@ function BPP_SimulatePlayerKills(killCount)
     BPP_Print("Registered " .. killCount .. " random test kill(s).")
 end
 
+-- Same as BPP_SimulatePlayerKills but forces a specific guild name, so the
+-- rival-guild achievements (kills_targetguild_*) can be tested without
+-- waiting to actually fight that guild.
+function BPP_SimulateGuildKills(guildName, killCount)
+    if not guildName or guildName == "" then
+        BPP_Print("Usage: /bpp registerguildkill <guild name> [count]")
+        return
+    end
+
+    for i = 1, killCount do
+        local testPlayer = BPP_GetRandomTestPlayer()
+        testPlayer.guildName = guildName
+        testPlayer.guildRankName = BPP_guildRanks[math.random(1, #BPP_guildRanks)]
+        local killName = BPP_DebugApplyRandomRealm(testPlayer.name)
+
+        local randomZone = zones[math.random(#zones)]
+        local originalGetRealZoneText = GetRealZoneText
+        GetRealZoneText = function() return randomZone end
+
+        local randomX = 10.0 + (90.0 - 10.0) * math.random()
+        local randomY = 10.0 + (90.0 - 10.0) * math.random()
+        local originalGetPlayerMapPosition = C_Map.GetPlayerMapPosition
+        ---@diagnostic disable-next-line: duplicate-set-field
+        C_Map.GetPlayerMapPosition = function(mapID, unit)
+            return { x = randomX / 100, y = randomY / 100 }
+        end
+
+        BPP_StorePlayerInfo(killName, testPlayer.level, testPlayer.class,
+            testPlayer.race, testPlayer.gender, testPlayer.guildName, testPlayer.guildRankName,
+            testPlayer.rank)
+        BPP_RegisterPlayerKill(killName)
+
+        C_Map.GetPlayerMapPosition = originalGetPlayerMapPosition
+        GetRealZoneText = originalGetRealZoneText
+    end
+
+    BPP_Print("Registered " .. killCount .. " test kill(s) against guild '" .. guildName .. "'.")
+end
+
 
 local function BPP_DebugSnapshotNowKey(label)
     local ts = time and time() or 0
@@ -354,7 +393,10 @@ local function BPP_SnapshotKeySort(a, b)
     return tostring(a) < tostring(b)
 end
 
-local function BPP_SerializeSnapshotValue(value, indent, visited)
+-- Serializes any plain data value (tables/strings/numbers/etc.) into valid Lua
+-- literal syntax. Made global (not local) so BackupTools.lua can reuse it for
+-- the /bpp export feature instead of duplicating this logic.
+function BPP_SerializeSnapshotValue(value, indent, visited)
     local t = type(value)
     if t == "nil" then
         return "nil"

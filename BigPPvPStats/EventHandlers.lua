@@ -772,6 +772,7 @@ function BPP_RegisterEvents()
         elseif event == "PLAYER_LOGOUT" then
             BPP_GetAndStorePlayerInfoFromUnit("player", true)
             BPP_CleanupPlayerInfoCache()
+            BPP_CreateRollingBackupSnapshot()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             BPP_CheckBattlegroundStatus()
         elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_GUILD_UPDATE" then

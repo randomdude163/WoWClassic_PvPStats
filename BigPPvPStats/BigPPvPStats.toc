@@ -1,5 +1,5 @@
 ## Interface: 11508, 20505
-## Version: 4.5
+## Version: 4.6.0
 ## Title: BigPPvP Stats
 ## Author: Severussnipe & Hkfarmer <BIGPPvP> (customized by Oomkill)
 ## Notes: Tracks PvP history and provides detailed statistics.
@@ -16,6 +16,7 @@ ConfigUI.lua
 DataHelpers.lua
 DataStorage.lua
 DataMigration.lua
+BackupTools.lua
 DeathTracking.lua
 DebugTools.lua
 EventHandlers.lua

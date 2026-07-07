@@ -1,3 +1,11 @@
+v4.6.0:
+- Renamed the addon to BigPPvPStats (folder, SavedVariables, slash commands, and every internal global) so it can run side-by-side with the original PvPStatsClassic addon without the two clobbering each other's data
+- Added rival-guild kill achievements: 9 tiers (10/25/50/75/100/200/300/400/500) per guild in the new BPP_TARGET_GUILDS list (see AchievementDefinitionsClassic.lua)
+- Added automatic rolling backups (up to 3, at most one per day) of your kill/achievement data, restorable with /bpp restore
+- Added /bpp export and /bpp import for a copy-pasteable text backup that survives outside the SavedVariables file
+- Added /bpp registerguildkill debug command to test the new rival-guild achievements without needing to fight that guild
+- Fixed /bpp toggledebug, which previously had no handler and was unreachable
+
 v4.5.1:
 - Fixed bug where the K/D of other players was incorrect when you view their detailed stats in the leaderboard.
 

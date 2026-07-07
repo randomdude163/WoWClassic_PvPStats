@@ -7,9 +7,15 @@ local function PrintSlashCommandUsage()
     BPP_Print("Usage: /bpp leaderboard - Show PvP leaderboard")
     BPP_Print("Usage: /bpp sendstats <player name> - Send your stats to a player")
     BPP_Print("Usage: /bpp settings - Open addon settings")
+    BPP_Print("Usage: /bpp export - Open a copyable text backup of your stats/achievements")
+    BPP_Print("Usage: /bpp import - Paste a previously exported backup back in")
+    BPP_Print("Usage: /bpp backups - List your automatic rolling backups")
+    BPP_Print("Usage: /bpp restore [number] - Restore a rolling backup (1 = most recent)")
+    BPP_Print("Usage: /bpp toggledebug - Toggle debug/test commands on or off")
 
     if BPP_Debug then
         BPP_Print("Debug Commands:")
+        BPP_Print("Usage: /bpp registerguildkill <guild name> [count] - Register test kill(s) against a specific guild")
         BPP_Print("Usage: /bpp registerstreakkill [days] [killsPerDay] [daysAgo] - Generate test streak data")
         BPP_Print("Usage: /bpp timezonetest - Test timezone detection")
         BPP_Print("Usage: /bpp status - Show current settings")
@@ -19,7 +25,6 @@ local function PrintSlashCommandUsage()
         BPP_Print("Usage: /bpp registernpckill <NPC name> - Register NPC kill for testing")
         BPP_Print("Usage: /bpp simulatedeath [killers] [assists] - Simulate being killed")
         BPP_Print("Usage: /bpp bgmode - Toggle battleground mode manually")
-        BPP_Print("Usage: /bpp toggledebug - Toggle debug messages")
         BPP_Print("Usage: /bpp debugevents - Enhanced combat log debugging for 30 seconds")
         BPP_Print("Usage: /bpp debugpet - Track all pet damage and kills for 60 seconds")
         BPP_Print("Usage: /bpp simulatedeath [killers] [assists] - Simulate being killed")
@@ -114,6 +119,22 @@ function BPP_SlashCommandHandler(msg)
     elseif command == "options" or command == "settings" then
         BPP_CreateConfigUI()
 
+    elseif command == "export" then
+        BPP_ShowExportFrame()
+
+    elseif command == "import" then
+        BPP_ShowImportFrame()
+
+    elseif command == "backups" then
+        BPP_ListRollingBackups()
+
+    elseif command == "restore" then
+        BPP_RestoreRollingBackupSnapshot(arguments ~= "" and arguments or 1)
+
+    elseif command == "toggledebug" then
+        BPP_Debug = not BPP_Debug
+        BPP_Print("Debug mode " .. (BPP_Debug and "ENABLED" or "DISABLED") .. ". Type /bpp for the full debug command list.")
+
     elseif command == "migrate_international_data" then
         BPP_MigratePlayerInfoToEnglish(true)
         -- reload UI
@@ -176,6 +197,16 @@ function BPP_SlashCommandHandler(msg)
 
         elseif command == "registernpckill" then
             BPP_RegisterNPCKillCommand(arguments)
+
+        elseif command == "registerguildkill" then
+            local guildName, trailingCount = arguments:match("^(.-)%s+(%d+)%s*$")
+            local killCount = 1
+            if guildName and trailingCount then
+                killCount = tonumber(trailingCount) or 1
+            else
+                guildName = strtrim(arguments or "")
+            end
+            BPP_SimulateGuildKills(guildName, killCount)
 
         elseif command == "registerstreakkill" then
             local days, killsPerDay, daysAgo = arguments:match("(%d+)%s+(%d+)%s*(%d*)")
