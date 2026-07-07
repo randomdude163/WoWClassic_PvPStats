@@ -1,3 +1,8 @@
+v4.7.0:
+- Replaced the fixed 10-guild kill milestone list with a dynamic system: every guild you kill a member of gets its own 9-tier ladder (10/25/50/75/100/200/300/400/500) automatically, generated the first time you kill someone from that guild - no name list to maintain
+- Renamed remaining "PvP Stats (Classic)" text (settings window, minimap tooltip, leaderboard, What's New popup) to BigPPvP Stats
+- Replaced the "[PvPStats]" chat message prefix with "[BigPPvP]" throughout
+
 v4.6.0:
 - Renamed the addon to BigPPvPStats (folder, SavedVariables, slash commands, and every internal global) so it can run side-by-side with the original PvPStatsClassic addon without the two clobbering each other's data
 - Added rival-guild kill achievements: 9 tiers (10/25/50/75/100/200/300/400/500) per guild in the new BPP_TARGET_GUILDS list (see AchievementDefinitionsClassic.lua)

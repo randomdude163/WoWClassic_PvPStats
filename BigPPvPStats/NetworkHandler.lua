@@ -1018,7 +1018,7 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
         self:UpdateLeaderboardCache(statsData)
 
         if distribution == "WHISPER" then
-            BPP_Print("[PvPStats]: " .. uniqueName .. " sent you their stats, open the Leaderboard to view them.")
+            BPP_Print("[BigPPvP]: " .. uniqueName .. " sent you their stats, open the Leaderboard to view them.")
         end
 
         D("Received detailed stats from", uniqueName, "via", distribution, "- Kills:", statsData.totalKills)

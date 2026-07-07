@@ -275,7 +275,7 @@ function BPP_RegisterPlayerKill(playerName, killerName, killerGUID)
             BPP_DB.PlayerKillCounts.Characters[characterKey].GrayKillsCount + 1
 
         if BPP_Debug then
-            print("[PvPStats]: Gray kill registered against " .. playerName .. " (Level " .. level .. ")")
+            print("[BigPPvP]: Gray kill registered against " .. playerName .. " (Level " .. level .. ")")
         end
     end
 
@@ -366,7 +366,7 @@ function BPP_RegisterNPCKill(npcName, npcID)
     characterData.NPCKills[npcName] = (characterData.NPCKills[npcName] or 0) + 1
 
     if BPP_Debug then
-        print("[PvPStats]: Recorded kill for NPC: " .. npcName .. " (ID: " .. npcID .. ")")
+        print("[BigPPvP]: Recorded kill for NPC: " .. npcName .. " (ID: " .. npcID .. ")")
     end
 
     BPP_StartIncrementalAchievementsCalculation()

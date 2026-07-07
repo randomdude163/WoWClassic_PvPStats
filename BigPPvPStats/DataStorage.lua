@@ -330,7 +330,7 @@ local function ProcessKillKeyMigrationSlice()
     while processed < KILL_KEY_MIGRATION_BUDGET do
         if killMigrationState.charIndex > #killMigrationState.charKeys then
             BPP_DB.KillKeysMigrated = true
-            print("[PvPStats]: Migration step 1 complete. Updated " .. killMigrationState.count .. " database entries.")
+            print("[BigPPvP]: Migration step 1 complete. Updated " .. killMigrationState.count .. " database entries.")
             killMigrationState = nil
             return
         end
@@ -408,7 +408,7 @@ end
 function BPP_MigrateKillKeys()
     if BPP_DB.KillKeysMigrated then return end
     if killMigrationState and killMigrationState.running then return end
-    print("[PvPStats]: Performing database update, this will cause your game to stutter for a few seconds...")
+    print("[BigPPvP]: Performing database update, this will cause your game to stutter for a few seconds...")
     InitKillKeyMigrationState()
     C_Timer.After(0, ProcessKillKeyMigrationSlice)
 end
@@ -462,7 +462,7 @@ local function ProcessLossKeyMigrationSlice()
     while processed < LOSS_KEY_MIGRATION_BUDGET do
         if lossMigrationState.charIndex > #lossMigrationState.charKeys then
             BPP_DB.LossKeysMigrated_v3 = true
-            print("[PvPStats]: Death history migration complete. Normalized " .. lossMigrationState.count .. " database entries.")
+            print("[BigPPvP]: Death history migration complete. Normalized " .. lossMigrationState.count .. " database entries.")
             lossMigrationState = nil
             return
         end
@@ -553,7 +553,7 @@ function BPP_MigrateLossKeys()
     if lossMigrationState and lossMigrationState.running then return end
     if not BPP_DB.PvPLossCounts then return end
     InitLossKeyMigrationState()
-    print("[PvPStats]: Migrating death history to normalize player names...")
+    print("[BigPPvP]: Migrating death history to normalize player names...")
     C_Timer.After(0, ProcessLossKeyMigrationSlice)
 end
 
@@ -681,14 +681,14 @@ function BPP_MigrateArenaZones()
 
     BPP_DB.ArenaZonesMigrated_v1 = true
     if migratedKills > 0 or migratedDeaths > 0 then
-        print(string.format("[PvPStats]: Arena zone migration complete. Fixed %d kill location(s) and %d death record(s).",
+        print(string.format("[BigPPvP]: Arena zone migration complete. Fixed %d kill location(s) and %d death record(s).",
             migratedKills, migratedDeaths))
     end
 end
 
 function BPP_MigratePlayerInfoCache()
     if not BPP_DB.PlayerInfoCacheMigrated then
-        print("[PvPStats]: Migrating player cache to support cross-realm players...")
+        print("[BigPPvP]: Migrating player cache to support cross-realm players...")
 
         local oldCache = BPP_DB.PlayerInfoCache
         local newCache = {}
@@ -709,7 +709,7 @@ function BPP_MigratePlayerInfoCache()
         BPP_DB.PlayerInfoCache = newCache
         BPP_DB.PlayerInfoCacheMigrated = true
 
-        print("[PvPStats]: Player cache migration complete!")
+        print("[BigPPvP]: Player cache migration complete!")
     end
 end
 
@@ -891,7 +891,7 @@ function BPP_MigratePlayerInfoToEnglish(force)
         end
 
         BPP_DB.PlayerInfoEnglishMigrated = true
-        print("[PvPStats]: Data migration to English complete!")
+        print("[BigPPvP]: Data migration to English complete!")
     end
 end
 
@@ -1248,5 +1248,5 @@ function BPP_ResetAllStatsToDefault()
     BPP_InitializeAchievementDataStructure()
     BPP_InitializeLeaderboardCache()
 
-    print("[PvPStats]: All statistics have been reset!")
+    print("[BigPPvP]: All statistics have been reset!")
 end

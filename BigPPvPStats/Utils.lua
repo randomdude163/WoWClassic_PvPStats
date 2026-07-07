@@ -44,7 +44,7 @@ local function BPP_RunTaskQueue(taskQueue, onDone)
 
         local success, result = pcall(taskQueue[currentTask])
         if not success then
-            print("[PvPStats] Error in incremental calculation task " .. currentTask .. ": " .. tostring(result))
+            print("[BigPPvP] Error in incremental calculation task " .. currentTask .. ": " .. tostring(result))
             result = true
         end
 
@@ -186,6 +186,8 @@ function BPP_StartIncrementalAchievementsCalculation()
                 unlockedAchievements = BPP_GetUnlockedAchievementCount()
             }
 
+            BPP_SyncDynamicGuildAchievements(achievementStats)
+
             -- Broadcast calculated stats to network
             if PVPSC.Network and PVPSC.Network.initialized then
                 local statsComponents = {
@@ -243,12 +245,12 @@ function BPP_SendAnnounceMessage(message)
     local channel = BPP_DB.AnnounceChannel or "GROUP"
 
     if channel == "SELF" then
-        print("[PvPStats]: " .. message)
+        print("[BigPPvP]: " .. message)
     elseif channel == "GROUP" then
         if IsInGroup() then
             SendChatMessage(message, "PARTY")
         else
-            print("[PvPStats]: " .. message)
+            print("[BigPPvP]: " .. message)
         end
     elseif channel == "RAID" then
         if IsInRaid() then
@@ -256,13 +258,13 @@ function BPP_SendAnnounceMessage(message)
         elseif IsInGroup() then
             SendChatMessage(message, "PARTY")
         else
-            print("[PvPStats]: " .. message)
+            print("[BigPPvP]: " .. message)
         end
     elseif channel == "GUILD" then
         if IsInGuild() then
             SendChatMessage(message, "GUILD")
         else
-            print("[PvPStats]: " .. message)
+            print("[BigPPvP]: " .. message)
         end
     end
 end
@@ -438,7 +440,7 @@ function BPP_IsSamePlayerName(candidateName, targetName)
 end
 
 function BPP_GetAddonVersion()
-    return "4.6.0"
+    return "4.7.0"
 end
 
 -- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)

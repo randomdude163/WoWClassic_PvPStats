@@ -138,7 +138,7 @@ function BPP_InitializeGrayKillsCounter()
     characterData.GrayKillsCount = BPP_CalculateGrayKills() or 0
 
     if BPP_Debug then
-        print("[PvPStats]: Initialized gray kills counter with " .. characterData.GrayKillsCount .. " kills")
+        print("[BigPPvP]: Initialized gray kills counter with " .. characterData.GrayKillsCount .. " kills")
     end
 end
 
@@ -150,7 +150,7 @@ function BPP_InitializeSpawnCamperCounter()
     characterData.SpawnCamperMaxKills = BPP_CalculateSpawnCamperMaxKills() or 0
 
     if BPP_Debug then
-        print("[PvPStats]: Initialized spawn camper counter with " .. characterData.SpawnCamperMaxKills .. " max kills in 60s window")
+        print("[BigPPvP]: Initialized spawn camper counter with " .. characterData.SpawnCamperMaxKills .. " max kills in 60s window")
     end
 end
 
@@ -286,7 +286,7 @@ local function BPP_ShowUnlockedAchievements(achievementsUnlocked, unlockedList)
     end
 
     if achievementsUnlocked > 3 then
-        print("|cffffffff[PvPStats]|r You have unlocked |cffffff00" .. achievementsUnlocked .. "|r new achievements:")
+        print("|cffffffff[BigPPvP]|r You have unlocked |cffffff00" .. achievementsUnlocked .. "|r new achievements:")
         for _, achievement in ipairs(unlockedList) do
             print("|cffffff00" .. achievement.title .. "|r: |cffffffff" .. achievement.description .. "|r")
         end

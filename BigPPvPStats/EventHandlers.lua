@@ -138,7 +138,7 @@ function BPP_HandlePlayerDeath()
         PlaySoundFile(soundFile, "Master")
     end
 
-    print("[PvPStats]: You died, kill streak reset.")
+    print("[BigPPvP]: You died, kill streak reset.")
 
     if BPP_CurrentlyInBattleground and not BPP_DB.CountDeathsInBattlegrounds then
         if BPP_Debug then print("BG Mode: Death tracking disabled in battlegrounds") end
@@ -629,8 +629,6 @@ local function HandlePlayerEnteringWorld()
         BPP_ResetAllStatsToDefault()
     end
 
-    PVPSC.AchievementSystem:LoadAchievementCompletedData()
-
     -- Initialize minimap button settings if not present
     if not BPP_DB.minimapButton then
         BPP_DB.minimapButton = {
@@ -670,6 +668,13 @@ local function HandlePlayerEnteringWorld()
     BPP_InitializeLeaderboardCache()
     BPP_InitializePlayerLossCounts()
 
+    -- Regenerate any previously-discovered guilds' kill-milestone achievements
+    -- (their unlock state is keyed by id, not stored separately) before
+    -- loading completion data, or CleanupObsoleteAchievements would treat
+    -- their saved records as belonging to achievements that no longer exist.
+    BPP_SyncDynamicGuildAchievements(BPP_GetStatsForAchievements())
+    PVPSC.AchievementSystem:LoadAchievementCompletedData()
+
     BPP_UpdateMinimapButtonPosition()
     BPP_SetupMouseoverTooltip()
     BPP_InCombat = UnitAffectingCombat("player")
@@ -682,12 +687,12 @@ local function HandlePlayerEnteringWorld()
     end
 
     if BPP_Debug then
-        print("[PvPStats]: Debug mode enabled.")
+        print("[BigPPvP]: Debug mode enabled.")
     end
 
     if not addonWelcomeMessageShown then
         addonWelcomeMessageShown = true
-        print("[PvPStats]: Click the minimap button or type /bpp to use the addon.")
+        print("[BigPPvP]: Click the minimap button or type /bpp to use the addon.")
     end
 
     local currentVersion = BPP_GetAddonVersion()
@@ -787,7 +792,7 @@ end
 function BPP_CheckBattlegroundStatus()
     if BPP_DB.ForceBattlegroundMode then
         if not BPP_lastInBattlegroundValue then
-            print("[PvPStats]: Forced battleground mode enabled.")
+            print("[BigPPvP]: Forced battleground mode enabled.")
         end
         BPP_CurrentlyInBattleground = true
         BPP_lastInBattlegroundValue = true
@@ -820,7 +825,7 @@ function BPP_CheckBattlegroundStatus()
     for _, bgMapId in ipairs(battlegroundZoneIds) do
         if (currentMapId == bgMapId) then
             if not BPP_lastInBattlegroundValue then
-                local msg = "[PvPStats]: Entered battleground. "
+                local msg = "[BigPPvP]: Entered battleground. "
                 if BPP_DB.CountKillsInBattlegrounds then
                     msg = msg .. "Only your own killing blows "
                     if BPP_DB.CountAssistsInBattlegrounds then
@@ -844,7 +849,7 @@ function BPP_CheckBattlegroundStatus()
     end
 
     if BPP_lastInBattlegroundValue then
-        print("[PvPStats]: Left battleground.")
+        print("[BigPPvP]: Left battleground.")
     end
     BPP_lastInBattlegroundValue = false
     BPP_CurrentlyInBattleground = false

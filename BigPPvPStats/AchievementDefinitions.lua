@@ -48,6 +48,6 @@ function AchievementSystem:InitializeAchievements()
 
     if BPP_Debug then
         local count = self.achievements and #self.achievements or 0
-        print("[PvPStats] Initialized " .. count .. " achievements for game version: " .. tostring(BPP_GameVersion))
+        print("[BigPPvP] Initialized " .. count .. " achievements for game version: " .. tostring(BPP_GameVersion))
     end
 end

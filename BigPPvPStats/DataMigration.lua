@@ -206,7 +206,7 @@ local function BPP_RunMigrationTaskQueue(taskQueue, onDone)
 
         local success, result = pcall(taskQueue[currentTask])
         if not success then
-            print("[PvPStats] Error in migration task " .. currentTask .. ": " .. tostring(result))
+            print("[BigPPvP] Error in migration task " .. currentTask .. ": " .. tostring(result))
             result = true
         end
 
@@ -309,11 +309,11 @@ end
 function BPP_PerformDataMigration(runSync)
     if not BPP_DB_IMPORT then return end
 
-    print("[PvPStats]: Starting data migration...")
+    print("[BigPPvP]: Starting data migration...")
 
     -- 1. Merge Player Info Cache (Global)
     local infoImported = MergePlayerInfoCache(BPP_DB.PlayerInfoCache, BPP_DB_IMPORT.PlayerInfoCache)
-    print(string.format("[PvPStats]: Imported %d player info cache entries.", infoImported))
+    print(string.format("[BigPPvP]: Imported %d player info cache entries.", infoImported))
 
     -- Ensure localized class/race names from imported data are normalized
     BPP_DB.PlayerInfoEnglishMigrated = nil
@@ -520,10 +520,10 @@ function BPP_PerformDataMigration(runSync)
 
     local function finalizeMigration()
         if BPP_Debug and killState then
-            print(string.format("[PvPStats]: Imported %d kills (%d kill keys normalized).", killState.totalImportedKills or 0, killState.counters.normalizedKeys or 0))
+            print(string.format("[BigPPvP]: Imported %d kills (%d kill keys normalized).", killState.totalImportedKills or 0, killState.counters.normalizedKeys or 0))
         end
         if BPP_Debug and lossState then
-            print(string.format("[PvPStats]: Imported %d deaths (%d loss keys normalized, %d assister names normalized).", lossState.counters.importedDeaths or 0, lossState.counters.normalizedKeys or 0, lossState.counters.normalizedAssisters or 0))
+            print(string.format("[BigPPvP]: Imported %d deaths (%d loss keys normalized, %d assister names normalized).", lossState.counters.importedDeaths or 0, lossState.counters.normalizedKeys or 0, lossState.counters.normalizedAssisters or 0))
         end
 
         local perCharacterSummary = {}
@@ -541,8 +541,8 @@ function BPP_PerformDataMigration(runSync)
             perCharacter = perCharacterSummary
         }
 
-        print("[PvPStats]: Data migration complete!")
-        print("[PvPStats]: Reloading UI to finalize changes...")
+        print("[BigPPvP]: Data migration complete!")
+        print("[BigPPvP]: Reloading UI to finalize changes...")
 
         BPP_DB_IMPORT = nil
 
@@ -645,7 +645,7 @@ function BPP_CheckForDataMigration()
         end,
         OnCancel = function()
             BPP_DB_IMPORT = nil
-            print("[PvPStats]: Import cancelled. Data discarded.")
+            print("[BigPPvP]: Import cancelled. Data discarded.")
         end,
         timeout = 0,
         whileDead = true,
