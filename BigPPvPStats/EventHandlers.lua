@@ -668,12 +668,8 @@ local function HandlePlayerEnteringWorld()
     BPP_InitializeLeaderboardCache()
     BPP_InitializePlayerLossCounts()
 
-    -- Regenerate any previously-discovered guilds' kill-milestone achievements
-    -- (their unlock state is keyed by id, not stored separately) before
-    -- loading completion data, or CleanupObsoleteAchievements would treat
-    -- their saved records as belonging to achievements that no longer exist.
-    BPP_SyncDynamicGuildAchievements(BPP_GetStatsForAchievements())
     PVPSC.AchievementSystem:LoadAchievementCompletedData()
+    BPP_ShowWeeklyRivalryDigestIfDue()
 
     BPP_UpdateMinimapButtonPosition()
     BPP_SetupMouseoverTooltip()

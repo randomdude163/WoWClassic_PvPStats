@@ -7,6 +7,8 @@ local function PrintSlashCommandUsage()
     BPP_Print("Usage: /bpp leaderboard - Show PvP leaderboard")
     BPP_Print("Usage: /bpp sendstats <player name> - Send your stats to a player")
     BPP_Print("Usage: /bpp sync - Ask nearby/guild/group players with the addon to refresh your leaderboard")
+    BPP_Print("Usage: /bpp rivals - Show the Most Hated Guilds board (combined kills across the roster)")
+    BPP_Print("Usage: /bpp rivals digest - Show your rival guild kills from the past week")
     BPP_Print("Usage: /bpp settings - Open addon settings")
     BPP_Print("Usage: /bpp export - Open a copyable text backup of your stats/achievements")
     BPP_Print("Usage: /bpp import - Paste a previously exported backup back in")
@@ -119,6 +121,13 @@ function BPP_SlashCommandHandler(msg)
 
     elseif command == "sync" then
         PVPSC.Network:RequestManualSync()
+
+    elseif command == "rivals" then
+        if arguments == "digest" then
+            BPP_ShowRivalryDigest()
+        else
+            BPP_ShowMostHatedGuildsFrame()
+        end
 
     elseif command == "options" or command == "settings" then
         BPP_CreateConfigUI()
