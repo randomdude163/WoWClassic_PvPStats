@@ -8755,4 +8755,84 @@ local subTexts24h = {
 }
 CreateTimeAchievement("time_24h_ganker", "The 24h Ganker", 24, tiers24h, 134376, subTexts24h, "Get %d kills during every single hour of the day (00:00 - 23:59)")
 
+-- =====================================================
+-- TARGET GUILD ACHIEVEMENTS (rival guild kill milestones)
+-- =====================================================
+-- Edit this list to set the rival guilds you're tracking. Each name must match
+-- the guild's exact in-game spelling/capitalization, since progress is looked
+-- up as stats.guildData[guildName].
+local PSC_TARGET_GUILDS = {
+    "The Red Empire",
+    "PLACEHOLDER GUILD 2",
+    "PLACEHOLDER GUILD 3",
+    "PLACEHOLDER GUILD 4",
+    "PLACEHOLDER GUILD 5",
+    "PLACEHOLDER GUILD 6",
+    "PLACEHOLDER GUILD 7",
+    "PLACEHOLDER GUILD 8",
+    "PLACEHOLDER GUILD 9",
+    "PLACEHOLDER GUILD 10",
+}
+
+local PSC_TARGET_GUILD_TIERS = {
+    { kills = 10, points = 10, icon = 134473, roman = "I" },
+    { kills = 25, points = 25, icon = 134471, roman = "II" },
+    { kills = 50, points = 50, icon = 134472, roman = "III" },
+    { kills = 75, points = 75, icon = 134470, roman = "IV" },
+    { kills = 100, points = 100, icon = 134468, roman = "V" },
+    { kills = 200, points = 200, icon = 134467, roman = "VI" },
+    { kills = 300, points = 300, icon = 134466, roman = "VII" },
+    { kills = 400, points = 400, icon = 134328, roman = "VIII" },
+    { kills = 500, points = 500, icon = 134327, roman = "IX" },
+}
+
+-- One shared joke per tier, reused for every guild in PSC_TARGET_GUILDS.
+local PSC_TARGET_GUILD_SUBTEXTS = {
+    [10] = function(g, n) return ("First blood against %s! %d down, and word is already spreading through their guild chat."):format(g, n) end,
+    [25] = function(g, n) return ("%d members of %s sent packing! Their officers are updating the roster faster than you can say 'wipe.'"):format(n, g) end,
+    [50] = function(g, n) return ("%d kills against %s and counting! Their guild bank is basically a memorial fund at this point."):format(n, g) end,
+    [75] = function(g, n) return ("%d members of %s eliminated! Recruitment ads now include 'must enjoy respawning.'"):format(n, g) end,
+    [100] = function(g, n) return ("Triple digits! %d players from %s put down. Their guild master is considering a merger just to survive."):format(n, g) end,
+    [200] = function(g, n) return ("%d members of %s dispatched! You've killed more of them than their raid team ever logged in."):format(n, g) end,
+    [300] = function(g, n) return ("%d down! %s's officer chat is 90%% just your name and a skull emoji at this point."):format(n, g) end,
+    [400] = function(g, n) return ("%d kills deep into %s! Their guild charter is basically a casualty list now."):format(n, g) end,
+    [500] = function(g, n) return ("%d players from %s eliminated! History will remember this as the day %s stopped recruiting and started grieving."):format(n, g, g) end,
+}
+
+local function PSC_SlugifyGuildName(guildName)
+    return guildName:lower():gsub("[^%a%d]+", "")
+end
+
+local function CreateTargetGuildAchievements(guildName)
+    local slug = PSC_SlugifyGuildName(guildName)
+
+    for _, tier in ipairs(PSC_TARGET_GUILD_TIERS) do
+        local achievement = {
+            id = "kills_targetguild_" .. slug .. "_" .. tier.kills,
+            guildName = guildName,
+            title = guildName .. " Hunter " .. tier.roman,
+            description = function(a) return ("Eliminate %d players from %s"):format(a.targetValue, a.guildName) end,
+            iconID = tier.icon,
+            achievementPoints = tier.points,
+            targetValue = tier.kills,
+            condition = function(achievement, stats)
+                return achievement.progress(achievement, stats) >= achievement.targetValue
+            end,
+            unlocked = false,
+            completedDate = nil,
+            subText = function(a)
+                return PSC_TARGET_GUILD_SUBTEXTS[a.targetValue](a.guildName, a.targetValue)
+            end,
+            progress = function(achievement, stats)
+                return stats.guildData[achievement.guildName] or 0
+            end,
+        }
+        table.insert(AchievementSystem.achievementsClassic, achievement)
+    end
+end
+
+for _, guildName in ipairs(PSC_TARGET_GUILDS) do
+    CreateTargetGuildAchievements(guildName)
+end
+
 
