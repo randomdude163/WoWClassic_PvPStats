@@ -7,8 +7,8 @@ local function PrintSlashCommandUsage()
     BPP_Print("Usage: /bpp leaderboard - Show PvP leaderboard")
     BPP_Print("Usage: /bpp sendstats <player name> - Send your stats to a player")
     BPP_Print("Usage: /bpp sync - Ask nearby/guild/group players with the addon to refresh your leaderboard")
-    BPP_Print("Usage: /bpp rivals - Show the Most Hated Guilds board (combined kills across the roster)")
-    BPP_Print("Usage: /bpp rivals digest - Show your rival guild kills from the past week")
+    BPP_Print("Usage: /bpp trash - Show the Most Hated Guilds board (combined kills across the roster)")
+    BPP_Print("Usage: /bpp trash digest - Show your trashed guild kills from the past week")
     BPP_Print("Usage: /bpp kos - Show your Kill On Sight list (players and guilds)")
     BPP_Print("Usage: /bpp kos add <name> [reason] - Add a player to your Kill On Sight list")
     BPP_Print("Usage: /bpp kos remove <name> - Remove a player from your Kill On Sight list")
@@ -16,6 +16,8 @@ local function PrintSlashCommandUsage()
     BPP_Print("Usage: /bpp kos guild remove <guild name> - Remove a guild from your Kill On Sight list")
     BPP_Print("Usage: /bpp kos ignore <name> - Suppress Kill On Sight alerts for a player")
     BPP_Print("Usage: /bpp kos unignore <name> - Stop suppressing alerts for a player")
+    BPP_Print("Usage: /bpp kos testsound - Fire a test Kill On Sight alert (popup + sound)")
+    BPP_Print("Usage: /bpp kos importspy - Import your Kill On Sight/Ignore lists from a co-installed Spy addon")
     BPP_Print("Usage: /bpp nearby - Toggle the Nearby Enemies panel")
     BPP_Print("Usage: /bpp zone disable [zone name] - Disable detection in a zone (defaults to your current zone)")
     BPP_Print("Usage: /bpp zone enable [zone name] - Re-enable detection in a zone")
@@ -133,9 +135,9 @@ function BPP_SlashCommandHandler(msg)
     elseif command == "sync" then
         PVPSC.Network:RequestManualSync()
 
-    elseif command == "rivals" then
+    elseif command == "trash" then
         if arguments == "digest" then
-            BPP_ShowRivalryDigest()
+            BPP_ShowTrashDigest()
         else
             BPP_ShowMostHatedGuildsFrame()
         end
@@ -174,6 +176,18 @@ function BPP_SlashCommandHandler(msg)
                 if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
             else
                 BPP_Print("[BigPPvP] " .. subArguments .. " isn't on your ignore list.")
+            end
+
+        elseif subCommand == "testsound" then
+            BPP_TestKOSAlert()
+
+        elseif subCommand == "importspy" then
+            local ok, a, b, c, d = BPP_ImportFromSpy and BPP_ImportFromSpy()
+            if not ok then
+                BPP_Print("[BigPPvP] " .. (a or "Import failed."))
+            else
+                BPP_Print(("[BigPPvP] Imported %d Kill On Sight player(s) (%d already on your list) and %d ignore entr%s (%d already on your list) from Spy."):format(
+                    a, b, c, c == 1 and "y" or "ies", d))
             end
 
         elseif subCommand == "guild" then
@@ -226,9 +240,6 @@ function BPP_SlashCommandHandler(msg)
 
         elseif zoneAction == "list" then
             local zones = BPP_GetDisabledZoneList()
-            if BPP_DB.DisableInMajorCities then
-                BPP_Print("[BigPPvP] Major cities: disabled.")
-            end
             if #zones == 0 then
                 BPP_Print("[BigPPvP] No custom zones disabled. Usage: /bpp zone disable [zone name]")
             else

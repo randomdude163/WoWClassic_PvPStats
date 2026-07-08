@@ -149,6 +149,9 @@ local function CreateCheckbox(parent, labelText, initialValue, onClickFunc)
 
     local label = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     label:SetPoint("LEFT", checkbox, "RIGHT", 5, 0)
+    label:SetWidth(440)
+    label:SetJustifyH("LEFT")
+    label:SetWordWrap(true)
     label:SetText(labelText)
 
     return checkbox, label
@@ -926,11 +929,28 @@ local function CreateKillOnSightSection(parent, yOffset)
     end)
     classColorsCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    local nearbySoundCheckbox, _ = CreateCheckbox(parent, "Play a sound for new nearby sightings",
+        BPP_DB.NearbySoundEnabled ~= false, function(checked)
+            BPP_DB.NearbySoundEnabled = checked
+        end)
+    nearbySoundCheckbox:SetPoint("TOPLEFT", classColorsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.nearbySoundCheckbox = nearbySoundCheckbox
+    nearbySoundCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play a sound for new nearby sightings")
+        GameTooltip:AddLine("A short sound the first time a hostile player is detected, distinct from the Kill On Sight and Stealth alert sounds. Skipped for Kill On Sight matches and Ignored players.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    nearbySoundCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- Same six options as Spy's "Remove undetected" setting.
     local expiryOptions = {
+        {text = "1 minute", value = 60},
+        {text = "2 minutes", value = 120},
         {text = "5 minutes", value = 300},
         {text = "10 minutes", value = 600},
         {text = "15 minutes", value = 900},
-        {text = "30 minutes", value = 1800},
+        {text = "Never", value = -1},
     }
 
     local expiryContainer, expiryDropdown = CreateDropdown(parent, "Nearby view shows entries seen within:",
@@ -938,7 +958,7 @@ local function CreateKillOnSightSection(parent, yOffset)
             BPP_DB.NearbyPanelExpirySeconds = selectedValue
             if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
         end)
-    expiryContainer:SetPoint("TOPLEFT", classColorsCheckbox, "BOTTOMLEFT", 0, -14)
+    expiryContainer:SetPoint("TOPLEFT", nearbySoundCheckbox, "BOTTOMLEFT", 0, -14)
     parent.expiryDropdown = expiryDropdown
 
     if expiryDropdown and expiryDropdown:GetName() then
@@ -978,20 +998,179 @@ local function CreateKillOnSightSection(parent, yOffset)
     local zoneHeader = CreateSectionHeader(parent, "Zone Exclusions", 0, 0)
     zoneHeader:SetPoint("TOPLEFT", autoShowCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
 
-    local majorCitiesCheckbox, _ = CreateCheckbox(parent, "Disable detection in major cities",
-        BPP_DB.DisableInMajorCities == true, function(checked)
-            BPP_DB.DisableInMajorCities = checked
+    local zoneHint = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    zoneHint:SetPoint("TOPLEFT", zoneHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 8)
+    zoneHint:SetWidth(500)
+    zoneHint:SetJustifyH("LEFT")
+    zoneHint:SetWordWrap(true)
+    zoneHint:SetText("Suppresses Kill On Sight, Stealth alerts, and the Nearby panel while in a checked zone - these are the neutral hub towns both factions pass through constantly. For any other zone, use /bpp zone disable <zone name>.")
+
+    parent.zoneCheckboxes = parent.zoneCheckboxes or {}
+    local lastZoneCheckbox = zoneHint
+    for i, zoneName in ipairs(BPP_PRESET_DISABLE_ZONES) do
+        local zoneCheckbox, _ = CreateCheckbox(parent, zoneName,
+            BPP_DB.DisabledZones and BPP_DB.DisabledZones[zoneName] == true, function(checked)
+                if checked then
+                    BPP_AddDisabledZone(zoneName)
+                else
+                    BPP_RemoveDisabledZone(zoneName)
+                end
+            end)
+        if i == 1 then
+            zoneCheckbox:SetPoint("TOPLEFT", zoneHint, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+        else
+            zoneCheckbox:SetPoint("TOPLEFT", lastZoneCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+        end
+        parent.zoneCheckboxes[zoneName] = zoneCheckbox
+        lastZoneCheckbox = zoneCheckbox
+    end
+
+    local scopeHeader = CreateSectionHeader(parent, "PvP Scope", 0, 0)
+    scopeHeader:SetPoint("TOPLEFT", lastZoneCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local scopeHint = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    scopeHint:SetPoint("TOPLEFT", scopeHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 8)
+    scopeHint:SetWidth(500)
+    scopeHint:SetJustifyH("LEFT")
+    scopeHint:SetWordWrap(true)
+    scopeHint:SetText("Dungeons and raids are always excluded, same as Spy - there's nothing to detect there.")
+    parent.scopeHint = scopeHint
+
+    local bgCheckbox, _ = CreateCheckbox(parent, "Disable detection in battlegrounds",
+        BPP_DB.DisableInBattlegrounds == true, function(checked)
+            BPP_DB.DisableInBattlegrounds = checked
         end)
-    majorCitiesCheckbox:SetPoint("TOPLEFT", zoneHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
-    parent.majorCitiesCheckbox = majorCitiesCheckbox
-    majorCitiesCheckbox:SetScript("OnEnter", function(self)
+    bgCheckbox:SetPoint("TOPLEFT", scopeHint, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.bgCheckbox = bgCheckbox
+
+    local arenaCheckbox, _ = CreateCheckbox(parent, "Disable detection in arenas",
+        BPP_DB.DisableInArenas == true, function(checked)
+            BPP_DB.DisableInArenas = checked
+        end)
+    arenaCheckbox:SetPoint("TOPLEFT", bgCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.arenaCheckbox = arenaCheckbox
+
+    local sanctuaryCheckbox, _ = CreateCheckbox(parent, "Disable detection in sanctuaries",
+        BPP_DB.DisableInSanctuaries ~= false, function(checked)
+            BPP_DB.DisableInSanctuaries = checked
+        end)
+    sanctuaryCheckbox:SetPoint("TOPLEFT", arenaCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.sanctuaryCheckbox = sanctuaryCheckbox
+    sanctuaryCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Disable detection in major cities")
-        GameTooltip:AddLine("Suppresses Kill On Sight, Stealth alerts, and the Nearby panel while in a capital city (Stormwind, Ironforge, Darnassus, Exodar, Orgrimmar, Thunder Bluff, Undercity, Silvermoon, Shattrath, Dalaran).", 1, 1, 1, true)
-        GameTooltip:AddLine("For any other zone, use /bpp zone disable <zone name>.", 0.6, 0.6, 0.6, true)
+        GameTooltip:AddLine("Disable detection in sanctuaries")
+        GameTooltip:AddLine("Sanctuaries (Shattrath's lower city, etc.) don't allow PvP combat at all, so detection there is rarely useful. On by default.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
-    majorCitiesCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    sanctuaryCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local unflaggedCheckbox, _ = CreateCheckbox(parent, "Disable detection while not PvP flagged",
+        BPP_DB.DisableWhenPvPUnflagged ~= false, function(checked)
+            BPP_DB.DisableWhenPvPUnflagged = checked
+        end)
+    unflaggedCheckbox:SetPoint("TOPLEFT", sanctuaryCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.unflaggedCheckbox = unflaggedCheckbox
+    unflaggedCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Disable detection while not PvP flagged")
+        GameTooltip:AddLine("If you can't be attacked, there's usually nothing to warn about. On by default.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    unflaggedCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local worldPvPCheckbox, _ = CreateCheckbox(parent, "Disable detection in world PvP zones (Wintergrasp/Tol Barad)",
+        BPP_DB.DisableInWorldPvPZones == true, function(checked)
+            BPP_DB.DisableInWorldPvPZones = checked
+        end)
+    worldPvPCheckbox:SetPoint("TOPLEFT", unflaggedCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.worldPvPCheckbox = worldPvPCheckbox
+    worldPvPCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Disable detection in world PvP zones")
+        GameTooltip:AddLine("Forced-PvP objective zones flag everyone automatically regardless of your own PvP flag. Off by default, matching Spy.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    worldPvPCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local sharingHeader2 = CreateSectionHeader(parent, "Live Sighting Sharing", 0, 0)
+    sharingHeader2:SetPoint("TOPLEFT", worldPvPCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local nearbySharingCheckbox, _ = CreateCheckbox(parent, "Share live sightings with guild/party",
+        BPP_DB.NearbySharingEnabled ~= false, function(checked)
+            BPP_DB.NearbySharingEnabled = checked
+        end)
+    nearbySharingCheckbox:SetPoint("TOPLEFT", sharingHeader2, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.nearbySharingCheckbox = nearbySharingCheckbox
+    nearbySharingCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Share live sightings with guild/party")
+        GameTooltip:AddLine("When you detect a new hostile player, briefly tell online guildmates/group members running the addon so they see it in their own Nearby panel too - not just your Kill On Sight watchlist. Throttled to avoid chat spam.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    nearbySharingCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local purgeHeader = CreateSectionHeader(parent, "Data Retention", 0, 0)
+    purgeHeader:SetPoint("TOPLEFT", nearbySharingCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local purgeOptions = {
+        {text = "Never", value = 0},
+        {text = "30 days", value = 30},
+        {text = "60 days", value = 60},
+        {text = "90 days", value = 90},
+    }
+
+    local purgeContainer, purgeDropdown = CreateDropdown(parent, "Auto-remove Kill On Sight/Ignore entries not seen in:",
+        purgeOptions, BPP_DB.KOSPurgeDays or 0, function(selectedValue)
+            BPP_DB.KOSPurgeDays = selectedValue
+        end)
+    purgeContainer:SetPoint("TOPLEFT", purgeHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.purgeDropdown = purgeDropdown
+
+    if purgeDropdown and purgeDropdown:GetName() then
+        local currentDays = BPP_DB.KOSPurgeDays or 0
+        local currentLabel = "Never"
+        for _, option in ipairs(purgeOptions) do
+            if option.value == currentDays then
+                currentLabel = option.text
+            end
+        end
+        UIDropDownMenu_SetSelectedValue(purgeDropdown, currentDays)
+        UIDropDownMenu_SetText(purgeDropdown, currentLabel)
+    end
+
+    purgeContainer:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Auto-remove old entries")
+        GameTooltip:AddLine("Removes a Kill On Sight or Ignore entry if that player hasn't been detected in this many days. Checked once per login. 'Never' (default) keeps everything until you remove it yourself.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    purgeContainer:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local testSoundButton = CreateButton(parent, "Test Alert Sound", 150, 22, function()
+        if BPP_TestKOSAlert then BPP_TestKOSAlert() end
+    end)
+    testSoundButton:SetPoint("TOPLEFT", purgeContainer, "BOTTOMLEFT", 0, -20)
+    parent.testSoundButton = testSoundButton
+
+    local importSpyButton = CreateButton(parent, "Import from Spy", 150, 22, function()
+        local ok, a, b, c, d = BPP_ImportFromSpy and BPP_ImportFromSpy()
+        if not ok then
+            BPP_Print("[BigPPvP] " .. (a or "Import failed."))
+        else
+            BPP_Print(("[BigPPvP] Imported %d Kill On Sight player(s) (%d already on your list) and %d ignore entr%s (%d already on your list) from Spy."):format(
+                a, b, c, c == 1 and "y" or "ies", d))
+            if BPP_UpdateConfigUI then BPP_UpdateConfigUI() end
+        end
+    end)
+    importSpyButton:SetPoint("LEFT", testSoundButton, "RIGHT", 15, 0)
+    parent.importSpyButton = importSpyButton
+    importSpyButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Import from Spy")
+        GameTooltip:AddLine("Copies your current character's Kill On Sight and Ignore lists in directly from a co-installed Spy addon, if it's loaded. Existing entries are left alone - this only adds what's missing.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    importSpyButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
 local function CreateActionButtons(parent)
@@ -1044,7 +1223,7 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "BPP_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 690)
+    frame:SetSize(600, 930)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -1126,8 +1305,34 @@ function BPP_UpdateConfigUI()
         configFrame.autoShowCheckbox:SetChecked(BPP_DB.NearbyPanelAutoShow ~= false)
     end
 
-    if configFrame.majorCitiesCheckbox then
-        configFrame.majorCitiesCheckbox:SetChecked(BPP_DB.DisableInMajorCities == true)
+    if configFrame.zoneCheckboxes then
+        for zoneName, checkbox in pairs(configFrame.zoneCheckboxes) do
+            checkbox:SetChecked(BPP_DB.DisabledZones and BPP_DB.DisabledZones[zoneName] == true)
+        end
+    end
+
+    if configFrame.bgCheckbox then
+        configFrame.bgCheckbox:SetChecked(BPP_DB.DisableInBattlegrounds == true)
+    end
+
+    if configFrame.arenaCheckbox then
+        configFrame.arenaCheckbox:SetChecked(BPP_DB.DisableInArenas == true)
+    end
+
+    if configFrame.sanctuaryCheckbox then
+        configFrame.sanctuaryCheckbox:SetChecked(BPP_DB.DisableInSanctuaries ~= false)
+    end
+
+    if configFrame.unflaggedCheckbox then
+        configFrame.unflaggedCheckbox:SetChecked(BPP_DB.DisableWhenPvPUnflagged ~= false)
+    end
+
+    if configFrame.worldPvPCheckbox then
+        configFrame.worldPvPCheckbox:SetChecked(BPP_DB.DisableInWorldPvPZones == true)
+    end
+
+    if configFrame.nearbySharingCheckbox then
+        configFrame.nearbySharingCheckbox:SetChecked(BPP_DB.NearbySharingEnabled ~= false)
     end
 
     if configFrame.showNearbyCheckbox then
@@ -1136,6 +1341,10 @@ function BPP_UpdateConfigUI()
 
     if configFrame.classColorsCheckbox then
         configFrame.classColorsCheckbox:SetChecked(BPP_DB.NearbyPanelClassColors ~= false)
+    end
+
+    if configFrame.nearbySoundCheckbox then
+        configFrame.nearbySoundCheckbox:SetChecked(BPP_DB.NearbySoundEnabled ~= false)
     end
 
     if configFrame.soundPackDropdown and configFrame.soundPackDropdown:GetName() then
@@ -1324,47 +1533,13 @@ local function CreateAboutTab(parent)
     logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
     logo:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BIGPPvPLogo.blp")
 
-    local hunterColor = RAID_CLASS_COLORS["HUNTER"] or {
-        r = 0.67,
-        g = 0.83,
-        b = 0.45
-    }
-
     local contentWidth = 300
     local creditsContainer = CreateFrame("Frame", nil, parent)
     creditsContainer:SetSize(contentWidth, 200)
     creditsContainer:SetPoint("TOP", logo, "BOTTOM", 29, -10)
 
-    local devsLabel = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    devsLabel:SetPoint("TOPLEFT", creditsContainer, "TOPLEFT", 0, 0)
-    devsLabel:SetText("Developed by:")
-
-    local firstAuthorText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    firstAuthorText:SetPoint("TOPLEFT", devsLabel, "TOPRIGHT", 5, 0)
-    firstAuthorText:SetText("Severussnipe")
-    firstAuthorText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
-
-    local andText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    andText:SetPoint("TOPLEFT", firstAuthorText, "TOPRIGHT", 5, 0)
-    andText:SetText("&")
-    andText:SetTextColor(1, 1, 1) -- Set color to white
-
-    local secondAuthorText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    secondAuthorText:SetPoint("TOPLEFT", andText, "TOPRIGHT", 5, 0)
-    secondAuthorText:SetText("Hkfarmer")
-    secondAuthorText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
-
-    local customizedByLabel = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    customizedByLabel:SetPoint("TOPLEFT", devsLabel, "BOTTOMLEFT", 0, -10)
-    customizedByLabel:SetText("Customized by:")
-
-    local customizedByText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    customizedByText:SetPoint("TOPLEFT", customizedByLabel, "TOPRIGHT", 5, 0)
-    customizedByText:SetText("Oomkill")
-    customizedByText:SetTextColor(hunterColor.r, hunterColor.g, hunterColor.b)
-
     local guildText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    guildText:SetPoint("TOPLEFT", customizedByLabel, "BOTTOMLEFT", 0, -10)
+    guildText:SetPoint("TOPLEFT", creditsContainer, "TOPLEFT", 0, 0)
     guildText:SetText("Guild: ")
     guildText:SetTextColor(BPP_CONFIG_HEADER_R, BPP_CONFIG_HEADER_G, BPP_CONFIG_HEADER_B)
 
@@ -1383,14 +1558,21 @@ local function CreateAboutTab(parent)
     realmNameText:SetText("Nightslayer (US)")
     realmNameText:SetTextColor(1, 1, 1) -- Set color to white
 
-    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord:", "",
+    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord:", "TBD",
         realmText, -60, -50)
-    local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub: ",
-        "github.com/oneeyedglocker/bigppvp", discordLabel, 0, -20)
-    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact:", "",
+    local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub: ", "TBD",
+        discordLabel, 0, -20)
+    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact:", "TBD",
         githubLabel, 0, -20)
-    local curseforgeLabel, curseforgeField = CreateCopyableField(creditsContainer, "CurseForge:", "",
+    local curseforgeLabel, curseforgeField = CreateCopyableField(creditsContainer, "CurseForge:", "TBD",
         contactLabel, 0, -20, 265)
+
+    local attributionText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    attributionText:SetPoint("TOPLEFT", curseforgeLabel, "BOTTOMLEFT", 0, -30)
+    attributionText:SetWidth(contentWidth)
+    attributionText:SetJustifyH("LEFT")
+    attributionText:SetWordWrap(true)
+    attributionText:SetText("Originally based on PvPStatsClassic by Severussnipe & Hkfarmer.")
 
     return parent
 end
@@ -1446,9 +1628,17 @@ function BPP_CreateConfigFrame()
     configFrame.shareKOSCheckbox = tabFrames[4].shareKOSCheckbox
     configFrame.receiveKOSCheckbox = tabFrames[4].receiveKOSCheckbox
     configFrame.autoShowCheckbox = tabFrames[4].autoShowCheckbox
-    configFrame.majorCitiesCheckbox = tabFrames[4].majorCitiesCheckbox
+    configFrame.zoneCheckboxes = tabFrames[4].zoneCheckboxes
+    configFrame.bgCheckbox = tabFrames[4].bgCheckbox
+    configFrame.arenaCheckbox = tabFrames[4].arenaCheckbox
+    configFrame.sanctuaryCheckbox = tabFrames[4].sanctuaryCheckbox
+    configFrame.unflaggedCheckbox = tabFrames[4].unflaggedCheckbox
+    configFrame.worldPvPCheckbox = tabFrames[4].worldPvPCheckbox
+    configFrame.nearbySharingCheckbox = tabFrames[4].nearbySharingCheckbox
+    configFrame.purgeDropdown = tabFrames[4].purgeDropdown
     configFrame.showNearbyCheckbox = tabFrames[4].showNearbyCheckbox
     configFrame.classColorsCheckbox = tabFrames[4].classColorsCheckbox
+    configFrame.nearbySoundCheckbox = tabFrames[4].nearbySoundCheckbox
     configFrame.expiryDropdown = tabFrames[4].expiryDropdown
 
     local resetButtons = CreateActionButtons(tabFrames[5])

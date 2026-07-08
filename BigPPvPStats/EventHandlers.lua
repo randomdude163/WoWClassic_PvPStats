@@ -528,7 +528,7 @@ local function HandleCombatLogEvent()
         if (spellName == "Stealth" or spellName == "Prowl")
            and bit.band(sourceFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
            and bit.band(sourceFlags or 0, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
-            BPP_CheckStealthAlert(sourceName)
+            BPP_CheckStealthAlert(sourceName, spellName)
         end
     end
 
@@ -711,12 +711,40 @@ local function HandlePlayerEnteringWorld()
         BPP_DB.NearbyPanelAutoShow = true
     end
 
-    if BPP_DB.DisableInMajorCities == nil then
-        BPP_DB.DisableInMajorCities = false
-    end
-
     if BPP_DB.DisabledZones == nil then
         BPP_DB.DisabledZones = {}
+    end
+
+    if BPP_DB.DisableInBattlegrounds == nil then
+        BPP_DB.DisableInBattlegrounds = false
+    end
+
+    if BPP_DB.DisableInArenas == nil then
+        BPP_DB.DisableInArenas = false
+    end
+
+    if BPP_DB.DisableInSanctuaries == nil then
+        BPP_DB.DisableInSanctuaries = true
+    end
+
+    if BPP_DB.DisableWhenPvPUnflagged == nil then
+        BPP_DB.DisableWhenPvPUnflagged = true
+    end
+
+    if BPP_DB.DisableInWorldPvPZones == nil then
+        BPP_DB.DisableInWorldPvPZones = false
+    end
+
+    if BPP_DB.KOSPurgeDays == nil then
+        BPP_DB.KOSPurgeDays = 0
+    end
+
+    if BPP_DB.NearbySharingEnabled == nil then
+        BPP_DB.NearbySharingEnabled = true
+    end
+
+    if BPP_DB.NearbySoundEnabled == nil then
+        BPP_DB.NearbySoundEnabled = true
     end
 
     BPP_GetAndStorePlayerInfoFromUnit("player", true)
@@ -735,7 +763,11 @@ local function HandlePlayerEnteringWorld()
     BPP_InitializePlayerLossCounts()
 
     PVPSC.AchievementSystem:LoadAchievementCompletedData()
-    BPP_ShowWeeklyRivalryDigestIfDue()
+    BPP_ShowWeeklyTrashDigestIfDue()
+
+    if BPP_PurgeStaleKOSEntries then
+        BPP_PurgeStaleKOSEntries()
+    end
 
     BPP_UpdateMinimapButtonPosition()
     BPP_SetupMouseoverTooltip()

@@ -9,6 +9,7 @@ local addonName, PVPSC = ...
 -- ============================================================
 
 local NEARBY_EXPIRY_DEFAULT = 600 -- entries drop off 10 minutes after last seen by default
+local NEARBY_EXPIRY_NEVER = -1 -- matches Spy's "Never" RemoveUndetected option
 local NEARBY_PRUNE_INTERVAL = 30
 
 local function GetNearbyExpirySeconds()
@@ -33,10 +34,48 @@ local NEARBY_HARD_RETENTION_SECONDS = 3600
 -- Recording + pruning
 -- ============================================================
 
-function BPP_RecordNearbyPlayer(name, level, class, race, guildName, infoKey)
+-- ============================================================
+-- Live sighting sharing - when this client detects a genuinely new nearby
+-- player, briefly tell online guild/party members running the addon so it
+-- shows up in their Nearby panel too, not just via the periodic stats
+-- broadcast. Throttled per-player so a flickering nameplate can't spam
+-- chat, and one-directional (received sightings are merged locally but
+-- never re-broadcast) so there's no echo loop between clients.
+-- ============================================================
+
+local SIGHTING_BROADCAST_COOLDOWN = 120
+local lastSightingBroadcast = {}
+
+local function BroadcastSighting(name, level, class, race, guildName, infoKey)
+    if not BPP_DB or BPP_DB.NearbySharingEnabled == false then return end
+    if not PVPSC.Network or not PVPSC.Network.SendCommMessageWithDebug then return end
+
+    local now = time()
+    if lastSightingBroadcast[infoKey] and now - lastSightingBroadcast[infoKey] < SIGHTING_BROADCAST_COOLDOWN then
+        return
+    end
+    lastSightingBroadcast[infoKey] = now
+
+    local payload = "SIGHT|" .. table.concat({
+        name or "", tostring(level or ""), class or "", race or "", guildName or "",
+    }, "\30")
+
+    if IsInRaid() then
+        PVPSC.Network:SendCommMessageWithDebug("BPP", payload, "RAID")
+    elseif IsInGroup() then
+        PVPSC.Network:SendCommMessageWithDebug("BPP", payload, "PARTY")
+    end
+    if IsInGuild() then
+        PVPSC.Network:SendCommMessageWithDebug("BPP", payload, "GUILD")
+    end
+end
+
+-- Called from NetworkHandler.lua when a SIGHT message is received - merges
+-- it in like a local detection, but never re-broadcasts it.
+function BPP_MergeSharedSighting(name, level, class, race, guildName)
     if not name or name == "" then return end
     if BPP_IsZoneDetectionDisabled and BPP_IsZoneDetectionDisabled() then return end
-    infoKey = infoKey or BPP_GetInfoKeyFromName(name)
+    local infoKey = BPP_GetInfoKeyFromName(name)
 
     nearbyPlayers[infoKey] = {
         name = name,
@@ -46,6 +85,47 @@ function BPP_RecordNearbyPlayer(name, level, class, race, guildName, infoKey)
         guild = guildName,
         lastSeen = time(),
     }
+
+    if nearbyPanelFrame and nearbyPanelFrame:IsShown() then
+        BPP_RefreshNearbyPanel()
+    elseif BPP_DB and BPP_DB.NearbyPanelAutoShow ~= false and BPP_ShowNearbyPanel then
+        BPP_ShowNearbyPanel()
+    end
+end
+
+function BPP_RecordNearbyPlayer(name, level, class, race, guildName, infoKey, suppressSound)
+    if not name or name == "" then return end
+    if BPP_IsZoneDetectionDisabled and BPP_IsZoneDetectionDisabled() then return end
+    if BPP_IsScopeDetectionDisabled and BPP_IsScopeDetectionDisabled() then return end
+    infoKey = infoKey or BPP_GetInfoKeyFromName(name)
+
+    local isNewSighting = nearbyPlayers[infoKey] == nil
+
+    nearbyPlayers[infoKey] = {
+        name = name,
+        level = level,
+        class = class,
+        race = race,
+        guild = guildName,
+        lastSeen = time(),
+    }
+
+    if isNewSighting then
+        BroadcastSighting(name, level, class, race, guildName, infoKey)
+
+        -- Spy's own detected-nearby.mp3 (see sounds/Spy/), for a genuinely
+        -- new hostile sighting. Skipped for Kill On Sight matches and
+        -- Ignored players - Kill On Sight has its own distinct sound that's
+        -- about to fire right after this (see DataStorage.lua), and playing
+        -- both at once would overlap them. Also skipped when the caller
+        -- (the Stealth alert) already has its own distinct sound covering
+        -- this same detection.
+        if not suppressSound and BPP_DB and BPP_DB.NearbySoundEnabled ~= false
+           and not BPP_IsKOSIgnored(infoKey)
+           and not (BPP_IsKOSMatch and BPP_IsKOSMatch(infoKey, guildName)) then
+            PlaySoundFile("Interface\\AddOns\\BigPPvPStats\\sounds\\Spy\\detected-nearby.mp3", "Master")
+        end
+    end
 
     if nearbyPanelFrame and nearbyPanelFrame:IsShown() then
         BPP_RefreshNearbyPanel()
@@ -94,11 +174,17 @@ local stealthLastAlerted = {}
 local stealthPopupFrame = nil
 local stealthPopupTimer = nil
 
+-- Compact two-line toast matching Spy's own AlertWindow (icon + title + name
+-- over a translucent tooltip-style backdrop, ~42px tall, width fit to the
+-- text) instead of a large opaque block that gets in the way of the view.
+local STEALTH_ICON = "Interface\\Icons\\Ability_Stealth"
+local PROWL_ICON = "Interface\\Icons\\Ability_Ambush"
+
 local function CreateStealthPopupFrame()
     if stealthPopupFrame then return stealthPopupFrame end
 
     local frame = CreateFrame("Frame", "BPP_StealthPopupFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(260, 50)
+    frame:SetSize(220, 42)
     frame:SetPoint("TOP", UIParent, "TOP", 0, -340)
     frame:SetFrameStrata("HIGH")
     frame:SetClampedToScreen(true)
@@ -108,31 +194,57 @@ local function CreateStealthPopupFrame()
     end
 
     frame:SetBackdrop({
-        bgFile = "Interface\\BUTTONS\\WHITE8X8",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         tile = true,
-        tileSize = 16,
-        edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+        tileSize = 8,
+        edgeSize = 8,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
     })
-    frame:SetBackdropColor(0, 0, 0, 0.85)
-    frame:SetBackdropBorderColor(0.6, 0.2, 0.9)
+    frame:SetBackdropColor(0, 0, 0, 0.45)
+    frame:SetBackdropBorderColor(0.6, 0.2, 1.0, 0.6)
 
-    local text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    text:SetPoint("CENTER", frame, "CENTER", 0, 0)
-    text:SetTextColor(0.75, 0.4, 1.0)
-    frame.text = text
+    local icon = frame:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(32, 32)
+    icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 6, -5)
+    icon:SetTexture(STEALTH_ICON)
+    frame.icon = icon
+
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 8, -2)
+    title:SetJustifyH("LEFT")
+    title:SetTextColor(0.6, 0.2, 1.0)
+    title:SetText("Stealth player detected!")
+    frame.title = title
+
+    local name = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    name:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -3)
+    name:SetJustifyH("LEFT")
+    name:SetTextColor(1, 1, 1)
+    frame.name = name
 
     frame:Hide()
     stealthPopupFrame = frame
     return frame
 end
 
-function BPP_CheckStealthAlert(name)
-    if not BPP_DB or BPP_DB.StealthAlertsEnabled == false or not name or name == "" then return end
+function BPP_CheckStealthAlert(name, spellName)
+    if not BPP_DB or not name or name == "" then return end
     if BPP_IsZoneDetectionDisabled and BPP_IsZoneDetectionDisabled() then return end
+    if BPP_IsScopeDetectionDisabled and BPP_IsScopeDetectionDisabled() then return end
 
     local infoKey = BPP_GetInfoKeyFromName(name)
+
+    -- Stealth is detected purely from the combat log (no unit token to mouse
+    -- over/target), so this is the only chance to add the sighting to the
+    -- Nearby list - without it, a player seen going stealthy never showed up
+    -- there at all, even though they triggered an alert. Uses whatever the
+    -- addon already knows about them from past target/mouseover encounters.
+    local cacheInfo = BPP_DB.PlayerInfoCache and BPP_DB.PlayerInfoCache[infoKey]
+    BPP_RecordNearbyPlayer(name, cacheInfo and cacheInfo.level, cacheInfo and cacheInfo.class,
+        cacheInfo and cacheInfo.race, cacheInfo and cacheInfo.guild, infoKey, true)
+
+    if BPP_DB.StealthAlertsEnabled == false then return end
     if BPP_IsKOSIgnored(infoKey) then return end
 
     local now = time()
@@ -147,7 +259,9 @@ function BPP_CheckStealthAlert(name)
         stealthPopupTimer = nil
     end
 
-    frame.text:SetText(name .. " went into stealth nearby!")
+    frame.icon:SetTexture(spellName == "Prowl" and PROWL_ICON or STEALTH_ICON)
+    frame.name:SetText(name)
+    frame:SetWidth(math.max(frame.title:GetStringWidth(), frame.name:GetStringWidth()) + 46)
     frame:Show()
     frame:SetAlpha(1)
 
@@ -155,7 +269,9 @@ function BPP_CheckStealthAlert(name)
         BPP_FrameManager:BringToFront("StealthPopup")
     end
 
-    PlaySound(SOUNDKIT.READY_CHECK) -- short, distinct from the KOS raid-warning sound
+    -- Spy's own detected-stealth.mp3, bundled directly (see sounds/Spy/) -
+    -- distinct from the Kill On Sight alert sound, matching Spy's own design.
+    PlaySoundFile("Interface\\AddOns\\BigPPvPStats\\sounds\\Spy\\detected-stealth.mp3", "Master")
 
     stealthPopupTimer = C_Timer.NewTimer(4, function()
         UIFrameFade(frame, { mode = "OUT", timeToFade = 1, finishedFunc = function() frame:Hide() end })
@@ -164,6 +280,10 @@ function BPP_CheckStealthAlert(name)
 end
 
 local function PruneNearbyPlayers()
+    -- "Never" means entries stick around until removed by hand, matching
+    -- Spy's InactiveTimeout=-1 behavior - skip the hard 1-hour cap too.
+    if GetNearbyExpirySeconds() == NEARBY_EXPIRY_NEVER then return end
+
     local now = time()
     local changed = false
     for infoKey, data in pairs(nearbyPlayers) do
@@ -338,11 +458,12 @@ local function CreateNearbyPanelFrame()
 
     -- Resize grip only adjusts width (useful for long names) - height is
     -- always driven by the current row count on refresh. Anchored to the
-    -- vertical middle of the right edge, well clear of the title bar's
-    -- arrows/close button so they can't overlap.
+    -- frame's bottom-right corner, which is always right below the last
+    -- row (not the frame's vertical middle - that put it halfway up a
+    -- tall list, nowhere near the actual bottom edge).
     local resizeGrip = CreateFrame("Button", nil, frame)
-    resizeGrip:SetSize(10, 24)
-    resizeGrip:SetPoint("RIGHT", frame, "RIGHT", 2, 0)
+    resizeGrip:SetSize(12, 12)
+    resizeGrip:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
     resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
@@ -374,12 +495,24 @@ local function CreateNearbyRow(content, rowY, rowWidth, infoKey, data)
     local isKOS = BPP_DB.KOSPlayers and BPP_DB.KOSPlayers[infoKey] ~= nil
     local isIgnored = BPP_IsKOSIgnored(infoKey)
 
-    local row = CreateFrame("Button", nil, content)
+    -- SecureActionButtonTemplate so left-click can target the player
+    -- directly (matches Spy). Setting the secure "macrotext1" attribute is
+    -- itself a protected action - skip it while in combat lockdown (the
+    -- row still displays fine, it just won't target until the panel
+    -- refreshes again out of combat, the same limitation Spy's own
+    -- documentation calls out).
+    local row = CreateFrame("Button", nil, content, "SecureActionButtonTemplate")
     row:SetSize(rowWidth, ROW_HEIGHT)
     row:SetPoint("TOPLEFT", 1, rowY)
-    row:RegisterForClicks("RightButtonUp")
-    row:SetScript("OnClick", function()
-        ShowRowContextMenu(infoKey, data.name, row)
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    if not InCombatLockdown() then
+        row:SetAttribute("type1", "macro")
+        row:SetAttribute("macrotext1", "/targetexact " .. data.name)
+    end
+    row:SetScript("OnClick", function(self, button)
+        if button == "RightButton" then
+            ShowRowContextMenu(infoKey, data.name, row)
+        end
     end)
 
     local bar = row:CreateTexture(nil, "BACKGROUND")
@@ -452,7 +585,14 @@ local function GetModeEntries(modeName)
         local now = time()
         -- Nearby only shows entries seen within the (configurable) short
         -- window; Last Hour shows everything still in the hour-long store.
-        local cutoff = modeName == "Nearby" and GetNearbyExpirySeconds() or NEARBY_HARD_RETENTION_SECONDS
+        -- "Never" (-1) means don't filter by time at all in the Nearby view.
+        local cutoff
+        if modeName == "Nearby" then
+            local expiry = GetNearbyExpirySeconds()
+            cutoff = (expiry == NEARBY_EXPIRY_NEVER) and math.huge or expiry
+        else
+            cutoff = NEARBY_HARD_RETENTION_SECONDS
+        end
         for infoKey, data in pairs(nearbyPlayers) do
             if now - data.lastSeen <= cutoff then
                 table.insert(entries, { key = infoKey, data = data })

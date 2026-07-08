@@ -72,7 +72,7 @@ faster for "I just broke something 5 minutes ago."
 These feed the exact same code path as a real kill, so kill-streak popups,
 milestone popups, announce messages, and achievement unlocks all fire normally.
 
-## 6. Testing guild rivalry milestones specifically
+## 6. Testing guild trash milestones specifically
 
 Milestones (10/25/50/75/100/200/300/400/500 kills against a single guild) are
 tracked automatically for *any* guild you fight - there's no name list to
@@ -86,7 +86,7 @@ dedicated command instead:
 /bpp registerguildkill <guild name> [count]
 ```
 
-For example, to walk up to the first tier against a made-up rival:
+For example, to walk up to the first tier against a made-up target:
 
 ```
 /bpp registerguildkill The Red Empire 10
@@ -99,17 +99,21 @@ once at a high count (e.g. `500`) to jump straight to the top and confirm the
 whole chain of tiers fires in order without duplicates. Try a second,
 different guild name too, to confirm each guild tracks independently.
 
-Then check the aggregate view - `/bpp rivals`, or the "Show Rivals" button in
+Then check the aggregate view - `/bpp trash`, or the "Show Trash" button in
 the Statistics window's button row (alongside Show Settings/Achievements/Kill
 History/Kill Streak/Leaderboard). This sums `topGuildKills` (each
-contributor's own top 10 rival guilds) across yourself, your alts, and anyone
+contributor's own top 10 trashed guilds) across yourself, your alts, and anyone
 else's broadcast data you've received - `/bpp sync` first if you want to pull
 in a guildmate's data on demand.
 
-`/bpp rivals digest`, or the "This Week" button inside the Most Hated Guilds
-window, shows a summary of rival-guild kills from the last 7 days, computed
-from raw kill history (this also fires automatically at most once per real
-week, on login).
+`/bpp trash digest` shows a summary of trashed-guild kills from the last 7
+days as a popup, computed from raw kill history (this also fires
+automatically at most once per real week, on login). The "This Week" button
+inside the Most Hated Guilds window is different - it swaps that window's
+own list between the combined all-time board and your personal past-7-days
+view in place (button label flips to "All Time" to switch back), rather
+than opening a separate popup. Click it a couple of times to confirm the
+list content and button label both update with no extra popup appearing.
 
 ## 7. Testing the Kill On Sight list
 
@@ -129,7 +133,7 @@ player names and guilds, so you can test it against any real player nearby
 To see the alert fire, add a real nearby player's exact name (or their exact
 guild name) to the list, then target them, mouse over them, or let their
 nameplate appear. You should get a red popup with a distinct "raid warning"
-sound - separate from the rivalry milestone popup so the two can't cut each
+sound - separate from the trash milestone popup so the two can't cut each
 other off. A named match takes priority over a guild match. Alerts are
 deduped per player with a 60-second cooldown, so hovering back and forth
 over the same target won't spam it.
@@ -179,7 +183,7 @@ hard cap); Kill On Sight and Ignored persist until you remove them.
 
 Your own KOS player/guild lists (capped to the most recently added 25 of
 each) broadcast alongside your other stats, the same way `topGuildKills`
-does for the rivalry board. Anyone else running the addon - guildmate, group
+does for the trash board. Anyone else running the addon - guildmate, group
 member, or alt - who receives that broadcast will also get alerted on your
 watchlist entries, even if they never added them personally, and vice versa.
 
@@ -203,10 +207,13 @@ nothing changes for existing users until they touch it.
 
 To test the Stealth alert specifically: have a rogue or druid (an alt, or a
 nearby real one) go into Stealth/Prowl within combat-log range of you. You
-should get a small purple-bordered popup and a short sound - this fires from
-the combat log directly, so it works even if you never target or mouse over
-them. It respects your Ignore list and the "Alert when a rogue/druid
-stealths nearby" checkbox in Settings.
+should get a small, mostly see-through popup (matching Spy's own alert
+style - a small ability icon, "Stealth player detected!", and the name
+below, not a large opaque box) and a short sound - this fires from the
+combat log directly, so it works even if you never target or mouse over
+them. A druid going Prowl should show a different icon (a dagger-strike
+icon) than a rogue going Stealth. It respects your Ignore list and the
+"Alert when a rogue/druid stealths nearby" checkbox in Settings.
 
 ## 11. Testing the minimap icon, auto-show, and zone exclusions
 
@@ -231,15 +238,76 @@ Zone exclusions - two ways to test:
 /bpp zone list
 ```
 
-or check "Disable detection in major cities" in Settings > Kill On Sight,
-then travel to a capital city (Stormwind, Ironforge, Darnassus, Exodar,
-Orgrimmar, Thunder Bluff, Undercity, Silvermoon, Shattrath, or Dalaran).
-Either way, once in a disabled zone, Kill On Sight alerts, Stealth alerts,
+or check one of the per-zone boxes under "Disabled Zones" in Settings > Kill
+On Sight (Booty Bay, Everlook, Gadgetzan, Ratchet, The Salty Sailor Tavern,
+Cenarion Hold, Shattrath City, Area 52 - the neutral hubs both factions use,
+matching Spy's own list; racial capitals aren't included since the opposing
+faction can't normally enter them anyway), then travel there. Either way,
+once in a disabled zone, Kill On Sight alerts, Stealth alerts,
 and the Nearby panel should all go quiet - the Nearby panel simply won't
 pick up new entries while you're there, even ones you'd normally be
 watchlisted for.
 
-## 12. Undo the test data
+## 12. Testing click-to-target, PvP scope, live sharing, and purge
+
+Click a name in the Nearby panel (left-click) to target that player directly
+- like every other secure click-to-target in WoW, this only works outside
+combat lockdown, so it won't do anything mid-fight until the panel
+refreshes again after combat ends.
+
+PvP scope toggles (Settings > Kill On Sight > PvP Scope) - test by entering
+a battleground/arena with the matching toggle on, and confirm detection
+goes quiet; toggle "Disable detection while not PvP flagged" and confirm
+detection stops as soon as you're not flagged (auto-flags off in most PvE
+zones), and resumes once you flag up. Dungeons and raids are always
+excluded regardless of any toggle (there's nothing to detect there) - queue
+into one and confirm detection goes quiet with no setting involved.
+
+Kill On Sight and Stealth alerts now play the identical sound (previously
+two different ones) and the KOS popup now clears itself after ~4 seconds
+total instead of lingering for 9 - `/bpp kos testsound` is the fastest way
+to check both without waiting on a real detection.
+
+Import from Spy - with Spy installed and loaded on the same character (see
+section 1), add a player or two to Spy's own Kill On Sight/Ignore lists,
+then use "Import from Spy" in Settings > Kill On Sight (or
+`/bpp kos importspy`). Open `/bpp kos` afterward - the imported players
+should show up with any reason Spy had stored for them carried over.
+Running it again should report 0 newly imported (everything already on
+your list), not duplicates.
+
+The Nearby view's fall-off dropdown now has Spy's full six options (1/2/5/
+10/15 minutes, Never) instead of just four. "Never" is the one to watch
+closely - unlike the timed options, it also skips the panel's old 1-hour
+hard cap, so an entry set that way should still be there after waiting over
+an hour, not just within the shorter Nearby window.
+
+Live sighting sharing - have a second character (an alt or a guildmate)
+detect a new hostile player; if "Share live sightings with guild/party" is
+on for both of you, it should show up in your own Nearby panel within a few
+seconds, without you having seen them yourself.
+
+Data retention - set "Auto-remove Kill On Sight/Ignore entries not seen in"
+to 30 days, add a KOS entry, then manually backdate it for testing via
+`/run BPP_DB.KOSPlayers["Name-Realm"].lastSeen = time() - 40*86400` and
+`/reload` - it should be gone after the purge runs on login.
+
+`/bpp kos testsound`, or "Test Alert Sound" in Settings, fires the Kill On
+Sight popup and sound directly - use this first if sound seems broken, to
+rule out "detection never fired" vs. "the sound itself didn't play."
+
+Kill On Sight, Stealth, and new-nearby-sighting alerts each play one of
+Spy's own bundled sounds now (sounds/Spy/detected-kos.mp3, detected-
+stealth.mp3, detected-nearby.mp3) instead of a Blizzard stock sound - all
+three should sound distinct from each other. Detect a brand new hostile
+player (not on your Kill On Sight or Ignore list) to hear detected-nearby.mp3
+fire once; detecting them again shouldn't replay it. Toggle "Play a sound
+for new nearby sightings" off in Settings to confirm it goes quiet while
+Kill On Sight/Stealth sounds keep working. Add that same player to your Kill
+On Sight list first and detect them again - only the KOS sound should play,
+not both at once.
+
+## 13. Undo the test data
 
 Once you're done poking at it:
 
@@ -252,7 +320,7 @@ step 4 via `/bpp import`. Either way, follow up with `/reload` so any open
 windows (achievements, statistics, leaderboard) refresh against the restored
 data.
 
-## 13. How guild rivalry tracking works
+## 14. How guild trash tracking works
 
 There's nothing to configure - every guild you kill a member of is tracked
 automatically against a 9-tier ladder (10/25/50/75/100/200/300/400/500). See
@@ -269,8 +337,8 @@ a fresh `CreateFrame()` call on every refresh, with no pooling). Instead:
   announced), not a full record per tier
 - Milestones show a lightweight popup, not an Achievement Frame entry, and
   don't add achievement points
-- The "Most Hated Guilds" board (`/bpp rivals`) aggregates from a bounded top
-  10 rival guilds per contributor (broadcast in `topGuildKills`), so the
+- The "Most Hated Guilds" board (`/bpp trash`) aggregates from a bounded top
+  10 trashed guilds per contributor (broadcast in `topGuildKills`), so the
   network payload and the board itself stay a fixed size no matter how many
   total guilds exist
 - Browsing your own full per-guild kill history (not just the top 10) is

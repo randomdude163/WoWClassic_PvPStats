@@ -1071,6 +1071,15 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
             self.syncResponsePending = false
             self:BroadcastStats()
         end)
+
+    elseif msgType == "SIGHT" then
+        -- Live sighting share: a guild/party member's addon just detected a
+        -- new hostile player and is passing it along so it shows up in our
+        -- own Nearby panel too, not just our own detections.
+        if BPP_MergeSharedSighting then
+            local name, level, class, race, guildName = strsplit("\30", data)
+            BPP_MergeSharedSighting(name, tonumber(level), class, race, guildName)
+        end
     end
 end
 
