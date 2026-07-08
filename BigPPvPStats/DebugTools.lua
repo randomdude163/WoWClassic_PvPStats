@@ -329,7 +329,7 @@ function BPP_SimulatePlayerKills(killCount)
 end
 
 -- Same as BPP_SimulatePlayerKills but forces a specific guild name, so the
--- guild rivalry milestones (see GuildRivalry.lua) can be tested without
+-- guild trash milestones (see GuildRivalry.lua) can be tested without
 -- waiting to actually fight that guild.
 function BPP_SimulateGuildKills(guildName, killCount)
     if not guildName or guildName == "" then

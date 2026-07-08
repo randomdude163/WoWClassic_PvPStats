@@ -1,7 +1,7 @@
 local addonName, PVPSC = ...
 
 -- ============================================================
--- Guild rivalry: personal highlight popups + a guild-wide aggregate view,
+-- Guild trash talk: personal highlight popups + a guild-wide aggregate view,
 -- tracking kills against every guild you've fought without treating any of
 -- it as a formal achievement (no Achievement Frame tiles, no per-tier saved
 -- records - just a lightweight highlight, the same pattern BPP_ShowKillMilestone
@@ -29,13 +29,13 @@ local GUILD_MILESTONE_SUBTEXTS = {
 -- Personal highlight popup - a lightweight toast, not an achievement.
 -- ============================================================
 
-local rivalryPopupFrame = nil
-local rivalryPopupTimer = nil
+local trashPopupFrame = nil
+local trashPopupTimer = nil
 
-local function CreateRivalryPopupFrame()
-    if rivalryPopupFrame then return rivalryPopupFrame end
+local function CreateTrashPopupFrame()
+    if trashPopupFrame then return trashPopupFrame end
 
-    local frame = CreateFrame("Frame", "BPP_RivalryPopupFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
+    local frame = CreateFrame("Frame", "BPP_TrashPopupFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
     frame:SetSize(320, 90)
     frame:SetPoint("TOP", UIParent, "TOP", 0, -150)
     frame:SetFrameStrata("HIGH")
@@ -47,7 +47,7 @@ local function CreateRivalryPopupFrame()
     frame:SetClampedToScreen(true)
 
     if BPP_FrameManager then
-        BPP_FrameManager:RegisterFrame(frame, "RivalryPopup", true)
+        BPP_FrameManager:RegisterFrame(frame, "TrashPopup", true)
     end
 
     frame:SetBackdrop({
@@ -83,19 +83,19 @@ local function CreateRivalryPopupFrame()
     frame.subText = subText
 
     frame:Hide()
-    rivalryPopupFrame = frame
+    trashPopupFrame = frame
     return frame
 end
 
 local POPUP_MIN_HEIGHT = 90
 local POPUP_MAX_HEIGHT = 320
 
-local function ShowRivalryPopup(title, subText)
-    local frame = CreateRivalryPopupFrame()
+local function ShowTrashPopup(title, subText)
+    local frame = CreateTrashPopupFrame()
 
-    if rivalryPopupTimer then
-        rivalryPopupTimer:Cancel()
-        rivalryPopupTimer = nil
+    if trashPopupTimer then
+        trashPopupTimer:Cancel()
+        trashPopupTimer = nil
     end
 
     frame.title:SetText(title)
@@ -112,14 +112,14 @@ local function ShowRivalryPopup(title, subText)
     frame:SetAlpha(1)
 
     if BPP_FrameManager then
-        BPP_FrameManager:BringToFront("RivalryPopup")
+        BPP_FrameManager:BringToFront("TrashPopup")
     end
 
     PlaySound(8473) -- "achievement gained" fanfare - distinct from the kill-streak sound packs
 
-    rivalryPopupTimer = C_Timer.NewTimer(8, function()
+    trashPopupTimer = C_Timer.NewTimer(8, function()
         UIFrameFade(frame, { mode = "OUT", timeToFade = 1, finishedFunc = function() frame:Hide() end })
-        rivalryPopupTimer = nil
+        trashPopupTimer = nil
     end)
 end
 
@@ -135,7 +135,7 @@ end
 -- The very first time this runs for a character, any tiers already passed
 -- (from kill history predating this feature) are recorded silently instead
 -- of bursting out a popup/chat message per guild per tier all at once.
-function BPP_CheckGuildRivalryMilestones(stats)
+function BPP_CheckGuildTrashMilestones(stats)
     if not stats or not stats.guildData or not BPP_DB or not BPP_DB.PlayerKillCounts then
         return
     end
@@ -162,7 +162,7 @@ function BPP_CheckGuildRivalryMilestones(stats)
 
                 if not isFirstRunForCharacter then
                     local subText = GUILD_MILESTONE_SUBTEXTS[tier](guildName, tier)
-                    ShowRivalryPopup(("%d kills vs %s!"):format(tier, guildName), subText)
+                    ShowTrashPopup(("%d kills vs %s!"):format(tier, guildName), subText)
 
                     if i >= GUILD_CALLOUT_MIN_TIER_INDEX and IsInGuild() and not BPP_CurrentlyInBattleground then
                         SendChatMessage(("[BigPPvP] %s just hit %d kills against %s!"):format(UnitName("player"), tier, guildName), "GUILD")
@@ -203,8 +203,8 @@ end
 -- or cached from a previous one) into "who has BIGPPvP collectively hurt the
 -- most." Bounded by construction: each contributor only ever reports their
 -- own top 10, so this never grows past (10 x number of known contributors)
--- regardless of how many total rival guilds exist.
-function BPP_GetAggregatedGuildRivalryData()
+-- regardless of how many total trashed guilds exist.
+function BPP_GetAggregatedGuildTrashData()
     local totals = {}
     local contributorCount = 0
 
@@ -228,6 +228,8 @@ end
 -- ============================================================
 
 local mostHatedFrame = nil
+local RefreshMostHatedFrame -- forward-declared: CreateMostHatedFrame's "This Week" button and
+                             -- RefreshMostHatedFrame itself both need to call each other
 
 local function CreateMostHatedFrame()
     if mostHatedFrame then return mostHatedFrame end
@@ -253,22 +255,25 @@ local function CreateMostHatedFrame()
     hint:SetPoint("RIGHT", frame, "RIGHT", -15, 0)
     hint:SetJustifyH("LEFT")
     hint:SetWordWrap(true)
-    hint:SetText("Combined kills across every online guild/group member running the addon. Each contributes their own top 10 rival guilds.")
+    hint:SetText("Combined kills across every online guild/group member running the addon. Each contributes their own top 10 trashed guilds.")
 
     local digestButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     digestButton:SetSize(110, 22)
     digestButton:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -10)
     digestButton:SetText("This Week")
     digestButton:SetScript("OnClick", function()
-        BPP_ShowRivalryDigest()
+        frame.mode = (frame.mode == "week") and "alltime" or "week"
+        RefreshMostHatedFrame()
     end)
     digestButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Weekly Digest", 1, 0.82, 0)
-        GameTooltip:AddLine("Show your own rival guild kills from the past 7 days.", 1, 1, 1, true)
+        GameTooltip:AddLine("Switch this list between the combined all-time board and your own trashed guild kills from the past 7 days.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     digestButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    frame.digestButton = digestButton
+    frame.mode = "alltime"
 
     local scrollFrame = CreateFrame("ScrollFrame", "BPP_MostHatedScrollFrame", frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", digestButton, "BOTTOMLEFT", 0, -10)
@@ -283,7 +288,41 @@ local function CreateMostHatedFrame()
     return frame
 end
 
-local function RefreshMostHatedFrame()
+local function CalculateGuildKillsSince(characterData, sinceTimestamp)
+    local result = {}
+    if not characterData or not characterData.Kills then return result end
+
+    for nameWithLevel, killData in pairs(characterData.Kills) do
+        if killData.killLocations then
+            local colonIndex = string.find(nameWithLevel, ":", 1, true)
+            local nameWithoutLevel = colonIndex and string.sub(nameWithLevel, 1, colonIndex - 1) or nameWithLevel
+
+            local infoKey = BPP_NormalizePlayerName(nameWithoutLevel)
+            local info = infoKey and BPP_DB.PlayerInfoCache[infoKey]
+            local guild = info and info.guild
+
+            if guild and guild ~= "" then
+                local countInWindow = 0
+                for _, loc in ipairs(killData.killLocations) do
+                    if loc.timestamp and loc.timestamp >= sinceTimestamp then
+                        countInWindow = countInWindow + 1
+                    end
+                end
+                if countInWindow > 0 then
+                    result[guild] = (result[guild] or 0) + countInWindow
+                end
+            end
+        end
+    end
+
+    return result
+end
+
+-- Renders either the combined all-time board or the "This Week" personal
+-- view into the same window/content area (frame.mode toggled by the
+-- digestButton), instead of the past behavior where "This Week" spawned a
+-- separate floating popup on top of this window.
+function RefreshMostHatedFrame()
     local frame = CreateMostHatedFrame()
     local content = frame.content
 
@@ -292,12 +331,30 @@ local function RefreshMostHatedFrame()
         child:SetParent(nil)
     end
 
-    local totals, contributorCount = BPP_GetAggregatedGuildRivalryData()
+    local entries, footerLabel, emptyMessage
 
-    local entries = {}
-    for guildName, kills in pairs(totals) do
-        table.insert(entries, { name = guildName, kills = kills })
+    if frame.mode == "week" then
+        frame.digestButton:SetText("All Time")
+        local characterData = BPP_DB and BPP_DB.PlayerKillCounts
+            and BPP_DB.PlayerKillCounts.Characters[BPP_GetCharacterKey()]
+        local guildKills = CalculateGuildKillsSince(characterData, time() - 7 * 24 * 3600)
+        entries = {}
+        for guildName, kills in pairs(guildKills) do
+            table.insert(entries, { name = guildName, kills = kills })
+        end
+        footerLabel = "Your own kills from the past 7 days."
+        emptyMessage = "No trashed guilds in the past 7 days. Get some kills to see them here."
+    else
+        frame.digestButton:SetText("This Week")
+        local totals, contributorCount = BPP_GetAggregatedGuildTrashData()
+        entries = {}
+        for guildName, kills in pairs(totals) do
+            table.insert(entries, { name = guildName, kills = kills })
+        end
+        footerLabel = "Based on data from " .. contributorCount .. " known contributor(s)."
+        emptyMessage = "No trashed guild data yet. Get some kills, or try /bpp sync to pull data from nearby guild/group members."
     end
+
     table.sort(entries, function(a, b) return a.kills > b.kills end)
 
     if #entries == 0 then
@@ -306,7 +363,7 @@ local function RefreshMostHatedFrame()
         emptyText:SetWidth(280)
         emptyText:SetJustifyH("LEFT")
         emptyText:SetWordWrap(true)
-        emptyText:SetText("No rival guild data yet. Get some kills, or try /bpp sync to pull data from nearby guild/group members.")
+        emptyText:SetText(emptyMessage)
         content:SetHeight(60)
         return
     end
@@ -341,53 +398,25 @@ local function RefreshMostHatedFrame()
     local footerY = -5 - (#entries * 22) - 10
     local footerText = content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     footerText:SetPoint("TOPLEFT", 5, footerY)
-    footerText:SetText("Based on data from " .. contributorCount .. " known contributor(s).")
+    footerText:SetText(footerLabel)
 
     content:SetHeight(math.max(-footerY + 20, 10))
 end
 
 function BPP_ShowMostHatedGuildsFrame()
+    local frame = CreateMostHatedFrame()
+    frame.mode = "alltime"
     RefreshMostHatedFrame()
-    mostHatedFrame:Show()
+    frame:Show()
 end
 
 -- ============================================================
--- Weekly rivalry digest
+-- Weekly trash digest
 -- ============================================================
 
-local function CalculateGuildKillsSince(characterData, sinceTimestamp)
-    local result = {}
-    if not characterData or not characterData.Kills then return result end
-
-    for nameWithLevel, killData in pairs(characterData.Kills) do
-        if killData.killLocations then
-            local colonIndex = string.find(nameWithLevel, ":", 1, true)
-            local nameWithoutLevel = colonIndex and string.sub(nameWithLevel, 1, colonIndex - 1) or nameWithLevel
-
-            local infoKey = BPP_NormalizePlayerName(nameWithoutLevel)
-            local info = infoKey and BPP_DB.PlayerInfoCache[infoKey]
-            local guild = info and info.guild
-
-            if guild and guild ~= "" then
-                local countInWindow = 0
-                for _, loc in ipairs(killData.killLocations) do
-                    if loc.timestamp and loc.timestamp >= sinceTimestamp then
-                        countInWindow = countInWindow + 1
-                    end
-                end
-                if countInWindow > 0 then
-                    result[guild] = (result[guild] or 0) + countInWindow
-                end
-            end
-        end
-    end
-
-    return result
-end
-
--- Shows a summary of rival-guild kills in the given window (default: the
--- last 7 days) as a rivalry popup. Available on-demand via /bpp rivals digest.
-function BPP_ShowRivalryDigest(sinceTimestamp)
+-- Shows a summary of trashed-guild kills in the given window (default: the
+-- last 7 days) as a trash popup. Available on-demand via /bpp trash digest.
+function BPP_ShowTrashDigest(sinceTimestamp)
     if not BPP_DB or not BPP_DB.PlayerKillCounts then return end
     local characterData = BPP_DB.PlayerKillCounts.Characters[BPP_GetCharacterKey()]
     if not characterData then return end
@@ -402,7 +431,7 @@ function BPP_ShowRivalryDigest(sinceTimestamp)
     table.sort(entries, function(a, b) return a.kills > b.kills end)
 
     if #entries == 0 then
-        BPP_Print("[BigPPvP] No rival guild kills to report for the past week.")
+        BPP_Print("[BigPPvP] No trashed guild kills to report for the past week.")
         return
     end
 
@@ -411,22 +440,22 @@ function BPP_ShowRivalryDigest(sinceTimestamp)
         table.insert(lines, entries[i].kills .. " vs " .. entries[i].name)
     end
 
-    ShowRivalryPopup("Weekly Rivalry Report", table.concat(lines, "\n"))
+    ShowTrashPopup("Weekly Trash Report", table.concat(lines, "\n"))
 end
 
 -- Shows the digest automatically at most once per real week. Call at login.
-function BPP_ShowWeeklyRivalryDigestIfDue()
+function BPP_ShowWeeklyTrashDigestIfDue()
     if not BPP_DB or not BPP_DB.PlayerKillCounts then return end
     local characterKey = BPP_GetCharacterKey()
     local characterData = BPP_DB.PlayerKillCounts.Characters[characterKey]
     if not characterData then return end
 
     local now = time()
-    local lastShown = characterData.LastRivalryDigestShown or 0
+    local lastShown = characterData.LastTrashDigestShown or 0
     if now - lastShown < 7 * 24 * 3600 then
         return
     end
 
-    characterData.LastRivalryDigestShown = now
-    BPP_ShowRivalryDigest(now - 7 * 24 * 3600)
+    characterData.LastTrashDigestShown = now
+    BPP_ShowTrashDigest(now - 7 * 24 * 3600)
 end

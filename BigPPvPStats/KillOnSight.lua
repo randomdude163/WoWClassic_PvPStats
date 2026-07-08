@@ -21,15 +21,16 @@ end
 
 -- ============================================================
 -- Zone exclusions - suppresses all detection (Kill On Sight, Stealth
--- alerts, and the Nearby panel) while in a listed zone, e.g. capital
--- cities where "who's nearby" isn't useful and every mouseover would
--- otherwise ping. Mirrors the Spy addon's per-zone disable.
+-- alerts, and the Nearby panel) while in a listed zone. Mirrors the Spy
+-- addon's per-zone disable list, which targets neutral hub towns where
+-- both factions mingle constantly (not faction-exclusive capitals, which
+-- are sanctuaries the opposing faction can't normally even enter).
 -- ============================================================
 
-local MAJOR_CITIES = {
-    "Stormwind City", "Ironforge", "Darnassus", "Exodar",
-    "Orgrimmar", "Thunder Bluff", "Undercity", "Silvermoon City",
-    "Shattrath City", "Dalaran",
+-- Exposed for ConfigUI.lua to build one checkbox per preset zone against.
+BPP_PRESET_DISABLE_ZONES = {
+    "Booty Bay", "Everlook", "Gadgetzan", "Ratchet",
+    "The Salty Sailor Tavern", "Cenarion Hold", "Shattrath City", "Area 52",
 }
 
 function BPP_AddDisabledZone(zoneName)
@@ -58,8 +59,9 @@ function BPP_GetDisabledZoneList()
     return zones
 end
 
--- True if detection should be suppressed in the player's current zone,
--- either because it's on the custom list or "Major Cities" is toggled on.
+-- True if detection should be suppressed in the player's current zone.
+-- Preset zones (the checkboxes in Settings) and custom zones (/bpp zone
+-- disable) both just live as entries in the same DisabledZones table.
 function BPP_IsZoneDetectionDisabled()
     if not BPP_DB then return false end
     local zone = BPP_GetCurrentZoneName and BPP_GetCurrentZoneName()
@@ -69,13 +71,74 @@ function BPP_IsZoneDetectionDisabled()
         return true
     end
 
-    if BPP_DB.DisableInMajorCities then
-        for _, city in ipairs(MAJOR_CITIES) do
-            if city == zone then return true end
+    return false
+end
+
+-- True if detection should be suppressed given the player's current
+-- instance/zone-PvP-type/PvP-flag status. Mirrors Spy's ZoneChanged branching
+-- exactly: dungeons/raids are always excluded (unconditionally, same as
+-- Spy - there's nothing to detect there), battlegrounds/arenas are
+-- conditional on their own toggles, and outside any instance sanctuary/
+-- world-PvP-zone/unflagged are each conditional on their own toggle, checked
+-- in that priority order so being in a forced-PvP zone never also trips the
+-- "unflagged" check.
+function BPP_IsScopeDetectionDisabled()
+    if not BPP_DB then return false end
+
+    local inInstance, instanceType = IsInInstance()
+    if inInstance then
+        if instanceType == "party" or instanceType == "raid" then
+            return true
         end
+        if BPP_DB.DisableInBattlegrounds and instanceType == "pvp" then
+            return true
+        end
+        if BPP_DB.DisableInArenas and instanceType == "arena" then
+            return true
+        end
+        return false
+    end
+
+    local pvpType = GetZonePVPInfo()
+    if pvpType == "sanctuary" then
+        return BPP_DB.DisableInSanctuaries == true
+    elseif pvpType == "combat" then
+        return BPP_DB.DisableInWorldPvPZones == true
+    elseif BPP_DB.DisableWhenPvPUnflagged and not UnitIsPVP("player") then
+        return true
     end
 
     return false
+end
+
+-- Removes Kill On Sight / Ignore entries not seen in BPP_DB.KOSPurgeDays
+-- days (0 = never purge, the default). Call once per login.
+function BPP_PurgeStaleKOSEntries()
+    if not BPP_DB or not BPP_DB.KOSPurgeDays or BPP_DB.KOSPurgeDays <= 0 then
+        return 0
+    end
+    EnsureKOSTables()
+
+    local cutoff = time() - (BPP_DB.KOSPurgeDays * 86400)
+    local purged = 0
+
+    for infoKey, entry in pairs(BPP_DB.KOSPlayers) do
+        local lastSeen = entry.lastSeen or entry.addedAt or 0
+        if lastSeen < cutoff then
+            BPP_DB.KOSPlayers[infoKey] = nil
+            purged = purged + 1
+        end
+    end
+
+    for infoKey, entry in pairs(BPP_DB.KOSIgnored) do
+        local addedAt = entry.addedAt or 0
+        if addedAt < cutoff then
+            BPP_DB.KOSIgnored[infoKey] = nil
+            purged = purged + 1
+        end
+    end
+
+    return purged
 end
 
 -- ============================================================
@@ -100,6 +163,7 @@ function BPP_AddKOSPlayer(input)
         name = displayName,
         reason = reason and strtrim(reason) ~= "" and strtrim(reason) or nil,
         addedAt = time(),
+        lastSeen = time(),
     }
     return true, displayName
 end
@@ -166,6 +230,57 @@ end
 function BPP_IsKOSIgnored(infoKey)
     if not BPP_DB or not BPP_DB.KOSIgnored or not infoKey then return false end
     return BPP_DB.KOSIgnored[infoKey] ~= nil
+end
+
+-- ============================================================
+-- Import from Spy - Spy and this addon can run side by side (see
+-- TESTING.md), so if Spy is currently loaded on this character its
+-- SavedVariables tables (SpyPerCharDB.KOSData/IgnoreData, both realm-less
+-- player-name sets) are already sitting in memory as globals. Reads them
+-- directly instead of asking the player to copy/paste anything.
+-- ============================================================
+
+function BPP_ImportFromSpy()
+    if not SpyPerCharDB or not SpyPerCharDB.KOSData then
+        return false, "Spy isn't installed and loaded on this character - couldn't find its saved data."
+    end
+    EnsureKOSTables()
+
+    local importedPlayers, skippedPlayers = 0, 0
+    for name, addedAt in pairs(SpyPerCharDB.KOSData) do
+        if type(name) == "string" and name ~= "" then
+            local infoKey = BPP_GetInfoKeyFromName(name)
+            if BPP_DB.KOSPlayers[infoKey] then
+                skippedPlayers = skippedPlayers + 1
+            else
+                local spyPlayerData = SpyPerCharDB.PlayerData and SpyPerCharDB.PlayerData[name]
+                BPP_DB.KOSPlayers[infoKey] = {
+                    name = name,
+                    reason = spyPlayerData and spyPlayerData.reason or nil,
+                    addedAt = type(addedAt) == "number" and addedAt or time(),
+                    lastSeen = time(),
+                }
+                importedPlayers = importedPlayers + 1
+            end
+        end
+    end
+
+    local importedIgnores, skippedIgnores = 0, 0
+    if SpyPerCharDB.IgnoreData then
+        for name in pairs(SpyPerCharDB.IgnoreData) do
+            if type(name) == "string" and name ~= "" then
+                local infoKey = BPP_GetInfoKeyFromName(name)
+                if BPP_DB.KOSIgnored[infoKey] then
+                    skippedIgnores = skippedIgnores + 1
+                else
+                    BPP_DB.KOSIgnored[infoKey] = { addedAt = time() }
+                    importedIgnores = importedIgnores + 1
+                end
+            end
+        end
+    end
+
+    return true, importedPlayers, skippedPlayers, importedIgnores, skippedIgnores
 end
 
 -- ============================================================
@@ -238,9 +353,29 @@ local function GetAggregatedKOSData()
     return players, guilds
 end
 
+-- Exposed for NearbyList.lua: whether a detection is a Kill On Sight match
+-- (personal or guild-wide aggregated), so the generic "new nearby sighting"
+-- sound can stay quiet when the KOS alert (with its own distinct sound) is
+-- about to fire for the very same detection instead of overlapping it.
+function BPP_IsKOSMatch(infoKey, guildName)
+    if not BPP_DB or not infoKey then return false end
+    EnsureKOSTables()
+
+    if BPP_DB.KOSPlayers[infoKey] then return true end
+    if guildName and guildName ~= "" and BPP_DB.KOSGuilds[guildName] then return true end
+
+    if BPP_DB.KOSReceiveShared ~= false then
+        local aggPlayers, aggGuilds = GetAggregatedKOSData()
+        if aggPlayers[infoKey] then return true end
+        if guildName and guildName ~= "" and aggGuilds[guildName] then return true end
+    end
+
+    return false
+end
+
 -- ============================================================
--- Alert popup - same dynamic-height toast pattern as the rivalry popup in
--- GuildRivalry.lua, but red-themed and on its own timer/frame so a rivalry
+-- Alert popup - same dynamic-height toast pattern as the trash popup in
+-- GuildRivalry.lua, but red-themed and on its own timer/frame so a trash
 -- milestone and a KOS sighting can't cut each other off.
 -- ============================================================
 
@@ -305,6 +440,12 @@ end
 local KOS_POPUP_MIN_HEIGHT = 90
 local KOS_POPUP_MAX_HEIGHT = 320
 
+-- Kill On Sight alert sound - Spy's own detected-kos.mp3, bundled directly
+-- (see sounds/Spy/), not a Blizzard stock sound standing in for it.
+function BPP_PlayThreatAlertSound()
+    PlaySoundFile("Interface\\AddOns\\BigPPvPStats\\sounds\\Spy\\detected-kos.mp3", "Master")
+end
+
 local function ShowKOSAlert(title, subText)
     local frame = CreateKOSPopupFrame()
 
@@ -327,10 +468,12 @@ local function ShowKOSAlert(title, subText)
     end
 
     if BPP_DB.KOSAlertSoundEnabled ~= false then
-        PlaySound(SOUNDKIT.RAID_WARNING) -- distinct from the rivalry milestone fanfare
+        BPP_PlayThreatAlertSound()
     end
 
-    kosPopupTimer = C_Timer.NewTimer(8, function()
+    -- Matches Spy's KOS alert timing exactly (3s held + 1s fade = 4s total
+    -- on screen), not a slow linger.
+    kosPopupTimer = C_Timer.NewTimer(3, function()
         UIFrameFade(frame, { mode = "OUT", timeToFade = 1, finishedFunc = function() frame:Hide() end })
         kosPopupTimer = nil
     end)
@@ -358,6 +501,7 @@ function BPP_CheckKillOnSight(name, guildName)
     if not BPP_DB or not name or name == "" then return end
     if BPP_DB.KOSAlertsEnabled == false then return end
     if BPP_IsZoneDetectionDisabled() then return end
+    if BPP_IsScopeDetectionDisabled() then return end
     EnsureKOSTables()
 
     local infoKey = BPP_GetInfoKeyFromName(name)
@@ -375,6 +519,9 @@ function BPP_CheckKillOnSight(name, guildName)
 
     local playerEntry = BPP_DB.KOSPlayers[infoKey]
     local displayName = infoKey:match("^([^-]+)") or name
+    if playerEntry then
+        playerEntry.lastSeen = now
+    end
     if playerEntry or aggPlayers[infoKey] then
         kosLastAlerted[infoKey] = now
         local subText = (playerEntry and playerEntry.reason)
@@ -668,4 +815,12 @@ end
 function BPP_ShowKOSListFrame()
     BPP_RefreshKOSListFrame()
     kosListFrame:Show()
+end
+
+-- Fires the popup + sound directly, bypassing detection/cooldown/zone
+-- checks entirely - isolates "is the alert sound broken" from "is
+-- detection ever triggering it" when troubleshooting.
+function BPP_TestKOSAlert()
+    ShowKOSAlert("KOS: Test Alert", "This is a test of the Kill On Sight alert popup and sound.")
+    BPP_Print("[BigPPvP] Test alert fired. If you saw the popup but heard nothing, it's a sound issue, not a detection issue.")
 end
