@@ -1,0 +1,1684 @@
+local addonName, PVPSC = ...
+
+local configFrame = nil
+
+local BPP_CONFIG_HEADER_R = 1.0
+local BPP_CONFIG_HEADER_G = 0.82
+local BPP_CONFIG_HEADER_B = 0.0
+
+local HEADER_ELEMENT_SPACING = 15
+local CHECKBOX_SPACING = 5
+local MESSAGE_TEXTFIELD_SPACING = 40
+
+local function CreateAndShowStaticPopup(dialogName, text, onAcceptFunc)
+    StaticPopupDialogs[dialogName] = {
+        text = text,
+        button1 = "Yes",
+        button2 = "No",
+        OnAccept = onAcceptFunc,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+
+        OnShow = function(self)
+            if configFrame then
+                configFrame:EnableKeyboard(false)
+            end
+        end,
+
+        OnHide = function()
+            if configFrame and configFrame:IsVisible() then
+                configFrame:EnableKeyboard(true)
+
+                C_Timer.After(0.05, function()
+                    if configFrame:IsVisible() then
+                        BPP_FrameManager:BringToFront("ConfigUI")
+                    end
+                end)
+            end
+        end
+    }
+
+    local popup = StaticPopup_Show(dialogName)
+
+    if popup then
+        popup:SetFrameStrata("FULLSCREEN_DIALOG")
+        popup:SetFrameLevel(2000)
+        popup:SetPoint("CENTER", UIParent, "CENTER")
+        popup:Raise()
+
+        popup:SetPropagateKeyboardInput(false)
+        popup:EnableKeyboard(true)
+
+        popup:SetScript("OnKeyDown", nil)
+    end
+
+    return popup
+end
+
+local function ShowResetStatsConfirmation()
+    CreateAndShowStaticPopup("BPP_RESET_STATS",
+        "Are you sure you want to reset all kill/death statistics? This cannot be undone.", function()
+            BPP_ResetAllStatsToDefault()
+        end)
+end
+
+local function ResetAllSettingsToDefault()
+    BPP_LoadDefaultSettings()
+    ReloadUI()
+end
+
+local function ShowResetDefaultsConfirmation()
+    CreateAndShowStaticPopup("BPP_RESET_DEFAULTS",
+        "Are you sure you want to reset all settings to defaults? This will not affect your kill/death statistics. Forces a UI reload!",
+        function()
+            ResetAllSettingsToDefault()
+        end)
+end
+
+local function CreateSectionHeader(parent, text, xOffset, yOffset)
+    local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    header:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
+    header:SetText(text)
+    header:SetTextColor(BPP_CONFIG_HEADER_R, BPP_CONFIG_HEADER_G, BPP_CONFIG_HEADER_B)
+
+    local line = parent:CreateTexture(nil, "ARTWORK")
+    line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
+    line:SetSize(parent:GetWidth() - (xOffset * 2), 1)
+    line:SetColorTexture(0.5, 0.5, 0.5, 0.7)
+
+    return header
+end
+
+local function CreateInputField(parent, labelText, width, initialValue, onTextChangedFunc)
+    local container = CreateFrame("Frame", nil, parent)
+    container:SetSize(width, 50)
+
+    local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
+    label:SetText(labelText)
+
+    local editBox = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
+    editBox:SetSize(width - 20, 20)
+    editBox:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 5, -5)
+    editBox:SetAutoFocus(false)
+    editBox:SetText(initialValue or "")
+
+    editBox:SetScript("OnTextChanged", function(self, userInput)
+        if userInput and onTextChangedFunc then
+            onTextChangedFunc(self:GetText())
+        end
+    end)
+
+    editBox:SetScript("OnEscapePressed", function(self)
+        self:SetText(initialValue)
+        self:ClearFocus()
+    end)
+
+    editBox:SetScript("OnEnterPressed", function(self)
+        if onTextChangedFunc then
+            onTextChangedFunc(self:GetText())
+        end
+        self:ClearFocus()
+    end)
+
+    editBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+
+    editBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+        if onTextChangedFunc then
+            onTextChangedFunc(self:GetText())
+        end
+    end)
+
+    return container, editBox
+end
+
+local function CreateCheckbox(parent, labelText, initialValue, onClickFunc)
+    local checkbox = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+    checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    checkbox:SetChecked(initialValue)
+    checkbox:SetScript("OnClick", function(self)
+        local checked = self:GetChecked()
+        onClickFunc(checked)
+        PlaySound(checked and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+    end)
+
+    local label = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("LEFT", checkbox, "RIGHT", 5, 0)
+    label:SetWidth(440)
+    label:SetJustifyH("LEFT")
+    label:SetWordWrap(true)
+    label:SetText(labelText)
+
+    return checkbox, label
+end
+
+local function CreateButton(parent, text, width, height, onClickFunc)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(width, height)
+    button:SetText(text)
+    button:SetScript("OnClick", onClickFunc)
+
+    return button
+end
+
+local function CreateDropdown(parent, labelText, options, initialValue, onSelectionChangedFunc)
+    local container = CreateFrame("Frame", nil, parent)
+    container:SetSize(200, 40)
+
+    local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -5)
+    label:SetText(labelText)
+
+    local dropdownName = "BPP_Dropdown_" .. tostring(math.random(1000000, 9999999))
+    local dropdown = CreateFrame("Frame", dropdownName, container, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("TOPLEFT", label, "BOTTOMLEFT", -18, -5)
+    UIDropDownMenu_SetWidth(dropdown, 150)
+
+    local function InitializeDropdown(self, level)
+        for i, option in ipairs(options) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = option.text
+            info.value = option.value
+            info.func = function()
+                UIDropDownMenu_SetSelectedValue(dropdown, option.value)
+                if onSelectionChangedFunc then
+                    onSelectionChangedFunc(option.value)
+                end
+            end
+            info.checked = (option.value == UIDropDownMenu_GetSelectedValue(dropdown))
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+
+    UIDropDownMenu_Initialize(dropdown, InitializeDropdown)
+    UIDropDownMenu_SetSelectedValue(dropdown, initialValue)
+
+    return container, dropdown
+end
+
+local function CreateAnnouncementSection(parent, yOffset)
+    local announcementSettingsHeader = CreateSectionHeader(parent, "Party Chat Announcements", 20, yOffset)
+
+    local enableKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce kills", BPP_DB.EnableKillAnnounceMessages,
+        function(checked)
+            BPP_DB.EnableKillAnnounceMessages = checked
+        end)
+    enableKillAnnounceCheckbox:SetPoint("TOPLEFT", announcementSettingsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.enableKillAnnounceCheckbox = enableKillAnnounceCheckbox
+    enableKillAnnounceCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce kills in party chat")
+        GameTooltip:AddLine("When checked, kills will be announced in party chat. You can customize these messages in the Messages tab. ", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableKillAnnounceCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local includePlayerDetailsCheckbox, _ = CreateCheckbox(parent, "Include player details",
+        BPP_DB.IncludePlayerDetailsInAnnounce,
+        function(checked)
+            BPP_DB.IncludePlayerDetailsInAnnounce = checked
+        end)
+    includePlayerDetailsCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
+    parent.includePlayerDetailsCheckbox = includePlayerDetailsCheckbox
+    includePlayerDetailsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Include player details in kill announcements")
+        GameTooltip:AddLine("Always show level, class, and race of killed enemies in announcements.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    includePlayerDetailsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local includeGuildDetailsCheckbox, _ = CreateCheckbox(parent, "Include guild details",
+        BPP_DB.IncludeGuildDetailsInAnnounce,
+        function(checked)
+            BPP_DB.IncludeGuildDetailsInAnnounce = checked
+        end)
+    includeGuildDetailsCheckbox:SetPoint("TOPLEFT", includePlayerDetailsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
+    parent.includeGuildDetailsCheckbox = includeGuildDetailsCheckbox
+    includeGuildDetailsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Include guild details in kill announcements")
+        GameTooltip:AddLine("Shows guild rank and guild name of killed enemies (e.g. 'Member of <Guild Name>').", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    includeGuildDetailsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local enableRecordAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce personal bests",
+        BPP_DB.EnableRecordAnnounceMessages, function(checked)
+            BPP_DB.EnableRecordAnnounceMessages = checked
+        end)
+    enableRecordAnnounceCheckbox:SetPoint("TOPLEFT", includeGuildDetailsCheckbox, "BOTTOMLEFT", -40, -CHECKBOX_SPACING)
+    parent.enableRecordAnnounceCheckbox = enableRecordAnnounceCheckbox
+    enableRecordAnnounceCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce personal bests in party chat")
+        GameTooltip:AddLine("When checked, a customizable party chat message will be sent when you achieve a new personal best for kill streak or multi-kill.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableRecordAnnounceCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local enableMultiKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce multi-kills",
+        BPP_DB.EnableMultiKillAnnounceMessages, function(checked)
+            BPP_DB.EnableMultiKillAnnounceMessages = checked
+        end)
+    enableMultiKillAnnounceCheckbox:SetPoint("TOPLEFT", enableKillAnnounceCheckbox, "TOPLEFT", 300, 0)
+    parent.enableMultiKillAnnounceCheckbox = enableMultiKillAnnounceCheckbox
+    enableMultiKillAnnounceCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce personal bests in party chat")
+        GameTooltip:AddLine("When checked, a customizable party chat message will be sent when you achieve a multi-kill.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableMultiKillAnnounceCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local slider = CreateFrame("Slider", "BPP_MultiKillThresholdSlider", parent, "OptionsSliderTemplate")
+    slider:SetWidth(200)
+    slider:SetHeight(16)
+    slider:SetPoint("TOPLEFT", announcementSettingsHeader, "TOPLEFT", 305, -CHECKBOX_SPACING - 74)
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetMinMaxValues(2, 10)
+    slider:SetValueStep(1)
+    slider:SetValue(BPP_DB.MultiKillThreshold or 3)
+    getglobal(slider:GetName() .. "Low"):SetText("Double")
+    getglobal(slider:GetName() .. "High"):SetText("Deca")
+    getglobal(slider:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. (BPP_DB.MultiKillThreshold or 3))
+    parent.multiKillSlider = slider
+
+    slider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value + 0.5)
+        self:SetValue(value)
+        getglobal(self:GetName() .. "Text"):SetText("Multi-Kill announce threshold: " .. value)
+        BPP_DB.MultiKillThreshold = value
+    end)
+
+    local announceChannelOptions = {
+        {text = "Group Chat", value = "GROUP"},
+        {text = "Raid Chat", value = "RAID"},
+        {text = "Guild Chat", value = "GUILD"},
+        {text = "Myself", value = "SELF"}
+    }
+
+    local announceChannelContainer, announceChannelDropdown = CreateDropdown(parent, "Announce messages to:",
+        announceChannelOptions, BPP_DB.AnnounceChannel or "GROUP", function(selectedValue)
+            BPP_DB.AnnounceChannel = selectedValue
+        end)
+    announceChannelContainer:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 303, 44)
+    parent.announceChannelDropdown = announceChannelDropdown
+
+    -- Ensure the dropdown shows the correct initial value
+    if announceChannelDropdown and announceChannelDropdown:GetName() then
+        UIDropDownMenu_SetSelectedValue(announceChannelDropdown, BPP_DB.AnnounceChannel or "GROUP")
+        UIDropDownMenu_SetText(announceChannelDropdown, "Group Chat")
+    end
+
+    announceChannelContainer:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce messages to")
+        GameTooltip:AddLine("Group Chat: Sends to party chat only. If you're not in a group, messages are displayed only to yourself.", 1, 1, 1, true)
+        GameTooltip:AddLine("\n", 1, 1, 1, true)
+        GameTooltip:AddLine("Raid Chat: Sends to raid chat. If you're not in a raid, messages will be sent to party chat. If not in a group, messages are displayed only to yourself.", 1, 1, 1, true)
+        GameTooltip:AddLine("\n", 1, 1, 1, true)
+        GameTooltip:AddLine("Guild Chat: Sends to guild. If you're not in a guild, messages are displayed only to yourself.", 1, 1, 1, true)
+        GameTooltip:AddLine("\n", 1, 1, 1, true)
+        GameTooltip:AddLine("Myself: Messages appear only in your own chat window, not sent to any channel.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    announceChannelContainer:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -195)
+
+    local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode", BPP_DB.AutoBattlegroundMode,
+        function(checked)
+            BPP_DB.AutoBattlegroundMode = checked
+            BPP_CheckBattlegroundStatus()
+        end)
+    autoBGModeCheckbox:SetPoint("TOPLEFT", battlegroundModeHeader, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING)
+    parent.autoBGModeCheckbox = autoBGModeCheckbox
+
+    autoBGModeCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Auto Battleground Mode")
+        GameTooltip:AddLine("When checked, BG mode will be automatically enabled if you enter a battleground. In BG Mode, kills are only counted if you get the killing blow and party chat announce messages are disabled.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    autoBGModeCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local assistsInBGCheckbox, _ = CreateCheckbox(parent, "Count assist kills",
+        BPP_DB.CountAssistsInBattlegrounds, function(checked)
+            BPP_DB.CountAssistsInBattlegrounds = checked
+        end)
+    assistsInBGCheckbox:SetPoint("TOPLEFT", autoBGModeCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
+    parent.assistsInBGCheckbox = assistsInBGCheckbox
+
+    assistsInBGCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Count assist kills in Battleground Mode")
+        GameTooltip:AddLine(
+            "If checked, kills are also counted if you damage a player or cast harmful spells on them and someone else does the killing blow.",
+            1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    assistsInBGCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local forceEnableBGModeCheckbox, _ = CreateCheckbox(parent, "Always enabled",
+        BPP_DB.ForceBattlegroundMode, function(checked)
+            BPP_DB.ForceBattlegroundMode = checked
+            BPP_CheckBattlegroundStatus()
+        end)
+    forceEnableBGModeCheckbox:SetPoint("TOPLEFT", assistsInBGCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 5)
+    parent.manualBGModeCheckbox = forceEnableBGModeCheckbox
+
+    forceEnableBGModeCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enable Battleground Mode everywhere")
+        GameTooltip:AddLine("Enable BG mode until you turn it off again.", 1, 1, 1, false)
+        GameTooltip:Show()
+    end)
+    forceEnableBGModeCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local trackBGKillsCheckbox, _ = CreateCheckbox(parent, "Count kills in battlegrounds",
+        BPP_DB.CountKillsInBattlegrounds, function(checked)
+            BPP_DB.CountKillsInBattlegrounds = checked
+        end)
+    trackBGKillsCheckbox:SetPoint("TOPLEFT", assistsInBGCheckbox, "TOPLEFT", 260, 0)
+    parent.trackBGKillsCheckbox = trackBGKillsCheckbox
+
+    trackBGKillsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Count kills in battlegrounds")
+        GameTooltip:AddLine("When unchecked, kills in battlegrounds won't be counted at all.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    trackBGKillsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local trackBGDeathsCheckbox, _ = CreateCheckbox(parent, "Count deaths in battlegrounds",
+        BPP_DB.CountDeathsInBattlegrounds, function(checked)
+            BPP_DB.CountDeathsInBattlegrounds = checked
+        end)
+    trackBGDeathsCheckbox:SetPoint("TOPLEFT", trackBGKillsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.trackBGDeathsCheckbox = trackBGDeathsCheckbox
+
+    trackBGDeathsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Count deaths in battlegrounds")
+        GameTooltip:AddLine("When unchecked, deaths in battlegrounds won't be counted at all.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    trackBGDeathsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -350)
+
+    local showKillMilestonesCheckbox, _ = CreateCheckbox(parent, "Show kill milestones", BPP_DB.ShowKillMilestones,
+        function(checked)
+            BPP_DB.ShowKillMilestones = checked
+        end)
+    showKillMilestonesCheckbox:SetPoint("TOPLEFT", killMilestonesHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.showKillMilestonesCheckbox = showKillMilestonesCheckbox
+
+    showKillMilestonesCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show kill milestones")
+        GameTooltip:AddLine("Show a notification when you reach a certain number of kills for the same player.", 1, 1, 1, true)
+        GameTooltip:AddLine("You can move the notificatin frame using drag and drop.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showKillMilestonesCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local killMilestoneSoundsCheckbox, _ = CreateCheckbox(parent, "Play milestone sound effect",
+        BPP_DB.EnableKillMilestoneSound, function(checked)
+            BPP_DB.EnableKillMilestoneSound = checked
+        end)
+    killMilestoneSoundsCheckbox:SetPoint("TOPLEFT", showKillMilestonesCheckbox, "BOTTOMLEFT", 40, -CHECKBOX_SPACING + 5)
+    parent.killMilestoneSoundsCheckbox = killMilestoneSoundsCheckbox
+
+    killMilestoneSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play milestone sound effect")
+        GameTooltip:AddLine("Play a sound effect when a kill milestone notification is shown.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    killMilestoneSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local showMilestoneForFirstKillCheckbox, _ = CreateCheckbox(parent, "Show milestone for first kill",
+        BPP_DB.ShowMilestoneForFirstKill, function(checked)
+            BPP_DB.ShowMilestoneForFirstKill = checked
+        end)
+    showMilestoneForFirstKillCheckbox:SetPoint("TOPLEFT", killMilestoneSoundsCheckbox, "BOTTOMLEFT", 0,
+        -CHECKBOX_SPACING + 5)
+    parent.showMilestoneForFirstKillCheckbox = showMilestoneForFirstKillCheckbox
+
+    showMilestoneForFirstKillCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show milestone for first kill")
+        GameTooltip:AddLine("When checked, show a notification for your first kill of a player.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showMilestoneForFirstKillCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local milestoneIntervalSlider =
+        CreateFrame("Slider", "BPP_MilestoneIntervalSlider", parent, "OptionsSliderTemplate")
+    milestoneIntervalSlider:SetWidth(200)
+    milestoneIntervalSlider:SetHeight(16)
+    milestoneIntervalSlider:SetPoint("TOPLEFT", killMilestonesHeader, "BOTTOMLEFT", 310, -CHECKBOX_SPACING - 25)
+    milestoneIntervalSlider:SetOrientation("HORIZONTAL")
+    milestoneIntervalSlider:SetMinMaxValues(3, 10)
+    milestoneIntervalSlider:SetValueStep(1)
+    milestoneIntervalSlider:SetValue(BPP_DB.KillMilestoneInterval or 5)
+    getglobal(milestoneIntervalSlider:GetName() .. "Low"):SetText("3")
+    getglobal(milestoneIntervalSlider:GetName() .. "High"):SetText("10")
+    getglobal(milestoneIntervalSlider:GetName() .. "Text"):SetText(
+        "Milestone interval: Every " .. (BPP_DB.KillMilestoneInterval or 5) .. " kills")
+    parent.milestoneIntervalSlider = milestoneIntervalSlider
+
+    milestoneIntervalSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value + 0.5)
+        self:SetValue(value)
+        getglobal(self:GetName() .. "Text"):SetText("Milestone interval: Every " .. value .. " kills")
+        BPP_DB.KillMilestoneInterval = value
+    end)
+
+    local milestoneAutoHideTimeSlider =
+        CreateFrame("Slider", "BPP_MilestoneTimeSlider", parent, "OptionsSliderTemplate")
+    milestoneAutoHideTimeSlider:SetWidth(200)
+    milestoneAutoHideTimeSlider:SetHeight(16)
+    milestoneAutoHideTimeSlider:SetPoint("TOPLEFT", milestoneIntervalSlider, "BOTTOMLEFT", 0, -30)
+    milestoneAutoHideTimeSlider:SetOrientation("HORIZONTAL")
+    milestoneAutoHideTimeSlider:SetMinMaxValues(1, 15)
+    milestoneAutoHideTimeSlider:SetValueStep(1)
+    milestoneAutoHideTimeSlider:SetValue(BPP_DB.KillMilestoneAutoHideTime or 5)
+    getglobal(milestoneAutoHideTimeSlider:GetName() .. "Low"):SetText("1 sec")
+    getglobal(milestoneAutoHideTimeSlider:GetName() .. "High"):SetText("15 sec")
+    getglobal(milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText(
+        "Hide notification after: " .. (BPP_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
+    parent.milestoneAutoHideTimeSlider = milestoneAutoHideTimeSlider
+
+    milestoneAutoHideTimeSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value + 0.5)
+        self:SetValue(value)
+        getglobal(self:GetName() .. "Text"):SetText("Hide notification after: " .. value .. " seconds")
+        BPP_DB.KillMilestoneAutoHideTime = value
+    end)
+
+    local testButton = CreateButton(parent, "Show Kill Milestone", 160, 22, function()
+        local testKillCounts = {1, BPP_DB.KillMilestoneInterval, BPP_DB.KillMilestoneInterval * 2}
+        local index = math.random(1, 3)
+
+        if not BPP_DB.ShowMilestoneForFirstKill and testKillCounts[index] == 1 then
+            index = 2
+        end
+
+        local classes = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID"}
+        local randomClass = classes[math.random(1, #classes)]
+
+        local useHorde = (math.random(1, 2) == 1)
+
+        local rank
+        if math.random(1, 10) <= 3 then
+            rank = 0
+        else
+            local rankRoll = math.random(1, 100)
+            if rankRoll <= 50 then
+                rank = math.random(1, 4)
+                rank = math.random(5, 8)
+            elseif rankRoll <= 90 then
+                rank = math.random(9, 11)
+            else
+                rank = math.random(12, 14)
+            end
+        end
+
+        BPP_ShowKillMilestone("TestPlayer", 60, randomClass, rank, testKillCounts[index])
+    end)
+    testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
+    parent.milestoneTestButton = testButton
+
+    local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -510)
+
+    local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show kills in mouseover tooltips",
+        BPP_DB.ShowScoreInPlayerTooltip, function(checked)
+            BPP_DB.ShowScoreInPlayerTooltip = checked
+        end)
+    tooltipKillInfoCheckbox:SetPoint("TOPLEFT", generalSectionHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 5)
+    parent.tooltipKillInfoCheckbox = tooltipKillInfoCheckbox
+
+    tooltipKillInfoCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show kills in mouseover tooltips")
+        GameTooltip:AddLine("Show your kills of an enemy player in their mouseover tooltip.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    tooltipKillInfoCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local tooltipExtendedInfoCheckbox, _ = CreateCheckbox(parent, "Show deaths and time since last kill",
+        BPP_DB.ShowExtendedTooltipInfo or true, function(checked)
+            BPP_DB.ShowExtendedTooltipInfo = checked
+        end)
+    tooltipExtendedInfoCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.tooltipExtendedInfoCheckbox = tooltipExtendedInfoCheckbox
+
+    tooltipExtendedInfoCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show deaths and time since last kill")
+        GameTooltip:AddLine("When checked, tooltips will show your deaths against that player and time since your last kill. When unchecked, only the number of kills will be shown.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    tooltipExtendedInfoCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local showAccountWideStatsCheckbox, _ = CreateCheckbox(parent, "Show account-wide statistics",
+        BPP_DB.ShowAccountWideStats, function(checked)
+            BPP_DB.ShowAccountWideStats = checked
+        end)
+    showAccountWideStatsCheckbox:SetPoint("TOPLEFT", tooltipKillInfoCheckbox, "TOPLEFT", 300, 0)
+    parent.showAccountWideStatsCheckbox = showAccountWideStatsCheckbox
+    showAccountWideStatsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show account-wide statistics")
+        GameTooltip:AddLine("When checked, the addon will use data from all your characters for statistics calculation and in the kills list.", 1, 1, 1, true)
+        GameTooltip:AddLine("When unchecked, only data from your current character will be used.", 1, 1, 1, true)
+        GameTooltip:AddLine("You have to reopen the statistics window for changes to take effect.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showAccountWideStatsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local autoOpenKillStreakCheckbox, _ = CreateCheckbox(parent, "Auto-open kill streak window on kill",
+        BPP_DB.AutoOpenKillStreakPopup, function(checked)
+            BPP_DB.AutoOpenKillStreakPopup = checked
+        end)
+    autoOpenKillStreakCheckbox:SetPoint("TOPLEFT", showAccountWideStatsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.autoOpenKillStreakCheckbox = autoOpenKillStreakCheckbox
+    autoOpenKillStreakCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Auto-open kill streak window on kill")
+        GameTooltip:AddLine("When enabled, the kill streak window will automatically open when you kill an enemy player.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    autoOpenKillStreakCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local capAchievementProgressCheckbox, _ = CreateCheckbox(parent, "Cap achievement progress at target value",
+        BPP_DB.CapAchievementProgress, function(checked)
+            BPP_DB.CapAchievementProgress = checked
+        end)
+    capAchievementProgressCheckbox:SetPoint("TOPLEFT", tooltipExtendedInfoCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.capAchievementProgressCheckbox = capAchievementProgressCheckbox
+    capAchievementProgressCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Cap achievement progress at target value")
+        GameTooltip:AddLine("When enabled, achievement progress will display as '100/100' instead of '125/100' once completed.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    capAchievementProgressCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    return 320
+end
+
+local function CreateSoundsSection(parent, yOffset)
+    local soundsHeader = CreateSectionHeader(parent, "Multi-Kill Sounds", 20, yOffset)
+
+    local enableMultiKillSoundsCheckbox, _ = CreateCheckbox(parent, "Enable multi-kill sound effects",
+        BPP_DB.EnableMultiKillSounds, function(checked)
+            BPP_DB.EnableMultiKillSounds = checked
+            if parent.soundPackDropdown and parent.soundPackDropdown:GetName() then
+                if checked then
+                    UIDropDownMenu_EnableDropDown(parent.soundPackDropdown)
+                else
+                    UIDropDownMenu_DisableDropDown(parent.soundPackDropdown)
+                end
+            end
+        end)
+    enableMultiKillSoundsCheckbox:SetPoint("TOPLEFT", soundsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.enableMultiKillSoundsCheckbox = enableMultiKillSoundsCheckbox
+
+    enableMultiKillSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enable multi-kill sound effects")
+        GameTooltip:AddLine("Play sound effects when you achieve a multi-kill.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableMultiKillSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local soundPackOptions = {
+        {text = "League of Legends", value = "LoL"},
+        {text = "Unreal Tournament", value = "UT"}
+    }
+
+    local soundPackContainer, soundPackDropdown = CreateDropdown(parent, "Sound Pack:", soundPackOptions,
+        BPP_DB.SoundPack or "LoL", function(selectedValue)
+            BPP_DB.SoundPack = selectedValue
+        end)
+    soundPackContainer:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 40, -20)
+    parent.soundPackDropdown = soundPackDropdown
+
+    if not BPP_DB.EnableMultiKillSounds and soundPackDropdown:GetName() then
+        UIDropDownMenu_DisableDropDown(soundPackDropdown)
+    end
+
+    local testSoundButton = CreateButton(parent, "Preview Sound Effect", 140, 22, function()
+        local soundPack = BPP_DB.SoundPack or "LoL"
+        local soundFile
+        if soundPack == "LoL" then
+            local lolSounds = {"double_kill.mp3", "triple_kill.mp3", "quadra_kill.mp3", "penta_kill.mp3"}
+            local randomIndex = math.random(1, #lolSounds)
+            soundFile = "Interface\\AddOns\\BigPPvPStats\\sounds\\LoL\\" .. lolSounds[randomIndex]
+        else
+            local utSounds = {"first-blood.mp3", "head-hunter.mp3", "dominating.mp3", "double-kill.mp3", "combowhore.mp3", "triple-kill.mp3", "holy-shit.mp3", "unreal.mp3", "ultra-kill.mp3", "mega-kill.mp3", "ludicrous-kill.mp3", "monster-kill.mp3"}
+            local randomIndex = math.random(1, #utSounds)
+            soundFile = "Interface\\AddOns\\BigPPvPStats\\sounds\\UT\\" .. utSounds[randomIndex]
+        end
+        PlaySoundFile(soundFile, "Master")
+    end)
+    testSoundButton:SetPoint("TOPLEFT", soundPackContainer, "BOTTOMLEFT", 0, -10)
+    parent.testSoundButton = testSoundButton
+
+    local enableDeathSoundsCheckbox, _ = CreateCheckbox(parent, "Play death sound effects",
+        BPP_DB.EnableDeathSounds, function(checked)
+            BPP_DB.EnableDeathSounds = checked
+        end)
+    enableDeathSoundsCheckbox:SetPoint("TOPLEFT", testSoundButton, "BOTTOMLEFT", 0, -20)
+    parent.enableDeathSoundsCheckbox = enableDeathSoundsCheckbox
+
+    enableDeathSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play death sound effects")
+        GameTooltip:AddLine("Play a sound effect when you die.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableDeathSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local enableSingleKillSoundsCheckbox, _ = CreateCheckbox(parent, "Play single kill sound effects",
+        BPP_DB.EnableSingleKillSounds, function(checked)
+            BPP_DB.EnableSingleKillSounds = checked
+        end)
+    enableSingleKillSoundsCheckbox:SetPoint("TOPLEFT", enableDeathSoundsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING + 2)
+    parent.enableSingleKillSoundsCheckbox = enableSingleKillSoundsCheckbox
+
+    enableSingleKillSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play single kill sound effects")
+        GameTooltip:AddLine("Play a sound effect when you get a kill (not part of a multi-kill).", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableSingleKillSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    local descriptionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    descriptionText:SetPoint("TOPLEFT", enableSingleKillSoundsCheckbox, "BOTTOMLEFT", 0, -20)
+    descriptionText:SetText("League of Legends: Classic structured announcements (Double Kill, Triple Kill, Quadra Kill, Penta Kill, Hexa Kill, Legendary Kill) with iconic LoL sounds for single kills and deaths.\n\nUnreal Tournament: Chaotic variety with multiple random sound options per kill count, offering unpredictable and diverse audio experiences.")
+    descriptionText:SetJustifyH("LEFT")
+    descriptionText:SetWidth(450)
+
+    return 320
+end
+
+local function CreateMessageTemplatesSection(parent, yOffset)
+    yOffset = yOffset
+
+    local header, line = CreateSectionHeader(parent, "Party Announcement Messages", 20, yOffset)
+
+    local killMsgContainer, killMsgEditBox = CreateInputField(parent, "Kill announcement message:", 560,
+        BPP_DB.KillAnnounceMessage, function(text)
+            BPP_DB.KillAnnounceMessage = text
+        end)
+    killMsgContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -HEADER_ELEMENT_SPACING - 10)
+
+    local killAnnounceMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    killAnnounceMessageDesc:SetPoint("TOPLEFT", killMsgEditBox, "BOTTOMLEFT", -4, -5)
+    killAnnounceMessageDesc:SetText(
+        "Placeholders: |cFFFFFFFFEnemyplayername|r for player name and |cFFFFFFFFx#|r for kill count (e.g. x3 for 3rd kill).")
+    killAnnounceMessageDesc:SetJustifyH("LEFT")
+
+    local streakEndedContainer, streakEndedEditBox = CreateInputField(parent, "Kill streak ended message:", 560,
+        BPP_DB.KillStreakEndedMessage, function(text)
+            BPP_DB.KillStreakEndedMessage = text
+        end)
+    streakEndedContainer:SetPoint("TOPLEFT", killMsgContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
+
+    local streakEndedMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    streakEndedMessageDesc:SetPoint("TOPLEFT", streakEndedEditBox, "BOTTOMLEFT", -4, -5)
+    streakEndedMessageDesc:SetText("Placeholder: |cFFFFFFFFSTREAKCOUNT|r for the number of kills in your streak.")
+    streakEndedMessageDesc:SetJustifyH("LEFT")
+
+    local newStreakContainer, newStreakEditBox = CreateInputField(parent, "New kill streak personal best message:", 560,
+        BPP_DB.NewKillStreakRecordMessage, function(text)
+            BPP_DB.NewKillStreakRecordMessage = text
+        end)
+    newStreakContainer:SetPoint("TOPLEFT", streakEndedContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
+
+    local newStreakMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    newStreakMessageDesc:SetPoint("TOPLEFT", newStreakEditBox, "BOTTOMLEFT", -4, -5)
+    newStreakMessageDesc:SetText("Placeholder: |cFFFFFFFFSTREAKCOUNT|r for the number of kills in your streak.")
+    newStreakMessageDesc:SetJustifyH("LEFT")
+
+    local multiKillContainer, multiKillEditBox = CreateInputField(parent, "New multi-kill personal best message:", 560,
+        BPP_DB.NewMultiKillRecordMessage, function(text)
+            BPP_DB.NewMultiKillRecordMessage = text
+        end)
+    multiKillContainer:SetPoint("TOPLEFT", newStreakContainer, "BOTTOMLEFT", 0, -MESSAGE_TEXTFIELD_SPACING)
+
+    local multiKillMessageDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    multiKillMessageDesc:SetPoint("TOPLEFT", multiKillEditBox, "BOTTOMLEFT", -4, -5)
+    multiKillMessageDesc:SetText(
+        "Placeholder: |cFFFFFFFFMULTIKILLTEXT|r for the multi-kill description ('Double-Kill', 'Triple-Kill', etc).")
+    multiKillMessageDesc:SetJustifyH("LEFT")
+
+    return {
+        killMsg = killMsgEditBox,
+        streakEnded = streakEndedEditBox,
+        newStreak = newStreakEditBox,
+        multiKill = multiKillEditBox
+    }
+end
+
+local function CreateKillOnSightSection(parent, yOffset)
+    local alertsHeader = CreateSectionHeader(parent, "Kill On Sight Alerts", 20, yOffset)
+
+    local enableKOSCheckbox, _ = CreateCheckbox(parent, "Enable Kill On Sight alerts",
+        BPP_DB.KOSAlertsEnabled ~= false, function(checked)
+            BPP_DB.KOSAlertsEnabled = checked
+        end)
+    enableKOSCheckbox:SetPoint("TOPLEFT", alertsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.enableKOSCheckbox = enableKOSCheckbox
+    enableKOSCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enable Kill On Sight alerts")
+        GameTooltip:AddLine("Master switch for the Kill On Sight popup. Turning this off does not clear your watchlists.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableKOSCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local enableKOSSoundCheckbox, _ = CreateCheckbox(parent, "Play alert sound",
+        BPP_DB.KOSAlertSoundEnabled ~= false, function(checked)
+            BPP_DB.KOSAlertSoundEnabled = checked
+        end)
+    enableKOSSoundCheckbox:SetPoint("TOPLEFT", enableKOSCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.enableKOSSoundCheckbox = enableKOSSoundCheckbox
+    enableKOSSoundCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play alert sound")
+        GameTooltip:AddLine("Play a distinct raid-warning sound alongside the popup.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableKOSSoundCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local enableStealthCheckbox, _ = CreateCheckbox(parent, "Alert when a rogue/druid stealths nearby",
+        BPP_DB.StealthAlertsEnabled ~= false, function(checked)
+            BPP_DB.StealthAlertsEnabled = checked
+        end)
+    enableStealthCheckbox:SetPoint("TOPLEFT", enableKOSSoundCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.enableStealthCheckbox = enableStealthCheckbox
+    enableStealthCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Alert when a rogue/druid stealths nearby")
+        GameTooltip:AddLine("A small popup when a hostile player is seen going into Stealth or Prowl in the combat log - works even if they're never targeted or moused over. Suppressed for players on your Ignore list.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableStealthCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local sharingHeader = CreateSectionHeader(parent, "Guild Sharing", 0, 0)
+    sharingHeader:SetPoint("TOPLEFT", enableStealthCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local shareKOSCheckbox, _ = CreateCheckbox(parent, "Share my watchlists with guildmates",
+        BPP_DB.KOSShareEnabled ~= false, function(checked)
+            BPP_DB.KOSShareEnabled = checked
+        end)
+    shareKOSCheckbox:SetPoint("TOPLEFT", sharingHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.shareKOSCheckbox = shareKOSCheckbox
+    shareKOSCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Share my watchlists with guildmates")
+        GameTooltip:AddLine("Broadcasts your Kill On Sight player/guild lists (most recent 25 of each) alongside your other stats, so online guildmates/group members running the addon can benefit from them too.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    shareKOSCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local receiveKOSCheckbox, _ = CreateCheckbox(parent, "Alert on guildmates' reported Kill On Sight too",
+        BPP_DB.KOSReceiveShared ~= false, function(checked)
+            BPP_DB.KOSReceiveShared = checked
+        end)
+    receiveKOSCheckbox:SetPoint("TOPLEFT", shareKOSCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.receiveKOSCheckbox = receiveKOSCheckbox
+    receiveKOSCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Alert on guildmates' reported Kill On Sight too")
+        GameTooltip:AddLine("When someone else running the addon reports a player or guild as Kill On Sight, also alert you - even if you never added it yourself.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    receiveKOSCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local nearbyHeader = CreateSectionHeader(parent, "Nearby Enemies Panel", 0, 0)
+    nearbyHeader:SetPoint("TOPLEFT", receiveKOSCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local showNearbyCheckbox, _ = CreateCheckbox(parent, "Show panel on login",
+        BPP_DB.NearbyPanelShown ~= false, function(checked)
+            BPP_DB.NearbyPanelShown = checked
+            if checked and BPP_ShowNearbyPanel then
+                BPP_ShowNearbyPanel()
+            elseif not checked and BPP_HideNearbyPanel then
+                BPP_HideNearbyPanel()
+            end
+        end)
+    showNearbyCheckbox:SetPoint("TOPLEFT", nearbyHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.showNearbyCheckbox = showNearbyCheckbox
+    showNearbyCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show panel on login")
+        GameTooltip:AddLine("Keep the Nearby Enemies panel visible on screen. You can also toggle it anytime with /bpp nearby.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showNearbyCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local classColorsCheckbox, _ = CreateCheckbox(parent, "Color names by class",
+        BPP_DB.NearbyPanelClassColors ~= false, function(checked)
+            BPP_DB.NearbyPanelClassColors = checked
+            if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
+        end)
+    classColorsCheckbox:SetPoint("TOPLEFT", showNearbyCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.classColorsCheckbox = classColorsCheckbox
+    classColorsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Color names by class")
+        GameTooltip:AddLine("Color each row by the detected player's class. Kill On Sight (red) and Ignored (gray) always take priority.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    classColorsCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local nearbySoundCheckbox, _ = CreateCheckbox(parent, "Play a sound for new nearby sightings",
+        BPP_DB.NearbySoundEnabled ~= false, function(checked)
+            BPP_DB.NearbySoundEnabled = checked
+        end)
+    nearbySoundCheckbox:SetPoint("TOPLEFT", classColorsCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.nearbySoundCheckbox = nearbySoundCheckbox
+    nearbySoundCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play a sound for new nearby sightings")
+        GameTooltip:AddLine("A short sound the first time a hostile player is detected, distinct from the Kill On Sight and Stealth alert sounds. Skipped for Kill On Sight matches and Ignored players.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    nearbySoundCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- Same six options as Spy's "Remove undetected" setting.
+    local expiryOptions = {
+        {text = "1 minute", value = 60},
+        {text = "2 minutes", value = 120},
+        {text = "5 minutes", value = 300},
+        {text = "10 minutes", value = 600},
+        {text = "15 minutes", value = 900},
+        {text = "Never", value = -1},
+    }
+
+    local expiryContainer, expiryDropdown = CreateDropdown(parent, "Nearby view shows entries seen within:",
+        expiryOptions, BPP_DB.NearbyPanelExpirySeconds or 600, function(selectedValue)
+            BPP_DB.NearbyPanelExpirySeconds = selectedValue
+            if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
+        end)
+    expiryContainer:SetPoint("TOPLEFT", nearbySoundCheckbox, "BOTTOMLEFT", 0, -14)
+    parent.expiryDropdown = expiryDropdown
+
+    if expiryDropdown and expiryDropdown:GetName() then
+        local currentSeconds = BPP_DB.NearbyPanelExpirySeconds or 600
+        local currentLabel = "10 minutes"
+        for _, option in ipairs(expiryOptions) do
+            if option.value == currentSeconds then
+                currentLabel = option.text
+            end
+        end
+        UIDropDownMenu_SetSelectedValue(expiryDropdown, currentSeconds)
+        UIDropDownMenu_SetText(expiryDropdown, currentLabel)
+    end
+
+    expiryContainer:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Nearby view window")
+        GameTooltip:AddLine("How recently a player must have been seen to show up in the panel's Nearby view. The Last Hour view (cycle with the title bar arrows) always shows the full hour regardless of this setting.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    expiryContainer:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local autoShowCheckbox, _ = CreateCheckbox(parent, "Auto-show panel when an enemy is detected",
+        BPP_DB.NearbyPanelAutoShow ~= false, function(checked)
+            BPP_DB.NearbyPanelAutoShow = checked
+        end)
+    autoShowCheckbox:SetPoint("TOPLEFT", expiryContainer, "BOTTOMLEFT", 0, -30)
+    parent.autoShowCheckbox = autoShowCheckbox
+    autoShowCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Auto-show panel when an enemy is detected")
+        GameTooltip:AddLine("If the panel is closed, automatically bring it back the next time a hostile player is detected. Turn this off to keep it closed until you reopen it yourself.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    autoShowCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local zoneHeader = CreateSectionHeader(parent, "Zone Exclusions", 0, 0)
+    zoneHeader:SetPoint("TOPLEFT", autoShowCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local zoneHint = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    zoneHint:SetPoint("TOPLEFT", zoneHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 8)
+    zoneHint:SetWidth(500)
+    zoneHint:SetJustifyH("LEFT")
+    zoneHint:SetWordWrap(true)
+    zoneHint:SetText("Suppresses Kill On Sight, Stealth alerts, and the Nearby panel while in a checked zone - these are the neutral hub towns both factions pass through constantly. For any other zone, use /bpp zone disable <zone name>.")
+
+    parent.zoneCheckboxes = parent.zoneCheckboxes or {}
+    local lastZoneCheckbox = zoneHint
+    for i, zoneName in ipairs(BPP_PRESET_DISABLE_ZONES) do
+        local zoneCheckbox, _ = CreateCheckbox(parent, zoneName,
+            BPP_DB.DisabledZones and BPP_DB.DisabledZones[zoneName] == true, function(checked)
+                if checked then
+                    BPP_AddDisabledZone(zoneName)
+                else
+                    BPP_RemoveDisabledZone(zoneName)
+                end
+            end)
+        if i == 1 then
+            zoneCheckbox:SetPoint("TOPLEFT", zoneHint, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+        else
+            zoneCheckbox:SetPoint("TOPLEFT", lastZoneCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+        end
+        parent.zoneCheckboxes[zoneName] = zoneCheckbox
+        lastZoneCheckbox = zoneCheckbox
+    end
+
+    local scopeHeader = CreateSectionHeader(parent, "PvP Scope", 0, 0)
+    scopeHeader:SetPoint("TOPLEFT", lastZoneCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local scopeHint = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    scopeHint:SetPoint("TOPLEFT", scopeHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 8)
+    scopeHint:SetWidth(500)
+    scopeHint:SetJustifyH("LEFT")
+    scopeHint:SetWordWrap(true)
+    scopeHint:SetText("Dungeons and raids are always excluded, same as Spy - there's nothing to detect there.")
+    parent.scopeHint = scopeHint
+
+    local bgCheckbox, _ = CreateCheckbox(parent, "Disable detection in battlegrounds",
+        BPP_DB.DisableInBattlegrounds == true, function(checked)
+            BPP_DB.DisableInBattlegrounds = checked
+        end)
+    bgCheckbox:SetPoint("TOPLEFT", scopeHint, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.bgCheckbox = bgCheckbox
+
+    local arenaCheckbox, _ = CreateCheckbox(parent, "Disable detection in arenas",
+        BPP_DB.DisableInArenas == true, function(checked)
+            BPP_DB.DisableInArenas = checked
+        end)
+    arenaCheckbox:SetPoint("TOPLEFT", bgCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.arenaCheckbox = arenaCheckbox
+
+    local sanctuaryCheckbox, _ = CreateCheckbox(parent, "Disable detection in sanctuaries",
+        BPP_DB.DisableInSanctuaries ~= false, function(checked)
+            BPP_DB.DisableInSanctuaries = checked
+        end)
+    sanctuaryCheckbox:SetPoint("TOPLEFT", arenaCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.sanctuaryCheckbox = sanctuaryCheckbox
+    sanctuaryCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Disable detection in sanctuaries")
+        GameTooltip:AddLine("Sanctuaries (Shattrath's lower city, etc.) don't allow PvP combat at all, so detection there is rarely useful. On by default.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    sanctuaryCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local unflaggedCheckbox, _ = CreateCheckbox(parent, "Disable detection while not PvP flagged",
+        BPP_DB.DisableWhenPvPUnflagged ~= false, function(checked)
+            BPP_DB.DisableWhenPvPUnflagged = checked
+        end)
+    unflaggedCheckbox:SetPoint("TOPLEFT", sanctuaryCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.unflaggedCheckbox = unflaggedCheckbox
+    unflaggedCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Disable detection while not PvP flagged")
+        GameTooltip:AddLine("If you can't be attacked, there's usually nothing to warn about. On by default.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    unflaggedCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local worldPvPCheckbox, _ = CreateCheckbox(parent, "Disable detection in world PvP zones (Wintergrasp/Tol Barad)",
+        BPP_DB.DisableInWorldPvPZones == true, function(checked)
+            BPP_DB.DisableInWorldPvPZones = checked
+        end)
+    worldPvPCheckbox:SetPoint("TOPLEFT", unflaggedCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.worldPvPCheckbox = worldPvPCheckbox
+    worldPvPCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Disable detection in world PvP zones")
+        GameTooltip:AddLine("Forced-PvP objective zones flag everyone automatically regardless of your own PvP flag. Off by default, matching Spy.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    worldPvPCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local sharingHeader2 = CreateSectionHeader(parent, "Live Sighting Sharing", 0, 0)
+    sharingHeader2:SetPoint("TOPLEFT", worldPvPCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local nearbySharingCheckbox, _ = CreateCheckbox(parent, "Share live sightings with guild/party",
+        BPP_DB.NearbySharingEnabled ~= false, function(checked)
+            BPP_DB.NearbySharingEnabled = checked
+        end)
+    nearbySharingCheckbox:SetPoint("TOPLEFT", sharingHeader2, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.nearbySharingCheckbox = nearbySharingCheckbox
+    nearbySharingCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Share live sightings with guild/party")
+        GameTooltip:AddLine("When you detect a new hostile player, briefly tell online guildmates/group members running the addon so they see it in their own Nearby panel too - not just your Kill On Sight watchlist. Throttled to avoid chat spam.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    nearbySharingCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local purgeHeader = CreateSectionHeader(parent, "Data Retention", 0, 0)
+    purgeHeader:SetPoint("TOPLEFT", nearbySharingCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local purgeOptions = {
+        {text = "Never", value = 0},
+        {text = "30 days", value = 30},
+        {text = "60 days", value = 60},
+        {text = "90 days", value = 90},
+    }
+
+    local purgeContainer, purgeDropdown = CreateDropdown(parent, "Auto-remove Kill On Sight/Ignore entries not seen in:",
+        purgeOptions, BPP_DB.KOSPurgeDays or 0, function(selectedValue)
+            BPP_DB.KOSPurgeDays = selectedValue
+        end)
+    purgeContainer:SetPoint("TOPLEFT", purgeHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.purgeDropdown = purgeDropdown
+
+    if purgeDropdown and purgeDropdown:GetName() then
+        local currentDays = BPP_DB.KOSPurgeDays or 0
+        local currentLabel = "Never"
+        for _, option in ipairs(purgeOptions) do
+            if option.value == currentDays then
+                currentLabel = option.text
+            end
+        end
+        UIDropDownMenu_SetSelectedValue(purgeDropdown, currentDays)
+        UIDropDownMenu_SetText(purgeDropdown, currentLabel)
+    end
+
+    purgeContainer:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Auto-remove old entries")
+        GameTooltip:AddLine("Removes a Kill On Sight or Ignore entry if that player hasn't been detected in this many days. Checked once per login. 'Never' (default) keeps everything until you remove it yourself.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    purgeContainer:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local testSoundButton = CreateButton(parent, "Test Alert Sound", 150, 22, function()
+        if BPP_TestKOSAlert then BPP_TestKOSAlert() end
+    end)
+    testSoundButton:SetPoint("TOPLEFT", purgeContainer, "BOTTOMLEFT", 0, -20)
+    parent.testSoundButton = testSoundButton
+
+    local importSpyButton = CreateButton(parent, "Import from Spy", 150, 22, function()
+        local ok, a, b, c, d = BPP_ImportFromSpy and BPP_ImportFromSpy()
+        if not ok then
+            BPP_Print("[BigPPvP] " .. (a or "Import failed."))
+        else
+            BPP_Print(("[BigPPvP] Imported %d Kill On Sight player(s) (%d already on your list) and %d ignore entr%s (%d already on your list) from Spy."):format(
+                a, b, c, c == 1 and "y" or "ies", d))
+            if BPP_UpdateConfigUI then BPP_UpdateConfigUI() end
+        end
+    end)
+    importSpyButton:SetPoint("LEFT", testSoundButton, "RIGHT", 15, 0)
+    parent.importSpyButton = importSpyButton
+    importSpyButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Import from Spy")
+        GameTooltip:AddLine("Copies your current character's Kill On Sight and Ignore lists in directly from a co-installed Spy addon, if it's loaded. Existing entries are left alone - this only adds what's missing.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    importSpyButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
+local function CreateActionButtons(parent)
+    local buttonContainer = CreateFrame("Frame", nil, parent)
+    buttonContainer:SetSize(200, 200)
+    buttonContainer:SetPoint("CENTER")
+
+    local buttonWidth = 160
+    local buttonHeight = 25
+    local buttonSpacing = 15
+
+    local resetStatsBtn = CreateButton(buttonContainer, "Reset Statistics", buttonWidth, buttonHeight, function()
+        ShowResetStatsConfirmation()
+    end)
+
+    local defaultsBtn = CreateButton(buttonContainer, "Reset to Defaults", buttonWidth, buttonHeight, function()
+        ShowResetDefaultsConfirmation()
+    end)
+
+    resetStatsBtn:SetPoint("TOP", buttonContainer, "TOP", 0, 0)
+    defaultsBtn:SetPoint("TOP", resetStatsBtn, "BOTTOM", 0, -buttonSpacing)
+
+    return {
+        resetBtn = resetStatsBtn,
+        defaultsBtn = defaultsBtn
+    }
+end
+
+local currentTestAchievement = 1
+
+local function CreateTestAchievementButton(parent)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(200, 22)
+    button:SetText("Test Achievement Popup")
+    button:SetPoint("TOPLEFT", 20, -240)
+
+    button:SetScript("OnClick", function()
+        -- Use our new test achievement function
+        PVPSC.AchievementSystem:TestAchievementPopup()
+    end)
+
+    -- Create a simple explanation text
+    local helpText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    helpText:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -5)
+    helpText:SetText("Press to display a randomly styled test achievement popup")
+    helpText:SetTextColor(0.8, 0.8, 0.8)
+
+    return button
+end
+
+local function CreateMainFrame()
+    local frame = CreateFrame("Frame", "BPP_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
+    -- Fixed, screen-friendly size - tab content that overflows this now
+    -- scrolls internally (see CreateTabSystem) instead of the window itself
+    -- growing every time a section is added.
+    frame:SetSize(600, 620)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+
+    frame.CloseButton:SetScript("OnClick", function()
+        BPP_FrameManager:HideFrame("ConfigUI")
+    end)
+
+    tinsert(UISpecialFrames, "BPP_ConfigFrame")
+
+    frame.TitleText:SetText("BigPPvP Stats Settings")
+
+    return frame
+end
+
+function BPP_UpdateConfigUI()
+    if not configFrame then
+        return
+    end
+
+    configFrame.autoBGModeCheckbox:SetChecked(BPP_DB.AutoBattlegroundMode)
+    configFrame.assistsInBGCheckbox:SetChecked(BPP_DB.CountAssistsInBattlegrounds)
+    configFrame.manualBGModeCheckbox:SetChecked(BPP_DB.ForceBattlegroundMode)
+    configFrame.tooltipKillInfoCheckbox:SetChecked(BPP_DB.ShowScoreInPlayerTooltip)
+    configFrame.tooltipExtendedInfoCheckbox:SetChecked(BPP_DB.ShowExtendedTooltipInfo)
+    configFrame.showKillMilestonesCheckbox:SetChecked(BPP_DB.ShowKillMilestones)
+    configFrame.killMilestoneSoundsCheckbox:SetChecked(BPP_DB.EnableKillMilestoneSound)
+    configFrame.showMilestoneForFirstKillCheckbox:SetChecked(BPP_DB.ShowMilestoneForFirstKill)
+    configFrame.enableKillAnnounceCheckbox:SetChecked(BPP_DB.EnableKillAnnounceMessages)
+    configFrame.includePlayerDetailsCheckbox:SetChecked(BPP_DB.IncludePlayerDetailsInAnnounce)
+    configFrame.includeGuildDetailsCheckbox:SetChecked(BPP_DB.IncludeGuildDetailsInAnnounce)
+    configFrame.enableRecordAnnounceCheckbox:SetChecked(BPP_DB.EnableRecordAnnounceMessages)
+    configFrame.enableMultiKillAnnounceCheckbox:SetChecked(BPP_DB.EnableMultiKillAnnounceMessages)
+    configFrame.showAccountWideStatsCheckbox:SetChecked(BPP_DB.ShowAccountWideStats)
+    configFrame.trackBGKillsCheckbox:SetChecked(BPP_DB.CountKillsInBattlegrounds)
+    configFrame.trackBGDeathsCheckbox:SetChecked(BPP_DB.CountDeathsInBattlegrounds)
+    configFrame.autoOpenKillStreakCheckbox:SetChecked(BPP_DB.AutoOpenKillStreakPopup)
+
+    if configFrame.capAchievementProgressCheckbox then
+        configFrame.capAchievementProgressCheckbox:SetChecked(BPP_DB.CapAchievementProgress)
+    end
+
+    if configFrame.enableMultiKillSoundsCheckbox then
+        configFrame.enableMultiKillSoundsCheckbox:SetChecked(BPP_DB.EnableMultiKillSounds)
+    end
+
+    if configFrame.enableDeathSoundsCheckbox then
+        configFrame.enableDeathSoundsCheckbox:SetChecked(BPP_DB.EnableDeathSounds)
+    end
+
+    if configFrame.enableSingleKillSoundsCheckbox then
+        configFrame.enableSingleKillSoundsCheckbox:SetChecked(BPP_DB.EnableSingleKillSounds)
+    end
+
+    if configFrame.enableKOSCheckbox then
+        configFrame.enableKOSCheckbox:SetChecked(BPP_DB.KOSAlertsEnabled ~= false)
+    end
+
+    if configFrame.enableKOSSoundCheckbox then
+        configFrame.enableKOSSoundCheckbox:SetChecked(BPP_DB.KOSAlertSoundEnabled ~= false)
+    end
+
+    if configFrame.enableStealthCheckbox then
+        configFrame.enableStealthCheckbox:SetChecked(BPP_DB.StealthAlertsEnabled ~= false)
+    end
+
+    if configFrame.shareKOSCheckbox then
+        configFrame.shareKOSCheckbox:SetChecked(BPP_DB.KOSShareEnabled ~= false)
+    end
+
+    if configFrame.receiveKOSCheckbox then
+        configFrame.receiveKOSCheckbox:SetChecked(BPP_DB.KOSReceiveShared ~= false)
+    end
+
+    if configFrame.autoShowCheckbox then
+        configFrame.autoShowCheckbox:SetChecked(BPP_DB.NearbyPanelAutoShow ~= false)
+    end
+
+    if configFrame.zoneCheckboxes then
+        for zoneName, checkbox in pairs(configFrame.zoneCheckboxes) do
+            checkbox:SetChecked(BPP_DB.DisabledZones and BPP_DB.DisabledZones[zoneName] == true)
+        end
+    end
+
+    if configFrame.bgCheckbox then
+        configFrame.bgCheckbox:SetChecked(BPP_DB.DisableInBattlegrounds == true)
+    end
+
+    if configFrame.arenaCheckbox then
+        configFrame.arenaCheckbox:SetChecked(BPP_DB.DisableInArenas == true)
+    end
+
+    if configFrame.sanctuaryCheckbox then
+        configFrame.sanctuaryCheckbox:SetChecked(BPP_DB.DisableInSanctuaries ~= false)
+    end
+
+    if configFrame.unflaggedCheckbox then
+        configFrame.unflaggedCheckbox:SetChecked(BPP_DB.DisableWhenPvPUnflagged ~= false)
+    end
+
+    if configFrame.worldPvPCheckbox then
+        configFrame.worldPvPCheckbox:SetChecked(BPP_DB.DisableInWorldPvPZones == true)
+    end
+
+    if configFrame.nearbySharingCheckbox then
+        configFrame.nearbySharingCheckbox:SetChecked(BPP_DB.NearbySharingEnabled ~= false)
+    end
+
+    if configFrame.showNearbyCheckbox then
+        configFrame.showNearbyCheckbox:SetChecked(BPP_DB.NearbyPanelShown ~= false)
+    end
+
+    if configFrame.classColorsCheckbox then
+        configFrame.classColorsCheckbox:SetChecked(BPP_DB.NearbyPanelClassColors ~= false)
+    end
+
+    if configFrame.nearbySoundCheckbox then
+        configFrame.nearbySoundCheckbox:SetChecked(BPP_DB.NearbySoundEnabled ~= false)
+    end
+
+    if configFrame.soundPackDropdown and configFrame.soundPackDropdown:GetName() then
+        UIDropDownMenu_SetSelectedValue(configFrame.soundPackDropdown, BPP_DB.SoundPack or "LoL")
+        if BPP_DB.EnableMultiKillSounds then
+            UIDropDownMenu_EnableDropDown(configFrame.soundPackDropdown)
+        else
+            UIDropDownMenu_DisableDropDown(configFrame.soundPackDropdown)
+        end
+    end
+
+    if configFrame.multiKillSlider and configFrame.multiKillSlider:GetName() then
+        configFrame.multiKillSlider:SetValue(BPP_DB.MultiKillThreshold or 3)
+        getglobal(configFrame.multiKillSlider:GetName() .. "Text"):SetText(
+            "Multi-Kill announce threshold: " .. (BPP_DB.MultiKillThreshold or 3))
+    end
+
+    if configFrame.announceChannelDropdown and configFrame.announceChannelDropdown:GetName() then
+        local channelValue = BPP_DB.AnnounceChannel or "GROUP"
+        UIDropDownMenu_SetSelectedValue(configFrame.announceChannelDropdown, channelValue)
+
+        -- Set the display text based on the value
+        local displayText = "Group Chat"
+        if channelValue == "GUILD" then
+            displayText = "Guild Chat"
+        elseif channelValue == "RAID" then
+            displayText = "Raid Chat"
+        elseif channelValue == "SELF" then
+            displayText = "Myself"
+        end
+        UIDropDownMenu_SetText(configFrame.announceChannelDropdown, displayText)
+    end
+
+    if configFrame.milestoneIntervalSlider and configFrame.milestoneIntervalSlider:GetName() then
+        configFrame.milestoneIntervalSlider:SetValue(BPP_DB.KillMilestoneInterval or 5)
+        getglobal(configFrame.milestoneIntervalSlider:GetName() .. "Text"):SetText(
+            "Milestone interval: Every " .. (BPP_DB.KillMilestoneInterval or 5) .. " kills")
+    end
+
+    if configFrame.milestoneAutoHideTimeSlider and configFrame.milestoneAutoHideTimeSlider:GetName() then
+        configFrame.milestoneAutoHideTimeSlider:SetValue(BPP_DB.KillMilestoneAutoHideTime or 5)
+        getglobal(configFrame.milestoneAutoHideTimeSlider:GetName() .. "Text"):SetText(
+            "Hide notification after: " .. (BPP_DB.KillMilestoneAutoHideTime or 5) .. " seconds")
+    end
+
+    configFrame.editBoxes.killMsg:SetText(BPP_DB.KillAnnounceMessage)
+    configFrame.editBoxes.streakEnded:SetText(BPP_DB.KillStreakEndedMessage)
+    configFrame.editBoxes.newStreak:SetText(BPP_DB.NewKillStreakRecordMessage)
+    configFrame.editBoxes.multiKill:SetText(BPP_DB.NewMultiKillRecordMessage)
+end
+
+-- Generous fixed height for the scrollable area inside each tab - content
+-- never needs to grow the whole window anymore (that kept getting bumped up
+-- every time a section was added, until the window no longer fit on screen:
+-- 690 -> 840 -> 900 -> 930). Some blank space at the bottom of a shorter tab
+-- is harmless; a tab running out of room and clipping off-screen isn't.
+local TAB_CONTENT_HEIGHT = 1050
+
+local function CreateTabSystem(parent)
+    local tabWidth = 85
+    local tabHeight = 32
+    local tabs = {}
+    local tabFrames = {}
+    local scrollFrames = {}
+
+    local tabContainer = CreateFrame("Frame", nil, parent)
+    tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
+    tabContainer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -7, 7)
+
+    local tabNames = {"General", "Messages", "Sounds", "Kill On Sight", "Reset", "About"}
+    for i, name in ipairs(tabNames) do
+        local tab = CreateFrame("Button", parent:GetName() .. "Tab" .. i, parent, "CharacterFrameTabButtonTemplate")
+        tab:SetText(name)
+        tab:SetID(i)
+
+        tab:SetSize(tabWidth, tabHeight)
+
+        local tabMiddle = _G[tab:GetName() .. "Middle"]
+        local tabLeft = _G[tab:GetName() .. "Left"]
+        local tabRight = _G[tab:GetName() .. "Right"]
+        local tabSelectedMiddle = _G[tab:GetName() .. "SelectedMiddle"]
+        local tabSelectedLeft = _G[tab:GetName() .. "SelectedLeft"]
+        local tabSelectedRight = _G[tab:GetName() .. "SelectedRight"]
+        local tabText = _G[tab:GetName() .. "Text"]
+
+        if tabMiddle then
+            tabMiddle:ClearAllPoints()
+            tabMiddle:SetPoint("LEFT", tabLeft, "RIGHT", 0, 0)
+            tabMiddle:SetWidth(tabWidth - 31)
+        end
+        if tabSelectedMiddle then
+            tabSelectedMiddle:ClearAllPoints()
+            tabSelectedMiddle:SetPoint("LEFT", tabSelectedLeft, "RIGHT", 0, 0)
+            tabSelectedMiddle:SetWidth(tabWidth - 31)
+        end
+
+        if i == 1 then
+            tab:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", 5, 0)
+        else
+            tab:SetPoint("LEFT", tabs[i - 1], "RIGHT", -8, 0)
+        end
+
+        if tabText then
+            tabText:ClearAllPoints()
+            tabText:SetPoint("CENTER", tab, "CENTER", 0, 2)
+            tabText:SetJustifyH("CENTER")
+            tabText:SetWidth(tabWidth - 40)
+        end
+
+        -- Each tab's content sits in a scroll frame instead of directly in
+        -- tabContainer, so a tall tab (Kill On Sight, with the most
+        -- sections) scrolls internally instead of forcing the whole window
+        -- to keep growing taller.
+        local scrollFrame = CreateFrame("ScrollFrame", parent:GetName() .. "Tab" .. i .. "Scroll", tabContainer, "UIPanelScrollFrameTemplate")
+        scrollFrame:SetPoint("TOPLEFT", tabContainer, "TOPLEFT", 0, -5)
+        scrollFrame:SetPoint("BOTTOMRIGHT", tabContainer, "BOTTOMRIGHT", -22, 0)
+        scrollFrame:Hide()
+
+        local contentFrame = CreateFrame("Frame", nil, scrollFrame)
+        contentFrame:SetSize(scrollFrame:GetWidth(), TAB_CONTENT_HEIGHT)
+        scrollFrame:SetScrollChild(contentFrame)
+
+        tabFrames[i] = contentFrame
+        scrollFrames[i] = scrollFrame
+        table.insert(tabs, tab)
+
+        tab:SetScript("OnClick", function()
+            PanelTemplates_SetTab(parent, i)
+            for index, frame in ipairs(scrollFrames) do
+                if index == i then
+                    frame:Show()
+                    PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+                else
+                    frame:Hide()
+                end
+            end
+        end)
+    end
+
+    parent.tabs = tabs
+    parent.numTabs = #tabs
+    PanelTemplates_SetNumTabs(parent, #tabs)
+    PanelTemplates_SetTab(parent, 1)
+    scrollFrames[1]:Show()
+
+    for i, tab in ipairs(tabs) do
+        PanelTemplates_TabResize(tab, 0)
+    end
+
+    return tabFrames
+end
+
+local function CreateCopyableField(parent, label, text, anchorTo, xOffset, yOffset, customWidth)
+    local labelText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    labelText:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", xOffset, yOffset)
+    labelText:SetText(label)
+
+    local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    editBox:SetAutoFocus(false)
+    local width = customWidth or 285
+    editBox:SetSize(width, 20)
+    editBox:SetPoint("TOPLEFT", labelText, "TOPLEFT", labelText:GetStringWidth() + 10, 5)
+    editBox:SetText(text)
+    editBox:SetTextColor(0.3, 0.6, 1.0)
+
+    editBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+    editBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
+    editBox:SetScript("OnTextChanged", function(self, userInput)
+        if userInput then
+            self:SetText(text)
+            self:HighlightText()
+        end
+    end)
+    editBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+
+    return labelText, editBox
+end
+
+local function CreateAboutTab(parent)
+    local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    header:SetPoint("TOP", parent, "TOP", 0, -20)
+    header:SetText("BigPPvP Stats")
+    header:SetTextColor(BPP_CONFIG_HEADER_R, BPP_CONFIG_HEADER_G, BPP_CONFIG_HEADER_B)
+
+    local versionText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    versionText:SetPoint("TOP", header, "BOTTOM", 0, -5)
+    versionText:SetText("Version: " .. BPP_GetAddonVersion())
+    versionText:SetTextColor(1, 1, 1)
+
+    local creditsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    creditsHeader:SetPoint("TOP", header, "BOTTOM", 0, -60)
+    creditsHeader:SetText("Credits")
+    creditsHeader:SetTextColor(BPP_CONFIG_HEADER_R, BPP_CONFIG_HEADER_G, BPP_CONFIG_HEADER_B)
+
+    local logo = parent:CreateTexture(nil, "ARTWORK")
+    logo:SetSize(240, 240)
+    logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
+    logo:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BIGPPvPLogo.blp")
+
+    local contentWidth = 300
+    local creditsContainer = CreateFrame("Frame", nil, parent)
+    creditsContainer:SetSize(contentWidth, 200)
+    creditsContainer:SetPoint("TOP", logo, "BOTTOM", 29, -10)
+
+    local guildText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    guildText:SetPoint("TOPLEFT", creditsContainer, "TOPLEFT", 0, 0)
+    guildText:SetText("Guild: ")
+    guildText:SetTextColor(BPP_CONFIG_HEADER_R, BPP_CONFIG_HEADER_G, BPP_CONFIG_HEADER_B)
+
+    local guildNameText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    guildNameText:SetPoint("TOPLEFT", guildText, "TOPRIGHT", 0, 0)
+    guildNameText:SetText("<BIGPPvP>")
+    guildNameText:SetTextColor(1, 1, 1) -- Set color to white
+
+    local realmText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    realmText:SetPoint("TOPLEFT", guildText, "BOTTOMLEFT", 0, -10)
+    realmText:SetText("Realm: ")
+    realmText:SetTextColor(BPP_CONFIG_HEADER_R, BPP_CONFIG_HEADER_G, BPP_CONFIG_HEADER_B)
+
+    local realmNameText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    realmNameText:SetPoint("TOPLEFT", realmText, "TOPRIGHT", 0, 0)
+    realmNameText:SetText("Nightslayer (US)")
+    realmNameText:SetTextColor(1, 1, 1) -- Set color to white
+
+    local discordLabel, discordField = CreateCopyableField(creditsContainer, "Discord:", "TBD",
+        realmText, -60, -50)
+    local githubLabel, githubField = CreateCopyableField(creditsContainer, "GitHub: ", "TBD",
+        discordLabel, 0, -20)
+    local contactLabel, contactField = CreateCopyableField(creditsContainer, "Contact:", "TBD",
+        githubLabel, 0, -20)
+    local curseforgeLabel, curseforgeField = CreateCopyableField(creditsContainer, "CurseForge:", "TBD",
+        contactLabel, 0, -20, 265)
+
+    local attributionText = creditsContainer:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    attributionText:SetPoint("TOPLEFT", curseforgeLabel, "BOTTOMLEFT", 0, -30)
+    attributionText:SetWidth(contentWidth)
+    attributionText:SetJustifyH("LEFT")
+    attributionText:SetWordWrap(true)
+    attributionText:SetText("Originally based on PvPStatsClassic by Severussnipe & Hkfarmer.")
+
+    return parent
+end
+
+function BPP_CreateConfigFrame()
+    if configFrame then
+        configFrame:Show()
+        return
+    end
+
+    configFrame = CreateMainFrame()
+    BPP_FrameManager:RegisterFrame(configFrame, "ConfigUI")
+
+    local tabFrames = CreateTabSystem(configFrame)
+
+    local currentY = -10
+    local announcementHeight = CreateAnnouncementSection(tabFrames[1], currentY)
+
+    configFrame.autoBGModeCheckbox = tabFrames[1].autoBGModeCheckbox
+    configFrame.assistsInBGCheckbox = tabFrames[1].assistsInBGCheckbox
+    configFrame.manualBGModeCheckbox = tabFrames[1].manualBGModeCheckbox
+    configFrame.tooltipKillInfoCheckbox = tabFrames[1].tooltipKillInfoCheckbox
+    configFrame.showKillMilestonesCheckbox = tabFrames[1].showKillMilestonesCheckbox
+    configFrame.killMilestoneSoundsCheckbox = tabFrames[1].killMilestoneSoundsCheckbox
+    configFrame.showMilestoneForFirstKillCheckbox = tabFrames[1].showMilestoneForFirstKillCheckbox
+    configFrame.enableKillAnnounceCheckbox = tabFrames[1].enableKillAnnounceCheckbox
+    configFrame.includePlayerDetailsCheckbox = tabFrames[1].includePlayerDetailsCheckbox
+    configFrame.includeGuildDetailsCheckbox = tabFrames[1].includeGuildDetailsCheckbox
+    configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
+    configFrame.enableMultiKillAnnounceCheckbox = tabFrames[1].enableMultiKillAnnounceCheckbox
+    configFrame.showAccountWideStatsCheckbox = tabFrames[1].showAccountWideStatsCheckbox
+    configFrame.autoOpenKillStreakCheckbox = tabFrames[1].autoOpenKillStreakCheckbox
+    configFrame.trackBGKillsCheckbox = tabFrames[1].trackBGKillsCheckbox
+    configFrame.trackBGDeathsCheckbox = tabFrames[1].trackBGDeathsCheckbox
+    configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
+    configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
+    configFrame.multiKillSlider = tabFrames[1].multiKillSlider
+    configFrame.tooltipExtendedInfoCheckbox = tabFrames[1].tooltipExtendedInfoCheckbox
+    configFrame.announceChannelDropdown = tabFrames[1].announceChannelDropdown
+
+    configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
+
+    CreateSoundsSection(tabFrames[3], -10)
+    configFrame.enableMultiKillSoundsCheckbox = tabFrames[3].enableMultiKillSoundsCheckbox
+    configFrame.enableDeathSoundsCheckbox = tabFrames[3].enableDeathSoundsCheckbox
+    configFrame.enableSingleKillSoundsCheckbox = tabFrames[3].enableSingleKillSoundsCheckbox
+    configFrame.soundPackDropdown = tabFrames[3].soundPackDropdown
+
+    CreateKillOnSightSection(tabFrames[4], -10)
+    configFrame.enableKOSCheckbox = tabFrames[4].enableKOSCheckbox
+    configFrame.enableKOSSoundCheckbox = tabFrames[4].enableKOSSoundCheckbox
+    configFrame.enableStealthCheckbox = tabFrames[4].enableStealthCheckbox
+    configFrame.shareKOSCheckbox = tabFrames[4].shareKOSCheckbox
+    configFrame.receiveKOSCheckbox = tabFrames[4].receiveKOSCheckbox
+    configFrame.autoShowCheckbox = tabFrames[4].autoShowCheckbox
+    configFrame.zoneCheckboxes = tabFrames[4].zoneCheckboxes
+    configFrame.bgCheckbox = tabFrames[4].bgCheckbox
+    configFrame.arenaCheckbox = tabFrames[4].arenaCheckbox
+    configFrame.sanctuaryCheckbox = tabFrames[4].sanctuaryCheckbox
+    configFrame.unflaggedCheckbox = tabFrames[4].unflaggedCheckbox
+    configFrame.worldPvPCheckbox = tabFrames[4].worldPvPCheckbox
+    configFrame.nearbySharingCheckbox = tabFrames[4].nearbySharingCheckbox
+    configFrame.purgeDropdown = tabFrames[4].purgeDropdown
+    configFrame.showNearbyCheckbox = tabFrames[4].showNearbyCheckbox
+    configFrame.classColorsCheckbox = tabFrames[4].classColorsCheckbox
+    configFrame.nearbySoundCheckbox = tabFrames[4].nearbySoundCheckbox
+    configFrame.expiryDropdown = tabFrames[4].expiryDropdown
+
+    local resetButtons = CreateActionButtons(tabFrames[5])
+    configFrame.resetButtons = resetButtons
+
+    CreateAboutTab(tabFrames[6])
+
+    PanelTemplates_SetTab(configFrame, 1)
+    tabFrames[1]:Show()
+
+    BPP_UpdateConfigUI()
+
+    return configFrame
+end
+
+function BPP_CreateConfigUI()
+    if configFrame then
+        BPP_FrameManager:ShowFrame("ConfigUI")
+        return
+    end
+
+    BPP_CreateConfigFrame()
+end

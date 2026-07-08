@@ -1,0 +1,383 @@
+local addonName, PVPSC = ...
+
+local function PrintSlashCommandUsage()
+    BPP_Print("Usage: /bpp stats - Show PvP statistics")
+    BPP_Print("Usage: /bpp history - Show PvP history")
+    BPP_Print("Usage: /bpp achievements - Show PvP achievements")
+    BPP_Print("Usage: /bpp leaderboard - Show PvP leaderboard")
+    BPP_Print("Usage: /bpp sendstats <player name> - Send your stats to a player")
+    BPP_Print("Usage: /bpp sync - Ask nearby/guild/group players with the addon to refresh your leaderboard")
+    BPP_Print("Usage: /bpp trash - Show the Most Hated Guilds board (combined kills across the roster)")
+    BPP_Print("Usage: /bpp trash digest - Show your trashed guild kills from the past week")
+    BPP_Print("Usage: /bpp kos - Show your Kill On Sight list (players and guilds)")
+    BPP_Print("Usage: /bpp kos add <name> [reason] - Add a player to your Kill On Sight list")
+    BPP_Print("Usage: /bpp kos remove <name> - Remove a player from your Kill On Sight list")
+    BPP_Print("Usage: /bpp kos guild add <guild name> [- reason] - Add a guild to your Kill On Sight list")
+    BPP_Print("Usage: /bpp kos guild remove <guild name> - Remove a guild from your Kill On Sight list")
+    BPP_Print("Usage: /bpp kos ignore <name> - Suppress Kill On Sight alerts for a player")
+    BPP_Print("Usage: /bpp kos unignore <name> - Stop suppressing alerts for a player")
+    BPP_Print("Usage: /bpp kos testsound - Fire a test Kill On Sight alert (popup + sound)")
+    BPP_Print("Usage: /bpp kos importspy - Import your Kill On Sight/Ignore lists from a co-installed Spy addon")
+    BPP_Print("Usage: /bpp nearby - Toggle the Nearby Enemies panel")
+    BPP_Print("Usage: /bpp zone disable [zone name] - Disable detection in a zone (defaults to your current zone)")
+    BPP_Print("Usage: /bpp zone enable [zone name] - Re-enable detection in a zone")
+    BPP_Print("Usage: /bpp zone list - Show disabled zones")
+    BPP_Print("Usage: /bpp settings - Open addon settings")
+    BPP_Print("Usage: /bpp export - Open a copyable text backup of your stats/achievements")
+    BPP_Print("Usage: /bpp import - Paste a previously exported backup back in")
+    BPP_Print("Usage: /bpp backups - List your automatic rolling backups")
+    BPP_Print("Usage: /bpp restore [number] - Restore a rolling backup (1 = most recent)")
+    BPP_Print("Usage: /bpp toggledebug - Toggle debug/test commands on or off")
+
+    if BPP_Debug then
+        BPP_Print("Debug Commands:")
+        BPP_Print("Usage: /bpp registerguildkill <guild name> [count] - Register test kill(s) against a specific guild")
+        BPP_Print("Usage: /bpp registerstreakkill [days] [killsPerDay] [daysAgo] - Generate test streak data")
+        BPP_Print("Usage: /bpp timezonetest - Test timezone detection")
+        BPP_Print("Usage: /bpp status - Show current settings")
+        BPP_Print("Usage: /bpp debug - Show current streak values")
+        BPP_Print("Usage: /bpp registerkill [number] - Register test kill(s) for testing")
+        BPP_Print("Usage: /bpp registerlevel1kill [number] - Register test level 1 kill(s) for testing")
+        BPP_Print("Usage: /bpp registernpckill <NPC name> - Register NPC kill for testing")
+        BPP_Print("Usage: /bpp simulatedeath [killers] [assists] - Simulate being killed")
+        BPP_Print("Usage: /bpp bgmode - Toggle battleground mode manually")
+        BPP_Print("Usage: /bpp debugevents - Enhanced combat log debugging for 30 seconds")
+        BPP_Print("Usage: /bpp debugpet - Track all pet damage and kills for 60 seconds")
+        BPP_Print("Usage: /bpp simulatedeath [killers] [assists] - Simulate being killed")
+        BPP_Print("Usage: /bpp simcombatlog [killers] [assists] [damage] - Simulate combat log entries for death")
+        BPP_Print("Usage: /bpp deathstats - Show death statistics")
+        BPP_Print("Usage: /bpp snapshot [label] - Save stats + achievement progress snapshot to SavedVariables")
+    end
+
+
+end
+
+local function BPP_RegisterNPCKillCommand(arguments)
+    if arguments and arguments ~= "" then
+        local npcName = strtrim(arguments)
+        -- Find matching NPC by name
+        local npcID = nil
+        for id, name in pairs(BPP_TrackedNPCs) do
+            if name == npcName then
+                npcID = id
+                break
+            end
+        end
+
+        if npcID then
+            BPP_RegisterNPCKill(npcName, npcID)
+        else
+            BPP_Print("Error: NPC '" .. npcName .. "' not found in tracked NPCs list.")
+            BPP_Print("Available NPCs:")
+            for id, name in pairs(BPP_TrackedNPCs) do
+                BPP_Print("  - " .. name .. " (ID: " .. id .. ")")
+            end
+        end
+    else
+        BPP_Print("Usage: /bpp registernpckill <NPC name>")
+        BPP_Print("Available NPCs:")
+        for id, name in pairs(BPP_TrackedNPCs) do
+            BPP_Print("  - " .. name .. " (ID: " .. id .. ")")
+        end
+    end
+end
+
+local function PrintStatus()
+    local statusMessage = "Kill announce messages are " .. (BPP_DB.EnableKillAnnounceMessages and "ENABLED" or "DISABLED") .. "."
+    BPP_Print(statusMessage)
+    BPP_Print("Current kill announce message: " .. BPP_DB.KillAnnounceMessage)
+    BPP_Print("Streak ended message: " .. BPP_DB.KillStreakEndedMessage)
+    BPP_Print("New streak record message: " .. BPP_DB.NewKillStreakRecordMessage)
+    BPP_Print("New multi-kill record message: " .. BPP_DB.NewMultiKillRecordMessage)
+    BPP_Print("Multi-kill announcement threshold: " .. BPP_DB.MultiKillThreshold)
+    BPP_Print("Record announcements: " .. (BPP_DB.EnableRecordAnnounceMessages and "ENABLED" or "DISABLED"))
+    BPP_Print("Battleground Mode: " .. (BPP_CurrentlyInBattleground and "ACTIVE" or "INACTIVE"))
+    BPP_Print("Auto BG Detection: " .. (BPP_DB.AutoBattlegroundMode and "ENABLED" or "DISABLED"))
+    BPP_Print("Manual BG Mode: " .. (BPP_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
+end
+
+function BPP_SlashCommandHandler(msg)
+    local command, arguments = msg:match("^(%S*)%s*(.-)$")
+    command = string.lower(command or "")
+
+    if command == "stats" then
+        BPP_CreateStatisticsFrame()
+
+    elseif command == "history" then
+        BPP_CreateKillsListFrame()
+
+    elseif command == "achievements" then
+        BPP_ToggleAchievementFrame()
+
+    elseif command == "leaderboard" or command == "lb" then
+        BPP_CreateLeaderboardFrame()
+
+    elseif command == "sendstats" then
+        if not arguments or arguments == "" then
+            BPP_Print("Usage: /bpp sendstats <player name>")
+            return
+        end
+
+        local normalized = PVPSC.Network.NormalizeTargetName and PVPSC.Network:NormalizeTargetName(arguments) or strtrim(arguments)
+        if not normalized or normalized == "" then
+            BPP_Print("Usage: /bpp sendstats <player name>")
+            return
+        end
+
+        local sent, _, reason = PVPSC.Network:SendStatsToPlayer(normalized)
+        if not sent then
+            BPP_Print("[BigPPvP]: " .. (reason or "Unable to send statistics."))
+            return
+        end
+
+        BPP_Print("[BigPPvP]: Sent stats to " .. normalized .. ". They will only be able to receive them if they have addon version 4.2 or higher.")
+
+    elseif command == "sync" then
+        PVPSC.Network:RequestManualSync()
+
+    elseif command == "trash" then
+        if arguments == "digest" then
+            BPP_ShowTrashDigest()
+        else
+            BPP_ShowMostHatedGuildsFrame()
+        end
+
+    elseif command == "kos" then
+        local subCommand, subArguments = arguments:match("^(%S*)%s*(.-)$")
+        subCommand = string.lower(subCommand or "")
+
+        if subCommand == "add" then
+            local ok, nameOrErr = BPP_AddKOSPlayer(subArguments)
+            if ok then
+                BPP_Print("[BigPPvP] Added " .. nameOrErr .. " to your Kill On Sight list.")
+            else
+                BPP_Print("[BigPPvP] " .. nameOrErr)
+            end
+
+        elseif subCommand == "remove" then
+            if BPP_RemoveKOSPlayer(subArguments) then
+                BPP_Print("[BigPPvP] Removed " .. subArguments .. " from your Kill On Sight list.")
+            else
+                BPP_Print("[BigPPvP] " .. subArguments .. " isn't on your Kill On Sight list.")
+            end
+
+        elseif subCommand == "ignore" then
+            local ok, infoKey = BPP_AddKOSIgnore(subArguments)
+            if ok then
+                BPP_Print("[BigPPvP] " .. subArguments .. " will no longer trigger Kill On Sight alerts.")
+                if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
+            else
+                BPP_Print("[BigPPvP] Usage: /bpp kos ignore <name>")
+            end
+
+        elseif subCommand == "unignore" then
+            if BPP_RemoveKOSIgnore(subArguments) then
+                BPP_Print("[BigPPvP] " .. subArguments .. " removed from your ignore list.")
+                if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
+            else
+                BPP_Print("[BigPPvP] " .. subArguments .. " isn't on your ignore list.")
+            end
+
+        elseif subCommand == "testsound" then
+            BPP_TestKOSAlert()
+
+        elseif subCommand == "importspy" then
+            local ok, a, b, c, d = BPP_ImportFromSpy and BPP_ImportFromSpy()
+            if not ok then
+                BPP_Print("[BigPPvP] " .. (a or "Import failed."))
+            else
+                BPP_Print(("[BigPPvP] Imported %d Kill On Sight player(s) (%d already on your list) and %d ignore entr%s (%d already on your list) from Spy."):format(
+                    a, b, c, c == 1 and "y" or "ies", d))
+            end
+
+        elseif subCommand == "guild" then
+            local guildAction, guildArguments = subArguments:match("^(%S*)%s*(.-)$")
+            guildAction = string.lower(guildAction or "")
+
+            if guildAction == "add" then
+                local ok, guildOrErr = BPP_AddKOSGuild(guildArguments)
+                if ok then
+                    BPP_Print("[BigPPvP] Added guild " .. guildOrErr .. " to your Kill On Sight list.")
+                else
+                    BPP_Print("[BigPPvP] " .. guildOrErr)
+                end
+            elseif guildAction == "remove" then
+                if BPP_RemoveKOSGuild(guildArguments) then
+                    BPP_Print("[BigPPvP] Removed guild " .. guildArguments .. " from your Kill On Sight list.")
+                else
+                    BPP_Print("[BigPPvP] Guild " .. guildArguments .. " isn't on your Kill On Sight list.")
+                end
+            else
+                BPP_Print("Usage: /bpp kos guild add <guild name> [- reason]")
+                BPP_Print("Usage: /bpp kos guild remove <guild name>")
+            end
+
+        else
+            BPP_ShowKOSListFrame()
+        end
+
+    elseif command == "nearby" then
+        BPP_ToggleNearbyPanel()
+
+    elseif command == "zone" then
+        local zoneAction, zoneArguments = arguments:match("^(%S*)%s*(.-)$")
+        zoneAction = string.lower(zoneAction or "")
+        local targetZone = zoneArguments ~= "" and zoneArguments or (BPP_GetCurrentZoneName and BPP_GetCurrentZoneName())
+
+        if zoneAction == "disable" then
+            if BPP_AddDisabledZone(targetZone) then
+                BPP_Print("[BigPPvP] Detection disabled in " .. targetZone .. ".")
+            else
+                BPP_Print("Usage: /bpp zone disable [zone name] - omit the name to use your current zone")
+            end
+
+        elseif zoneAction == "enable" then
+            if BPP_RemoveDisabledZone(targetZone) then
+                BPP_Print("[BigPPvP] Detection re-enabled in " .. targetZone .. ".")
+            else
+                BPP_Print("[BigPPvP] " .. tostring(targetZone) .. " isn't on your disabled zone list.")
+            end
+
+        elseif zoneAction == "list" then
+            local zones = BPP_GetDisabledZoneList()
+            if #zones == 0 then
+                BPP_Print("[BigPPvP] No custom zones disabled. Usage: /bpp zone disable [zone name]")
+            else
+                BPP_Print("[BigPPvP] Disabled zones: " .. table.concat(zones, ", "))
+            end
+
+        else
+            BPP_Print("Usage: /bpp zone disable [zone name] - omit the name to use your current zone")
+            BPP_Print("Usage: /bpp zone enable [zone name]")
+            BPP_Print("Usage: /bpp zone list")
+        end
+
+    elseif command == "options" or command == "settings" then
+        BPP_CreateConfigUI()
+
+    elseif command == "export" then
+        BPP_ShowExportFrame()
+
+    elseif command == "import" then
+        BPP_ShowImportFrame()
+
+    elseif command == "backups" then
+        BPP_ListRollingBackups()
+
+    elseif command == "restore" then
+        BPP_RestoreRollingBackupSnapshot(arguments ~= "" and arguments or 1)
+
+    elseif command == "toggledebug" then
+        BPP_Debug = not BPP_Debug
+        BPP_Print("Debug mode " .. (BPP_Debug and "ENABLED" or "DISABLED") .. ". Type /bpp for the full debug command list.")
+
+    elseif command == "migrate_international_data" then
+        BPP_MigratePlayerInfoToEnglish(true)
+        -- reload UI
+        ReloadUI()
+
+    elseif BPP_Debug then
+        if command == "simulatedeath" then
+            local killerCount = 1
+            local assistCount = 0
+            if arguments and arguments ~= "" then
+                local counts = {arguments:match("(%d+)%s*(%d*)")}
+                if counts[1] then killerCount = tonumber(counts[1]) end
+                if counts[2] then assistCount = tonumber(counts[2]) end
+            end
+            BPP_SimulatePlayerDeathByEnemy(killerCount, assistCount)
+
+        elseif command == "simcombatlog" then
+            local killerCount = 1
+            local assistCount = 0
+            local damageType = "direct"  -- Options: direct, dot, mixed
+            if arguments and arguments ~= "" then
+                local parts = {strsplit(" ", arguments)}
+                if parts[1] then killerCount = tonumber(parts[1]) or 1 end
+                if parts[2] then assistCount = tonumber(parts[2]) or 0 end
+                if parts[3] then damageType = parts[3] end
+            end
+            BPP_SimulateCombatLogEvent(killerCount, assistCount, damageType)
+
+        elseif command == "testtrackers" or command == "testdeath" then
+            BPP_RunDeathTrackingTests()
+
+        elseif command == "deathstats" then
+            BPP_ShowDeathStats()
+
+        elseif command == "status" then
+            PrintStatus()
+
+        elseif command == "debug" then
+            BPP_ShowDebugInfo()
+
+        elseif command == "registerkill" then
+            local testKillCount = 1
+            if arguments and arguments ~= "" then
+                local count = tonumber(arguments)
+                if count and count > 0 then
+                    testKillCount = count
+                end
+            end
+            BPP_SimulatePlayerKills(testKillCount)
+
+        elseif command == "registerlevel1kill" then
+            local testKillCount = 1
+            if arguments and arguments ~= "" then
+                local count = tonumber(arguments)
+                if count and count > 0 then
+                    testKillCount = count
+                end
+            end
+            BPP_SimulateLevel1Kills(testKillCount)
+
+        elseif command == "registernpckill" then
+            BPP_RegisterNPCKillCommand(arguments)
+
+        elseif command == "registerguildkill" then
+            local guildName, trailingCount = arguments:match("^(.-)%s+(%d+)%s*$")
+            local killCount = 1
+            if guildName and trailingCount then
+                killCount = tonumber(trailingCount) or 1
+            else
+                guildName = strtrim(arguments or "")
+            end
+            BPP_SimulateGuildKills(guildName, killCount)
+
+        elseif command == "registerstreakkill" then
+            local days, killsPerDay, daysAgo = arguments:match("(%d+)%s+(%d+)%s*(%d*)")
+            days = tonumber(days) or 7
+            killsPerDay = tonumber(killsPerDay) or 10
+            daysAgo = tonumber(daysAgo) or nil
+            BPP_GenerateStreakTestData(days, killsPerDay, daysAgo)
+
+        elseif command == "bgmode" then
+            BPP_DB.ForceBattlegroundMode = not BPP_DB.ForceBattlegroundMode
+            BPP_CheckBattlegroundStatus()
+            BPP_Print("Manual Battleground Mode " .. (BPP_DB.ForceBattlegroundMode and "ENABLED" or "DISABLED"))
+
+        elseif command == "debugevents" then
+            BPP_DebugCombatLogEvents()
+
+        elseif command == "debugpet" then
+            BPP_DebugPetKills()
+
+        elseif command == "timezonetest" then
+            BPP_TestTimeZoneOffsetCalculation()
+
+        elseif command == "roleplayer" then
+            BPP_CreateRoleplayer()
+
+        elseif command == "snapshot" then
+            BPP_CreateDebugSnapshot(arguments ~= "" and arguments or nil)
+
+        elseif command == "testdatamigration" then
+            BPP_RunMigrationTests()
+
+        else
+            PrintSlashCommandUsage()
+        end
+    else
+        PrintSlashCommandUsage()
+    end
+end
