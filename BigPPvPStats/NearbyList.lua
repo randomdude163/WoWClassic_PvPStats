@@ -35,6 +35,7 @@ local NEARBY_HARD_RETENTION_SECONDS = 3600
 
 function BPP_RecordNearbyPlayer(name, level, class, race, guildName, infoKey)
     if not name or name == "" then return end
+    if BPP_IsZoneDetectionDisabled and BPP_IsZoneDetectionDisabled() then return end
     infoKey = infoKey or BPP_GetInfoKeyFromName(name)
 
     nearbyPlayers[infoKey] = {
@@ -48,6 +49,8 @@ function BPP_RecordNearbyPlayer(name, level, class, race, guildName, infoKey)
 
     if nearbyPanelFrame and nearbyPanelFrame:IsShown() then
         BPP_RefreshNearbyPanel()
+    elseif BPP_DB and BPP_DB.NearbyPanelAutoShow ~= false and BPP_ShowNearbyPanel then
+        BPP_ShowNearbyPanel()
     end
 end
 
@@ -127,6 +130,7 @@ end
 
 function BPP_CheckStealthAlert(name)
     if not BPP_DB or BPP_DB.StealthAlertsEnabled == false or not name or name == "" then return end
+    if BPP_IsZoneDetectionDisabled and BPP_IsZoneDetectionDisabled() then return end
 
     local infoKey = BPP_GetInfoKeyFromName(name)
     if BPP_IsKOSIgnored(infoKey) then return end

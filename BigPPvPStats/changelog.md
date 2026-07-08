@@ -1,3 +1,8 @@
+v4.15.0:
+- Added minimap icon bindings: Shift+Right-Click opens the Kill On Sight list, Alt+Right-Click toggles the Nearby Enemies panel
+- The Nearby panel now auto-shows itself the moment an enemy is detected if it's currently closed, matching Spy's behavior - controllable via a new "Auto-show panel when an enemy is detected" checkbox in Settings > Kill On Sight (on by default)
+- Added zone exclusions: Kill On Sight, Stealth alerts, and the Nearby panel can now be suppressed entirely in specific zones. A "Disable detection in major cities" checkbox in Settings covers the ten capital cities in one click; /bpp zone disable|enable|list [zone name] manages any other zone
+
 v4.14.0:
 - Fixed the Nearby panel's resize grip overlapping the close button, causing accidental closes - moved it from the top-right corner to the vertical middle of the right edge
 - Added a "Show Nearby List" button next to "Show KOS List" in the Statistics window, so there's a permanent, discoverable way to reopen the panel if it gets closed (previously only `/bpp nearby` or the Settings checkbox)

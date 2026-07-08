@@ -707,6 +707,18 @@ local function HandlePlayerEnteringWorld()
         BPP_DB.NearbyPanelClassColors = true
     end
 
+    if BPP_DB.NearbyPanelAutoShow == nil then
+        BPP_DB.NearbyPanelAutoShow = true
+    end
+
+    if BPP_DB.DisableInMajorCities == nil then
+        BPP_DB.DisableInMajorCities = false
+    end
+
+    if BPP_DB.DisabledZones == nil then
+        BPP_DB.DisabledZones = {}
+    end
+
     BPP_GetAndStorePlayerInfoFromUnit("player", true)
 
     if BPP_DB.NearbyPanelShown ~= false and BPP_ShowNearbyPanel then

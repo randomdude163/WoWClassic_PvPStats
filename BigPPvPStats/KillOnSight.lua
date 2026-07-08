@@ -16,6 +16,66 @@ local function EnsureKOSTables()
     BPP_DB.KOSPlayers = BPP_DB.KOSPlayers or {}
     BPP_DB.KOSGuilds = BPP_DB.KOSGuilds or {}
     BPP_DB.KOSIgnored = BPP_DB.KOSIgnored or {}
+    BPP_DB.DisabledZones = BPP_DB.DisabledZones or {}
+end
+
+-- ============================================================
+-- Zone exclusions - suppresses all detection (Kill On Sight, Stealth
+-- alerts, and the Nearby panel) while in a listed zone, e.g. capital
+-- cities where "who's nearby" isn't useful and every mouseover would
+-- otherwise ping. Mirrors the Spy addon's per-zone disable.
+-- ============================================================
+
+local MAJOR_CITIES = {
+    "Stormwind City", "Ironforge", "Darnassus", "Exodar",
+    "Orgrimmar", "Thunder Bluff", "Undercity", "Silvermoon City",
+    "Shattrath City", "Dalaran",
+}
+
+function BPP_AddDisabledZone(zoneName)
+    if not zoneName or strtrim(zoneName) == "" then return false end
+    EnsureKOSTables()
+    BPP_DB.DisabledZones[strtrim(zoneName)] = true
+    return true
+end
+
+function BPP_RemoveDisabledZone(zoneName)
+    if not zoneName or strtrim(zoneName) == "" then return false end
+    EnsureKOSTables()
+    zoneName = strtrim(zoneName)
+    if not BPP_DB.DisabledZones[zoneName] then return false end
+    BPP_DB.DisabledZones[zoneName] = nil
+    return true
+end
+
+function BPP_GetDisabledZoneList()
+    EnsureKOSTables()
+    local zones = {}
+    for zoneName in pairs(BPP_DB.DisabledZones) do
+        table.insert(zones, zoneName)
+    end
+    table.sort(zones)
+    return zones
+end
+
+-- True if detection should be suppressed in the player's current zone,
+-- either because it's on the custom list or "Major Cities" is toggled on.
+function BPP_IsZoneDetectionDisabled()
+    if not BPP_DB then return false end
+    local zone = BPP_GetCurrentZoneName and BPP_GetCurrentZoneName()
+    if not zone then return false end
+
+    if BPP_DB.DisabledZones and BPP_DB.DisabledZones[zone] then
+        return true
+    end
+
+    if BPP_DB.DisableInMajorCities then
+        for _, city in ipairs(MAJOR_CITIES) do
+            if city == zone then return true end
+        end
+    end
+
+    return false
 end
 
 -- ============================================================
@@ -297,6 +357,7 @@ end
 function BPP_CheckKillOnSight(name, guildName)
     if not BPP_DB or not name or name == "" then return end
     if BPP_DB.KOSAlertsEnabled == false then return end
+    if BPP_IsZoneDetectionDisabled() then return end
     EnsureKOSTables()
 
     local infoKey = BPP_GetInfoKeyFromName(name)

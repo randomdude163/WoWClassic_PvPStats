@@ -17,6 +17,10 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("BigPPvPStats", {
         elseif button == "RightButton" then
             if IsControlKeyDown() then
                 BPP_ToggleAchievementFrame()
+            elseif IsShiftKeyDown() then
+                if BPP_ShowKOSListFrame then BPP_ShowKOSListFrame() end
+            elseif IsAltKeyDown() then
+                if BPP_ToggleNearbyPanel then BPP_ToggleNearbyPanel() end
             else
                 BPP_CreateKillsListFrame()
             end
@@ -30,6 +34,8 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("BigPPvPStats", {
         tooltip:AddLine("|cff87ceebShift+Left-Click:|r Leaderboard", 1, 1, 1)
         tooltip:AddLine("|cff87ceebCtrl+Left-Click:|r Settings", 1, 1, 1)
         tooltip:AddLine("|cff87ceebCtrl+Right-Click:|r Achievements", 1, 1, 1)
+        tooltip:AddLine("|cff87ceebShift+Right-Click:|r Kill On Sight List", 1, 1, 1)
+        tooltip:AddLine("|cff87ceebAlt+Right-Click:|r Toggle Nearby Panel", 1, 1, 1)
     end,
 })
 

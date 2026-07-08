@@ -960,6 +960,38 @@ local function CreateKillOnSightSection(parent, yOffset)
         GameTooltip:Show()
     end)
     expiryContainer:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local autoShowCheckbox, _ = CreateCheckbox(parent, "Auto-show panel when an enemy is detected",
+        BPP_DB.NearbyPanelAutoShow ~= false, function(checked)
+            BPP_DB.NearbyPanelAutoShow = checked
+        end)
+    autoShowCheckbox:SetPoint("TOPLEFT", expiryContainer, "BOTTOMLEFT", 0, -30)
+    parent.autoShowCheckbox = autoShowCheckbox
+    autoShowCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Auto-show panel when an enemy is detected")
+        GameTooltip:AddLine("If the panel is closed, automatically bring it back the next time a hostile player is detected. Turn this off to keep it closed until you reopen it yourself.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    autoShowCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local zoneHeader = CreateSectionHeader(parent, "Zone Exclusions", 0, 0)
+    zoneHeader:SetPoint("TOPLEFT", autoShowCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
+
+    local majorCitiesCheckbox, _ = CreateCheckbox(parent, "Disable detection in major cities",
+        BPP_DB.DisableInMajorCities == true, function(checked)
+            BPP_DB.DisableInMajorCities = checked
+        end)
+    majorCitiesCheckbox:SetPoint("TOPLEFT", zoneHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.majorCitiesCheckbox = majorCitiesCheckbox
+    majorCitiesCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Disable detection in major cities")
+        GameTooltip:AddLine("Suppresses Kill On Sight, Stealth alerts, and the Nearby panel while in a capital city (Stormwind, Ironforge, Darnassus, Exodar, Orgrimmar, Thunder Bluff, Undercity, Silvermoon, Shattrath, Dalaran).", 1, 1, 1, true)
+        GameTooltip:AddLine("For any other zone, use /bpp zone disable <zone name>.", 0.6, 0.6, 0.6, true)
+        GameTooltip:Show()
+    end)
+    majorCitiesCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
 local function CreateActionButtons(parent)
@@ -1088,6 +1120,14 @@ function BPP_UpdateConfigUI()
 
     if configFrame.receiveKOSCheckbox then
         configFrame.receiveKOSCheckbox:SetChecked(BPP_DB.KOSReceiveShared ~= false)
+    end
+
+    if configFrame.autoShowCheckbox then
+        configFrame.autoShowCheckbox:SetChecked(BPP_DB.NearbyPanelAutoShow ~= false)
+    end
+
+    if configFrame.majorCitiesCheckbox then
+        configFrame.majorCitiesCheckbox:SetChecked(BPP_DB.DisableInMajorCities == true)
     end
 
     if configFrame.showNearbyCheckbox then
@@ -1405,6 +1445,8 @@ function BPP_CreateConfigFrame()
     configFrame.enableStealthCheckbox = tabFrames[4].enableStealthCheckbox
     configFrame.shareKOSCheckbox = tabFrames[4].shareKOSCheckbox
     configFrame.receiveKOSCheckbox = tabFrames[4].receiveKOSCheckbox
+    configFrame.autoShowCheckbox = tabFrames[4].autoShowCheckbox
+    configFrame.majorCitiesCheckbox = tabFrames[4].majorCitiesCheckbox
     configFrame.showNearbyCheckbox = tabFrames[4].showNearbyCheckbox
     configFrame.classColorsCheckbox = tabFrames[4].classColorsCheckbox
     configFrame.expiryDropdown = tabFrames[4].expiryDropdown
