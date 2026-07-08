@@ -1102,15 +1102,6 @@ function BPP_CreateLeaderboardFrame()
     end)
     BPP_LeaderboardFrame.sendStatsButton = sendStatsButton
 
-    local mostHatedButton = CreateFrame("Button", nil, BPP_LeaderboardFrame, "UIPanelButtonTemplate")
-    mostHatedButton:SetSize(150, 25)
-    mostHatedButton:SetPoint("BOTTOMLEFT", sendStatsButton, "BOTTOMLEFT", -160, 0)
-    mostHatedButton:SetText("Most Hated Guilds")
-    mostHatedButton:SetScript("OnClick", function()
-        BPP_ShowMostHatedGuildsFrame()
-    end)
-    BPP_LeaderboardFrame.mostHatedButton = mostHatedButton
-
     local recentSyncCheckbox = CreateFrame("CheckButton", nil, BPP_LeaderboardFrame, "UICheckButtonTemplate")
     recentSyncCheckbox:SetSize(20, 20)
     recentSyncCheckbox:SetPoint("RIGHT", sendStatsButton, "LEFT", -120, 0)
