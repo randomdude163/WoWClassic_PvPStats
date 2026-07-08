@@ -208,7 +208,38 @@ the combat log directly, so it works even if you never target or mouse over
 them. It respects your Ignore list and the "Alert when a rogue/druid
 stealths nearby" checkbox in Settings.
 
-## 11. Undo the test data
+## 11. Testing the minimap icon, auto-show, and zone exclusions
+
+The minimap icon now has two more bindings (hover it to see the full list):
+
+```
+Shift+Right-Click   -- opens the Kill On Sight list
+Alt+Right-Click     -- toggles the Nearby Enemies panel
+```
+
+Auto-show: close the Nearby panel (the X button, or `/bpp nearby`), then get
+a real or simulated kill/detection against any nearby hostile player - the
+panel should reopen on its own. Toggle it off via the "Auto-show panel when
+an enemy is detected" checkbox in Settings > Kill On Sight to confirm it
+stays closed instead.
+
+Zone exclusions - two ways to test:
+
+```
+/bpp zone disable [zone name]   -- omit the name to disable your current zone
+/bpp zone enable [zone name]
+/bpp zone list
+```
+
+or check "Disable detection in major cities" in Settings > Kill On Sight,
+then travel to a capital city (Stormwind, Ironforge, Darnassus, Exodar,
+Orgrimmar, Thunder Bluff, Undercity, Silvermoon, Shattrath, or Dalaran).
+Either way, once in a disabled zone, Kill On Sight alerts, Stealth alerts,
+and the Nearby panel should all go quiet - the Nearby panel simply won't
+pick up new entries while you're there, even ones you'd normally be
+watchlisted for.
+
+## 12. Undo the test data
 
 Once you're done poking at it:
 
@@ -221,7 +252,7 @@ step 4 via `/bpp import`. Either way, follow up with `/reload` so any open
 windows (achievements, statistics, leaderboard) refresh against the restored
 data.
 
-## 12. How guild rivalry tracking works
+## 13. How guild rivalry tracking works
 
 There's nothing to configure - every guild you kill a member of is tracked
 automatically against a 9-tier ladder (10/25/50/75/100/200/300/400/500). See

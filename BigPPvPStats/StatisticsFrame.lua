@@ -8,7 +8,7 @@ local statisticsFrame = nil
 local UI = {
     FRAME = {
         WIDTH = 850,
-        HEIGHT = 700
+        HEIGHT = 760
     },
     CHART = {
         WIDTH = 360,
@@ -3254,8 +3254,8 @@ function BPP_UpdateStatisticsFrame(frame, externalPlayerData)
 
     if not isExternalPlayer then
         local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
-        buttonSeparatorLine:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 430, 135)
-        buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 135)
+        buttonSeparatorLine:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 430, 165)
+        buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 165)
         buttonSeparatorLine:SetHeight(1)
         buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
@@ -3317,11 +3317,21 @@ function BPP_UpdateStatisticsFrame(frame, externalPlayerData)
         end)
 
         local kosButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-        kosButton:SetSize(fullWidth, buttonHeight)
+        kosButton:SetSize(buttonWidth, buttonHeight)
         kosButton:SetPoint("TOPLEFT", leaderboardButton, "BOTTOMLEFT", 0, -buttonSpacing)
         kosButton:SetText("Show KOS List")
         kosButton:SetScript("OnClick", function()
             BPP_ShowKOSListFrame()
+        end)
+
+        local nearbyButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+        nearbyButton:SetSize(buttonWidth, buttonHeight)
+        nearbyButton:SetPoint("TOPRIGHT", rivalsButton, "BOTTOMRIGHT", 0, -buttonSpacing)
+        nearbyButton:SetText("Show Nearby List")
+        nearbyButton:SetScript("OnClick", function()
+            if BPP_ShowNearbyPanel then
+                BPP_ShowNearbyPanel()
+            end
         end)
     end
 end

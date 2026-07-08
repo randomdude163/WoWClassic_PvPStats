@@ -17,6 +17,9 @@ local function PrintSlashCommandUsage()
     BPP_Print("Usage: /bpp kos ignore <name> - Suppress Kill On Sight alerts for a player")
     BPP_Print("Usage: /bpp kos unignore <name> - Stop suppressing alerts for a player")
     BPP_Print("Usage: /bpp nearby - Toggle the Nearby Enemies panel")
+    BPP_Print("Usage: /bpp zone disable [zone name] - Disable detection in a zone (defaults to your current zone)")
+    BPP_Print("Usage: /bpp zone enable [zone name] - Re-enable detection in a zone")
+    BPP_Print("Usage: /bpp zone list - Show disabled zones")
     BPP_Print("Usage: /bpp settings - Open addon settings")
     BPP_Print("Usage: /bpp export - Open a copyable text backup of your stats/achievements")
     BPP_Print("Usage: /bpp import - Paste a previously exported backup back in")
@@ -201,6 +204,42 @@ function BPP_SlashCommandHandler(msg)
 
     elseif command == "nearby" then
         BPP_ToggleNearbyPanel()
+
+    elseif command == "zone" then
+        local zoneAction, zoneArguments = arguments:match("^(%S*)%s*(.-)$")
+        zoneAction = string.lower(zoneAction or "")
+        local targetZone = zoneArguments ~= "" and zoneArguments or (BPP_GetCurrentZoneName and BPP_GetCurrentZoneName())
+
+        if zoneAction == "disable" then
+            if BPP_AddDisabledZone(targetZone) then
+                BPP_Print("[BigPPvP] Detection disabled in " .. targetZone .. ".")
+            else
+                BPP_Print("Usage: /bpp zone disable [zone name] - omit the name to use your current zone")
+            end
+
+        elseif zoneAction == "enable" then
+            if BPP_RemoveDisabledZone(targetZone) then
+                BPP_Print("[BigPPvP] Detection re-enabled in " .. targetZone .. ".")
+            else
+                BPP_Print("[BigPPvP] " .. tostring(targetZone) .. " isn't on your disabled zone list.")
+            end
+
+        elseif zoneAction == "list" then
+            local zones = BPP_GetDisabledZoneList()
+            if BPP_DB.DisableInMajorCities then
+                BPP_Print("[BigPPvP] Major cities: disabled.")
+            end
+            if #zones == 0 then
+                BPP_Print("[BigPPvP] No custom zones disabled. Usage: /bpp zone disable [zone name]")
+            else
+                BPP_Print("[BigPPvP] Disabled zones: " .. table.concat(zones, ", "))
+            end
+
+        else
+            BPP_Print("Usage: /bpp zone disable [zone name] - omit the name to use your current zone")
+            BPP_Print("Usage: /bpp zone enable [zone name]")
+            BPP_Print("Usage: /bpp zone list")
+        end
 
     elseif command == "options" or command == "settings" then
         BPP_CreateConfigUI()

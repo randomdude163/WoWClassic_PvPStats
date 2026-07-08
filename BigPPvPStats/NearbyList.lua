@@ -35,6 +35,7 @@ local NEARBY_HARD_RETENTION_SECONDS = 3600
 
 function BPP_RecordNearbyPlayer(name, level, class, race, guildName, infoKey)
     if not name or name == "" then return end
+    if BPP_IsZoneDetectionDisabled and BPP_IsZoneDetectionDisabled() then return end
     infoKey = infoKey or BPP_GetInfoKeyFromName(name)
 
     nearbyPlayers[infoKey] = {
@@ -48,6 +49,8 @@ function BPP_RecordNearbyPlayer(name, level, class, race, guildName, infoKey)
 
     if nearbyPanelFrame and nearbyPanelFrame:IsShown() then
         BPP_RefreshNearbyPanel()
+    elseif BPP_DB and BPP_DB.NearbyPanelAutoShow ~= false and BPP_ShowNearbyPanel then
+        BPP_ShowNearbyPanel()
     end
 end
 
@@ -127,6 +130,7 @@ end
 
 function BPP_CheckStealthAlert(name)
     if not BPP_DB or BPP_DB.StealthAlertsEnabled == false or not name or name == "" then return end
+    if BPP_IsZoneDetectionDisabled and BPP_IsZoneDetectionDisabled() then return end
 
     local infoKey = BPP_GetInfoKeyFromName(name)
     if BPP_IsKOSIgnored(infoKey) then return end
@@ -333,10 +337,12 @@ local function CreateNearbyPanelFrame()
     frame.content = content
 
     -- Resize grip only adjusts width (useful for long names) - height is
-    -- always driven by the current row count on refresh.
+    -- always driven by the current row count on refresh. Anchored to the
+    -- vertical middle of the right edge, well clear of the title bar's
+    -- arrows/close button so they can't overlap.
     local resizeGrip = CreateFrame("Button", nil, frame)
-    resizeGrip:SetSize(10, TITLE_BAR_HEIGHT)
-    resizeGrip:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -TITLE_BAR_HEIGHT)
+    resizeGrip:SetSize(10, 24)
+    resizeGrip:SetPoint("RIGHT", frame, "RIGHT", 2, 0)
     resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
