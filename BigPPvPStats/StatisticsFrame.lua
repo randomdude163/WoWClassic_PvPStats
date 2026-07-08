@@ -1962,6 +1962,23 @@ end
 local function createGuildTable(parent, x, y, width, height, precomputedGuildData)
     local container = createContainerWithTitle(parent, "Kills by Guild", x, y, width, height)
 
+    local mostHatedLink = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    mostHatedLink:SetSize(120, 18)
+    mostHatedLink:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, 2)
+    mostHatedLink:SetText("Guild-wide...")
+    mostHatedLink:SetScript("OnClick", function()
+        if BPP_ShowMostHatedGuildsFrame then
+            BPP_ShowMostHatedGuildsFrame()
+        end
+    end)
+    mostHatedLink:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Most Hated Guilds", 1, 0.82, 0)
+        GameTooltip:AddLine("See combined kills across your whole online guild/group, not just yourself.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    mostHatedLink:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     local guildKills = precomputedGuildData or BPP_CalculateGuildKills()
     local sortedGuilds = sortByValue(guildKills, true)
 

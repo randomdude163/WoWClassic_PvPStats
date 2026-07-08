@@ -63,7 +63,7 @@ local function CreateRivalryPopupFrame()
 
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetSize(48, 48)
-    icon:SetPoint("LEFT", frame, "LEFT", 12, 0)
+    icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -12)
     icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BigPPvPLogo.blp")
     frame.icon = icon
 
@@ -87,6 +87,9 @@ local function CreateRivalryPopupFrame()
     return frame
 end
 
+local POPUP_MIN_HEIGHT = 90
+local POPUP_MAX_HEIGHT = 320
+
 local function ShowRivalryPopup(title, subText)
     local frame = CreateRivalryPopupFrame()
 
@@ -97,6 +100,14 @@ local function ShowRivalryPopup(title, subText)
 
     frame.title:SetText(title)
     frame.subText:SetText(subText)
+
+    -- The digest can be several lines long, the single-milestone popup is
+    -- usually one short line - resize the backdrop to fit whichever it is,
+    -- instead of a fixed height that clips or leaves the text spilling
+    -- outside the border.
+    local contentHeight = 12 + frame.title:GetStringHeight() + 6 + frame.subText:GetStringHeight() + 16
+    frame:SetHeight(math.max(POPUP_MIN_HEIGHT, math.min(contentHeight, POPUP_MAX_HEIGHT)))
+
     frame:Show()
     frame:SetAlpha(1)
 
@@ -235,10 +246,25 @@ local function CreateMostHatedFrame()
 
     local hint = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -30)
-    hint:SetPoint("RIGHT", frame, "RIGHT", -15, 0)
+    hint:SetPoint("RIGHT", frame, "RIGHT", -85, 0)
     hint:SetJustifyH("LEFT")
     hint:SetWordWrap(true)
     hint:SetText("Combined kills across every online guild/group member running the addon. Each contributes their own top 10 rival guilds.")
+
+    local digestButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    digestButton:SetSize(90, 22)
+    digestButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -30, -28)
+    digestButton:SetText("This Week")
+    digestButton:SetScript("OnClick", function()
+        BPP_ShowRivalryDigest()
+    end)
+    digestButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Weekly Digest", 1, 0.82, 0)
+        GameTooltip:AddLine("Show your own rival guild kills from the past 7 days.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    digestButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local scrollFrame = CreateFrame("ScrollFrame", "BPP_MostHatedScrollFrame", frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -25)
