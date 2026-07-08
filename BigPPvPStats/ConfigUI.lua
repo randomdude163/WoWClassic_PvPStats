@@ -813,6 +813,152 @@ local function CreateMessageTemplatesSection(parent, yOffset)
     }
 end
 
+local function CreateKillOnSightSection(parent, yOffset)
+    local alertsHeader = CreateSectionHeader(parent, "Kill On Sight Alerts", 20, yOffset)
+
+    local enableKOSCheckbox, _ = CreateCheckbox(parent, "Enable Kill On Sight alerts",
+        BPP_DB.KOSAlertsEnabled ~= false, function(checked)
+            BPP_DB.KOSAlertsEnabled = checked
+        end)
+    enableKOSCheckbox:SetPoint("TOPLEFT", alertsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.enableKOSCheckbox = enableKOSCheckbox
+    enableKOSCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enable Kill On Sight alerts")
+        GameTooltip:AddLine("Master switch for the Kill On Sight popup. Turning this off does not clear your watchlists.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableKOSCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local enableKOSSoundCheckbox, _ = CreateCheckbox(parent, "Play alert sound",
+        BPP_DB.KOSAlertSoundEnabled ~= false, function(checked)
+            BPP_DB.KOSAlertSoundEnabled = checked
+        end)
+    enableKOSSoundCheckbox:SetPoint("TOPLEFT", enableKOSCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.enableKOSSoundCheckbox = enableKOSSoundCheckbox
+    enableKOSSoundCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Play alert sound")
+        GameTooltip:AddLine("Play a distinct raid-warning sound alongside the popup.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableKOSSoundCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local enableStealthCheckbox, _ = CreateCheckbox(parent, "Alert when a rogue/druid stealths nearby",
+        BPP_DB.StealthAlertsEnabled ~= false, function(checked)
+            BPP_DB.StealthAlertsEnabled = checked
+        end)
+    enableStealthCheckbox:SetPoint("TOPLEFT", enableKOSSoundCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.enableStealthCheckbox = enableStealthCheckbox
+    enableStealthCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Alert when a rogue/druid stealths nearby")
+        GameTooltip:AddLine("A small popup when a hostile player is seen going into Stealth or Prowl in the combat log - works even if they're never targeted or moused over. Suppressed for players on your Ignore list.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableStealthCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local sharingHeader = CreateSectionHeader(parent, "Guild Sharing", 20, -170)
+
+    local shareKOSCheckbox, _ = CreateCheckbox(parent, "Share my watchlists with guildmates",
+        BPP_DB.KOSShareEnabled ~= false, function(checked)
+            BPP_DB.KOSShareEnabled = checked
+        end)
+    shareKOSCheckbox:SetPoint("TOPLEFT", sharingHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.shareKOSCheckbox = shareKOSCheckbox
+    shareKOSCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Share my watchlists with guildmates")
+        GameTooltip:AddLine("Broadcasts your Kill On Sight player/guild lists (most recent 25 of each) alongside your other stats, so online guildmates/group members running the addon can benefit from them too.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    shareKOSCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local receiveKOSCheckbox, _ = CreateCheckbox(parent, "Alert on guildmates' reported Kill On Sight too",
+        BPP_DB.KOSReceiveShared ~= false, function(checked)
+            BPP_DB.KOSReceiveShared = checked
+        end)
+    receiveKOSCheckbox:SetPoint("TOPLEFT", shareKOSCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.receiveKOSCheckbox = receiveKOSCheckbox
+    receiveKOSCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Alert on guildmates' reported Kill On Sight too")
+        GameTooltip:AddLine("When someone else running the addon reports a player or guild as Kill On Sight, also alert you - even if you never added it yourself.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    receiveKOSCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local nearbyHeader = CreateSectionHeader(parent, "Nearby Enemies Panel", 20, -300)
+
+    local showNearbyCheckbox, _ = CreateCheckbox(parent, "Show panel on login",
+        BPP_DB.NearbyPanelShown ~= false, function(checked)
+            BPP_DB.NearbyPanelShown = checked
+            if checked and BPP_ShowNearbyPanel then
+                BPP_ShowNearbyPanel()
+            elseif not checked and BPP_HideNearbyPanel then
+                BPP_HideNearbyPanel()
+            end
+        end)
+    showNearbyCheckbox:SetPoint("TOPLEFT", nearbyHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.showNearbyCheckbox = showNearbyCheckbox
+    showNearbyCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Show panel on login")
+        GameTooltip:AddLine("Keep the Nearby Enemies panel visible on screen. You can also toggle it anytime with /bpp nearby.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    showNearbyCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local classColorsCheckbox, _ = CreateCheckbox(parent, "Color names by class",
+        BPP_DB.NearbyPanelClassColors ~= false, function(checked)
+            BPP_DB.NearbyPanelClassColors = checked
+            if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
+        end)
+    classColorsCheckbox:SetPoint("TOPLEFT", showNearbyCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.classColorsCheckbox = classColorsCheckbox
+    classColorsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Color names by class")
+        GameTooltip:AddLine("Color each row by the detected player's class. Kill On Sight (red) and Ignored (gray) always take priority.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    classColorsCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local expiryOptions = {
+        {text = "5 minutes", value = 300},
+        {text = "10 minutes", value = 600},
+        {text = "15 minutes", value = 900},
+        {text = "30 minutes", value = 1800},
+    }
+
+    local expiryContainer, expiryDropdown = CreateDropdown(parent, "Remove entries after:",
+        expiryOptions, BPP_DB.NearbyPanelExpirySeconds or 600, function(selectedValue)
+            BPP_DB.NearbyPanelExpirySeconds = selectedValue
+        end)
+    expiryContainer:SetPoint("TOPLEFT", classColorsCheckbox, "BOTTOMLEFT", 0, -14)
+    parent.expiryDropdown = expiryDropdown
+
+    if expiryDropdown and expiryDropdown:GetName() then
+        local currentSeconds = BPP_DB.NearbyPanelExpirySeconds or 600
+        local currentLabel = "10 minutes"
+        for _, option in ipairs(expiryOptions) do
+            if option.value == currentSeconds then
+                currentLabel = option.text
+            end
+        end
+        UIDropDownMenu_SetSelectedValue(expiryDropdown, currentSeconds)
+        UIDropDownMenu_SetText(expiryDropdown, currentLabel)
+    end
+
+    expiryContainer:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Remove entries after")
+        GameTooltip:AddLine("How long an undetected player stays listed in the Nearby Enemies panel before dropping off.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    expiryContainer:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
 local function CreateActionButtons(parent)
     local buttonContainer = CreateFrame("Frame", nil, parent)
     buttonContainer:SetSize(200, 200)
@@ -921,6 +1067,34 @@ function BPP_UpdateConfigUI()
         configFrame.enableSingleKillSoundsCheckbox:SetChecked(BPP_DB.EnableSingleKillSounds)
     end
 
+    if configFrame.enableKOSCheckbox then
+        configFrame.enableKOSCheckbox:SetChecked(BPP_DB.KOSAlertsEnabled ~= false)
+    end
+
+    if configFrame.enableKOSSoundCheckbox then
+        configFrame.enableKOSSoundCheckbox:SetChecked(BPP_DB.KOSAlertSoundEnabled ~= false)
+    end
+
+    if configFrame.enableStealthCheckbox then
+        configFrame.enableStealthCheckbox:SetChecked(BPP_DB.StealthAlertsEnabled ~= false)
+    end
+
+    if configFrame.shareKOSCheckbox then
+        configFrame.shareKOSCheckbox:SetChecked(BPP_DB.KOSShareEnabled ~= false)
+    end
+
+    if configFrame.receiveKOSCheckbox then
+        configFrame.receiveKOSCheckbox:SetChecked(BPP_DB.KOSReceiveShared ~= false)
+    end
+
+    if configFrame.showNearbyCheckbox then
+        configFrame.showNearbyCheckbox:SetChecked(BPP_DB.NearbyPanelShown ~= false)
+    end
+
+    if configFrame.classColorsCheckbox then
+        configFrame.classColorsCheckbox:SetChecked(BPP_DB.NearbyPanelClassColors ~= false)
+    end
+
     if configFrame.soundPackDropdown and configFrame.soundPackDropdown:GetName() then
         UIDropDownMenu_SetSelectedValue(configFrame.soundPackDropdown, BPP_DB.SoundPack or "LoL")
         if BPP_DB.EnableMultiKillSounds then
@@ -980,7 +1154,7 @@ local function CreateTabSystem(parent)
     tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
     tabContainer:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -7, 7)
 
-    local tabNames = {"General", "Messages", "Sounds", "Reset", "About"}
+    local tabNames = {"General", "Messages", "Sounds", "Kill On Sight", "Reset", "About"}
     for i, name in ipairs(tabNames) do
         local tab = CreateFrame("Button", parent:GetName() .. "Tab" .. i, parent, "CharacterFrameTabButtonTemplate")
         tab:SetText(name)
@@ -1222,10 +1396,20 @@ function BPP_CreateConfigFrame()
     configFrame.enableSingleKillSoundsCheckbox = tabFrames[3].enableSingleKillSoundsCheckbox
     configFrame.soundPackDropdown = tabFrames[3].soundPackDropdown
 
-    local resetButtons = CreateActionButtons(tabFrames[4])
+    CreateKillOnSightSection(tabFrames[4], -10)
+    configFrame.enableKOSCheckbox = tabFrames[4].enableKOSCheckbox
+    configFrame.enableKOSSoundCheckbox = tabFrames[4].enableKOSSoundCheckbox
+    configFrame.enableStealthCheckbox = tabFrames[4].enableStealthCheckbox
+    configFrame.shareKOSCheckbox = tabFrames[4].shareKOSCheckbox
+    configFrame.receiveKOSCheckbox = tabFrames[4].receiveKOSCheckbox
+    configFrame.showNearbyCheckbox = tabFrames[4].showNearbyCheckbox
+    configFrame.classColorsCheckbox = tabFrames[4].classColorsCheckbox
+    configFrame.expiryDropdown = tabFrames[4].expiryDropdown
+
+    local resetButtons = CreateActionButtons(tabFrames[5])
     configFrame.resetButtons = resetButtons
 
-    CreateAboutTab(tabFrames[5])
+    CreateAboutTab(tabFrames[6])
 
     PanelTemplates_SetTab(configFrame, 1)
     tabFrames[1]:Show()

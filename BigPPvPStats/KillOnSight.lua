@@ -141,6 +141,10 @@ function BPP_GetKOSBroadcastData()
         return result
     end
 
+    if BPP_DB.KOSShareEnabled == false then
+        return {}, {}
+    end
+
     return BoundedByRecency(BPP_DB.KOSPlayers), BoundedByRecency(BPP_DB.KOSGuilds)
 end
 
@@ -262,7 +266,9 @@ local function ShowKOSAlert(title, subText)
         BPP_FrameManager:BringToFront("KOSPopup")
     end
 
-    PlaySound(8959) -- "RaidWarning" - distinct from the rivalry milestone fanfare
+    if BPP_DB.KOSAlertSoundEnabled ~= false then
+        PlaySound(8959) -- "RaidWarning" - distinct from the rivalry milestone fanfare
+    end
 
     kosPopupTimer = C_Timer.NewTimer(8, function()
         UIFrameFade(frame, { mode = "OUT", timeToFade = 1, finishedFunc = function() frame:Hide() end })
@@ -290,6 +296,7 @@ end
 
 function BPP_CheckKillOnSight(name, guildName)
     if not BPP_DB or not name or name == "" then return end
+    if BPP_DB.KOSAlertsEnabled == false then return end
     EnsureKOSTables()
 
     local infoKey = BPP_GetInfoKeyFromName(name)
@@ -300,7 +307,10 @@ function BPP_CheckKillOnSight(name, guildName)
         return
     end
 
-    local aggPlayers, aggGuilds = GetAggregatedKOSData()
+    local aggPlayers, aggGuilds = {}, {}
+    if BPP_DB.KOSReceiveShared ~= false then
+        aggPlayers, aggGuilds = GetAggregatedKOSData()
+    end
 
     local playerEntry = BPP_DB.KOSPlayers[infoKey]
     local displayName = infoKey:match("^([^-]+)") or name

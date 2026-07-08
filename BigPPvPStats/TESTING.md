@@ -175,7 +175,24 @@ should show up under "Guild KOS - Players" / "Guild KOS - Guilds" with a
 you too. Click "Add to my list" on one to adopt it into your own personal
 list (optional - detection already covers it either way).
 
-## 10. Undo the test data
+## 10. Testing the Kill On Sight settings tab and Stealth alert
+
+`/bpp settings` (or the "Show Settings" button in Statistics) now has a
+"Kill On Sight" tab covering everything above by checkbox/dropdown instead
+of only slash commands: enable/disable alerts, alert sound, stealth alerts,
+guild sharing (both broadcasting your list and receiving guildmates'),
+Nearby panel show-on-login, class colors, and how long entries stay listed
+before dropping off (5/10/15/30 minutes). All default to on/10-minutes, so
+nothing changes for existing users until they touch it.
+
+To test the Stealth alert specifically: have a rogue or druid (an alt, or a
+nearby real one) go into Stealth/Prowl within combat-log range of you. You
+should get a small purple-bordered popup and a short sound - this fires from
+the combat log directly, so it works even if you never target or mouse over
+them. It respects your Ignore list and the "Alert when a rogue/druid
+stealths nearby" checkbox in Settings.
+
+## 11. Undo the test data
 
 Once you're done poking at it:
 
@@ -188,7 +205,7 @@ step 4 via `/bpp import`. Either way, follow up with `/reload` so any open
 windows (achievements, statistics, leaderboard) refresh against the restored
 data.
 
-## 11. How guild rivalry tracking works
+## 12. How guild rivalry tracking works
 
 There's nothing to configure - every guild you kill a member of is tracked
 automatically against a 9-tier ladder (10/25/50/75/100/200/300/400/500). See

@@ -8,8 +8,12 @@ local addonName, PVPSC = ...
 -- row to add/remove Kill On Sight or toggle Ignore.
 -- ============================================================
 
-local NEARBY_EXPIRY_SECONDS = 600 -- entries drop off 10 minutes after last seen
+local NEARBY_EXPIRY_DEFAULT = 600 -- entries drop off 10 minutes after last seen by default
 local NEARBY_PRUNE_INTERVAL = 30
+
+local function GetNearbyExpirySeconds()
+    return (BPP_DB and BPP_DB.NearbyPanelExpirySeconds) or NEARBY_EXPIRY_DEFAULT
+end
 
 local nearbyPlayers = {} -- [infoKey] = { name, level, class, race, guild, lastSeen }
 local nearbyPanelFrame = nil
@@ -37,11 +41,120 @@ function BPP_RecordNearbyPlayer(name, level, class, race, guildName, infoKey)
     end
 end
 
+-- Win/loss vs a specific enemy, derived from data this addon already
+-- tracks (kill history + death-by-killer records) rather than a new counter.
+local function GetWinLossAgainstPlayer(infoKey)
+    local wins, losses = 0, 0
+    if not BPP_DB then return wins, losses end
+
+    local characterKey = BPP_GetCharacterKey()
+    local shortName = infoKey:match("^([^-]+)") or infoKey
+
+    local characterData = BPP_DB.PlayerKillCounts and BPP_DB.PlayerKillCounts.Characters
+        and BPP_DB.PlayerKillCounts.Characters[characterKey]
+    if characterData and characterData.Kills then
+        for nameWithLevel, killData in pairs(characterData.Kills) do
+            local name = nameWithLevel:match("^([^:]+)")
+            if name and BPP_IsSamePlayerName(name, shortName) then
+                wins = wins + (killData.kills or 0)
+            end
+        end
+    end
+
+    local lossData = BPP_DB.PvPLossCounts and BPP_DB.PvPLossCounts[characterKey]
+    if lossData and lossData.Deaths and lossData.Deaths[infoKey] then
+        losses = lossData.Deaths[infoKey].deaths or 0
+    end
+
+    return wins, losses
+end
+
+-- ============================================================
+-- Stealth/Prowl alert - a small distinct toast when a hostile player is
+-- seen going into Stealth or Prowl nearby, from the combat log (works even
+-- if they're never targeted/moused-over). Independent of the Kill On Sight
+-- popup so the two can't cut each other off.
+-- ============================================================
+
+local STEALTH_ALERT_COOLDOWN = 30
+local stealthLastAlerted = {}
+local stealthPopupFrame = nil
+local stealthPopupTimer = nil
+
+local function CreateStealthPopupFrame()
+    if stealthPopupFrame then return stealthPopupFrame end
+
+    local frame = CreateFrame("Frame", "BPP_StealthPopupFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
+    frame:SetSize(260, 50)
+    frame:SetPoint("TOP", UIParent, "TOP", 0, -340)
+    frame:SetFrameStrata("HIGH")
+    frame:SetClampedToScreen(true)
+
+    if BPP_FrameManager then
+        BPP_FrameManager:RegisterFrame(frame, "StealthPopup", true)
+    end
+
+    frame:SetBackdrop({
+        bgFile = "Interface\\BUTTONS\\WHITE8X8",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    frame:SetBackdropColor(0, 0, 0, 0.85)
+    frame:SetBackdropBorderColor(0.6, 0.2, 0.9)
+
+    local text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    text:SetPoint("CENTER", frame, "CENTER", 0, 0)
+    text:SetTextColor(0.75, 0.4, 1.0)
+    frame.text = text
+
+    frame:Hide()
+    stealthPopupFrame = frame
+    return frame
+end
+
+function BPP_CheckStealthAlert(name)
+    if not BPP_DB or BPP_DB.StealthAlertsEnabled == false or not name or name == "" then return end
+
+    local infoKey = BPP_GetInfoKeyFromName(name)
+    if BPP_IsKOSIgnored(infoKey) then return end
+
+    local now = time()
+    if stealthLastAlerted[infoKey] and now - stealthLastAlerted[infoKey] < STEALTH_ALERT_COOLDOWN then
+        return
+    end
+    stealthLastAlerted[infoKey] = now
+
+    local frame = CreateStealthPopupFrame()
+    if stealthPopupTimer then
+        stealthPopupTimer:Cancel()
+        stealthPopupTimer = nil
+    end
+
+    frame.text:SetText(name .. " went into stealth nearby!")
+    frame:Show()
+    frame:SetAlpha(1)
+
+    if BPP_FrameManager then
+        BPP_FrameManager:BringToFront("StealthPopup")
+    end
+
+    PlaySound(11466) -- short, distinct from the KOS raid-warning sound
+
+    stealthPopupTimer = C_Timer.NewTimer(4, function()
+        UIFrameFade(frame, { mode = "OUT", timeToFade = 1, finishedFunc = function() frame:Hide() end })
+        stealthPopupTimer = nil
+    end)
+end
+
 local function PruneNearbyPlayers()
     local now = time()
     local changed = false
+    local expirySeconds = GetNearbyExpirySeconds()
     for infoKey, data in pairs(nearbyPlayers) do
-        if now - data.lastSeen > NEARBY_EXPIRY_SECONDS then
+        if now - data.lastSeen > expirySeconds then
             nearbyPlayers[infoKey] = nil
             changed = true
         end
@@ -223,7 +336,7 @@ local function CreateNearbyRow(content, rowY, infoKey, data)
     elseif isIgnored then
         text:SetTextColor(0.5, 0.5, 0.5)
     else
-        local color = data.class and CLASS_ROW_COLORS[data.class]
+        local color = (BPP_DB.NearbyPanelClassColors ~= false) and data.class and CLASS_ROW_COLORS[data.class]
         if color then
             text:SetTextColor(color[1], color[2], color[3])
         else
@@ -241,6 +354,10 @@ local function CreateNearbyRow(content, rowY, infoKey, data)
             GameTooltip:AddLine((data.race or "") .. " " .. data.class, 0.8, 0.8, 0.8)
         end
         GameTooltip:AddLine("Last seen: " .. date("%H:%M:%S", data.lastSeen), 0.6, 0.6, 0.6)
+        local wins, losses = GetWinLossAgainstPlayer(infoKey)
+        if wins > 0 or losses > 0 then
+            GameTooltip:AddLine("Wins: " .. wins .. "  Losses: " .. losses, 0.6, 0.9, 0.6)
+        end
         if isKOS then GameTooltip:AddLine("Kill On Sight", 1, 0.2, 0.2) end
         if isIgnored then GameTooltip:AddLine("Ignored", 0.6, 0.6, 0.6) end
         GameTooltip:AddLine("Right-click for options", 0.4, 0.7, 1)
