@@ -74,6 +74,8 @@ local KEY_MAP = {
     guildStatusData = "GS",
     npcKillsData = "NK",
     topGuildKills = "TGK",
+    kosPlayers = "KP",
+    kosGuilds = "KG",
     playerName = "pn",
     level = "l",
     class = "c",
@@ -311,7 +313,9 @@ local function DeserializeDetailedStats(payload)
         guildStatusData = {},
         unknownLevelClassData = {},
         deathsByClassData = {},
-        topGuildKills = {}
+        topGuildKills = {},
+        kosPlayers = {},
+        kosGuilds = {}
     }
     
     -- Initialize class charts with 0 to prevent missing chart data
@@ -541,6 +545,10 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
     local monthlyData = BPP_CalculateMonthlyStatistics(charactersToProcess)
     local yearlyData = BPP_CalculateYearlyStatistics(charactersToProcess)
     local deathsByClassData = BPP_CalculateDeathsByClass(charactersToProcess)
+    local kosPlayers, kosGuilds = {}, {}
+    if BPP_GetKOSBroadcastData then
+        kosPlayers, kosGuilds = BPP_GetKOSBroadcastData()
+    end
 
     if enableDebugLog then
         D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
@@ -564,7 +572,14 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
         -- Only the top 10 by kill count are sent (not the full breakdown)
         -- to keep the payload bounded regardless of how many guilds a
         -- player has fought - see BPP_GetTopGuildKills in GuildRivalry.lua.
-        topGuildKills = BPP_GetTopGuildKills(guildData, 10)
+        topGuildKills = BPP_GetTopGuildKills(guildData, 10),
+        -- Own Kill On Sight watchlists, bounded to the most recently added
+        -- entries so the payload stays a fixed size - see
+        -- BPP_GetKOSBroadcastData in KillOnSight.lua. Lets guildmates'
+        -- watchlists contribute to your own KOS alerts without a shared,
+        -- editable list.
+        kosPlayers = kosPlayers,
+        kosGuilds = kosGuilds
     })
 
     FlattenSummaryForLeaderboard(result)
@@ -688,6 +703,8 @@ function Network:ConstructPayload(components)
         guildStatusData = components.guildStatusData,
         npcKillsData = components.npcKillsData,
         topGuildKills = components.topGuildKills,
+        kosPlayers = components.kosPlayers,
+        kosGuilds = components.kosGuilds,
 
         playerName = UnitName("player"),
         level = UnitLevel("player"),
@@ -942,7 +959,9 @@ function Network:UpdateLeaderboardCache(statsData)
         zoneData = statsData.zoneData or {},
         npcKillsData = statsData.npcKillsData or {},
         deathsByClassData = statsData.deathsByClassData or {},
-        topGuildKills = statsData.topGuildKills or {}
+        topGuildKills = statsData.topGuildKills or {},
+        kosPlayers = statsData.kosPlayers or {},
+        kosGuilds = statsData.kosGuilds or {}
     }
 
     BPP_DB.LeaderboardCache[statsData.playerName] = entry

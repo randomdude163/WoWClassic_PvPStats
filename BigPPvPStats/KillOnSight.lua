@@ -15,6 +15,7 @@ local kosLastAlerted = {} -- [infoKey] = time() of last alert this session
 local function EnsureKOSTables()
     BPP_DB.KOSPlayers = BPP_DB.KOSPlayers or {}
     BPP_DB.KOSGuilds = BPP_DB.KOSGuilds or {}
+    BPP_DB.KOSIgnored = BPP_DB.KOSIgnored or {}
 end
 
 -- ============================================================
@@ -77,6 +78,104 @@ function BPP_RemoveKOSGuild(guildName)
     if not BPP_DB.KOSGuilds[guildName] then return false end
     BPP_DB.KOSGuilds[guildName] = nil
     return true
+end
+
+-- ============================================================
+-- Ignore list - suppresses KOS alerts (personal and guild-aggregated) for a
+-- specific player, without touching the Nearby panel listing itself. Mirrors
+-- the Spy addon's Ignore List.
+-- ============================================================
+
+function BPP_AddKOSIgnore(name)
+    if not name or strtrim(name) == "" then return false end
+    EnsureKOSTables()
+    local infoKey = BPP_GetInfoKeyFromName(strtrim(name))
+    BPP_DB.KOSIgnored[infoKey] = { addedAt = time() }
+    return true, infoKey
+end
+
+function BPP_RemoveKOSIgnore(name)
+    if not name or strtrim(name) == "" then return false end
+    EnsureKOSTables()
+    local infoKey = BPP_GetInfoKeyFromName(strtrim(name))
+    if not BPP_DB.KOSIgnored[infoKey] then return false end
+    BPP_DB.KOSIgnored[infoKey] = nil
+    return true
+end
+
+function BPP_IsKOSIgnored(infoKey)
+    if not BPP_DB or not BPP_DB.KOSIgnored or not infoKey then return false end
+    return BPP_DB.KOSIgnored[infoKey] ~= nil
+end
+
+-- ============================================================
+-- Guild-wide aggregation - every online guildmate/group member running the
+-- addon broadcasts their own personal KOS watchlists (bounded to the most
+-- recently added entries, see BPP_GetKOSBroadcastData) alongside their other
+-- stats. Detection checks this aggregate too, so a guildmate marking someone
+-- KOS alerts the whole roster - without a shared, mutually-editable list.
+-- Recomputed at most once every 10 seconds; this is called from the hot
+-- target/mouseover detection path, so it must stay cheap.
+-- ============================================================
+
+local KOS_BROADCAST_LIMIT = 25
+local AGGREGATE_KOS_CACHE_TTL = 10
+local aggregatedKOSCache = { players = {}, guilds = {}, computedAt = 0 }
+
+-- Returns (kosPlayers, kosGuilds): name/guild -> addedAt (numeric, so it fits
+-- the existing compact broadcast serializer), capped to the most recent N.
+function BPP_GetKOSBroadcastData()
+    EnsureKOSTables()
+
+    local function BoundedByRecency(source)
+        local entries = {}
+        for key, entry in pairs(source) do
+            table.insert(entries, { key = key, addedAt = entry.addedAt or 0 })
+        end
+        table.sort(entries, function(a, b) return a.addedAt > b.addedAt end)
+
+        local result = {}
+        for i = 1, math.min(KOS_BROADCAST_LIMIT, #entries) do
+            result[entries[i].key] = entries[i].addedAt
+        end
+        return result
+    end
+
+    if BPP_DB.KOSShareEnabled == false then
+        return {}, {}
+    end
+
+    return BoundedByRecency(BPP_DB.KOSPlayers), BoundedByRecency(BPP_DB.KOSGuilds)
+end
+
+local function GetAggregatedKOSData()
+    local now = time()
+    if now - aggregatedKOSCache.computedAt < AGGREGATE_KOS_CACHE_TTL then
+        return aggregatedKOSCache.players, aggregatedKOSCache.guilds
+    end
+
+    local players, guilds = {}, {}
+    if PVPSC.Network then
+        local leaderboardData = PVPSC.Network:GetAllLeaderboardData(true)
+        for _, entry in ipairs(leaderboardData) do
+            local reporter = entry.playerName
+            if entry.kosPlayers then
+                for infoKey in pairs(entry.kosPlayers) do
+                    players[infoKey] = players[infoKey] or {}
+                    table.insert(players[infoKey], reporter)
+                end
+            end
+            if entry.kosGuilds then
+                for guildName in pairs(entry.kosGuilds) do
+                    guilds[guildName] = guilds[guildName] or {}
+                    table.insert(guilds[guildName], reporter)
+                end
+            end
+        end
+    end
+
+    aggregatedKOSCache = { players = players, guilds = guilds, computedAt = now }
+    return players, guilds
 end
 
 -- ============================================================
@@ -167,7 +266,9 @@ local function ShowKOSAlert(title, subText)
         BPP_FrameManager:BringToFront("KOSPopup")
     end
 
-    PlaySound(8959) -- "RaidWarning" - distinct from the rivalry milestone fanfare
+    if BPP_DB.KOSAlertSoundEnabled ~= false then
+        PlaySound(8959) -- "RaidWarning" - distinct from the rivalry milestone fanfare
+    end
 
     kosPopupTimer = C_Timer.NewTimer(8, function()
         UIFrameFade(frame, { mode = "OUT", timeToFade = 1, finishedFunc = function() frame:Hide() end })
@@ -184,31 +285,52 @@ end
 -- per detected player so lingering on a mouseover doesn't spam the alert.
 -- ============================================================
 
+-- Joins up to 2 reporter names for a subtext line, e.g. "Reported by Foo and Bar."
+local function DescribeReporters(reporters)
+    if not reporters or #reporters == 0 then return nil end
+    if #reporters == 1 then
+        return "Reported by " .. reporters[1] .. "."
+    end
+    return "Reported by " .. reporters[1] .. " and " .. (#reporters - 1) .. " other(s)."
+end
+
 function BPP_CheckKillOnSight(name, guildName)
     if not BPP_DB or not name or name == "" then return end
+    if BPP_DB.KOSAlertsEnabled == false then return end
     EnsureKOSTables()
 
     local infoKey = BPP_GetInfoKeyFromName(name)
+    if BPP_IsKOSIgnored(infoKey) then return end
+
     local now = time()
     if kosLastAlerted[infoKey] and now - kosLastAlerted[infoKey] < KOS_ALERT_COOLDOWN then
         return
     end
 
+    local aggPlayers, aggGuilds = {}, {}
+    if BPP_DB.KOSReceiveShared ~= false then
+        aggPlayers, aggGuilds = GetAggregatedKOSData()
+    end
+
     local playerEntry = BPP_DB.KOSPlayers[infoKey]
-    if playerEntry then
+    local displayName = infoKey:match("^([^-]+)") or name
+    if playerEntry or aggPlayers[infoKey] then
         kosLastAlerted[infoKey] = now
-        ShowKOSAlert("KOS: " .. playerEntry.name, playerEntry.reason or "No reason logged. Kill on sight.")
+        local subText = (playerEntry and playerEntry.reason)
+            or DescribeReporters(aggPlayers[infoKey])
+            or "No reason logged. Kill on sight."
+        ShowKOSAlert("KOS: " .. (playerEntry and playerEntry.name or displayName), subText)
         return
     end
 
     if guildName and guildName ~= "" then
         local guildEntry = BPP_DB.KOSGuilds[guildName]
-        if guildEntry then
+        if guildEntry or aggGuilds[guildName] then
             kosLastAlerted[infoKey] = now
-            local displayName = infoKey:match("^([^-]+)") or name
             local subText = "Member of KOS guild " .. guildName .. "."
-            if guildEntry.reason then
-                subText = subText .. " " .. guildEntry.reason
+            local extra = (guildEntry and guildEntry.reason) or DescribeReporters(aggGuilds[guildName])
+            if extra then
+                subText = subText .. " " .. extra
             end
             ShowKOSAlert("KOS Guild: " .. displayName, subText)
         end
@@ -283,7 +405,7 @@ local function CreateKOSListFrame()
     hint:SetPoint("RIGHT", frame, "RIGHT", -15, 0)
     hint:SetJustifyH("LEFT")
     hint:SetWordWrap(true)
-    hint:SetText("Get a loud alert the moment a watchlisted player, or anyone from a watchlisted guild, is targeted, moused over, or shows up on a nameplate.")
+    hint:SetText("Get a loud alert the moment a watchlisted player, or anyone from a watchlisted guild, is targeted, moused over, or shows up on a nameplate. Right-click any name in the Nearby Enemies panel (/bpp nearby) to add/remove it here directly.")
 
     local playerAddRow = CreateKOSAddRow(frame, "Add", "Player name, optionally followed by a reason.\nExample: Somename ganked me at the lake", function(text)
         local ok, nameOrErr = BPP_AddKOSPlayer(text)
@@ -328,28 +450,39 @@ local function CreateKOSListFrame()
     return frame
 end
 
-local function CreateKOSListRow(content, rowY, displayText, tooltipLines, onRemove)
+-- buttonConfig: { template = "remove" | "add", tooltip, onClick } or nil for no button
+local function CreateKOSListRow(content, rowY, displayText, tooltipLines, buttonConfig)
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     nameText:SetPoint("TOPLEFT", 5, rowY)
-    nameText:SetWidth(250)
+    nameText:SetWidth(220)
     nameText:SetJustifyH("LEFT")
     nameText:SetText(displayText)
 
-    local removeButton = CreateFrame("Button", nil, content, "UIPanelCloseButton")
-    removeButton:SetSize(20, 20)
-    removeButton:SetPoint("TOPRIGHT", 15, rowY + 3)
-    removeButton:SetScript("OnClick", onRemove)
-    removeButton:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:SetText("Remove", 1, 1, 1)
-        GameTooltip:Show()
-    end)
-    removeButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    if buttonConfig then
+        local button
+        if buttonConfig.template == "add" then
+            button = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+            button:SetSize(40, 20)
+            button:SetText("Add")
+            button:SetPoint("TOPRIGHT", content, "TOPRIGHT", -5, rowY + 2)
+        else
+            button = CreateFrame("Button", nil, content, "UIPanelCloseButton")
+            button:SetSize(20, 20)
+            button:SetPoint("TOPRIGHT", content, "TOPRIGHT", -5, rowY + 3)
+        end
+        button:SetScript("OnClick", buttonConfig.onClick)
+        button:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+            GameTooltip:SetText(buttonConfig.tooltip or "Remove", 1, 1, 1)
+            GameTooltip:Show()
+        end)
+        button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    end
 
     if tooltipLines and #tooltipLines > 0 then
         local hitbox = CreateFrame("Frame", nil, content)
         hitbox:SetPoint("TOPLEFT", nameText, "TOPLEFT", 0, 0)
-        hitbox:SetSize(250, 18)
+        hitbox:SetSize(220, 18)
         hitbox:EnableMouse(true)
         hitbox:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -360,6 +493,29 @@ local function CreateKOSListRow(content, rowY, displayText, tooltipLines, onRemo
         end)
         hitbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
+end
+
+-- Renders a titled block of rows, returns the next free rowY beneath it.
+local function RenderKOSSection(content, rowY, title, entries, emptyText, buttonConfigFn)
+    local header = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    header:SetPoint("TOPLEFT", 5, rowY)
+    header:SetText(title)
+    header:SetTextColor(1.0, 0.5, 0.5)
+    rowY = rowY - 20
+
+    if #entries == 0 then
+        local empty = content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        empty:SetPoint("TOPLEFT", 10, rowY)
+        empty:SetText(emptyText)
+        rowY = rowY - 20
+    else
+        for _, item in ipairs(entries) do
+            CreateKOSListRow(content, rowY, item.displayText, item.tooltipLines, buttonConfigFn(item))
+            rowY = rowY - 22
+        end
+    end
+
+    return rowY - 10
 end
 
 function BPP_RefreshKOSListFrame()
@@ -374,62 +530,75 @@ function BPP_RefreshKOSListFrame()
 
     local rowY = -5
 
-    local playerHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    playerHeader:SetPoint("TOPLEFT", 5, rowY)
-    playerHeader:SetText("Players")
-    playerHeader:SetTextColor(1.0, 0.5, 0.5)
-    rowY = rowY - 20
-
     local playerEntries = {}
     for infoKey, entry in pairs(BPP_DB.KOSPlayers) do
-        table.insert(playerEntries, { key = infoKey, entry = entry })
+        table.insert(playerEntries, { key = infoKey, displayText = entry.name, tooltipLines = { entry.reason or "No reason logged." } })
     end
-    table.sort(playerEntries, function(a, b) return a.entry.name < b.entry.name end)
-
-    if #playerEntries == 0 then
-        local emptyText = content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        emptyText:SetPoint("TOPLEFT", 10, rowY)
-        emptyText:SetText("No players added yet.")
-        rowY = rowY - 20
-    else
-        for _, item in ipairs(playerEntries) do
-            local tooltipLines = { item.entry.reason or "No reason logged." }
-            CreateKOSListRow(content, rowY, item.entry.name, tooltipLines, function()
-                BPP_RemoveKOSPlayer(item.key)
-                BPP_RefreshKOSListFrame()
-            end)
-            rowY = rowY - 22
-        end
-    end
-
-    rowY = rowY - 10
-    local guildHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    guildHeader:SetPoint("TOPLEFT", 5, rowY)
-    guildHeader:SetText("Guilds")
-    guildHeader:SetTextColor(1.0, 0.5, 0.5)
-    rowY = rowY - 20
+    table.sort(playerEntries, function(a, b) return a.displayText < b.displayText end)
+    rowY = RenderKOSSection(content, rowY, "Players", playerEntries, "No players added yet.", function(item)
+        return { template = "remove", tooltip = "Remove", onClick = function()
+            BPP_RemoveKOSPlayer(item.key)
+            BPP_RefreshKOSListFrame()
+        end }
+    end)
 
     local guildEntries = {}
     for guildName, entry in pairs(BPP_DB.KOSGuilds) do
-        table.insert(guildEntries, { name = guildName, entry = entry })
+        table.insert(guildEntries, { key = guildName, displayText = guildName, tooltipLines = { entry.reason or "No reason logged." } })
     end
-    table.sort(guildEntries, function(a, b) return a.name < b.name end)
+    table.sort(guildEntries, function(a, b) return a.displayText < b.displayText end)
+    rowY = RenderKOSSection(content, rowY, "Guilds", guildEntries, "No guilds added yet.", function(item)
+        return { template = "remove", tooltip = "Remove", onClick = function()
+            BPP_RemoveKOSGuild(item.key)
+            BPP_RefreshKOSListFrame()
+        end }
+    end)
 
-    if #guildEntries == 0 then
-        local emptyText = content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        emptyText:SetPoint("TOPLEFT", 10, rowY)
-        emptyText:SetText("No guilds added yet.")
-        rowY = rowY - 20
-    else
-        for _, item in ipairs(guildEntries) do
-            local tooltipLines = { item.entry.reason or "No reason logged." }
-            CreateKOSListRow(content, rowY, item.name, tooltipLines, function()
-                BPP_RemoveKOSGuild(item.name)
-                BPP_RefreshKOSListFrame()
-            end)
-            rowY = rowY - 22
+    local ignoredEntries = {}
+    for infoKey in pairs(BPP_DB.KOSIgnored) do
+        table.insert(ignoredEntries, { key = infoKey, displayText = infoKey:match("^([^-]+)") or infoKey, tooltipLines = { "Alerts are suppressed for this player." } })
+    end
+    table.sort(ignoredEntries, function(a, b) return a.displayText < b.displayText end)
+    rowY = RenderKOSSection(content, rowY, "Ignored", ignoredEntries, "No players ignored.", function(item)
+        return { template = "remove", tooltip = "Un-ignore", onClick = function()
+            BPP_RemoveKOSIgnore(item.key)
+            BPP_RefreshKOSListFrame()
+        end }
+    end)
+
+    -- Guild-wide: players/guilds guildmates have reported, that you haven't
+    -- added yourself. "Add" copies it into your own personal list; either
+    -- way it already contributes to your alerts via GetAggregatedKOSData.
+    local aggPlayers, aggGuilds = GetAggregatedKOSData()
+
+    local aggPlayerEntries = {}
+    for infoKey, reporters in pairs(aggPlayers) do
+        if not BPP_DB.KOSPlayers[infoKey] then
+            local displayName = infoKey:match("^([^-]+)") or infoKey
+            table.insert(aggPlayerEntries, { key = infoKey, displayText = displayName, tooltipLines = { DescribeReporters(reporters) or "Reported by a guildmate." } })
         end
     end
+    table.sort(aggPlayerEntries, function(a, b) return a.displayText < b.displayText end)
+    rowY = RenderKOSSection(content, rowY, "Guild KOS - Players", aggPlayerEntries, "No guildmate-reported players.", function(item)
+        return { template = "add", tooltip = "Add to my list", onClick = function()
+            BPP_AddKOSPlayer(item.displayText)
+            BPP_RefreshKOSListFrame()
+        end }
+    end)
+
+    local aggGuildEntries = {}
+    for guildName, reporters in pairs(aggGuilds) do
+        if not BPP_DB.KOSGuilds[guildName] then
+            table.insert(aggGuildEntries, { key = guildName, displayText = guildName, tooltipLines = { DescribeReporters(reporters) or "Reported by a guildmate." } })
+        end
+    end
+    table.sort(aggGuildEntries, function(a, b) return a.displayText < b.displayText end)
+    rowY = RenderKOSSection(content, rowY, "Guild KOS - Guilds", aggGuildEntries, "No guildmate-reported guilds.", function(item)
+        return { template = "add", tooltip = "Add to my list", onClick = function()
+            BPP_AddKOSGuild(item.displayText)
+            BPP_RefreshKOSListFrame()
+        end }
+    end)
 
     content:SetHeight(math.max(-rowY + 10, 10))
 end

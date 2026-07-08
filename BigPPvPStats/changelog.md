@@ -1,3 +1,15 @@
+v4.11.0:
+- Added a "Kill On Sight" settings tab (ConfigUI.lua): enable/disable alerts, alert sound, stealth alerts, guild sharing (broadcast and/or receive), Nearby panel show-on-login, class colors, and cleanup timer (5/10/15/30 min) - all previously slash-command-only, per user request to prefer GUI configuration where it makes sense
+- Added a Stealth/Prowl alert: a small distinct popup (with its own sound and 30s per-player cooldown) when a hostile player is seen going into Stealth or Prowl in the combat log, working even if they're never targeted or moused over. Respects the Ignore list and a new master toggle
+- Nearby panel row tooltips now show your win/loss record against that specific player, derived from existing kill history and death-by-killer records rather than a new counter
+- All new toggles default to their previous always-on behavior, so this is non-breaking for existing users
+
+v4.10.0:
+- Added a Nearby Enemies panel (NearbyList.lua), like the Spy addon's main window: a small movable panel, shown by default, listing every hostile player detected nearby (target/mouseover/nameplate), sorted with Kill On Sight matches first. Right-click any name to add/remove Kill On Sight or toggle Ignore. Toggle the panel with /bpp nearby; position is remembered
+- Added a Kill On Sight Ignore list: suppresses alerts for a specific player (personal and guild-aggregated) without affecting the Nearby panel listing - /bpp kos ignore|unignore <name>, or right-click in the Nearby panel
+- Added guild-wide Kill On Sight sharing: your own KOS watchlists (bounded to the most recently added entries) broadcast alongside your other stats, and everyone running the addon now also alerts on guildmates' reported players/guilds, not just their own - no shared editable list, just aggregated read-only detection. The Kill On Sight window shows a "Guild KOS" section for entries you haven't personally added, with a one-click "Add to my list" to adopt one
+- Fixed the Kill On Sight list window's remove button rendering outside the visible row (a positive offset pushed it past the content frame's right edge instead of inset from it)
+
 v4.9.0:
 - Added a Kill On Sight list (KillOnSight.lua), inspired by the Spy addon: watch specific players and/or entire guilds, and get a loud, distinct popup alert the moment one is detected via target/mouseover/nameplate - reuses the same player/guild detection this addon already had for kill tracking, no separate scanning engine needed
 - Added /bpp kos, /bpp kos add|remove <name>, /bpp kos guild add|remove <guild name>, and a "Show KOS List" button in the Statistics window's button row

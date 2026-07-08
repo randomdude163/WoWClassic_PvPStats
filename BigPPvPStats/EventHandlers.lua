@@ -523,6 +523,15 @@ local function HandleCombatLogEvent()
         HandleCombatLogPlayerDamage(combatEvent, sourceGUID, sourceName, destGUID, destName, destFlags, param1, param4)
     end
 
+    if combatEvent == "SPELL_AURA_APPLIED" and sourceGUID ~= BPP_PlayerGUID and BPP_CheckStealthAlert then
+        local spellName = param2
+        if (spellName == "Stealth" or spellName == "Prowl")
+           and bit.band(sourceFlags or 0, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
+           and bit.band(sourceFlags or 0, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then
+            BPP_CheckStealthAlert(sourceName)
+        end
+    end
+
     if destGUID == BPP_PlayerGUID then
         if sourceGUID == BPP_PlayerGUID then
             -- Ignore self-damage events
@@ -666,7 +675,43 @@ local function HandlePlayerEnteringWorld()
         BPP_DB.KOSGuilds = {}
     end
 
+    if BPP_DB.KOSIgnored == nil then
+        BPP_DB.KOSIgnored = {}
+    end
+
+    if BPP_DB.KOSAlertsEnabled == nil then
+        BPP_DB.KOSAlertsEnabled = true
+    end
+
+    if BPP_DB.KOSAlertSoundEnabled == nil then
+        BPP_DB.KOSAlertSoundEnabled = true
+    end
+
+    if BPP_DB.KOSShareEnabled == nil then
+        BPP_DB.KOSShareEnabled = true
+    end
+
+    if BPP_DB.KOSReceiveShared == nil then
+        BPP_DB.KOSReceiveShared = true
+    end
+
+    if BPP_DB.StealthAlertsEnabled == nil then
+        BPP_DB.StealthAlertsEnabled = true
+    end
+
+    if BPP_DB.NearbyPanelExpirySeconds == nil then
+        BPP_DB.NearbyPanelExpirySeconds = 600
+    end
+
+    if BPP_DB.NearbyPanelClassColors == nil then
+        BPP_DB.NearbyPanelClassColors = true
+    end
+
     BPP_GetAndStorePlayerInfoFromUnit("player", true)
+
+    if BPP_DB.NearbyPanelShown ~= false and BPP_ShowNearbyPanel then
+        BPP_ShowNearbyPanel()
+    end
 
     BPP_MigratePlayerInfoCache()
     BPP_MigratePlayerInfoToEnglish()
@@ -703,7 +748,7 @@ local function HandlePlayerEnteringWorld()
     local currentVersion = BPP_GetAddonVersion()
     if BPP_DB.WhatsNewPopupVersion ~= currentVersion then
         local title = "BigPPvP Stats v" .. currentVersion .. " - What's new:"
-        local message = "-Added a Kill On Sight list! Watch specific players or entire guilds and get a loud alert the moment one is detected. Open it with /bpp kos or the \"Show KOS List\" button in Statistics.\n\nEnjoy!"
+        local message = "-Added a Settings tab for Kill On Sight: alert/sound toggles, guild-sharing controls, and Nearby panel options (show on login, class colors, cleanup timer).\n-Added a Stealth/Prowl alert - a small popup when a hostile rogue/druid is seen going stealthy nearby, even before you see them.\n-Nearby panel tooltips now show your win/loss record against that player.\n\nEnjoy!"
         local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
         BPP_ShowWhatsNewPopup(title, message, function()
             BPP_DB.WhatsNewPopupShown = true
