@@ -19,6 +19,11 @@ local nearbyPlayers = {} -- [infoKey] = { name, level, class, race, guild, lastS
 local nearbyPanelFrame = nil
 local nearbyPruneTicker = nil
 
+-- Panel cycles between these views with the title bar arrows, like Spy's
+-- Nearby/Last Hour/Ignore/KOS list switcher.
+local NEARBY_MODES = { "Nearby", "Kill On Sight", "Ignored" }
+local currentModeIndex = 1
+
 -- ============================================================
 -- Recording + pruning
 -- ============================================================
@@ -238,16 +243,26 @@ end
 -- Panel UI
 -- ============================================================
 
+local TITLE_BAR_HEIGHT = 18
+
 local function SaveNearbyPanelPosition(frame)
     local point, _, relPoint, x, y = frame:GetPoint()
     BPP_DB.NearbyPanelPosition = { point = point, relPoint = relPoint, x = x, y = y }
 end
 
+local function SaveNearbyPanelSize(frame)
+    BPP_DB.NearbyPanelSize = { width = frame:GetWidth(), height = frame:GetHeight() }
+end
+
 local function CreateNearbyPanelFrame()
     if nearbyPanelFrame then return nearbyPanelFrame end
 
-    local frame = CreateFrame("Frame", "BPP_NearbyPanelFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(190, 260)
+    local frame = CreateFrame("Frame", "BPP_NearbyPanelFrame", UIParent)
+    local savedSize = BPP_DB and BPP_DB.NearbyPanelSize
+    frame:SetSize(savedSize and savedSize.width or 200, savedSize and savedSize.height or 150)
+    frame:SetResizable(true)
+    if frame.SetMinResize then frame:SetMinResize(150, 80) end
+    if frame.SetMaxResize then frame:SetMaxResize(450, 500) end
 
     local pos = BPP_DB and BPP_DB.NearbyPanelPosition
     if pos and pos.point then
@@ -270,37 +285,64 @@ local function CreateNearbyPanelFrame()
         BPP_FrameManager:RegisterFrame(frame, "NearbyPanel")
     end
 
-    frame:SetBackdrop({
-        bgFile = "Interface\\BUTTONS\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true,
-        tileSize = 8,
-        edgeSize = 12,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
-    })
-    frame:SetBackdropColor(0, 0, 0, 0.75)
-    frame:SetBackdropBorderColor(0.6, 0.6, 0.6)
+    -- Only the title strip has a background, for text legibility - the rest
+    -- of the window stays fully transparent so it doesn't block the view.
+    local titleBar = frame:CreateTexture(nil, "BACKGROUND")
+    titleBar:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    titleBar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    titleBar:SetHeight(TITLE_BAR_HEIGHT)
+    titleBar:SetColorTexture(0, 0, 0, 0.55)
+
+    local leftArrow = CreateFrame("Button", nil, frame)
+    leftArrow:SetSize(14, 14)
+    leftArrow:SetPoint("LEFT", titleBar, "LEFT", 3, 0)
+    leftArrow:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
+    leftArrow:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Down")
+    leftArrow:SetScript("OnClick", function() BPP_CycleNearbyPanelMode(-1) end)
+
+    local rightArrow = CreateFrame("Button", nil, frame)
+    rightArrow:SetSize(14, 14)
+    rightArrow:SetPoint("RIGHT", titleBar, "RIGHT", -20, 0)
+    rightArrow:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
+    rightArrow:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down")
+    rightArrow:SetScript("OnClick", function() BPP_CycleNearbyPanelMode(1) end)
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetPoint("TOP", frame, "TOP", 0, -6)
-    title:SetText("Nearby Enemies")
+    title:SetPoint("CENTER", titleBar, "CENTER", 0, 0)
+    frame.title = title
 
     local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    closeButton:SetSize(18, 18)
-    closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 1, 1)
+    closeButton:SetSize(16, 16)
+    closeButton:SetPoint("RIGHT", titleBar, "RIGHT", 3, 0)
     closeButton:SetScript("OnClick", function()
         frame:Hide()
         BPP_DB.NearbyPanelShown = false
     end)
 
     local scrollFrame = CreateFrame("ScrollFrame", "BPP_NearbyPanelScrollFrame", frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 6, -24)
-    scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -26, 6)
+    scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 3, -(TITLE_BAR_HEIGHT + 2))
+    scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -22, 3)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
     content:SetSize(scrollFrame:GetWidth(), 1)
     scrollFrame:SetScrollChild(content)
     frame.content = content
+    frame.scrollFrame = scrollFrame
+
+    local resizeGrip = CreateFrame("Button", nil, frame)
+    resizeGrip:SetSize(14, 14)
+    resizeGrip:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, 2)
+    resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    resizeGrip:SetScript("OnMouseDown", function()
+        frame:StartSizing("BOTTOMRIGHT")
+    end)
+    resizeGrip:SetScript("OnMouseUp", function()
+        frame:StopMovingOrSizing()
+        SaveNearbyPanelSize(frame)
+        BPP_RefreshNearbyPanel()
+    end)
 
     nearbyPanelFrame = frame
     return frame
@@ -312,37 +354,55 @@ local CLASS_ROW_COLORS = {
     Mage = { 0.41, 0.8, 0.94 }, Warlock = { 0.58, 0.51, 0.79 }, Druid = { 1.0, 0.49, 0.04 },
 }
 
-local function CreateNearbyRow(content, rowY, infoKey, data)
+local ROW_HEIGHT = 16
+
+-- Each row is its own small class-colored bar with the name drawn on top of
+-- it (level/class on the right), rather than one big solid panel behind
+-- everything - keeps the window itself fully transparent.
+local function CreateNearbyRow(content, rowY, rowWidth, infoKey, data)
     local isKOS = BPP_DB.KOSPlayers and BPP_DB.KOSPlayers[infoKey] ~= nil
     local isIgnored = BPP_IsKOSIgnored(infoKey)
 
     local row = CreateFrame("Button", nil, content)
-    row:SetSize(160, 16)
-    row:SetPoint("TOPLEFT", 2, rowY)
+    row:SetSize(rowWidth, ROW_HEIGHT)
+    row:SetPoint("TOPLEFT", 1, rowY)
     row:RegisterForClicks("RightButtonUp")
     row:SetScript("OnClick", function()
         ShowRowContextMenu(infoKey, data.name, row)
     end)
 
-    local text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    text:SetPoint("LEFT", row, "LEFT", 2, 0)
-    text:SetWidth(158)
-    text:SetJustifyH("LEFT")
-    local label = data.name .. (data.level and (" (" .. data.level .. ")") or "")
-    text:SetText(label)
+    local bar = row:CreateTexture(nil, "BACKGROUND")
+    bar:SetAllPoints(row)
+    bar:SetTexture("Interface\\Buttons\\WHITE8X8")
 
     if isKOS then
-        text:SetTextColor(1, 0.2, 0.2)
+        bar:SetVertexColor(0.55, 0.1, 0.1, 0.75)
     elseif isIgnored then
-        text:SetTextColor(0.5, 0.5, 0.5)
+        bar:SetVertexColor(0.2, 0.2, 0.2, 0.55)
     else
-        local color = (BPP_DB.NearbyPanelClassColors ~= false) and data.class and CLASS_ROW_COLORS[data.class]
-        if color then
-            text:SetTextColor(color[1], color[2], color[3])
+        local classColor = (BPP_DB.NearbyPanelClassColors ~= false) and data.class and CLASS_ROW_COLORS[data.class]
+        if classColor then
+            bar:SetVertexColor(classColor[1] * 0.5, classColor[2] * 0.5, classColor[3] * 0.5, 0.7)
         else
-            text:SetTextColor(1, 1, 1)
+            bar:SetVertexColor(0.15, 0.15, 0.15, 0.6)
         end
     end
+
+    local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    nameText:SetPoint("LEFT", row, "LEFT", 4, 0)
+    nameText:SetJustifyH("LEFT")
+    nameText:SetTextColor(1, 1, 1)
+    nameText:SetText(data.name)
+
+    local infoText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    infoText:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+    infoText:SetJustifyH("RIGHT")
+    infoText:SetTextColor(0.85, 0.85, 0.85)
+    local infoLabel = data.level and tostring(data.level) or ""
+    if data.class then
+        infoLabel = infoLabel .. (infoLabel ~= "" and " " or "") .. data.class
+    end
+    infoText:SetText(infoLabel)
 
     row:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -353,7 +413,12 @@ local function CreateNearbyRow(content, rowY, infoKey, data)
         if data.class then
             GameTooltip:AddLine((data.race or "") .. " " .. data.class, 0.8, 0.8, 0.8)
         end
-        GameTooltip:AddLine("Last seen: " .. date("%H:%M:%S", data.lastSeen), 0.6, 0.6, 0.6)
+        if data.reason then
+            GameTooltip:AddLine(data.reason, 1, 1, 1, true)
+        end
+        if data.lastSeen and data.lastSeen > 0 then
+            GameTooltip:AddLine((data.timeLabel or "Last seen") .. ": " .. date("%H:%M:%S", data.lastSeen), 0.6, 0.6, 0.6)
+        end
         local wins, losses = GetWinLossAgainstPlayer(infoKey)
         if wins > 0 or losses > 0 then
             GameTooltip:AddLine("Wins: " .. wins .. "  Losses: " .. losses, 0.6, 0.9, 0.6)
@@ -366,45 +431,102 @@ local function CreateNearbyRow(content, rowY, infoKey, data)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
+-- Builds a uniform { key, data = { name, level, class, race, guild,
+-- lastSeen, timeLabel, reason } } list for whichever mode is active, so
+-- CreateNearbyRow doesn't need to know which underlying table it came from.
+local function GetModeEntries(modeName)
+    local entries = {}
+
+    if modeName == "Nearby" then
+        for infoKey, data in pairs(nearbyPlayers) do
+            table.insert(entries, { key = infoKey, data = data })
+        end
+        table.sort(entries, function(a, b)
+            local aKOS = BPP_DB.KOSPlayers and BPP_DB.KOSPlayers[a.key] ~= nil
+            local bKOS = BPP_DB.KOSPlayers and BPP_DB.KOSPlayers[b.key] ~= nil
+            if aKOS ~= bKOS then return aKOS end
+            return a.data.lastSeen > b.data.lastSeen
+        end)
+    elseif modeName == "Kill On Sight" then
+        for infoKey, entry in pairs(BPP_DB.KOSPlayers or {}) do
+            local cacheInfo = BPP_DB.PlayerInfoCache and BPP_DB.PlayerInfoCache[infoKey]
+            table.insert(entries, { key = infoKey, data = {
+                name = entry.name,
+                level = cacheInfo and cacheInfo.level,
+                class = cacheInfo and cacheInfo.class,
+                race = cacheInfo and cacheInfo.race,
+                guild = cacheInfo and cacheInfo.guild,
+                lastSeen = entry.addedAt or 0,
+                timeLabel = "Added",
+                reason = entry.reason,
+            } })
+        end
+        table.sort(entries, function(a, b) return a.data.name < b.data.name end)
+    elseif modeName == "Ignored" then
+        for infoKey, entry in pairs(BPP_DB.KOSIgnored or {}) do
+            local cacheInfo = BPP_DB.PlayerInfoCache and BPP_DB.PlayerInfoCache[infoKey]
+            table.insert(entries, { key = infoKey, data = {
+                name = infoKey:match("^([^-]+)") or infoKey,
+                level = cacheInfo and cacheInfo.level,
+                class = cacheInfo and cacheInfo.class,
+                race = cacheInfo and cacheInfo.race,
+                guild = cacheInfo and cacheInfo.guild,
+                lastSeen = entry.addedAt or 0,
+                timeLabel = "Added",
+            } })
+        end
+        table.sort(entries, function(a, b) return a.data.name < b.data.name end)
+    end
+
+    return entries
+end
+
+local MODE_EMPTY_TEXT = {
+    ["Nearby"] = "No enemies detected yet.",
+    ["Kill On Sight"] = "No players added yet.",
+    ["Ignored"] = "No players ignored.",
+}
+
 function BPP_RefreshNearbyPanel()
     local frame = CreateNearbyPanelFrame()
     local content = frame.content
+
+    local modeName = NEARBY_MODES[currentModeIndex]
+    frame.title:SetText(modeName)
 
     for _, child in ipairs({ content:GetChildren() }) do
         child:Hide()
         child:SetParent(nil)
     end
 
-    local entries = {}
-    for infoKey, data in pairs(nearbyPlayers) do
-        table.insert(entries, { key = infoKey, data = data })
-    end
+    local rowWidth = math.max(frame.scrollFrame:GetWidth(), 60)
+    content:SetWidth(rowWidth)
 
-    table.sort(entries, function(a, b)
-        local aKOS = BPP_DB.KOSPlayers and BPP_DB.KOSPlayers[a.key] ~= nil
-        local bKOS = BPP_DB.KOSPlayers and BPP_DB.KOSPlayers[b.key] ~= nil
-        if aKOS ~= bKOS then return aKOS end
-        return a.data.lastSeen > b.data.lastSeen
-    end)
+    local entries = GetModeEntries(modeName)
 
     if #entries == 0 then
         local emptyText = content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
         emptyText:SetPoint("TOPLEFT", 4, -4)
-        emptyText:SetWidth(158)
+        emptyText:SetWidth(rowWidth - 8)
         emptyText:SetJustifyH("LEFT")
         emptyText:SetWordWrap(true)
-        emptyText:SetText("No enemies detected yet.")
+        emptyText:SetText(MODE_EMPTY_TEXT[modeName] or "Nothing here yet.")
         content:SetHeight(40)
         return
     end
 
-    local rowY = -4
+    local rowY = -2
     for _, entry in ipairs(entries) do
-        CreateNearbyRow(content, rowY, entry.key, entry.data)
-        rowY = rowY - 16
+        CreateNearbyRow(content, rowY, rowWidth - 2, entry.key, entry.data)
+        rowY = rowY - (ROW_HEIGHT + 1)
     end
 
-    content:SetHeight(math.max(-rowY + 10, 10))
+    content:SetHeight(math.max(-rowY + 6, 10))
+end
+
+function BPP_CycleNearbyPanelMode(direction)
+    currentModeIndex = ((currentModeIndex - 1 + direction) % #NEARBY_MODES) + 1
+    BPP_RefreshNearbyPanel()
 end
 
 function BPP_ShowNearbyPanel()

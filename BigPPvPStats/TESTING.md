@@ -155,9 +155,14 @@ hooks as the KOS list, sorted with KOS matches first, then most recently
 seen. Entries drop off automatically 10 minutes after they're last seen.
 
 Right-click any name for a menu to add/remove Kill On Sight, toggle Ignore,
-or remove it from the panel. Names show red if they're KOS'd, gray if
-ignored, otherwise colored by class. Hover a name for level/guild/class and
-last-seen time.
+or remove it from the panel. Rows are colored by class (red for KOS, gray
+for ignored). Hover a name for level/guild/class, last-seen time, and
+win/loss record.
+
+The window itself is transparent apart from the title strip, so it doesn't
+block your view - drag the bottom-right corner to resize it, and use the
+arrows in the title bar to cycle between the Nearby, Kill On Sight, and
+Ignored views without opening a separate window.
 
 ## 9. Testing guild-wide Kill On Sight sharing
 
