@@ -657,6 +657,15 @@ local function HandlePlayerEnteringWorld()
     if BPP_DB.PlayerInfoCache == nil then
         BPP_DB.PlayerInfoCache = {}
     end
+
+    if BPP_DB.KOSPlayers == nil then
+        BPP_DB.KOSPlayers = {}
+    end
+
+    if BPP_DB.KOSGuilds == nil then
+        BPP_DB.KOSGuilds = {}
+    end
+
     BPP_GetAndStorePlayerInfoFromUnit("player", true)
 
     BPP_MigratePlayerInfoCache()
@@ -694,7 +703,7 @@ local function HandlePlayerEnteringWorld()
     local currentVersion = BPP_GetAddonVersion()
     if BPP_DB.WhatsNewPopupVersion ~= currentVersion then
         local title = "BigPPvP Stats v" .. currentVersion .. " - What's new:"
-        local message = "-Fixed bug where the K/D of other players was incorrect when you view their detailed stats in the leaderboard\n\nEnjoy!"
+        local message = "-Added a Kill On Sight list! Watch specific players or entire guilds and get a loud alert the moment one is detected. Open it with /bpp kos or the \"Show KOS List\" button in Statistics.\n\nEnjoy!"
         local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
         BPP_ShowWhatsNewPopup(title, message, function()
             BPP_DB.WhatsNewPopupShown = true

@@ -111,7 +111,34 @@ window, shows a summary of rival-guild kills from the last 7 days, computed
 from raw kill history (this also fires automatically at most once per real
 week, on login).
 
-## 7. Undo the test data
+## 7. Testing the Kill On Sight list
+
+The Kill On Sight (KOS) list doesn't need any fake kills - it fires off the
+same target/mouseover/nameplate detection this addon already uses to resolve
+player names and guilds, so you can test it against any real player nearby
+(a guildmate on an alt, someone in a starting zone, etc.) - just not yourself.
+
+```
+/bpp kos                                        -- opens the KOS list window
+/bpp kos add <name> [reason]                    -- add a player, e.g. /bpp kos add Somename ganked me at the lake
+/bpp kos remove <name>
+/bpp kos guild add <guild name> [- reason]      -- e.g. /bpp kos guild add The Red Empire - wiped our raid
+/bpp kos guild remove <guild name>
+```
+
+To see the alert fire, add a real nearby player's exact name (or their exact
+guild name) to the list, then target them, mouse over them, or let their
+nameplate appear. You should get a red popup with a distinct "raid warning"
+sound - separate from the rivalry milestone popup so the two can't cut each
+other off. A named match takes priority over a guild match. Alerts are
+deduped per player with a 60-second cooldown, so hovering back and forth
+over the same target won't spam it.
+
+Player and guild watchlists are account-wide (like PlayerInfoCache), not
+per-character, and are not included in `/bpp export` - only your kill and
+achievement data travels in that backup.
+
+## 8. Undo the test data
 
 Once you're done poking at it:
 
@@ -124,7 +151,7 @@ step 4 via `/bpp import`. Either way, follow up with `/reload` so any open
 windows (achievements, statistics, leaderboard) refresh against the restored
 data.
 
-## 8. How guild rivalry tracking works
+## 9. How guild rivalry tracking works
 
 There's nothing to configure - every guild you kill a member of is tracked
 automatically against a 9-tier ladder (10/25/50/75/100/200/300/400/500). See

@@ -9,6 +9,11 @@ local function PrintSlashCommandUsage()
     BPP_Print("Usage: /bpp sync - Ask nearby/guild/group players with the addon to refresh your leaderboard")
     BPP_Print("Usage: /bpp rivals - Show the Most Hated Guilds board (combined kills across the roster)")
     BPP_Print("Usage: /bpp rivals digest - Show your rival guild kills from the past week")
+    BPP_Print("Usage: /bpp kos - Show your Kill On Sight list (players and guilds)")
+    BPP_Print("Usage: /bpp kos add <name> [reason] - Add a player to your Kill On Sight list")
+    BPP_Print("Usage: /bpp kos remove <name> - Remove a player from your Kill On Sight list")
+    BPP_Print("Usage: /bpp kos guild add <guild name> [- reason] - Add a guild to your Kill On Sight list")
+    BPP_Print("Usage: /bpp kos guild remove <guild name> - Remove a guild from your Kill On Sight list")
     BPP_Print("Usage: /bpp settings - Open addon settings")
     BPP_Print("Usage: /bpp export - Open a copyable text backup of your stats/achievements")
     BPP_Print("Usage: /bpp import - Paste a previously exported backup back in")
@@ -127,6 +132,51 @@ function BPP_SlashCommandHandler(msg)
             BPP_ShowRivalryDigest()
         else
             BPP_ShowMostHatedGuildsFrame()
+        end
+
+    elseif command == "kos" then
+        local subCommand, subArguments = arguments:match("^(%S*)%s*(.-)$")
+        subCommand = string.lower(subCommand or "")
+
+        if subCommand == "add" then
+            local ok, nameOrErr = BPP_AddKOSPlayer(subArguments)
+            if ok then
+                BPP_Print("[BigPPvP] Added " .. nameOrErr .. " to your Kill On Sight list.")
+            else
+                BPP_Print("[BigPPvP] " .. nameOrErr)
+            end
+
+        elseif subCommand == "remove" then
+            if BPP_RemoveKOSPlayer(subArguments) then
+                BPP_Print("[BigPPvP] Removed " .. subArguments .. " from your Kill On Sight list.")
+            else
+                BPP_Print("[BigPPvP] " .. subArguments .. " isn't on your Kill On Sight list.")
+            end
+
+        elseif subCommand == "guild" then
+            local guildAction, guildArguments = subArguments:match("^(%S*)%s*(.-)$")
+            guildAction = string.lower(guildAction or "")
+
+            if guildAction == "add" then
+                local ok, guildOrErr = BPP_AddKOSGuild(guildArguments)
+                if ok then
+                    BPP_Print("[BigPPvP] Added guild " .. guildOrErr .. " to your Kill On Sight list.")
+                else
+                    BPP_Print("[BigPPvP] " .. guildOrErr)
+                end
+            elseif guildAction == "remove" then
+                if BPP_RemoveKOSGuild(guildArguments) then
+                    BPP_Print("[BigPPvP] Removed guild " .. guildArguments .. " from your Kill On Sight list.")
+                else
+                    BPP_Print("[BigPPvP] Guild " .. guildArguments .. " isn't on your Kill On Sight list.")
+                end
+            else
+                BPP_Print("Usage: /bpp kos guild add <guild name> [- reason]")
+                BPP_Print("Usage: /bpp kos guild remove <guild name>")
+            end
+
+        else
+            BPP_ShowKOSListFrame()
         end
 
     elseif command == "options" or command == "settings" then

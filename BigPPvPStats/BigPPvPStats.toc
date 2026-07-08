@@ -1,9 +1,9 @@
 ## Interface: 11508, 20505
-## Version: 4.8.2
+## Version: 4.9.0
 ## Title: BigPPvP Stats
 ## Author: Severussnipe & Hkfarmer <BIGPPvP> (customized by Oomkill)
 ## Notes: Tracks PvP history and provides detailed statistics.
-## IconTexture: Interface\AddOns\BigPPvPStats\img\BigPPvPLogo.blp
+## IconTexture: Interface\AddOns\BigPPvPStats\img\BIGPPvPLogo.blp
 ## SavedVariables: BPP_DB
 
 Libs\LibStub\LibStub.lua
@@ -28,6 +28,7 @@ KillsListFrame.lua
 NetworkHandler.lua
 LeaderboardFrame.lua
 GuildRivalry.lua
+KillOnSight.lua
 KillsTracking.lua
 Killstreaks.lua
 KillStreakPopup.lua

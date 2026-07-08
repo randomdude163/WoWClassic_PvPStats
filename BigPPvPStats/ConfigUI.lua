@@ -1105,7 +1105,7 @@ local function CreateAboutTab(parent)
     local logo = parent:CreateTexture(nil, "ARTWORK")
     logo:SetSize(240, 240)
     logo:SetPoint("TOP", creditsHeader, "BOTTOM", 0, -10)
-    logo:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BigPPvPLogo.blp")
+    logo:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BIGPPvPLogo.blp")
 
     local hunterColor = RAID_CLASS_COLORS["HUNTER"] or {
         r = 0.67,
