@@ -438,7 +438,7 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.5.1"
+    return "4.6"
 end
 
 -- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)
@@ -1952,7 +1952,7 @@ function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
     if linkUrl and linkUrl ~= "" then
         local linkLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         linkLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 67, 55)
-        linkLabel:SetText("Data import guide\n(CTRL+C to copy):")
+        linkLabel:SetText("Join our Discord\n(CTRL+C to copy):")
 
         local linkBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
         linkBox:SetSize(490, 22)

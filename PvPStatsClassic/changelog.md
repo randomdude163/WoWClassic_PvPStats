@@ -1,3 +1,8 @@
+v4.6:
+- Replaced K/D by Class chart with Win Rate by Class (kills / (kills + deaths)) for more meaningful class matchup data
+- Kills by Guild list now capped at top 50 entries for performance improvements
+- Discord server link added to What's New popup
+
 v4.5.1:
 - Fixed bug where the K/D of other players was incorrect when you view their detailed stats in the leaderboard.
 
