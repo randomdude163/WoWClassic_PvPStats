@@ -1,3 +1,8 @@
+v4.14.0:
+- Fixed the Nearby panel's resize grip overlapping the close button, causing accidental closes - moved it from the top-right corner to the vertical middle of the right edge
+- Added a "Show Nearby List" button next to "Show KOS List" in the Statistics window, so there's a permanent, discoverable way to reopen the panel if it gets closed (previously only `/bpp nearby` or the Settings checkbox)
+- Fixed Achievement summary text overlapping the Statistics window's button row - increased the frame height and the clearance between the summary stats box and the buttons below it
+
 v4.13.0:
 - Fixed the Kill On Sight list window popping open unexpectedly when adding/removing a player from the Nearby panel's right-click menu - it was never explicitly hidden after creation, so WoW's default "frames are shown when created" behavior made it appear the first time it was built
 - Fixed overlapping text in Settings > Kill On Sight - two section headers were anchored at fixed pixel offsets that didn't account for the stealth-alert checkbox added above them

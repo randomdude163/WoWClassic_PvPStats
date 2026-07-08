@@ -333,10 +333,12 @@ local function CreateNearbyPanelFrame()
     frame.content = content
 
     -- Resize grip only adjusts width (useful for long names) - height is
-    -- always driven by the current row count on refresh.
+    -- always driven by the current row count on refresh. Anchored to the
+    -- vertical middle of the right edge, well clear of the title bar's
+    -- arrows/close button so they can't overlap.
     local resizeGrip = CreateFrame("Button", nil, frame)
-    resizeGrip:SetSize(10, TITLE_BAR_HEIGHT)
-    resizeGrip:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -TITLE_BAR_HEIGHT)
+    resizeGrip:SetSize(10, 24)
+    resizeGrip:SetPoint("RIGHT", frame, "RIGHT", 2, 0)
     resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
