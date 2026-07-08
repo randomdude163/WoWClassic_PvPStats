@@ -14,6 +14,9 @@ local function PrintSlashCommandUsage()
     BPP_Print("Usage: /bpp kos remove <name> - Remove a player from your Kill On Sight list")
     BPP_Print("Usage: /bpp kos guild add <guild name> [- reason] - Add a guild to your Kill On Sight list")
     BPP_Print("Usage: /bpp kos guild remove <guild name> - Remove a guild from your Kill On Sight list")
+    BPP_Print("Usage: /bpp kos ignore <name> - Suppress Kill On Sight alerts for a player")
+    BPP_Print("Usage: /bpp kos unignore <name> - Stop suppressing alerts for a player")
+    BPP_Print("Usage: /bpp nearby - Toggle the Nearby Enemies panel")
     BPP_Print("Usage: /bpp settings - Open addon settings")
     BPP_Print("Usage: /bpp export - Open a copyable text backup of your stats/achievements")
     BPP_Print("Usage: /bpp import - Paste a previously exported backup back in")
@@ -153,6 +156,23 @@ function BPP_SlashCommandHandler(msg)
                 BPP_Print("[BigPPvP] " .. subArguments .. " isn't on your Kill On Sight list.")
             end
 
+        elseif subCommand == "ignore" then
+            local ok, infoKey = BPP_AddKOSIgnore(subArguments)
+            if ok then
+                BPP_Print("[BigPPvP] " .. subArguments .. " will no longer trigger Kill On Sight alerts.")
+                if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
+            else
+                BPP_Print("[BigPPvP] Usage: /bpp kos ignore <name>")
+            end
+
+        elseif subCommand == "unignore" then
+            if BPP_RemoveKOSIgnore(subArguments) then
+                BPP_Print("[BigPPvP] " .. subArguments .. " removed from your ignore list.")
+                if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
+            else
+                BPP_Print("[BigPPvP] " .. subArguments .. " isn't on your ignore list.")
+            end
+
         elseif subCommand == "guild" then
             local guildAction, guildArguments = subArguments:match("^(%S*)%s*(.-)$")
             guildAction = string.lower(guildAction or "")
@@ -178,6 +198,9 @@ function BPP_SlashCommandHandler(msg)
         else
             BPP_ShowKOSListFrame()
         end
+
+    elseif command == "nearby" then
+        BPP_ToggleNearbyPanel()
 
     elseif command == "options" or command == "settings" then
         BPP_CreateConfigUI()

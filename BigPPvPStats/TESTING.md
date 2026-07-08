@@ -138,7 +138,44 @@ Player and guild watchlists are account-wide (like PlayerInfoCache), not
 per-character, and are not included in `/bpp export` - only your kill and
 achievement data travels in that backup.
 
-## 8. Undo the test data
+```
+/bpp kos ignore <name>      -- suppress alerts for a player (personal and guild-aggregated)
+/bpp kos unignore <name>
+```
+
+## 8. Testing the Nearby Enemies panel
+
+```
+/bpp nearby      -- toggle the panel on/off
+```
+
+Shown by default on login (drag it to reposition - the spot is remembered).
+It lists every hostile player detected via the same target/mouseover/nameplate
+hooks as the KOS list, sorted with KOS matches first, then most recently
+seen. Entries drop off automatically 10 minutes after they're last seen.
+
+Right-click any name for a menu to add/remove Kill On Sight, toggle Ignore,
+or remove it from the panel. Names show red if they're KOS'd, gray if
+ignored, otherwise colored by class. Hover a name for level/guild/class and
+last-seen time.
+
+## 9. Testing guild-wide Kill On Sight sharing
+
+Your own KOS player/guild lists (capped to the most recently added 25 of
+each) broadcast alongside your other stats, the same way `topGuildKills`
+does for the rivalry board. Anyone else running the addon - guildmate, group
+member, or alt - who receives that broadcast will also get alerted on your
+watchlist entries, even if they never added them personally, and vice versa.
+
+To test it: have a second character (an alt, or someone else's client)
+add a player or guild to their KOS list, then `/bpp sync` on your main to
+pull their broadcast in. Open `/bpp kos` - entries you didn't add yourself
+should show up under "Guild KOS - Players" / "Guild KOS - Guilds" with a
+"Reported by ..." tooltip, and detecting that player/guild should now alert
+you too. Click "Add to my list" on one to adopt it into your own personal
+list (optional - detection already covers it either way).
+
+## 10. Undo the test data
 
 Once you're done poking at it:
 
@@ -151,7 +188,7 @@ step 4 via `/bpp import`. Either way, follow up with `/reload` so any open
 windows (achievements, statistics, leaderboard) refresh against the restored
 data.
 
-## 9. How guild rivalry tracking works
+## 11. How guild rivalry tracking works
 
 There's nothing to configure - every guild you kill a member of is tracked
 automatically against a 9-tier ladder (10/25/50/75/100/200/300/400/500). See

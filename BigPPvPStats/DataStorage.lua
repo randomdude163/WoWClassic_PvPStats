@@ -945,8 +945,13 @@ function BPP_GetAndStorePlayerInfoFromUnit(unit, allowFriendly)
     race = BPP_ConvertRaceToEnglish(race)
     BPP_StorePlayerInfo(name, level, class, race, gender, guildName, guildRankName, rank)
 
-    if unit ~= "player" and not UnitIsFriend("player", unit) and BPP_CheckKillOnSight then
-        BPP_CheckKillOnSight(name, guildName)
+    if unit ~= "player" and not UnitIsFriend("player", unit) then
+        if BPP_RecordNearbyPlayer then
+            BPP_RecordNearbyPlayer(name, level, class, race, guildName)
+        end
+        if BPP_CheckKillOnSight then
+            BPP_CheckKillOnSight(name, guildName)
+        end
     end
 end
 

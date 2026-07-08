@@ -666,7 +666,15 @@ local function HandlePlayerEnteringWorld()
         BPP_DB.KOSGuilds = {}
     end
 
+    if BPP_DB.KOSIgnored == nil then
+        BPP_DB.KOSIgnored = {}
+    end
+
     BPP_GetAndStorePlayerInfoFromUnit("player", true)
+
+    if BPP_DB.NearbyPanelShown ~= false and BPP_ShowNearbyPanel then
+        BPP_ShowNearbyPanel()
+    end
 
     BPP_MigratePlayerInfoCache()
     BPP_MigratePlayerInfoToEnglish()
@@ -703,7 +711,7 @@ local function HandlePlayerEnteringWorld()
     local currentVersion = BPP_GetAddonVersion()
     if BPP_DB.WhatsNewPopupVersion ~= currentVersion then
         local title = "BigPPvP Stats v" .. currentVersion .. " - What's new:"
-        local message = "-Added a Kill On Sight list! Watch specific players or entire guilds and get a loud alert the moment one is detected. Open it with /bpp kos or the \"Show KOS List\" button in Statistics.\n\nEnjoy!"
+        local message = "-Added a Nearby Enemies panel (like Spy) - a small always-on-screen list of every hostile player detected nearby. Right-click a name to add/remove Kill On Sight or Ignore. Toggle it with /bpp nearby.\n-Kill On Sight now has an Ignore list, and guildmates' KOS watchlists contribute to your own alerts automatically.\n\nEnjoy!"
         local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
         BPP_ShowWhatsNewPopup(title, message, function()
             BPP_DB.WhatsNewPopupShown = true
