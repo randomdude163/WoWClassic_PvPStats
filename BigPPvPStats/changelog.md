@@ -1,3 +1,7 @@
+v4.8.2:
+- Fixed the Most Hated Guilds window (and the export/import windows) not registering with the frame manager, so they could open behind an already-open window (Leaderboard, Statistics, Config) and appear to do nothing when clicked
+- Removed the "Most Hated Guilds" button from the Leaderboard window - it's now only in the Statistics window ("Guild-wide..." next to "Kills by Guild")
+
 v4.8.1:
 - Fixed the rivalry popup's backdrop not resizing for multi-line content (the weekly digest could spill text below the border)
 - Added UI buttons for the guild rivalry features: "Most Hated Guilds" in the Leaderboard window, "Guild-wide..." next to "Kills by Guild" in the Statistics window, and "This Week" inside the Most Hated Guilds window - no longer /bpp-command-only

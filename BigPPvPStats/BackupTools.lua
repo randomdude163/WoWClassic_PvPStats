@@ -165,7 +165,6 @@ local function BPP_CreateTextBoxFrame(frameGlobalName, scrollGlobalName, titleTe
     local frame = CreateFrame("Frame", frameGlobalName, UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(560, 420)
     frame:SetPoint("CENTER")
-    frame:SetFrameStrata("DIALOG")
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
@@ -174,6 +173,10 @@ local function BPP_CreateTextBoxFrame(frameGlobalName, scrollGlobalName, titleTe
 
     frame.TitleText:SetText(titleText)
     frame.CloseButton:SetScript("OnClick", function() frame:Hide() end)
+
+    if BPP_FrameManager then
+        BPP_FrameManager:RegisterFrame(frame, frameGlobalName)
+    end
 
     local hint = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -30)

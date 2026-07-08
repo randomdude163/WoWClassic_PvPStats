@@ -244,6 +244,10 @@ local function CreateMostHatedFrame()
     frame.CloseButton:SetScript("OnClick", function() frame:Hide() end)
     tinsert(UISpecialFrames, "BPP_MostHatedFrame")
 
+    if BPP_FrameManager then
+        BPP_FrameManager:RegisterFrame(frame, "MostHatedGuilds")
+    end
+
     local hint = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -30)
     hint:SetPoint("RIGHT", frame, "RIGHT", -85, 0)
