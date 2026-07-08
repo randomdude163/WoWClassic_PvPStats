@@ -858,7 +858,8 @@ local function CreateKillOnSightSection(parent, yOffset)
     end)
     enableStealthCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local sharingHeader = CreateSectionHeader(parent, "Guild Sharing", 20, -170)
+    local sharingHeader = CreateSectionHeader(parent, "Guild Sharing", 0, 0)
+    sharingHeader:SetPoint("TOPLEFT", enableStealthCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
 
     local shareKOSCheckbox, _ = CreateCheckbox(parent, "Share my watchlists with guildmates",
         BPP_DB.KOSShareEnabled ~= false, function(checked)
@@ -888,7 +889,8 @@ local function CreateKillOnSightSection(parent, yOffset)
     end)
     receiveKOSCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local nearbyHeader = CreateSectionHeader(parent, "Nearby Enemies Panel", 20, -300)
+    local nearbyHeader = CreateSectionHeader(parent, "Nearby Enemies Panel", 0, 0)
+    nearbyHeader:SetPoint("TOPLEFT", receiveKOSCheckbox, "BOTTOMLEFT", -20, -CHECKBOX_SPACING - 20)
 
     local showNearbyCheckbox, _ = CreateCheckbox(parent, "Show panel on login",
         BPP_DB.NearbyPanelShown ~= false, function(checked)
@@ -931,9 +933,10 @@ local function CreateKillOnSightSection(parent, yOffset)
         {text = "30 minutes", value = 1800},
     }
 
-    local expiryContainer, expiryDropdown = CreateDropdown(parent, "Remove entries after:",
+    local expiryContainer, expiryDropdown = CreateDropdown(parent, "Nearby view shows entries seen within:",
         expiryOptions, BPP_DB.NearbyPanelExpirySeconds or 600, function(selectedValue)
             BPP_DB.NearbyPanelExpirySeconds = selectedValue
+            if BPP_RefreshNearbyPanel then BPP_RefreshNearbyPanel() end
         end)
     expiryContainer:SetPoint("TOPLEFT", classColorsCheckbox, "BOTTOMLEFT", 0, -14)
     parent.expiryDropdown = expiryDropdown
@@ -952,8 +955,8 @@ local function CreateKillOnSightSection(parent, yOffset)
 
     expiryContainer:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Remove entries after")
-        GameTooltip:AddLine("How long an undetected player stays listed in the Nearby Enemies panel before dropping off.", 1, 1, 1, true)
+        GameTooltip:AddLine("Nearby view window")
+        GameTooltip:AddLine("How recently a player must have been seen to show up in the panel's Nearby view. The Last Hour view (cycle with the title bar arrows) always shows the full hour regardless of this setting.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     expiryContainer:SetScript("OnLeave", function() GameTooltip:Hide() end)
