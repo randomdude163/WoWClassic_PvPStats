@@ -1,3 +1,7 @@
+v4.8.1:
+- Fixed the rivalry popup's backdrop not resizing for multi-line content (the weekly digest could spill text below the border)
+- Added UI buttons for the guild rivalry features: "Most Hated Guilds" in the Leaderboard window, "Guild-wide..." next to "Kills by Guild" in the Statistics window, and "This Week" inside the Most Hated Guilds window - no longer /bpp-command-only
+
 v4.8.0:
 - Replaced the per-guild kill milestone achievement system with lightweight rivalry tracking (GuildRivalry.lua): milestones now show a highlight popup instead of an Achievement Frame entry, so tracking hundreds of rival guilds doesn't bloat the achievement UI or your saved achievement points
 - Added a guild-chat callout when a milestone of 100+ kills against a guild is reached
