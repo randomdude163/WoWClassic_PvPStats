@@ -440,7 +440,7 @@ function BPP_IsSamePlayerName(candidateName, targetName)
 end
 
 function BPP_GetAddonVersion()
-    return "1.0.0"
+    return "1.0.1"
 end
 
 -- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)

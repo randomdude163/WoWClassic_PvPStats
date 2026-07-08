@@ -156,7 +156,19 @@ achievement data travels in that backup.
 Shown by default on login (drag it to reposition - the spot is remembered).
 It lists every hostile player detected via the same target/mouseover/nameplate
 hooks as the KOS list, sorted with KOS matches first, then most recently
-seen.
+seen. Nameplates alone (never having moused over or targeted that player)
+should now be enough to detect them - previously this silently didn't work
+until the first manual hover/target, because the addon's own player-info
+lookup errored out on class/race data a fresh nameplate doesn't have cached
+yet. To test: walk near hostile players without touching your mouse over any
+of them and confirm they show up anyway.
+
+Also test that using the addon at all (hovering/targeting enemies, letting
+the panel auto-show) never locks up your keyboard or mouse in the game
+world - this was a real, serious bug (the panel was mistakenly grabbing all
+keyboard input into itself every time it was shown) that's now fixed. If
+you ever do lose input again, that's a regression worth reporting
+immediately, not something to work around with a relog.
 
 Right-click any name for a menu to add/remove Kill On Sight, toggle Ignore,
 or remove it from the panel. Rows are colored by class (red for KOS, gray
@@ -204,6 +216,14 @@ guild sharing (both broadcasting your list and receiving guildmates'),
 Nearby panel show-on-login, class colors, and how long entries stay listed
 before dropping off (5/10/15/30 minutes). All default to on/10-minutes, so
 nothing changes for existing users until they touch it.
+
+The Settings window is a fixed, screen-friendly size now - each tab scrolls
+internally (mouse wheel, or drag the scrollbar) if its content runs longer
+than the visible area, instead of the window itself growing every time a
+new section gets added. Open the Kill On Sight tab (the tallest one) and
+confirm the window fits comfortably on screen with nothing clipped off the
+bottom, and that scrolling down reaches every control, all the way to the
+"Test Alert Sound"/"Import from Spy" buttons at the very end.
 
 To test the Stealth alert specifically: have a rogue or druid (an alt, or a
 nearby real one) go into Stealth/Prowl within combat-log range of you. You

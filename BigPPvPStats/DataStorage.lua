@@ -175,10 +175,17 @@ local function GetPlayerInfoFromUnit(unit)
         else
             name = playername
         end
-        level = UnitLevel(unit)
-        class, _ = UnitClass(unit)
-        class = class:sub(1, 1):upper() .. class:sub(2):lower()
-        race, _ = UnitRace(unit)
+        level = UnitLevel(unit) or -1
+        -- A nameplate-only unit (never targeted/moused over) often doesn't
+        -- have its class/race resolved client-side yet in Classic - this
+        -- used to hard-error here (indexing nil with :sub()) the first time
+        -- that happened, silently aborting the whole call and leaving that
+        -- player undetected until a manual hover resolved it. Now falls back
+        -- to "Unknown" like the non-player branch below already does, and
+        -- gets overwritten with the real value next time this resolves.
+        local rawClass = UnitClass(unit)
+        class = rawClass and (rawClass:sub(1, 1):upper() .. rawClass:sub(2):lower()) or "Unknown"
+        race = UnitRace(unit) or "Unknown"
         gender = ConvertGenderToString(UnitSex(unit))
         guildName, guildRankName, _ = GetGuildInfo(unit)
         if not guildName then guildName = "" end
@@ -207,7 +214,9 @@ local function GetPlayerInfoFromUnit(unit)
     --     print("Rank: " .. tostring(rank))
     -- end
 
-    if not name or not level or not class or not race or not gender or not guildName or not guildRankName or not rank then
+    -- Every other field above is defaulted to a placeholder rather than nil,
+    -- so name (from UnitName) is the only thing that can actually be missing.
+    if not name then
         return nil, nil, nil, nil, nil, nil, nil, nil
     end
 
@@ -935,7 +944,15 @@ function BPP_GetAndStorePlayerInfoFromUnit(unit, allowFriendly)
         return
     end
     local name, level, class, race, gender, guildName, guildRankName, rank = GetPlayerInfoFromUnit(unit)
-    if not name or not level or not class or not race or not gender or not guildName or not guildRankName or not rank then
+    -- Guild fields are optional, not just "not yet cached": a guildless
+    -- player always returns nil for them, and even a guilded one often
+    -- hasn't had guild info cached by the client yet for a nameplate-only
+    -- unit that's never been moused over/targeted. Requiring them here used
+    -- to silently drop every nameplate-only detection (Nearby panel/Kill On
+    -- Sight would only start working after the first manual hover primed the
+    -- client's cache) - name/level/class/race are the only fields WoW
+    -- reliably has immediately for any player unit.
+    if not name or not level or not class or not race or not gender then
         if BPP_Debug then
             print("Incomplete player info for unit: " .. unit)
         end

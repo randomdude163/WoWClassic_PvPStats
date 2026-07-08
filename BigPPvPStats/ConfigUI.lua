@@ -1223,7 +1223,10 @@ end
 
 local function CreateMainFrame()
     local frame = CreateFrame("Frame", "BPP_ConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 930)
+    -- Fixed, screen-friendly size - tab content that overflows this now
+    -- scrolls internally (see CreateTabSystem) instead of the window itself
+    -- growing every time a section is added.
+    frame:SetSize(600, 620)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -1396,11 +1399,19 @@ function BPP_UpdateConfigUI()
     configFrame.editBoxes.multiKill:SetText(BPP_DB.NewMultiKillRecordMessage)
 end
 
+-- Generous fixed height for the scrollable area inside each tab - content
+-- never needs to grow the whole window anymore (that kept getting bumped up
+-- every time a section was added, until the window no longer fit on screen:
+-- 690 -> 840 -> 900 -> 930). Some blank space at the bottom of a shorter tab
+-- is harmless; a tab running out of room and clipping off-screen isn't.
+local TAB_CONTENT_HEIGHT = 1050
+
 local function CreateTabSystem(parent)
     local tabWidth = 85
     local tabHeight = 32
     local tabs = {}
     local tabFrames = {}
+    local scrollFrames = {}
 
     local tabContainer = CreateFrame("Frame", nil, parent)
     tabContainer:SetPoint("TOPLEFT", parent, "TOPLEFT", 7, -25)
@@ -1446,17 +1457,26 @@ local function CreateTabSystem(parent)
             tabText:SetWidth(tabWidth - 40)
         end
 
-        local contentFrame = CreateFrame("Frame", nil, tabContainer)
-        contentFrame:SetPoint("TOPLEFT", tabContainer, "TOPLEFT", 0, -5)
-        contentFrame:SetPoint("BOTTOMRIGHT", tabContainer, "BOTTOMRIGHT")
-        contentFrame:Hide()
+        -- Each tab's content sits in a scroll frame instead of directly in
+        -- tabContainer, so a tall tab (Kill On Sight, with the most
+        -- sections) scrolls internally instead of forcing the whole window
+        -- to keep growing taller.
+        local scrollFrame = CreateFrame("ScrollFrame", parent:GetName() .. "Tab" .. i .. "Scroll", tabContainer, "UIPanelScrollFrameTemplate")
+        scrollFrame:SetPoint("TOPLEFT", tabContainer, "TOPLEFT", 0, -5)
+        scrollFrame:SetPoint("BOTTOMRIGHT", tabContainer, "BOTTOMRIGHT", -22, 0)
+        scrollFrame:Hide()
+
+        local contentFrame = CreateFrame("Frame", nil, scrollFrame)
+        contentFrame:SetSize(scrollFrame:GetWidth(), TAB_CONTENT_HEIGHT)
+        scrollFrame:SetScrollChild(contentFrame)
 
         tabFrames[i] = contentFrame
+        scrollFrames[i] = scrollFrame
         table.insert(tabs, tab)
 
         tab:SetScript("OnClick", function()
             PanelTemplates_SetTab(parent, i)
-            for index, frame in ipairs(tabFrames) do
+            for index, frame in ipairs(scrollFrames) do
                 if index == i then
                     frame:Show()
                     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
@@ -1471,7 +1491,7 @@ local function CreateTabSystem(parent)
     parent.numTabs = #tabs
     PanelTemplates_SetNumTabs(parent, #tabs)
     PanelTemplates_SetTab(parent, 1)
-    tabFrames[1]:Show()
+    scrollFrames[1]:Show()
 
     for i, tab in ipairs(tabs) do
         PanelTemplates_TabResize(tab, 0)

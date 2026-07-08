@@ -410,7 +410,18 @@ local function CreateNearbyPanelFrame()
     frame:SetClampedToScreen(true)
 
     if BPP_FrameManager then
-        BPP_FrameManager:RegisterFrame(frame, "NearbyPanel")
+        -- Must register as a notification-style (non-keyboard-grabbing) frame.
+        -- FrameManager's default "interactive" registration calls
+        -- EnableKeyboard(true) + SetPropagateKeyboardInput(false) on whichever
+        -- registered frame is topmost, to support closing it with Escape.
+        -- This panel auto-shows/re-shows itself constantly (every new nearby
+        -- detection), so it was almost always the most-recently-shown/topmost
+        -- frame - meaning it was swallowing ALL keyboard input (WASD, chat,
+        -- everything) into an addon frame with nothing listening, locking the
+        -- player out of moving or typing until they closed the game. This
+        -- panel already has its own explicit close button and drag handling,
+        -- it doesn't need Escape-to-close or keyboard capture at all.
+        BPP_FrameManager:RegisterFrame(frame, "NearbyPanel", true)
     end
 
     -- Only the title strip has a background, for text legibility - the rest

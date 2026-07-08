@@ -654,15 +654,6 @@ local function HandlePlayerEnteringWorld()
         BPP_DB.AnnounceChannel = "GROUP"
     end
 
-    -- Initialize what's-new popup tracking
-    if BPP_DB.WhatsNewPopupShown == nil then
-        BPP_DB.WhatsNewPopupShown = false
-    end
-
-    if BPP_DB.WhatsNewPopupVersion == nil then
-        BPP_DB.WhatsNewPopupVersion = "v1.0"
-    end
-
     if BPP_DB.PlayerInfoCache == nil then
         BPP_DB.PlayerInfoCache = {}
     end
@@ -789,18 +780,6 @@ local function HandlePlayerEnteringWorld()
         print("[BigPPvP]: Click the minimap button or type /bpp to use the addon.")
     end
 
-    local currentVersion = BPP_GetAddonVersion()
-    if BPP_DB.WhatsNewPopupVersion ~= currentVersion then
-        local title = "BigPPvP Stats v" .. currentVersion .. " - What's new:"
-        local message = "-Added a Settings tab for Kill On Sight: alert/sound toggles, guild-sharing controls, and Nearby panel options (show on login, class colors, cleanup timer).\n-Added a Stealth/Prowl alert - a small popup when a hostile rogue/druid is seen going stealthy nearby, even before you see them.\n-Nearby panel tooltips now show your win/loss record against that player.\n\nEnjoy!"
-        local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
-        BPP_ShowWhatsNewPopup(title, message, function()
-            BPP_DB.WhatsNewPopupShown = true
-            BPP_DB.WhatsNewPopupVersion = currentVersion
-        end, dataImportGuideUrl)
-        -- Force migration of international data on first run after update
-        BPP_MigratePlayerInfoToEnglish(true)
-    end
 
     BPP_StartIncrementalAchievementsCalculation()
 
