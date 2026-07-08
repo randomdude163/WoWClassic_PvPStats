@@ -64,7 +64,7 @@ local function CreateRivalryPopupFrame()
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetSize(48, 48)
     icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -12)
-    icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BigPPvPLogo.blp")
+    icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BIGPPvPLogo.blp")
     frame.icon = icon
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")

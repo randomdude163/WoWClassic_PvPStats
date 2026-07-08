@@ -3254,8 +3254,8 @@ function BPP_UpdateStatisticsFrame(frame, externalPlayerData)
 
     if not isExternalPlayer then
         local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
-        buttonSeparatorLine:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 430, 105)
-        buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 105)
+        buttonSeparatorLine:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 430, 135)
+        buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 135)
         buttonSeparatorLine:SetHeight(1)
         buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
@@ -3264,7 +3264,7 @@ function BPP_UpdateStatisticsFrame(frame, externalPlayerData)
         local buttonHeight = 25
         local buttonSpacing = 5
         local fullWidth = (buttonWidth * 2) + buttonSpacing
-        buttonContainer:SetSize(fullWidth, (buttonHeight * 3) + (buttonSpacing * 2))
+        buttonContainer:SetSize(fullWidth, (buttonHeight * 4) + (buttonSpacing * 3))
         buttonContainer:SetPoint("BOTTOM", frame, "BOTTOM", 210, 13)
         frame.buttonContainer = buttonContainer
 
@@ -3314,6 +3314,14 @@ function BPP_UpdateStatisticsFrame(frame, externalPlayerData)
         rivalsButton:SetText("Show Rivals")
         rivalsButton:SetScript("OnClick", function()
             BPP_ShowMostHatedGuildsFrame()
+        end)
+
+        local kosButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+        kosButton:SetSize(fullWidth, buttonHeight)
+        kosButton:SetPoint("TOPLEFT", leaderboardButton, "BOTTOMLEFT", 0, -buttonSpacing)
+        kosButton:SetText("Show KOS List")
+        kosButton:SetScript("OnClick", function()
+            BPP_ShowKOSListFrame()
         end)
     end
 end

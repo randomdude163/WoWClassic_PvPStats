@@ -1,3 +1,8 @@
+v4.9.0:
+- Added a Kill On Sight list (KillOnSight.lua), inspired by the Spy addon: watch specific players and/or entire guilds, and get a loud, distinct popup alert the moment one is detected via target/mouseover/nameplate - reuses the same player/guild detection this addon already had for kill tracking, no separate scanning engine needed
+- Added /bpp kos, /bpp kos add|remove <name>, /bpp kos guild add|remove <guild name>, and a "Show KOS List" button in the Statistics window's button row
+- Alerts are deduped per player with a 60-second cooldown so lingering on a mouseover doesn't spam the popup
+
 v4.8.2:
 - Fixed the Most Hated Guilds window (and the export/import windows) not registering with the frame manager, so they could open behind an already-open window (Leaderboard, Statistics, Config) and appear to do nothing when clicked
 - Removed the "Most Hated Guilds" button from the Leaderboard window - it's now only in the Statistics window ("Guild-wide..." next to "Kills by Guild")

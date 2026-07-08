@@ -134,7 +134,7 @@ local function CreateKillstreakMilestoneFrameIfNeeded()
     local icon = frame:CreateTexture("BPP_MilestoneIcon", "ARTWORK")
     icon:SetSize(sizeX, sizeY)
     icon:SetPoint("TOP", 0, 0)
-    icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BigPPvPLogo.blp")
+    icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BIGPPvPLogo.blp")
     frame.icon = icon
 
     local text = frame:CreateFontString("BPP_MilestoneText", "OVERLAY", "SystemFont_Huge1")

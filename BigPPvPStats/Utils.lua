@@ -440,7 +440,7 @@ function BPP_IsSamePlayerName(candidateName, targetName)
 end
 
 function BPP_GetAddonVersion()
-    return "4.8.2"
+    return "4.9.0"
 end
 
 -- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)
@@ -1937,7 +1937,7 @@ function BPP_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetSize(136, 136)
     icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 25, -20)
-    icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BigPPvPLogo.blp")
+    icon:SetTexture("Interface\\AddOns\\BigPPvPStats\\img\\BIGPPvPLogo.blp")
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 15, 0)
