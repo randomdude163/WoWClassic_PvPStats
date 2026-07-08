@@ -1,3 +1,8 @@
+v4.12.0:
+- Reworked the Nearby Enemies panel to match Spy's look more closely: the window itself is now fully transparent (only a thin title strip has a background), each row is its own small class-colored bar with the name inside it, and it's resizable (drag the bottom-right corner) with the size remembered
+- Added left/right arrows in the panel's title bar to cycle between Nearby, Kill On Sight, and Ignored views in the same small window, instead of needing to open separate windows
+- Default panel size reduced to take up less screen space
+
 v4.11.0:
 - Added a "Kill On Sight" settings tab (ConfigUI.lua): enable/disable alerts, alert sound, stealth alerts, guild sharing (broadcast and/or receive), Nearby panel show-on-login, class colors, and cleanup timer (5/10/15/30 min) - all previously slash-command-only, per user request to prefer GUI configuration where it makes sense
 - Added a Stealth/Prowl alert: a small distinct popup (with its own sound and 30s per-player cooldown) when a hostile player is seen going into Stealth or Prowl in the combat log, working even if they're never targeted or moused over. Respects the Ignore list and a new master toggle
