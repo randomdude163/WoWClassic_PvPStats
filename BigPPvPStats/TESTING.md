@@ -152,7 +152,7 @@ achievement data travels in that backup.
 Shown by default on login (drag it to reposition - the spot is remembered).
 It lists every hostile player detected via the same target/mouseover/nameplate
 hooks as the KOS list, sorted with KOS matches first, then most recently
-seen. Entries drop off automatically 10 minutes after they're last seen.
+seen.
 
 Right-click any name for a menu to add/remove Kill On Sight, toggle Ignore,
 or remove it from the panel. Rows are colored by class (red for KOS, gray
@@ -160,9 +160,20 @@ for ignored). Hover a name for level/guild/class, last-seen time, and
 win/loss record.
 
 The window itself is transparent apart from the title strip, so it doesn't
-block your view - drag the bottom-right corner to resize it, and use the
-arrows in the title bar to cycle between the Nearby, Kill On Sight, and
-Ignored views without opening a separate window.
+block your view. There's no scrollbar - it grows and shrinks vertically to
+fit its rows automatically, up to 20 shown at once. Drag the right edge to
+resize the width. Use the arrows in the title bar to cycle between four
+views in the same window:
+
+- **Nearby** - entries seen within the configurable window from Settings >
+  Kill On Sight (5/10/15/30 min, default 10)
+- **Last Hour** - the same underlying data, but showing everything seen in
+  the last hour regardless of that shorter window
+- **Kill On Sight** - your personal watchlist
+- **Ignored** - players with alerts suppressed
+
+Only the Nearby/Last Hour views expire entries at all (after a full hour,
+hard cap); Kill On Sight and Ignored persist until you remove them.
 
 ## 9. Testing guild-wide Kill On Sight sharing
 

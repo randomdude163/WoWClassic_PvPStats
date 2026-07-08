@@ -267,7 +267,7 @@ local function ShowKOSAlert(title, subText)
     end
 
     if BPP_DB.KOSAlertSoundEnabled ~= false then
-        PlaySound(8959) -- "RaidWarning" - distinct from the rivalry milestone fanfare
+        PlaySound(SOUNDKIT.RAID_WARNING) -- distinct from the rivalry milestone fanfare
     end
 
     kosPopupTimer = C_Timer.NewTimer(8, function()
@@ -446,6 +446,7 @@ local function CreateKOSListFrame()
     scrollFrame:SetScrollChild(content)
 
     frame.content = content
+    frame:Hide()
     kosListFrame = frame
     return frame
 end

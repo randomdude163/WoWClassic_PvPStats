@@ -21,8 +21,13 @@ local nearbyPruneTicker = nil
 
 -- Panel cycles between these views with the title bar arrows, like Spy's
 -- Nearby/Last Hour/Ignore/KOS list switcher.
-local NEARBY_MODES = { "Nearby", "Kill On Sight", "Ignored" }
+local NEARBY_MODES = { "Nearby", "Last Hour", "Kill On Sight", "Ignored" }
 local currentModeIndex = 1
+local MAX_DISPLAYED_ROWS = 20
+
+-- Entries are kept for a full hour regardless of the shorter "Nearby" view
+-- filter below, so the Last Hour view has something to show.
+local NEARBY_HARD_RETENTION_SECONDS = 3600
 
 -- ============================================================
 -- Recording + pruning
@@ -146,7 +151,7 @@ function BPP_CheckStealthAlert(name)
         BPP_FrameManager:BringToFront("StealthPopup")
     end
 
-    PlaySound(11466) -- short, distinct from the KOS raid-warning sound
+    PlaySound(SOUNDKIT.READY_CHECK) -- short, distinct from the KOS raid-warning sound
 
     stealthPopupTimer = C_Timer.NewTimer(4, function()
         UIFrameFade(frame, { mode = "OUT", timeToFade = 1, finishedFunc = function() frame:Hide() end })
@@ -157,9 +162,8 @@ end
 local function PruneNearbyPlayers()
     local now = time()
     local changed = false
-    local expirySeconds = GetNearbyExpirySeconds()
     for infoKey, data in pairs(nearbyPlayers) do
-        if now - data.lastSeen > expirySeconds then
+        if now - data.lastSeen > NEARBY_HARD_RETENTION_SECONDS then
             nearbyPlayers[infoKey] = nil
             changed = true
         end
@@ -259,10 +263,10 @@ local function CreateNearbyPanelFrame()
 
     local frame = CreateFrame("Frame", "BPP_NearbyPanelFrame", UIParent)
     local savedSize = BPP_DB and BPP_DB.NearbyPanelSize
-    frame:SetSize(savedSize and savedSize.width or 200, savedSize and savedSize.height or 150)
+    frame:SetSize(savedSize and savedSize.width or 200, TITLE_BAR_HEIGHT + 6)
     frame:SetResizable(true)
-    if frame.SetMinResize then frame:SetMinResize(150, 80) end
-    if frame.SetMaxResize then frame:SetMaxResize(450, 500) end
+    if frame.SetMinResize then frame:SetMinResize(150, TITLE_BAR_HEIGHT + 6) end
+    if frame.SetMaxResize then frame:SetMaxResize(450, TITLE_BAR_HEIGHT + 6 + MAX_DISPLAYED_ROWS * 17) end
 
     local pos = BPP_DB and BPP_DB.NearbyPanelPosition
     if pos and pos.point then
@@ -319,24 +323,25 @@ local function CreateNearbyPanelFrame()
         BPP_DB.NearbyPanelShown = false
     end)
 
-    local scrollFrame = CreateFrame("ScrollFrame", "BPP_NearbyPanelScrollFrame", frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 3, -(TITLE_BAR_HEIGHT + 2))
-    scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -22, 3)
-
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(scrollFrame:GetWidth(), 1)
-    scrollFrame:SetScrollChild(content)
+    -- No scroll frame - the window itself grows/shrinks vertically to fit
+    -- its rows (capped at MAX_DISPLAYED_ROWS), so nothing ever needs to
+    -- scroll.
+    local content = CreateFrame("Frame", nil, frame)
+    content:SetPoint("TOPLEFT", frame, "TOPLEFT", 3, -(TITLE_BAR_HEIGHT + 2))
+    content:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -(TITLE_BAR_HEIGHT + 2))
+    content:SetHeight(1)
     frame.content = content
-    frame.scrollFrame = scrollFrame
 
+    -- Resize grip only adjusts width (useful for long names) - height is
+    -- always driven by the current row count on refresh.
     local resizeGrip = CreateFrame("Button", nil, frame)
-    resizeGrip:SetSize(14, 14)
-    resizeGrip:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, 2)
+    resizeGrip:SetSize(10, TITLE_BAR_HEIGHT)
+    resizeGrip:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -TITLE_BAR_HEIGHT)
     resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
     resizeGrip:SetScript("OnMouseDown", function()
-        frame:StartSizing("BOTTOMRIGHT")
+        frame:StartSizing("RIGHT")
     end)
     resizeGrip:SetScript("OnMouseUp", function()
         frame:StopMovingOrSizing()
@@ -437,9 +442,15 @@ end
 local function GetModeEntries(modeName)
     local entries = {}
 
-    if modeName == "Nearby" then
+    if modeName == "Nearby" or modeName == "Last Hour" then
+        local now = time()
+        -- Nearby only shows entries seen within the (configurable) short
+        -- window; Last Hour shows everything still in the hour-long store.
+        local cutoff = modeName == "Nearby" and GetNearbyExpirySeconds() or NEARBY_HARD_RETENTION_SECONDS
         for infoKey, data in pairs(nearbyPlayers) do
-            table.insert(entries, { key = infoKey, data = data })
+            if now - data.lastSeen <= cutoff then
+                table.insert(entries, { key = infoKey, data = data })
+            end
         end
         table.sort(entries, function(a, b)
             local aKOS = BPP_DB.KOSPlayers and BPP_DB.KOSPlayers[a.key] ~= nil
@@ -483,6 +494,7 @@ end
 
 local MODE_EMPTY_TEXT = {
     ["Nearby"] = "No enemies detected yet.",
+    ["Last Hour"] = "No enemies detected in the last hour.",
     ["Kill On Sight"] = "No players added yet.",
     ["Ignored"] = "No players ignored.",
 }
@@ -494,24 +506,37 @@ function BPP_RefreshNearbyPanel()
     local modeName = NEARBY_MODES[currentModeIndex]
     frame.title:SetText(modeName)
 
+    -- GetChildren() only enumerates child FRAMES (the row buttons), not
+    -- loose regions - the empty-state text is a FontString created directly
+    -- on content, so it's tracked and hidden explicitly instead, or it would
+    -- never get cleared and would sit behind newly-added rows forever.
     for _, child in ipairs({ content:GetChildren() }) do
         child:Hide()
         child:SetParent(nil)
     end
+    if content.emptyText then
+        content.emptyText:Hide()
+    end
 
-    local rowWidth = math.max(frame.scrollFrame:GetWidth(), 60)
-    content:SetWidth(rowWidth)
+    local rowWidth = math.max(content:GetWidth(), 60)
 
-    local entries = GetModeEntries(modeName)
+    local allEntries = GetModeEntries(modeName)
+    local entries = {}
+    for i = 1, math.min(#allEntries, MAX_DISPLAYED_ROWS) do
+        entries[i] = allEntries[i]
+    end
 
     if #entries == 0 then
-        local emptyText = content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        emptyText:SetPoint("TOPLEFT", 4, -4)
-        emptyText:SetWidth(rowWidth - 8)
-        emptyText:SetJustifyH("LEFT")
-        emptyText:SetWordWrap(true)
-        emptyText:SetText(MODE_EMPTY_TEXT[modeName] or "Nothing here yet.")
-        content:SetHeight(40)
+        if not content.emptyText then
+            content.emptyText = content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+            content.emptyText:SetPoint("TOPLEFT", 4, -4)
+            content.emptyText:SetJustifyH("LEFT")
+            content.emptyText:SetWordWrap(true)
+        end
+        content.emptyText:SetWidth(rowWidth - 8)
+        content.emptyText:SetText(MODE_EMPTY_TEXT[modeName] or "Nothing here yet.")
+        content.emptyText:Show()
+        frame:SetHeight(TITLE_BAR_HEIGHT + 6 + 30)
         return
     end
 
@@ -521,7 +546,9 @@ function BPP_RefreshNearbyPanel()
         rowY = rowY - (ROW_HEIGHT + 1)
     end
 
-    content:SetHeight(math.max(-rowY + 6, 10))
+    local contentHeight = -rowY + 4
+    content:SetHeight(contentHeight)
+    frame:SetHeight(TITLE_BAR_HEIGHT + 2 + contentHeight + 4)
 end
 
 function BPP_CycleNearbyPanelMode(direction)

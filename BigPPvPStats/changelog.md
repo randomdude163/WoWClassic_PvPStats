@@ -1,3 +1,11 @@
+v4.13.0:
+- Fixed the Kill On Sight list window popping open unexpectedly when adding/removing a player from the Nearby panel's right-click menu - it was never explicitly hidden after creation, so WoW's default "frames are shown when created" behavior made it appear the first time it was built
+- Fixed overlapping text in Settings > Kill On Sight - two section headers were anchored at fixed pixel offsets that didn't account for the stealth-alert checkbox added above them
+- Fixed a leftover "No enemies detected yet." message staying visible behind newly-detected rows in the Nearby panel - `GetChildren()` only enumerates child frames, not loose text/texture regions, so the empty-state text was never being cleared on refresh
+- Switched the Kill On Sight and Stealth alert sounds from guessed numeric sound IDs to Blizzard's named SOUNDKIT constants (RAID_WARNING, READY_CHECK), matching what the rest of the addon already uses reliably
+- Added a "Last Hour" view to the Nearby panel's cycling arrows: Nearby entries still drop out of that view after the configurable window (5/10/15/30 min), but stay visible under Last Hour for a full hour
+- Removed the Nearby panel's scrollbar - the window now grows and shrinks vertically to fit its rows automatically, capped at 20 displayed per view
+
 v4.12.0:
 - Reworked the Nearby Enemies panel to match Spy's look more closely: the window itself is now fully transparent (only a thin title strip has a background), each row is its own small class-colored bar with the name inside it, and it's resizable (drag the bottom-right corner) with the size remembered
 - Added left/right arrows in the panel's title bar to cycle between Nearby, Kill On Sight, and Ignored views in the same small window, instead of needing to open separate windows
