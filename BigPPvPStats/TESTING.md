@@ -99,12 +99,12 @@ once at a high count (e.g. `500`) to jump straight to the top and confirm the
 whole chain of tiers fires in order without duplicates. Try a second,
 different guild name too, to confirm each guild tracks independently.
 
-Then check the aggregate view - `/bpp rivals`, or the "Most Hated Guilds"
-button in the Leaderboard window, or "Guild-wide..." next to "Kills by Guild"
-in the Statistics window (all three open the same frame). This sums
-`topGuildKills` (each contributor's own top 10 rival guilds) across yourself,
-your alts, and anyone else's broadcast data you've received - `/bpp sync`
-first if you want to pull in a guildmate's data on demand.
+Then check the aggregate view - `/bpp rivals`, or the "Show Rivals" button in
+the Statistics window's button row (alongside Show Settings/Achievements/Kill
+History/Kill Streak/Leaderboard). This sums `topGuildKills` (each
+contributor's own top 10 rival guilds) across yourself, your alts, and anyone
+else's broadcast data you've received - `/bpp sync` first if you want to pull
+in a guildmate's data on demand.
 
 `/bpp rivals digest`, or the "This Week" button inside the Most Hated Guilds
 window, shows a summary of rival-guild kills from the last 7 days, computed
