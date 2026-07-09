@@ -693,13 +693,12 @@ local function HandlePlayerEnteringWorld()
     local currentVersion = PSC_GetAddonVersion()
     if PSC_DB.WhatsNewPopupVersion ~= currentVersion then
         local title = "PvP Stats v" .. currentVersion .. " - What's new:"
-        local message = "-Fixed bug where the K/D of other players was incorrect when you view their detailed stats in the leaderboard\n\nEnjoy!"
-        local dataImportGuideUrl = "https://github.com/randomdude163/WoWClassic_PvPStats/wiki/How-to-import-data-from-other-WoW-clients-(like-Classic-Era)"
+        local message = "-K/D by Class replaced with Win Rate by Class for more meaningful class matchup data\n-Small performance improvements in the Statistics window\n\nEnjoy!"
+        local discordUrl = "https://discord.gg/ZBaN2xk5h3"
         PSC_ShowWhatsNewPopup(title, message, function()
             PSC_DB.WhatsNewPopupShown = true
             PSC_DB.WhatsNewPopupVersion = currentVersion
-        end, dataImportGuideUrl)
-        -- Force migration of international data on first run after update
+        end, discordUrl)
         PSC_MigratePlayerInfoToEnglish(true)
     end
 
