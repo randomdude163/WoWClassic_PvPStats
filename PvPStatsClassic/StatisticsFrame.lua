@@ -734,7 +734,7 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
     valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
 
     local percentage = (total > 0) and (entry.value / total * 100) or 0
-    local valueText = entry.value .. " (" .. string.format("%.1f", percentage) .. "%)"
+    local valueText = entry.value .. " (" .. PSC_FormatPercent(percentage, 2) .. ")"
     valueLabel:SetText(valueText)
 
     local estimatedTextWidth = string.len(valueText) * 6
@@ -889,6 +889,15 @@ function PSC_GetWinPercentageColor(pct)
     end
 end
 
+function PSC_FormatPercent(pct, decimals)
+    decimals = decimals or 2
+    if math.abs(pct - 100) < 1e-6 then
+        return "100%"
+    end
+    local fmt = "%." .. tostring(decimals) .. "f%%"
+    return string.format(fmt, pct)
+end
+
 local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
     if not kdData then
         local container = createContainerWithTitle(parent, "Win Rate by Class", x, y, width, 45)
@@ -955,7 +964,7 @@ local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
 
         local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
-        valueLabel:SetText(string.format("%.2f%%", entry.value * 100))
+        valueLabel:SetText(PSC_FormatPercent(entry.value * 100, 2))
     end
 
     return container, height
@@ -1237,7 +1246,7 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
 
         local yLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         yLabel:SetPoint("RIGHT", container, "TOPLEFT", chartLeft - 8, yPos)
-        yLabel:SetText(string.format("%.0f%%", percent))
+        yLabel:SetText(PSC_FormatPercent(percent, 2))
     end
 
     local xStep = (monthCount > 1) and (chartWidth / (monthCount - 1)) or 0
@@ -1336,17 +1345,17 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                         GameTooltip:SetText(className, color.r, color.g, color.b)
                         GameTooltip:AddLine(PSC_FormatMonthBucketLabel(monthBucket), 1, 1, 1)
-                        GameTooltip:AddLine(string.format("Share: %.1f%%", value), 1, 1, 1)
+                        GameTooltip:AddLine("Share: " .. PSC_FormatPercent(value, 2), 1, 1, 1)
                         GameTooltip:AddLine("Kills: " .. classMonthKills .. " / " .. totalMonthKills, 1, 1, 1)
 
                         if previousValue ~= nil then
                             local delta = value - previousValue
                             local deltaAbs = math.abs(delta)
-                            local deltaText = string.format("%.1f", deltaAbs):gsub("%.0$", "")
+                            local deltaText = PSC_FormatPercent(deltaAbs, 2)
                             if delta > 0 then
-                                GameTooltip:AddLine(string.format("Delta vs %s: %s%% increase", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 0.3, 1, 0.3, true)
+                                GameTooltip:AddLine(string.format("Delta vs %s: %s increase", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 0.3, 1, 0.3, true)
                             elseif delta < 0 then
-                                GameTooltip:AddLine(string.format("Delta vs %s: %s%% decrease", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 1, 0.3, 0.3, true)
+                                GameTooltip:AddLine(string.format("Delta vs %s: %s decrease", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 1, 0.3, 0.3, true)
                             else
                                 GameTooltip:AddLine(string.format("Delta vs %s: no change", PSC_FormatMonthBucketLabel(previousMonthBucket)), 0.85, 0.85, 0.85, true)
                             end
@@ -1942,8 +1951,9 @@ local function PSC_CalculateWinRateByClass(killsByClass, deathsByClass)
     for _, class in ipairs(ALL_CLASSES) do
         local kills = killsByClass[class] or 0
         local deaths = deathsByClass[class] or 0
-        if deaths > 0 then
-            winRateData[class] = kills / (kills + deaths)
+        local total = kills + deaths
+        if total > 0 then
+            winRateData[class] = kills / total
             rawData[class] = {kills = kills, deaths = deaths}
         end
     end
@@ -2263,7 +2273,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     local totalEncounters = totalKills + totalDeaths
     if totalEncounters > 0 then
         local winPct = (totalKills / totalEncounters) * 100
-        local winText = string.format("%.2f%%", winPct)
+        local winText = PSC_FormatPercent(winPct, 2)
         local winColor = PSC_GetWinPercentageColor(winPct)
         local winTooltip = isLocalPlayer and "Win percentage: kills divided by total encounters (kills + deaths)." or "Win percentage: kills divided by total encounters (kills + deaths)."
         statY = addSummaryStatLine(container, "Win percentage:", winText, statY, winTooltip, false, isLocalPlayer, winColor)
@@ -2421,7 +2431,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
             percentage = (extraData.achievementsUnlocked / extraData.totalAchievements) * 100
         end
 
-        local achieveText = extraData.achievementsUnlocked .. " / " .. extraData.totalAchievements .. " (" .. string.format("%.1f%%", percentage) .. ")"
+        local achieveText = extraData.achievementsUnlocked .. " / " .. extraData.totalAchievements .. " (" .. PSC_FormatPercent(percentage, 2) .. ")"
 
         if isLocalPlayer then
             local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")

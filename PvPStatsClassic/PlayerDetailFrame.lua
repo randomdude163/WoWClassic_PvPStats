@@ -84,53 +84,6 @@ function PSC_FormatTimestamp(timestamp)
         dateInfo.hour, dateInfo.min, dateInfo.sec)
 end
 
-
-local function CreateKillHistoryHeaderRow(content, yOffset)
-    local headerBg = content:CreateTexture(nil, "BACKGROUND")
-    headerBg:SetPoint("TOPLEFT", 15, yOffset)
-    headerBg:SetPoint("TOPRIGHT", content, "TOPRIGHT", -15, 0)
-    headerBg:SetHeight(20)
-    headerBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
-
-    local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    levelHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
-    levelHeader:SetText("Level")
-    levelHeader:SetTextColor(1, 0.82, 0)
-
-    local zoneHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    zoneHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
-    zoneHeader:SetText("Zone")
-    zoneHeader:SetTextColor(1, 0.82, 0)
-    zoneHeader:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
-    zoneHeader:SetJustifyH("LEFT")
-
-    local killsHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killsHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
-    killsHeader:SetText("Kills")
-    killsHeader:SetTextColor(1, 0.82, 0)
-    killsHeader:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
-    killsHeader:SetJustifyH("LEFT")
-
-    local timeHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    timeHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
-    timeHeader:SetText("Time")
-    timeHeader:SetTextColor(1, 0.82, 0)
-
-    return yOffset - 20
-end
-
-local function SortKillHistoryByTimestamp(killHistory)
-    table.sort(killHistory, function(a, b)
-        local timestampA = a.timestamp or 0
-        local timestampB = b.timestamp or 0
-
-        -- Primary sort by timestamp (most recent first)
-        return timestampA > timestampB
-    end)
-
-    return killHistory
-end
-
 local function SortDeathHistoryByTimestamp(deathHistory)
     table.sort(deathHistory, function(a, b)
         return a.timestamp > b.timestamp
@@ -734,7 +687,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         winLabel:SetTextColor(1, 1, 1)
         local winValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         winValue:SetPoint("TOPLEFT", 120, yOffset)
-        winValue:SetText(string.format("%.1f%%", winPct))
+        winValue:SetText(PSC_FormatPercent(winPct, 2))
         local winPercentageColor = PSC_GetWinPercentageColor(winPct)
         winValue:SetTextColor(winPercentageColor.r, winPercentageColor.g, winPercentageColor.b)
         -- Also set K/D ratio to the same color
