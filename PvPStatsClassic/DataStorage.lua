@@ -1165,6 +1165,7 @@ function PSC_InitializePlayerKillCounts()
     for key, data in pairs(PSC_DB.PlayerKillCounts.Characters) do
         if data.HighestKillStreak == nil then data.HighestKillStreak = 0 end
         if data.HighestMultiKill == nil then data.HighestMultiKill = 0 end
+        if data.MultiKillCounts == nil then data.MultiKillCounts = {} end
         if data.CurrentKillStreak == nil then data.CurrentKillStreak = 0 end
         if data.Kills == nil then data.Kills = {} end
     end
@@ -1176,6 +1177,7 @@ function PSC_InitializePlayerKillCounts()
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
             HighestMultiKill = 0,
+            MultiKillCounts = {},
             GrayKillsCount = nil, -- We'll set this to nil initially to detect first run
             SpawnCamperMaxKills = nil, -- Pre-calculated spawn camper achievement value
             Level1KillTimestamps = {}, -- Cached list of all level 1 kill timestamps for efficient sliding window

@@ -160,6 +160,11 @@ local SUB_KEY_MAPS = {
         highestMultiKill = "hmk",
         highestKillStreakCharacter = "hksc",
         highestMultiKillCharacter = "hmkc",
+        doubleKills = "dk",
+        tripleKills = "trk",
+        quadraKills = "qk",
+        pentaKills = "pk",
+        uniqueGuildsKilled = "ugk",
         busiestWeekday = "bw",
         busiestWeekdayKills = "bwk",
         busiestHour = "bh",
@@ -532,8 +537,10 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
     self:ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
     self:ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, _, npcKillsData =
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
+    local _, uniqueGuildsKilled = PSC_CalculateGuildStats(guildData)
+    stats.uniqueGuildsKilled = uniqueGuildsKilled
     local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
     local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
     local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)

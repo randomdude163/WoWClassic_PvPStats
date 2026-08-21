@@ -626,6 +626,17 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
             rankIcon:SetSize(32, 32)
             rankIcon:SetPoint("LEFT", classIcon, "RIGHT", 10, 0)
             rankIcon:SetTexture(PVP_RANK_ICONS[playerDetail.rank])
+
+            local rankName = PSC_GetRankName(playerDetail.rank)
+            rankIcon:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText(rankName or ("Rank " .. playerDetail.rank), 1, 0.82, 0)
+                GameTooltip:AddLine("Rank " .. tostring(playerDetail.rank), 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            rankIcon:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
         end
     end
 
@@ -652,7 +663,38 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         yOffset = CreateDetailRow(content, "Realm:", playerRealm, yOffset)
     end
 
-    yOffset = CreateDetailRow(content, "PvP Rank:", playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0", yOffset)
+    local rankLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    rankLabel:SetPoint("TOPLEFT", 25, yOffset)
+    rankLabel:SetText("PvP Rank:")
+    rankLabel:SetTextColor(1, 1, 1)
+
+    local rankValue = playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0"
+    local rankValueText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    rankValueText:SetPoint("TOPLEFT", 120, yOffset)
+    rankValueText:SetText(rankValue)
+    rankValueText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+
+    local rankTooltipFrame = CreateFrame("Frame", nil, content)
+    rankTooltipFrame:SetPoint("TOPLEFT", rankLabel, "TOPLEFT", 0, 0)
+    rankTooltipFrame:SetPoint("BOTTOMRIGHT", rankValueText, "BOTTOMRIGHT", 0, 0)
+    rankTooltipFrame:SetScript("OnEnter", function(self)
+        local rankNumber = playerDetail.rank or 0
+        local rankName = PSC_GetRankName(rankNumber)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        if rankNumber > 0 and rankName then
+            GameTooltip:SetText(rankName, 1, 0.82, 0)
+            GameTooltip:AddLine("Rank " .. tostring(rankNumber), 1, 1, 1, true)
+        else
+            GameTooltip:SetText("Rank 0", 1, 0.82, 0)
+            GameTooltip:AddLine("No PvP rank earned yet", 1, 1, 1, true)
+        end
+        GameTooltip:Show()
+    end)
+    rankTooltipFrame:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    yOffset = yOffset - 20
 
     local killsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     killsLabel:SetPoint("TOPLEFT", 25, yOffset)

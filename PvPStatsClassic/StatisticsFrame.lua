@@ -410,7 +410,7 @@ local function calculateChartHeight(data, includeZeroKeys)
     return 30 + (entries * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
 end
 
-local function createContainerWithTitle(parent, title, x, y, width, height)
+local function createContainerWithTitle(parent, title, x, y, width, height, lineWidth)
     local container = CreateFrame("Frame", nil, parent)
     container:SetSize(width, height)
     container:SetPoint("TOPLEFT", x, y)
@@ -421,7 +421,7 @@ local function createContainerWithTitle(parent, title, x, y, width, height)
 
     local line = container:CreateTexture(nil, "ARTWORK")
     line:SetPoint("TOPLEFT", 0, -15)
-    line:SetSize(width, 1)
+    line:SetSize(lineWidth or width, 1)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
     return container
@@ -734,7 +734,7 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
     valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
 
     local percentage = (total > 0) and (entry.value / total * 100) or 0
-    local valueText = entry.value .. " (" .. PSC_FormatPercent(percentage, 2) .. ")"
+    local valueText = entry.value .. " (" .. PSC_FormatPercent(percentage, 1) .. ")"
     valueLabel:SetText(valueText)
 
     local estimatedTextWidth = string.len(valueText) * 6
@@ -1246,7 +1246,7 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
 
         local yLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         yLabel:SetPoint("RIGHT", container, "TOPLEFT", chartLeft - 8, yPos)
-        yLabel:SetText(PSC_FormatPercent(percent, 2))
+        yLabel:SetText(PSC_FormatPercent(percent, 1))
     end
 
     local xStep = (monthCount > 1) and (chartWidth / (monthCount - 1)) or 0
@@ -1574,6 +1574,10 @@ local function PSC_SummaryStats_CreateState(charactersToProcess)
         currentKillStreak = 0,
         highestMultiKill = 0,
         highestMultiKillCharacter = "",
+        doubleKills = 0,
+        tripleKills = 0,
+        quadraKills = 0,
+        pentaKills = 0,
         weekdayKills = {0, 0, 0, 0, 0, 0, 0},
         hourlyKills = {},
         monthlyKills = {},
@@ -1613,6 +1617,12 @@ end
 local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, characterData)
     local PSC_GetCharacterKey = PSC_GetCharacterKey
     local PSC_DB = PSC_DB
+    local multiKillCounts = characterData.MultiKillCounts or {}
+
+    state.doubleKills = state.doubleKills + (multiKillCounts[2] or 0)
+    state.tripleKills = state.tripleKills + (multiKillCounts[3] or 0)
+    state.quadraKills = state.quadraKills + (multiKillCounts[4] or 0)
+    state.pentaKills = state.pentaKills + (multiKillCounts[5] or 0)
 
     if characterKey == PSC_GetCharacterKey() then
         state.currentKillStreak = characterData.CurrentKillStreak
@@ -1908,6 +1918,10 @@ local function PSC_SummaryStats_BuildResult(state)
         highestMultiKill = state.highestMultiKill,
         highestKillStreakCharacter = state.highestKillStreakCharacter,
         highestMultiKillCharacter = state.highestMultiKillCharacter,
+        doubleKills = state.doubleKills,
+        tripleKills = state.tripleKills,
+        quadraKills = state.quadraKills,
+        pentaKills = state.pentaKills,
         busiestWeekday = state.busiestWeekday,
         busiestWeekdayKills = state.busiestWeekdayKills,
         busiestHour = state.busiestHour,
@@ -2423,6 +2437,11 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY, tip, false, isLocalPlayer)
     end
 
+    if stats.uniqueGuildsKilled ~= nil then
+        statY = addSummaryStatLine(container, "Different guilds killed:", stats.uniqueGuildsKilled, statY,
+            "Number of different guilds whose members you have killed.", false, isLocalPlayer)
+    end
+
     -- 7. Achievements
     if extraData and extraData.achievementsUnlocked and extraData.totalAchievements then
         statY = statY - spacing_between_sections
@@ -2469,6 +2488,16 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         end
     end
 
+    statY = statY - spacing_between_sections
+    statY = addSummaryStatLine(container, "Double kills:", stats.doubleKills or 0, statY,
+        "Double kills recorded since version 4.7.", false, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Triple kills:", stats.tripleKills or 0, statY,
+        "Triple kills recorded since version 4.7.", false, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Quadra kills:", stats.quadraKills or 0, statY,
+        "Quadra kills recorded since version 4.7.", false, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Penta kills:", stats.pentaKills or 0, statY,
+        "Penta kills recorded since version 4.7.", false, isLocalPlayer)
+
     -- 8. Footer Note
     if not isLocalPlayer then
         local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -2476,19 +2505,30 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
         noteText:SetTextColor(0.7, 0.7, 0.7)
     end
+
+    return -statY + 10
 end
 
 local function createSummaryStatsForExternalPlayer(parent, x, y, width, height, stats, playerName, extraData)
-    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
-    PSC_PopulateSummaryStatsContainer(container, stats, false, extraData, playerName)
+    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height, width - 20)
+    local contentHeight = PSC_PopulateSummaryStatsContainer(container, stats, false, extraData, playerName)
+    container:SetHeight(math.max(height, contentHeight))
     return container
 end
 
-local function createSummaryStats(parent, x, y, width, height)
-    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
+local function createSummaryStats(parent, x, y, width, height, stats, guildData)
+    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height, width - 20)
 
-    local charactersToProcess = GetCharactersToProcessForStatistics()
-    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+    if not stats then
+        local charactersToProcess = GetCharactersToProcessForStatistics()
+        stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+        guildData = PSC_CalculateGuildKills(charactersToProcess)
+    end
+
+    if guildData then
+        local _, uniqueGuildsKilled = PSC_CalculateGuildStats(guildData)
+        stats.uniqueGuildsKilled = uniqueGuildsKilled
+    end
 
     local extraData = {}
     if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
@@ -2510,7 +2550,8 @@ local function createSummaryStats(parent, x, y, width, height)
         extraData.totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
     end
 
-    PSC_PopulateSummaryStatsContainer(container, stats, true, extraData)
+    local contentHeight = PSC_PopulateSummaryStatsContainer(container, stats, true, extraData)
+    container:SetHeight(math.max(height, contentHeight))
     return container
 end
 
@@ -2848,6 +2889,42 @@ local function createScrollableLeftPanel(parent)
     return content, scrollFrame
 end
 
+local function createScrollableRightPanel(parent, hasFixedButtons)
+    local containerFrame = CreateFrame("Frame", nil, parent)
+    containerFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 440, -UI.TOP_PADDING)
+    containerFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, hasFixedButtons and 110 or 10)
+
+    local scrollFrame = CreateFrame("ScrollFrame", nil, containerFrame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetAllPoints(containerFrame)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetWidth(380)
+    content:SetHeight(1)
+    scrollFrame:SetScrollChild(content)
+
+    local scrollBar = scrollFrame.ScrollBar or scrollFrame.scrollBar
+    local scrollBarName = scrollFrame:GetName() and scrollFrame:GetName() .. "ScrollBar" or nil
+    scrollBar = scrollBar or (scrollBarName and _G[scrollBarName] or nil)
+
+    if not scrollBar then
+        local children = {scrollFrame:GetChildren()}
+        for _, child in ipairs(children) do
+            if child:GetObjectType() == "Slider" then
+                scrollBar = child
+                break
+            end
+        end
+    end
+
+    if scrollBar then
+        scrollBar:ClearAllPoints()
+        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", -26, -16)
+        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", -26, 16)
+    end
+
+    return content, scrollFrame
+end
+
 function GetFrameTitleTextWithCharacterText(titleText)
     if PSC_DB.ShowAccountWideStats then
         titleText = titleText .. " |cFFFFFFFF(account-wide stats)|r"
@@ -2998,6 +3075,17 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     if frame.summaryStats then
         frame.summaryStats:SetParent(nil)
         frame.summaryStats = nil
+    end
+
+    if frame.rightScrollFrame then
+        frame.rightScrollFrame:SetParent(nil)
+        frame.rightScrollFrame = nil
+        frame.rightScrollContent = nil
+    end
+
+    if frame.buttonSeparatorLine then
+        frame.buttonSeparatorLine:SetTexture(nil)
+        frame.buttonSeparatorLine = nil
     end
 
     if frame.buttonContainer then
@@ -3251,13 +3339,17 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
 
     local summaryStatsWidth = 380
     local summaryStatsHeight = 500
+    local rightScrollContent, rightScrollFrame = createScrollableRightPanel(frame, not isExternalPlayer)
+    frame.rightScrollContent = rightScrollContent
+    frame.rightScrollFrame = rightScrollFrame
 
     -- Summary Statistics at top right (pass stats if external player)
     if isExternalPlayer then
-        frame.summaryStats = createSummaryStatsForExternalPlayer(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight, stats, playerDisplayName, externalPlayerData)
+        frame.summaryStats = createSummaryStatsForExternalPlayer(rightScrollContent, 0, 0, summaryStatsWidth, summaryStatsHeight, stats, playerDisplayName, externalPlayerData)
     else
-        frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
+        frame.summaryStats = createSummaryStats(rightScrollContent, 0, 0, summaryStatsWidth, summaryStatsHeight, stats, guildData)
     end
+    rightScrollContent:SetHeight(frame.summaryStats:GetHeight() + (isExternalPlayer and 68 or 0))
 
     if not isExternalPlayer then
         local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
@@ -3265,6 +3357,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 105)
         buttonSeparatorLine:SetHeight(1)
         buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
+        frame.buttonSeparatorLine = buttonSeparatorLine
 
         local buttonContainer = CreateFrame("Frame", nil, frame)
         local buttonWidth = 140

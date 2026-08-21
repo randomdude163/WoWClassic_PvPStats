@@ -165,7 +165,13 @@ local function UpdateMultiKill()
     end
 
     local characterKey = PSC_GetCharacterKey()
-    local highestMultiKillAlias = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+    local highestMultiKillAlias = characterData.HighestMultiKill
+
+    characterData.MultiKillCounts = characterData.MultiKillCounts or {}
+    if PSC_MultiKillCount >= 2 and PSC_MultiKillCount <= 5 then
+        characterData.MultiKillCounts[PSC_MultiKillCount] = (characterData.MultiKillCounts[PSC_MultiKillCount] or 0) + 1
+    end
 
     if PSC_MultiKillCount > highestMultiKillAlias then
         PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill = PSC_MultiKillCount
@@ -265,6 +271,7 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
             HighestMultiKill = 0,
+            MultiKillCounts = {},
             GrayKillsCount = 0
         }
     end
