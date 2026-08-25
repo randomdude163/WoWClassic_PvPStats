@@ -2438,8 +2438,8 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     end
 
     if stats.uniqueGuildsKilled ~= nil then
-        statY = addSummaryStatLine(container, "Different guilds killed:", stats.uniqueGuildsKilled, statY,
-            "Number of different guilds whose members you have killed.", false, isLocalPlayer)
+        statY = addSummaryStatLine(container, "Unique guilds killed:", stats.uniqueGuildsKilled, statY,
+            "Number of guilds whose members you have killed.", false, isLocalPlayer)
     end
 
     -- 7. Achievements
