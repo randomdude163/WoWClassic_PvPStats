@@ -1578,6 +1578,7 @@ local function PSC_SummaryStats_CreateState(charactersToProcess)
         tripleKills = 0,
         quadraKills = 0,
         pentaKills = 0,
+        hexaPlusKills = 0,
         weekdayKills = {0, 0, 0, 0, 0, 0, 0},
         hourlyKills = {},
         monthlyKills = {},
@@ -1623,6 +1624,7 @@ local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, char
     state.tripleKills = state.tripleKills + (multiKillCounts[3] or 0)
     state.quadraKills = state.quadraKills + (multiKillCounts[4] or 0)
     state.pentaKills = state.pentaKills + (multiKillCounts[5] or 0)
+    state.hexaPlusKills = state.hexaPlusKills + (multiKillCounts[6] or 0)
 
     if characterKey == PSC_GetCharacterKey() then
         state.currentKillStreak = characterData.CurrentKillStreak
@@ -1922,6 +1924,7 @@ local function PSC_SummaryStats_BuildResult(state)
         tripleKills = state.tripleKills,
         quadraKills = state.quadraKills,
         pentaKills = state.pentaKills,
+        hexaPlusKills = state.hexaPlusKills,
         busiestWeekday = state.busiestWeekday,
         busiestWeekdayKills = state.busiestWeekdayKills,
         busiestHour = state.busiestHour,
@@ -2497,6 +2500,8 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         "Quadra kills recorded since version 4.7.", false, isLocalPlayer)
     statY = addSummaryStatLine(container, "Penta kills:", stats.pentaKills or 0, statY,
         "Penta kills recorded since version 4.7.", false, isLocalPlayer)
+    statY = addSummaryStatLine(container, ">Hexa kills:", stats.hexaPlusKills or 0, statY,
+        "Multi-kills of 6 or more, recorded since version 4.7.", false, isLocalPlayer)
 
     -- 8. Footer Note
     if not isLocalPlayer then

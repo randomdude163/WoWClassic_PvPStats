@@ -47,6 +47,7 @@ end
 
 local function HandleCombatState(inCombatNow)
     if PSC_InCombat and not inCombatNow then
+        PSC_FinalizeMultiKillTally()
         PSC_MultiKillCount = 0
         PSC_InCombat = false
     elseif not PSC_InCombat and inCombatNow then
@@ -116,6 +117,7 @@ function HandlePlayerDeath()
 
     characterData.CurrentKillStreak = 0
     characterData.CurrentKillStreakPlayers = {} -- Clear kill streak players list
+    PSC_FinalizeMultiKillTally()
     PSC_MultiKillCount = 0
     PSC_InCombat = false
 

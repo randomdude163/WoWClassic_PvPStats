@@ -96,8 +96,23 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     table.insert(killData.killLocations, newKillLocation)
 end
 
+-- Records the highest multi-kill reached in the current combat; call right before PSC_MultiKillCount resets to 0
+function PSC_FinalizeMultiKillTally()
+    if PSC_MultiKillCount < 2 then return end
+
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+    if not characterData then return end
+
+    characterData.MultiKillCounts = characterData.MultiKillCounts or {}
+    -- Bucket 6 represents "Hexa or higher" (multi-kills of 6+ are not split further)
+    local finalMultiKillCount = math.min(PSC_MultiKillCount, 6)
+    characterData.MultiKillCounts[finalMultiKillCount] = (characterData.MultiKillCounts[finalMultiKillCount] or 0) + 1
+end
+
 local function UpdateMultiKill()
     if not PSC_InCombat then
+        PSC_FinalizeMultiKillTally()
         PSC_MultiKillCount = 0
         return
     end
@@ -167,11 +182,6 @@ local function UpdateMultiKill()
     local characterKey = PSC_GetCharacterKey()
     local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
     local highestMultiKillAlias = characterData.HighestMultiKill
-
-    characterData.MultiKillCounts = characterData.MultiKillCounts or {}
-    if PSC_MultiKillCount >= 2 and PSC_MultiKillCount <= 5 then
-        characterData.MultiKillCounts[PSC_MultiKillCount] = (characterData.MultiKillCounts[PSC_MultiKillCount] or 0) + 1
-    end
 
     if PSC_MultiKillCount > highestMultiKillAlias then
         PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill = PSC_MultiKillCount

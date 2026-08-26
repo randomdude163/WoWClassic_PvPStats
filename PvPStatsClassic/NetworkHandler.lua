@@ -164,6 +164,7 @@ local SUB_KEY_MAPS = {
         tripleKills = "trk",
         quadraKills = "qk",
         pentaKills = "pk",
+        hexaPlusKills = "hpk",
         uniqueGuildsKilled = "ugk",
         busiestWeekday = "bw",
         busiestWeekdayKills = "bwk",
@@ -316,14 +317,14 @@ local function DeserializeDetailedStats(payload)
         unknownLevelClassData = {},
         deathsByClassData = {}
     }
-    
+
     -- Initialize class charts with 0 to prevent missing chart data
     for class, _ in pairs(CLASS_KEY_MAP) do
         data.classData[class] = 0
         data.unknownLevelClassData[class] = 0
         data.deathsByClassData[class] = 0
     end
-    
+
     for field in string.gmatch(payload, "([^;]+)") do
         local keyStr, values = string.match(field, "([^:]+):(.*)")
         if keyStr and values then
