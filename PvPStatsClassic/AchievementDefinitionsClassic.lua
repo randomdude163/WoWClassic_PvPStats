@@ -3284,6 +3284,44 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
+        id = "bonus_severussnipe_birthday",
+        title = "Severussnipe's Birthday Bash",
+        description = function(a) return ("Kill %d players on August 26th — Severussnipe's birthday"):format(a.targetValue) end,
+        iconID = 133969,
+        achievementPoints = 0,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills on August 26th. No cake was harmed — just %d players who logged in on Severussnipe's birthday and paid for it."):format(a.targetValue, a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsBySpecialDate("severussnipe_birthday")
+        end,
+    },
+    {
+        id = "bonus_hkfarmer_birthday",
+        title = "Hkfarmer's Birthday Bash",
+        description = function(a) return ("Kill %d players on June 12th — Hkfarmer's birthday"):format(a.targetValue) end,
+        iconID = 134176,
+        achievementPoints = 0,
+        targetValue = 10,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d kills on June 12th. The best birthday present you could give Hkfarmer: a fresh pile of corpses."):format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return PSC_CountKillsBySpecialDate("hkfarmer_birthday")
+        end,
+    },
+    {
         id = "zone_alliance_durotar",
         title = "Durotar Dominator",
         description = function(a) return ("Eliminate %d players in Durotar"):format(a.targetValue) end,
