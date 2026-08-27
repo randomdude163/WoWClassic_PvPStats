@@ -2500,7 +2500,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         "Quadra kills recorded since version 4.7.", false, isLocalPlayer)
     statY = addSummaryStatLine(container, "Penta kills:", stats.pentaKills or 0, statY,
         "Penta kills recorded since version 4.7.", false, isLocalPlayer)
-    statY = addSummaryStatLine(container, ">Hexa kills:", stats.hexaPlusKills or 0, statY,
+    statY = addSummaryStatLine(container, ">= Hexa kills:", stats.hexaPlusKills or 0, statY,
         "Multi-kills of 6 or more, recorded since version 4.7.", false, isLocalPlayer)
 
     -- 8. Footer Note
