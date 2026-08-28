@@ -1768,7 +1768,7 @@ local function PSC_SummaryStats_ProcessKillLocation(state, location, levelNum)
 
         local dateInfo = date("*t", timestamp)
         if dateInfo then
-            local dayKey = date("%Y-%m-%d", timestamp)
+            local dayKey = date("%d/%m/%y", timestamp)
             state.dailyKills[dayKey] = (state.dailyKills[dayKey] or 0) + 1
 
             -- Wednesday is the start of the WoW statistics week.
