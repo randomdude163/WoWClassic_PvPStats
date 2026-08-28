@@ -1595,6 +1595,13 @@ local function PSC_SummaryStats_CreateState(charactersToProcess)
         busiestHourKills = 0,
         busiestMonth = "None",
         busiestMonthKills = 0,
+        mostKillsInDay = 0,
+        mostKillsInWeek = 0,
+        mostKillsInDayDate = nil,
+        mostKillsInWeekDate = nil,
+        dailyKills = {},
+        weeklyKills = {},
+        weeklyKillDates = {},
         avgKillsPerDay = 0,
         nemesisName = "None",
         nemesisScore = 0,
@@ -1613,6 +1620,19 @@ local function PSC_SummaryStats_CreateState(charactersToProcess)
     state.timeBoundaries = PSC_CalculateTimePeriodBoundaries()
 
     return state
+end
+
+local function PSC_SummaryStats_GetDayNumber(year, month, day)
+    if month <= 2 then
+        year = year - 1
+        month = month + 12
+    end
+
+    local era = math.floor(year / 400)
+    local yearOfEra = year - era * 400
+    local dayOfYear = math.floor((153 * (month - 3) + 2) / 5) + day - 1
+    local dayOfEra = yearOfEra * 365 + math.floor(yearOfEra / 4) - math.floor(yearOfEra / 100) + dayOfYear
+    return era * 146097 + dayOfEra
 end
 
 local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, characterData)
@@ -1745,6 +1765,21 @@ local function PSC_SummaryStats_ProcessKillLocation(state, location, levelNum)
         if month then
             state.monthlyKills[month] = state.monthlyKills[month] + 1
         end
+
+        local dateInfo = date("*t", timestamp)
+        if dateInfo then
+            local dayKey = date("%Y-%m-%d", timestamp)
+            state.dailyKills[dayKey] = (state.dailyKills[dayKey] or 0) + 1
+
+            -- Wednesday is the start of the WoW statistics week.
+            local dayNumber = PSC_SummaryStats_GetDayNumber(dateInfo.year, dateInfo.month, dateInfo.day)
+            local daysFromWednesday = (dateInfo.wday + 3) % 7
+            local weekKey = dayNumber - daysFromWednesday
+            state.weeklyKills[weekKey] = (state.weeklyKills[weekKey] or 0) + 1
+            if not state.weeklyKillDates[weekKey] then
+                state.weeklyKillDates[weekKey] = date("%Y-%m-%d", timestamp - (daysFromWednesday * 86400))
+            end
+        end
     end
 
     if targetLevel > 0 and playerLevel > 0 then
@@ -1818,6 +1853,28 @@ local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
         if kills > state.busiestMonthKills then
             state.busiestMonthKills = kills
             state.busiestMonth = monthNames[i]
+        end
+    end
+
+    state.mostKillsInDay = 0
+    for _, kills in pairs(state.dailyKills) do
+        if kills > state.mostKillsInDay then
+            state.mostKillsInDay = kills
+        end
+    end
+
+    for day, kills in pairs(state.dailyKills) do
+        if kills == state.mostKillsInDay then
+            state.mostKillsInDayDate = day
+            break
+        end
+    end
+
+    state.mostKillsInWeek = 0
+    for weekKey, kills in pairs(state.weeklyKills) do
+        if kills > state.mostKillsInWeek then
+            state.mostKillsInWeek = kills
+            state.mostKillsInWeekDate = state.weeklyKillDates[weekKey]
         end
     end
 
@@ -1931,6 +1988,10 @@ local function PSC_SummaryStats_BuildResult(state)
         busiestHourKills = state.busiestHourKills,
         busiestMonth = state.busiestMonth,
         busiestMonthKills = state.busiestMonthKills,
+        mostKillsInDay = state.mostKillsInDay,
+        mostKillsInWeek = state.mostKillsInWeek,
+        mostKillsInDayDate = state.mostKillsInDayDate,
+        mostKillsInWeekDate = state.mostKillsInWeekDate,
         avgKillsPerDay = state.avgKillsPerDay,
         killsToday = state.killsToday,
         killsThisWeek = state.killsThisWeek,
@@ -2415,6 +2476,23 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     end
     if stats.killsThisYear or (isLocalPlayer and stats.killsThisYear ~= nil) then
         statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear or 0), statY, "Total player kills this year.", false, isLocalPlayer)
+    end
+
+    if stats.mostKillsInDay or (isLocalPlayer and stats.mostKillsInDay ~= nil) then
+        local dayText = tostring(stats.mostKillsInDay or 0)
+        if stats.mostKillsInDayDate then
+            dayText = dayText .. " (" .. stats.mostKillsInDayDate .. ")"
+        end
+        statY = addSummaryStatLine(container, "Most kills in one day:", dayText, statY,
+            isLocalPlayer and "Your highest number of player kills recorded on a local calendar day." or "Highest number of player kills recorded on a calendar day.", false, isLocalPlayer)
+    end
+    if stats.mostKillsInWeek or (isLocalPlayer and stats.mostKillsInWeek ~= nil) then
+        local weekText = tostring(stats.mostKillsInWeek or 0)
+        if stats.mostKillsInWeekDate then
+            weekText = weekText .. " (week of " .. stats.mostKillsInWeekDate .. ")"
+        end
+        statY = addSummaryStatLine(container, "Most kills in one week:", weekText, statY,
+            isLocalPlayer and "Your highest number of player kills recorded during a Wednesday-to-Tuesday statistics week." or "Highest number of player kills recorded during a Wednesday-to-Tuesday statistics week.", false, isLocalPlayer)
     end
 
     statY = statY - spacing_between_sections
