@@ -1777,7 +1777,7 @@ local function PSC_SummaryStats_ProcessKillLocation(state, location, levelNum)
             local weekKey = dayNumber - daysFromWednesday
             state.weeklyKills[weekKey] = (state.weeklyKills[weekKey] or 0) + 1
             if not state.weeklyKillDates[weekKey] then
-                state.weeklyKillDates[weekKey] = date("%Y-%m-%d", timestamp - (daysFromWednesday * 86400))
+                state.weeklyKillDates[weekKey] = date("%d/%m/%y", timestamp - (daysFromWednesday * 86400))
             end
         end
     end
