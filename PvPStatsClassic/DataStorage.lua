@@ -144,7 +144,7 @@ local function GetHonorRank(unit)
     return 0
 end
 
-local function ConvertGenderToString(genderCode)
+function PSC_ConvertGenderToString(genderCode)
     if genderCode == 2 then
         return "Male"
     elseif genderCode == 3 then
@@ -179,7 +179,7 @@ local function GetPlayerInfoFromUnit(unit)
         class, _ = UnitClass(unit)
         class = class:sub(1, 1):upper() .. class:sub(2):lower()
         race, _ = UnitRace(unit)
-        gender = ConvertGenderToString(UnitSex(unit))
+        gender = PSC_ConvertGenderToString(UnitSex(unit))
         guildName, guildRankName, _ = GetGuildInfo(unit)
         if not guildName then guildName = "" end
         if not guildRankName then guildRankName = "" end
