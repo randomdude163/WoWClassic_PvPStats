@@ -29,6 +29,16 @@ local function D(...)
     end
 end
 
+local function ConvertGenderToString(genderCode)
+    if genderCode == 2 then
+        return "Male"
+    elseif genderCode == 3 then
+        return "Female"
+    else
+        return "Unknown"
+    end
+end
+
 function Network:NormalizeTargetName(targetName)
     if not targetName then
         return nil
