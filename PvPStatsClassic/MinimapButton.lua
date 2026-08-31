@@ -23,7 +23,7 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("PvPStatsClassic", {
         end
     end,
     OnTooltipShow = function(tooltip)
-        tooltip:AddLine("PvP Stats (Classic)")
+        tooltip:AddDoubleLine("PvP Stats (Classic)", "v" .. PSC_GetAddonVersion())
         tooltip:AddLine(" ")
         tooltip:AddLine("|cff87ceebLeft-Click:|r Statistics", 1, 1, 1)
         tooltip:AddLine("|cff87ceebRight-Click:|r History", 1, 1, 1)

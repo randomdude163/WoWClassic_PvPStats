@@ -418,6 +418,7 @@ local function createContainerWithTitle(parent, title, x, y, width, height, line
     local titleText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     titleText:SetPoint("TOPLEFT", 0, 0)
     titleText:SetText(title)
+    container.titleText = titleText
 
     local line = container:CreateTexture(nil, "ARTWORK")
     line:SetPoint("TOPLEFT", 0, -15)
@@ -425,6 +426,90 @@ local function createContainerWithTitle(parent, title, x, y, width, height, line
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
     return container
+end
+
+local function AddSummaryStatsTitleMeta(container, info)
+    if not container or not container.titleText then
+        return
+    end
+
+    local titleText = container.titleText
+    local lastAnchor = titleText
+    local titleInfo = info or {}
+    local allowLocalFallback = titleInfo.allowLocalFallback ~= false
+
+    if allowLocalFallback and not titleInfo.class and not titleInfo.race and not titleInfo.guild then
+        local playerInfo = PSC_GetPlayerInfo(UnitName("player"))
+        titleInfo.class = playerInfo and playerInfo.class or nil
+        titleInfo.race = playerInfo and playerInfo.race or nil
+        titleInfo.gender = playerInfo and playerInfo.gender or nil
+        titleInfo.guild = playerInfo and playerInfo.guild or GetGuildInfo("player") or nil
+    end
+
+    if allowLocalFallback and titleInfo.guild == nil then
+        titleInfo.guild = GetGuildInfo("player") or nil
+    end
+
+    if titleInfo.race and titleInfo.race ~= "Unknown" and titleInfo.gender and titleInfo.gender ~= "Unknown" then
+        local raceIcon = container:CreateTexture(nil, "ARTWORK")
+        raceIcon:SetSize(15, 15)
+        raceIcon:SetPoint("LEFT", lastAnchor, "RIGHT", 6, 0)
+
+        local raceKey = titleInfo.race:gsub(" ", ""):upper() .. "_" .. titleInfo.gender:upper()
+        local raceIconID = RACE_ICON_IDS[raceKey]
+        if raceIconID then
+            raceIcon:SetTexture(raceIconID)
+            raceIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        else
+            raceIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            raceIcon:SetTexCoord(0, 1, 0, 1)
+        end
+
+        if raceIconID and type(raceIconID) == "string" then
+            local raceBorder = container:CreateTexture(nil, "OVERLAY")
+            raceBorder:SetSize(26, 26)
+            raceBorder:SetPoint("CENTER", raceIcon, "CENTER")
+            raceBorder:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+        end
+
+        lastAnchor = raceIcon
+    end
+
+    if titleInfo.class and titleInfo.class ~= "Unknown" then
+        local classIcon = container:CreateTexture(nil, "ARTWORK")
+        classIcon:SetSize(16, 16)
+        classIcon:SetPoint("LEFT", lastAnchor, "RIGHT", 4, 0)
+
+        local classTexture = "Interface\\TargetingFrame\\UI-Classes-Circles"
+        local coords = CLASS_ICON_TCOORDS[titleInfo.class:upper()]
+        if coords then
+            classIcon:SetTexture(classTexture)
+            classIcon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
+        else
+            classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+        end
+
+        local classBorder = container:CreateTexture(nil, "BORDER")
+        classBorder:SetSize(16, 16)
+        classBorder:SetPoint("CENTER", classIcon, "CENTER")
+        classBorder:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+        classBorder:SetColorTexture(0.83, 0.69, 0.22)
+
+        local maskTexture = container:CreateMaskTexture()
+        maskTexture:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        maskTexture:SetSize(16, 16)
+        maskTexture:SetPoint("CENTER", classIcon, "CENTER")
+        classBorder:AddMaskTexture(maskTexture)
+
+        lastAnchor = classIcon
+    end
+
+    if titleInfo.guild and titleInfo.guild ~= "" then
+        local guildText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        guildText:SetPoint("LEFT", lastAnchor, "RIGHT", 6, 0)
+        guildText:SetText("(" .. titleInfo.guild .. ")")
+        guildText:SetTextColor(0.7, 0.7, 0.7)
+    end
 end
 
 local function NormalizeMonthKey(key)
@@ -2594,6 +2679,13 @@ end
 
 local function createSummaryStatsForExternalPlayer(parent, x, y, width, height, stats, playerName, extraData)
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height, width - 20)
+    AddSummaryStatsTitleMeta(container, {
+        class = extraData and (extraData.class or extraData.playerClass),
+        race = extraData and (extraData.race or extraData.playerRace),
+        gender = extraData and (extraData.gender or extraData.playerGender),
+        guild = extraData and extraData.guild,
+        allowLocalFallback = false
+    })
     local contentHeight = PSC_PopulateSummaryStatsContainer(container, stats, false, extraData, playerName)
     container:SetHeight(math.max(height, contentHeight))
     return container
@@ -2601,6 +2693,7 @@ end
 
 local function createSummaryStats(parent, x, y, width, height, stats, guildData)
     local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height, width - 20)
+    AddSummaryStatsTitleMeta(container)
 
     if not stats then
         local charactersToProcess = GetCharactersToProcessForStatistics()

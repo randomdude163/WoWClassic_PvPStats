@@ -77,6 +77,7 @@ local KEY_MAP = {
     level = "l",
     class = "c",
     race = "r",
+    guild = "g",
     faction = "f",
     timestamp = "t",
     addonVersion = "av",
@@ -605,6 +606,7 @@ function Network:BuildDetailedStatsForCharacter(characterKey, characterData)
     result.level = tonumber(charInfo.level) or result.level or 0
     result.class = charInfo.class or result.class or "Unknown"
     result.race = charInfo.race or result.race or "Unknown"
+    result.guild = charInfo.guild or result.guild or ""
 
     local unlockedCount, achievementPoints = GetCharacterAchievementStats(characterKey)
     result.achievementsUnlocked = unlockedCount
@@ -699,6 +701,7 @@ function Network:ConstructPayload(components)
         level = UnitLevel("player"),
         class = PSC_ConvertClassToEnglish(UnitClass("player")),
         race = PSC_ConvertRaceToEnglish(UnitRace("player")),
+        guild = GetGuildInfo("player") or "",
         faction = UnitFactionGroup("player") or "",
         timestamp = GetServerTime(),
         realm = PSC_RealmName,

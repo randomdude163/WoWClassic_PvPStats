@@ -776,6 +776,11 @@ function PSC_RegisterEvents()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
             PSC_CheckBattlegroundStatus()
         elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_GUILD_UPDATE" then
+            -- Refresh the current character's guild info immediately so cached title data does not stay stale
+            if event == "PLAYER_GUILD_UPDATE" then
+                PSC_GetAndStorePlayerInfoFromUnit("player", true)
+            end
+
             -- Only broadcast stats on group/guild change if Network is initialized
             if PVPSC.Network and PVPSC.Network.initialized then
                 PVPSC.Network:BroadcastStats()

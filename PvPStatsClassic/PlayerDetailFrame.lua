@@ -35,7 +35,7 @@ local PVP_RANK_ICONS = {
     [14] = "Interface\\PvPRankBadges\\PvPRank14"
 }
 
-local RACE_ICON_IDS = {
+RACE_ICON_IDS = RACE_ICON_IDS or {
     ["HUMAN_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236448",
     ["HUMAN_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236447",
     ["DWARF_MALE"] = 236444,
