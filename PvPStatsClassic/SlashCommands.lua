@@ -119,6 +119,9 @@ function PSC_SlashCommandHandler(msg)
         -- reload UI
         ReloadUI()
 
+    elseif command == "register_kill_for_current_corpse_target" then
+        PSC_RegisterEyesOfTheBeastCorpseKill()
+
     elseif PSC_Debug then
         if command == "simulatedeath" then
             local killerCount = 1

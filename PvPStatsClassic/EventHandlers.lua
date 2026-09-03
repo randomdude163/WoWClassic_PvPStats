@@ -33,6 +33,20 @@ PSC_RecentlyCountedPriestKills = {}
 local PRIEST_SPIRIT_OF_REDEMPTION_MIN_LEVEL = 30
 local PRIEST_KILL_DEDUP_WINDOW = 20.0 -- 15s Spirit of Redemption + lag margin
 
+-- Eyes of the Beast lets a hunter's pet fight beyond combat log range, so those kills
+-- never generate PARTY_KILL/UNIT_DIED events. While the aura is active we instead watch
+-- "pettarget"'s health directly, which keeps syncing even at extreme range.
+local EYES_OF_THE_BEAST_SPELL_ID = 1002
+local eyesOfTheBeastWatcherActive = false
+local eyesOfTheBeastPetTargetGUID, eyesOfTheBeastPetTargetName
+local eyesOfTheBeastPetTargetWasAlive, eyesOfTheBeastPetTargetDeathHandled
+
+-- Backstop for /psc register_kill_for_current_corpse_target, in case the enemy auto-untargets
+-- on death before the watcher above can credit the kill. Keyed per-GUID so recovering one missed
+-- kill doesn't block recovering a different one moments later.
+local PET_CORPSE_KILL_COMMAND_COOLDOWN = 10.0
+local lastPetCorpseKillCommandTimeByGUID = {}
+
 local function OnPlayerTargetChanged()
     PSC_GetAndStorePlayerInfoFromUnit("target")
     PSC_GetAndStorePlayerInfoFromUnit("targettarget")
@@ -174,7 +188,11 @@ end
 PSC_TrackedNPCs = {
     [349] = "Corporal Keeshan",
     [467] = "The Defias Traitor",
-    [550] = "Defias Messenger"
+    [550] = "Defias Messenger",
+    [442] = "Tarantula",
+    [116] = "Defias Bandit",
+    [732] = "Murloc Lurker",
+    [43] = "Murloc Forager"
 }
 
 function PSC_IsValidTarget(destFlags, destGUID)
@@ -282,6 +300,202 @@ local function ShouldSuppressPriestKillForSpiritOfRedemption(destName)
     return false
 end
 
+local function IsEyesOfTheBeastActive()
+    for i = 1, 40 do
+        local name, _, _, _, _, _, _, _, _, spellId = UnitAura("player", i, "HELPFUL")
+        if PSC_Debug then
+            print("Aura: " .. (name or "nil") .. " spellId: " .. (spellId or "nil"))
+        end
+        if not name then
+            return false
+        end
+        if spellId == EYES_OF_THE_BEAST_SPELL_ID then
+            return true
+        end
+    end
+    return false
+end
+
+local function IsValidEyesOfTheBeastPetTarget(unit)
+    if not UnitExists(unit) or not UnitCanAttack("player", unit) then
+        return false
+    end
+
+    if UnitIsPlayer(unit) then
+        return true
+    end
+
+    local npcID = PSC_GetNPCIDFromGUID(UnitGUID(unit))
+    return npcID ~= nil and PSC_TrackedNPCs[npcID] ~= nil
+end
+
+local function ClearEyesOfTheBeastPetTargetState()
+    eyesOfTheBeastPetTargetGUID, eyesOfTheBeastPetTargetName = nil, nil
+    eyesOfTheBeastPetTargetWasAlive, eyesOfTheBeastPetTargetDeathHandled = nil, nil
+end
+
+local function CreditEyesOfTheBeastKill(destGUID, destName)
+    if not destGUID or not destName then
+        return
+    end
+
+    if PSC_WasKillRecentlyCounted(destGUID) then
+        if PSC_Debug then print("[EOTB] Kill for " .. destName .. " already counted, skipping") end
+        return
+    end
+
+    if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
+        if PSC_Debug then print("BG Mode: Eyes of the Beast pet kill ignored (kill tracking disabled in battlegrounds)") end
+        return
+    end
+
+    local npcID = PSC_GetNPCIDFromGUID(destGUID)
+    if npcID and PSC_TrackedNPCs[npcID] then
+        if PSC_Debug then print("[EOTB] Crediting NPC kill: " .. PSC_TrackedNPCs[npcID]) end
+        PSC_RecentlyCountedKills[destGUID] = GetTime()
+        PSC_RegisterNPCKill(PSC_TrackedNPCs[npcID], npcID)
+        return
+    end
+
+    if strsplit("-", destGUID) ~= "Player" then
+        if PSC_Debug then print("[EOTB] Target " .. destName .. " is not a player or tracked NPC, ignoring") end
+        return
+    end
+
+    if ShouldSuppressPriestKillForSpiritOfRedemption(destName) then
+        if PSC_Debug then print("[EOTB] Kill for " .. destName .. " suppressed (Spirit of Redemption)") end
+        return
+    end
+
+    if PSC_Debug then print("[EOTB] Crediting player kill: " .. destName) end
+    PSC_RecentlyCountedKills[destGUID] = GetTime()
+    PSC_RegisterPlayerKill(destName, "Eyes of the Beast", nil)
+end
+
+-- The pettarget's corpse can keep existing (still "valid") for a while after death, so we can't
+-- use its HP alone to decide whether to (re-)credit a kill once it vanishes or swaps - that flag
+-- alone would re-fire on every later vanish/swap. eyesOfTheBeastPetTargetDeathHandled remembers
+-- that this specific GUID's death was already dealt with, independent of any time window.
+local function HandleEyesOfTheBeastPetTargetDeath()
+    if eyesOfTheBeastPetTargetDeathHandled then return end
+    eyesOfTheBeastPetTargetDeathHandled = true
+    CreditEyesOfTheBeastKill(eyesOfTheBeastPetTargetGUID, eyesOfTheBeastPetTargetName)
+end
+
+-- Called on UNIT_HEALTH("pettarget")/UNIT_TARGET("pet"). Credits a kill the moment the
+-- pet's target goes from alive to dead; the vanish/swap fallback covers cases where we
+-- never see the target at 0 HP directly (e.g. its corpse is released before our next update).
+local function UpdateEyesOfTheBeastPetTarget()
+    if not IsValidEyesOfTheBeastPetTarget("pettarget") then
+        if eyesOfTheBeastPetTargetGUID and eyesOfTheBeastPetTargetWasAlive == false then
+            if PSC_Debug then print("[EOTB] pettarget vanished after dying: " .. (eyesOfTheBeastPetTargetName or "Unknown")) end
+            HandleEyesOfTheBeastPetTargetDeath()
+        elseif eyesOfTheBeastPetTargetGUID and PSC_Debug then
+            print("[EOTB] pettarget no longer valid: " .. (eyesOfTheBeastPetTargetName or "Unknown"))
+        end
+        ClearEyesOfTheBeastPetTargetState()
+        return
+    end
+
+    PSC_GetAndStorePlayerInfoFromUnit("pettarget")
+
+    local guid = UnitGUID("pettarget")
+    local hp = UnitHealth("pettarget") or 0
+    local isDead = UnitIsDead("pettarget") or hp == 0
+
+    if guid ~= eyesOfTheBeastPetTargetGUID then
+        if eyesOfTheBeastPetTargetGUID and eyesOfTheBeastPetTargetWasAlive == false then
+            if PSC_Debug then print("[EOTB] pettarget swapped after dying: " .. (eyesOfTheBeastPetTargetName or "Unknown")) end
+            HandleEyesOfTheBeastPetTargetDeath()
+        end
+        eyesOfTheBeastPetTargetGUID = guid
+        -- UnitName returns name and realm separately; cross-realm players need the "-Realm" suffix
+        -- to match the key PSC_GetAndStorePlayerInfoFromUnit just cached them under above.
+        local petTargetName, petTargetRealm = UnitName("pettarget")
+        eyesOfTheBeastPetTargetName = petTargetRealm and (petTargetName .. "-" .. petTargetRealm) or petTargetName
+        eyesOfTheBeastPetTargetWasAlive = not isDead
+        -- Found already dead (e.g. a pre-existing corpse) -> we never witnessed the kill, so mark it
+        -- handled up front; otherwise a later vanish/swap would wrongly credit it as a fresh kill.
+        eyesOfTheBeastPetTargetDeathHandled = isDead
+        if PSC_Debug then
+            print("[EOTB] pettarget acquired: " .. (eyesOfTheBeastPetTargetName or "Unknown") .. " HP: " .. hp ..
+                (isDead and " (already dead, not crediting)" or ""))
+        end
+        return
+    end
+
+    if eyesOfTheBeastPetTargetWasAlive and isDead then
+        if PSC_Debug then print("[EOTB] pettarget died: " .. (eyesOfTheBeastPetTargetName or "Unknown")) end
+        eyesOfTheBeastPetTargetWasAlive = false
+        HandleEyesOfTheBeastPetTargetDeath()
+    end
+end
+
+local function SetEyesOfTheBeastWatcherActive(active)
+    if active == eyesOfTheBeastWatcherActive then return end
+    eyesOfTheBeastWatcherActive = active
+
+    if PSC_Debug then
+        print("[EOTB] Pet target tracking " .. (active and "activated" or "deactivated"))
+    end
+
+    if active then
+        pvpStatsClassicFrame:RegisterUnitEvent("UNIT_HEALTH", "pettarget")
+        pvpStatsClassicFrame:RegisterUnitEvent("UNIT_TARGET", "pet")
+        UpdateEyesOfTheBeastPetTarget()
+    else
+        pvpStatsClassicFrame:UnregisterEvent("UNIT_HEALTH")
+        pvpStatsClassicFrame:UnregisterEvent("UNIT_TARGET")
+        ClearEyesOfTheBeastPetTargetState()
+    end
+end
+
+local function OnPlayerAuraChanged()
+    SetEyesOfTheBeastWatcherActive(IsEyesOfTheBeastActive())
+end
+
+-- Undocumented recovery command for /psc register_kill_for_current_corpse_target: some enemies
+-- auto-untarget the instant they die, which can clear pettarget before the watcher above ever
+-- observes the alive->dead transition. Bypasses the watcher's own state machine entirely and
+-- credits directly, relying on the shared PSC_WasKillRecentlyCounted guard against double-counting
+-- kills the watcher already caught on its own.
+function PSC_RegisterEyesOfTheBeastCorpseKill()
+    if not eyesOfTheBeastWatcherActive then
+        if PSC_Debug then print("[EOTB] register_kill_for_current_corpse_target: Eyes of the Beast is not active") end
+        return
+    end
+
+    if not UnitExists("pettarget") or not UnitIsPlayer("pettarget")
+        or not UnitCanAttack("player", "pettarget") or not UnitIsDead("pettarget") then
+        if PSC_Debug then print("[EOTB] register_kill_for_current_corpse_target: pet target is not a hostile player corpse") end
+        return
+    end
+
+    local guid = UnitGUID("pettarget")
+    local lastUse = lastPetCorpseKillCommandTimeByGUID[guid]
+    if lastUse and (GetTime() - lastUse) < PET_CORPSE_KILL_COMMAND_COOLDOWN then
+        if PSC_Debug then print("[EOTB] register_kill_for_current_corpse_target: on cooldown for this target") end
+        return
+    end
+    lastPetCorpseKillCommandTimeByGUID[guid] = GetTime()
+
+    PSC_GetAndStorePlayerInfoFromUnit("pettarget")
+    local name, realm = UnitName("pettarget")
+    local destName = realm and (name .. "-" .. realm) or name
+
+    if PSC_Debug then print("[EOTB] Manually registering kill for pet target corpse: " .. destName) end
+    CreditEyesOfTheBeastKill(guid, destName)
+end
+
+function PSC_CleanupPetCorpseKillCommandCooldowns()
+    local cutoff = GetTime() - (PET_CORPSE_KILL_COMMAND_COOLDOWN * 2)
+    for guid, timestamp in pairs(lastPetCorpseKillCommandTimeByGUID) do
+        if timestamp < cutoff then
+            lastPetCorpseKillCommandTimeByGUID[guid] = nil
+        end
+    end
+end
+
 function PSC_ScheduleHunterKillValidation(destGUID, destName, eventType, validationData)
     if not IsHunterAndCanFeignDeath(destName) then
         return false
@@ -307,6 +521,10 @@ function PSC_ScheduleHunterKillValidation(destGUID, destName, eventType, validat
 end
 
 local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
+    if PSC_WasKillRecentlyCounted(destGUID) then
+        return
+    end
+
     if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
         if PSC_Debug then print("BG Mode: Kill tracking disabled in battlegrounds") end
         return
@@ -349,10 +567,8 @@ local function HandlePartyKillEvent(sourceGUID, sourceName, destGUID, destName)
 end
 
 local function HandleUnitDiedEvent(destGUID, destName)
-    if PSC_RecentlyCountedKills[destGUID] then
-        if (GetTime() - PSC_RecentlyCountedKills[destGUID]) < PSC_KILL_TRACKING_WINDOW then
-            return
-        end
+    if PSC_WasKillRecentlyCounted(destGUID) then
+        return
     end
 
     if PSC_CurrentlyInBattleground and not PSC_DB.CountKillsInBattlegrounds then
@@ -686,6 +902,7 @@ local function HandlePlayerEnteringWorld()
     PSC_CheckBattlegroundStatus()
     PSC_InitializeGrayKillsCounter()
     PSC_InitializeSpawnCamperCounter()
+    OnPlayerAuraChanged() -- Resync the Eyes of the Beast watcher in case of a login/reload mid-buff
 
     if UnitIsDeadOrGhost("player") then
         HandlePlayerDeath()
@@ -732,6 +949,7 @@ local function HandlePlayerRegenEnabled()
     PSC_CleanupRecentDamageFromPlayers()
     PSC_CleanupPendingHunterKills()
     PSC_CleanupRecentlyCountedPriestKills()
+    PSC_CleanupPetCorpseKillCommandCooldowns()
     PSC_ClearGUIDCache()
 
     if PVPSC.Network and PVPSC.Network.pendingCombatBroadcast then
@@ -757,6 +975,7 @@ function PSC_RegisterEvents()
     pvpStatsClassicFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     pvpStatsClassicFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
     pvpStatsClassicFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
+    pvpStatsClassicFrame:RegisterUnitEvent("UNIT_AURA", "player")
 
     pvpStatsClassicFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_ENTERING_WORLD" then
@@ -774,6 +993,10 @@ function PSC_RegisterEvents()
             end
         elseif event == "PLAYER_DEAD" then
             HandlePlayerDeath()
+        elseif event == "UNIT_AURA" then
+            OnPlayerAuraChanged()
+        elseif event == "UNIT_HEALTH" or event == "UNIT_TARGET" then
+            UpdateEyesOfTheBeastPetTarget()
         elseif event == "PLAYER_REGEN_DISABLED" then
             HandleCombatState(true)
         elseif event == "PLAYER_REGEN_ENABLED" then

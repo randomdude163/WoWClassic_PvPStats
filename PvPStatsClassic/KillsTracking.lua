@@ -4,9 +4,16 @@ PSC_RecentPlayerDamage = {}
 PSC_ASSIST_DAMAGE_WINDOW = 60.0  -- 45 second window for kill assist credit
 
 PSC_RecentlyCountedKills = {}
-PSC_KILL_TRACKING_WINDOW = 1.0
+PSC_KILL_TRACKING_WINDOW = 2.0
 
 PSC_MultiKillCount = 0
+
+-- Shared guard so the same kill can't be registered twice by different detection paths
+-- (combat log PARTY_KILL/UNIT_DIED vs. the Eyes of the Beast out-of-range watcher)
+function PSC_WasKillRecentlyCounted(destGUID)
+    local countedAt = PSC_RecentlyCountedKills[destGUID]
+    return countedAt ~= nil and (GetTime() - countedAt) < PSC_KILL_TRACKING_WINDOW
+end
 
 -- Helper function to update spawn camper max kills after a new level 1 kill
 local function UpdateSpawnCamperCounter(newKillTimestamp)

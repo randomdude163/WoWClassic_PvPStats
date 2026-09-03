@@ -290,17 +290,17 @@ function PSC_CalculateGrayKills()
     local charData = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
 
     -- Run diagnostics if debug is enabled
-    if PSC_Debug then
-        print("=== Gray Kill Calculation Debug ===")
-        print("Current character: " .. currentCharacterKey)
-        DiagnoseGrayKillCalculation(charData)
-    end
+    -- if PSC_Debug then
+    --     print("=== Gray Kill Calculation Debug ===")
+    --     print("Current character: " .. currentCharacterKey)
+    --     DiagnoseGrayKillCalculation(charData)
+    -- end
 
     local grayKills = CalculateGrayKillsForCharacter(charData)
 
-    if PSC_Debug then
-        print("Final gray kills: " .. grayKills)
-    end
+    -- if PSC_Debug then
+    --     print("Final gray kills: " .. grayKills)
+    -- end
 
     return grayKills
 end
