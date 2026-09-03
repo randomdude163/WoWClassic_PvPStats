@@ -75,6 +75,10 @@ local function SendWarningIfKilledByHighLevelPlayer(killerInfo)
         return
     end
 
+    if not PSC_DB.EnableHighLevelDeathWarning then
+        return
+    end
+
     if not IsInGroup() then
         return
     end
@@ -647,6 +651,10 @@ local function HandlePlayerEnteringWorld()
     -- Initialize announce channel setting if not present (migration for existing users)
     if not PSC_DB.AnnounceChannel then
         PSC_DB.AnnounceChannel = "GROUP"
+    end
+
+    if PSC_DB.EnableHighLevelDeathWarning == nil then
+        PSC_DB.EnableHighLevelDeathWarning = true
     end
 
     -- Initialize what's-new popup tracking
