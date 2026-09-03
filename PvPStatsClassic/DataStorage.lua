@@ -1132,6 +1132,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.SoundPack = "LoL"
     PSC_DB.EnableDeathSounds = false
     PSC_DB.EnableSingleKillSounds = false
+    PSC_DB.EnableKillStreakSoundsAndEmotes = true
     PSC_DB.ShowScoreInPlayerTooltip = true
     PSC_DB.ShowExtendedTooltipInfo = true
     PSC_DB.ShowAccountWideStats = false
@@ -1215,6 +1216,9 @@ function PSC_InitializePlayerKillCounts()
     end
     if PSC_DB.ShowOwnAltsOnLeaderboard == nil then
         PSC_DB.ShowOwnAltsOnLeaderboard = true
+    end
+    if PSC_DB.EnableKillStreakSoundsAndEmotes == nil then
+        PSC_DB.EnableKillStreakSoundsAndEmotes = true
     end
 end
 

@@ -687,7 +687,7 @@ local function CreateSoundsSection(parent, yOffset)
         PSC_DB.SoundPack or "LoL", function(selectedValue)
             PSC_DB.SoundPack = selectedValue
         end)
-    soundPackContainer:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 40, -20)
+    soundPackContainer:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 40, -10)
     parent.soundPackDropdown = soundPackDropdown
 
     if not PSC_DB.EnableMultiKillSounds and soundPackDropdown:GetName() then
@@ -750,6 +750,27 @@ local function CreateSoundsSection(parent, yOffset)
     descriptionText:SetText("League of Legends: Classic structured announcements (Double Kill, Triple Kill, Quadra Kill, Penta Kill, Hexa Kill, Legendary Kill) with iconic LoL sounds for single kills and deaths.\n\nUnreal Tournament: Chaotic variety with multiple random sound options per kill count, offering unpredictable and diverse audio experiences.")
     descriptionText:SetJustifyH("LEFT")
     descriptionText:SetWidth(450)
+
+    local killStreakSoundsHeader = CreateSectionHeader(parent, "Kill Streak Sounds", 0, 0)
+    killStreakSoundsHeader:ClearAllPoints()
+    killStreakSoundsHeader:SetPoint("TOPLEFT", descriptionText, "BOTTOMLEFT", -40, -30)
+
+    local enableKillStreakSoundsCheckbox, _ = CreateCheckbox(parent, "Enable Kill Streak Sounds and Emotes",
+        PSC_DB.EnableKillStreakSoundsAndEmotes, function(checked)
+            PSC_DB.EnableKillStreakSoundsAndEmotes = checked
+        end)
+    enableKillStreakSoundsCheckbox:SetPoint("TOPLEFT", killStreakSoundsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.enableKillStreakSoundsCheckbox = enableKillStreakSoundsCheckbox
+
+    enableKillStreakSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enable Kill Streak Sounds and Emotes")
+        GameTooltip:AddLine("Play a sound, cheer emote, and show the kill streak notification when you reach a kill streak milestone (25, 50, 75, ...). When unchecked, none of these will happen.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableKillStreakSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     return 320
 end
@@ -919,6 +940,10 @@ function PSC_UpdateConfigUI()
 
     if configFrame.enableSingleKillSoundsCheckbox then
         configFrame.enableSingleKillSoundsCheckbox:SetChecked(PSC_DB.EnableSingleKillSounds)
+    end
+
+    if configFrame.enableKillStreakSoundsCheckbox then
+        configFrame.enableKillStreakSoundsCheckbox:SetChecked(PSC_DB.EnableKillStreakSoundsAndEmotes)
     end
 
     if configFrame.soundPackDropdown and configFrame.soundPackDropdown:GetName() then
@@ -1211,6 +1236,7 @@ function PSC_CreateConfigFrame()
     configFrame.enableMultiKillSoundsCheckbox = tabFrames[3].enableMultiKillSoundsCheckbox
     configFrame.enableDeathSoundsCheckbox = tabFrames[3].enableDeathSoundsCheckbox
     configFrame.enableSingleKillSoundsCheckbox = tabFrames[3].enableSingleKillSoundsCheckbox
+    configFrame.enableKillStreakSoundsCheckbox = tabFrames[3].enableKillStreakSoundsCheckbox
     configFrame.soundPackDropdown = tabFrames[3].soundPackDropdown
 
     local resetButtons = CreateActionButtons(tabFrames[4])

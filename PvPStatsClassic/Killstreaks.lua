@@ -154,6 +154,10 @@ local function PlayKillstreakMilestoneSound()
 end
 
 function ShowKillStreakMilestone(killCount)
+    if not PSC_DB.EnableKillStreakSoundsAndEmotes then
+        return
+    end
+
     if not IsKillStreakMilestone(killCount) then
         return
     end
