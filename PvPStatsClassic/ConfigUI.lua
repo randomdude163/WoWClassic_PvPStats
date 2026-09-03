@@ -339,7 +339,7 @@ local function CreatePartyAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local enableHighLevelDeathWarningCheckbox, _ = CreateCheckbox(parent, "Announce high-level killer warnings",
+    local enableHighLevelDeathWarningCheckbox, _ = CreateCheckbox(parent, "Announce kills by high-level players",
         PSC_DB.EnableHighLevelDeathWarning, function(checked)
             PSC_DB.EnableHighLevelDeathWarning = checked
         end)
@@ -348,8 +348,8 @@ local function CreatePartyAnnouncementSection(parent, yOffset)
 
     enableHighLevelDeathWarningCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Announce high-level killer warnings")
-        GameTooltip:AddLine("When checked, announce in party chat when you are killed by a player whose level is unknown.", 1, 1, 1, true)
+        GameTooltip:AddLine("Announce kills by high-level players")
+        GameTooltip:AddLine("When checked, announce in party chat when you are killed by a ?? player.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     enableHighLevelDeathWarningCheckbox:SetScript("OnLeave", function()
@@ -359,7 +359,7 @@ end
 
 local function CreateAnnouncementSection(parent, yOffset)
 
-    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -195)
+    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -160)
 
     local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode", PSC_DB.AutoBattlegroundMode,
         function(checked)
@@ -450,7 +450,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -350)
+    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -315)
 
     local showKillMilestonesCheckbox, _ = CreateCheckbox(parent, "Show kill milestones", PSC_DB.ShowKillMilestones,
         function(checked)
@@ -1253,7 +1253,7 @@ function PSC_CreateConfigFrame()
     configFrame.tooltipExtendedInfoCheckbox = tabFrames[1].tooltipExtendedInfoCheckbox
     configFrame.announceChannelDropdown = tabFrames[2].announceChannelDropdown
 
-    configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -260)
+    configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -240)
 
     CreateSoundsSection(tabFrames[3], -10)
     configFrame.enableMultiKillSoundsCheckbox = tabFrames[3].enableMultiKillSoundsCheckbox
