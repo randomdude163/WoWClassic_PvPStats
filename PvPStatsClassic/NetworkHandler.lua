@@ -812,7 +812,7 @@ function Network:BroadcastStats(providedStats)
     if PSC_Debug then
         local payloadSize = #payload
         local channelCount = #distributionList
-        print(string.format("|cFFFFD700[PVPSC Network]|r Stats Size: %dB x %d chans. Interval: %.1fs",
+        DebugPrint(string.format("Stats Size: %dB x %d chans. Interval: %.1fs",
             payloadSize, channelCount, self.MIN_BROADCAST_INTERVAL))
     end
 
