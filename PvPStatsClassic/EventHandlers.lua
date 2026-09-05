@@ -638,6 +638,14 @@ local function HandleUnitDiedEvent(destGUID, destName)
 
     local playerDamage = PSC_RecentPlayerDamage[destGUID]
     if playerDamage and (GetTime() - playerDamage.timestamp) <= PSC_ASSIST_DAMAGE_WINDOW then
+        local lastAssistTime = PSC_LastAssistCreditTime[destGUID]
+        if lastAssistTime and playerDamage.timestamp <= lastAssistTime then
+            if PSC_Debug then
+                print("Assist kill ignored for " .. destName .. ": no new action against them since the last assist")
+            end
+            return
+        end
+
         if playerDamage.totalDamage > 0 then
             if PSC_CurrentlyInBattleground and not PSC_DB.CountAssistsInBattlegrounds then
                 if PSC_Debug then
@@ -651,6 +659,7 @@ local function HandleUnitDiedEvent(destGUID, destName)
             end
 
             PSC_RecentlyCountedKills[destGUID] = GetTime()
+            PSC_LastAssistCreditTime[destGUID] = GetTime()
             local npcID = PSC_GetNPCIDFromGUID(destGUID)
             if npcID and PSC_TrackedNPCs[npcID] then
                 PSC_RegisterNPCKill(PSC_TrackedNPCs[npcID], npcID)
@@ -950,6 +959,7 @@ local function HandlePlayerRegenEnabled()
     PSC_CleanupPendingHunterKills()
     PSC_CleanupRecentlyCountedPriestKills()
     PSC_CleanupPetCorpseKillCommandCooldowns()
+    PSC_CleanupLastAssistCreditTimes()
     PSC_ClearGUIDCache()
 
     if PVPSC.Network and PVPSC.Network.pendingCombatBroadcast then
