@@ -440,7 +440,7 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.7 DEBUG"
+    return "4.7"
 end
 
 -- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)
