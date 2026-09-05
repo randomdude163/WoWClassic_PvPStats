@@ -2764,6 +2764,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     for hour = 0, 23 do
         hourlyData[hour] = 0
     end
+    local redridgeLevel15To25Kills = 0 -- Feeds the "bonus_next_redridgeguy" achievement without a separate full-table scan
 
     -- Ensure all classes, races, genders are present with at least 0
     local allRaces = {"Human", "Dwarf", "Night Elf", "Gnome", "Orc", "Undead", "Troll", "Tauren"}
@@ -2781,7 +2782,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     if not db.PlayerKillCounts.Characters then
-        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData
+        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills
     end
 
     for _, characterData in pairs(charactersToProcess) do
@@ -2846,10 +2847,16 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                             genderData[gender] = (genderData[gender] or 0) + kills
                         end
 
+                        local isVictimLevel15To25 = levelNum >= 15 and levelNum <= 25
+
                         if killData.killLocations and #killData.killLocations > 0 then
                             for _, location in ipairs(killData.killLocations) do
                                 local zone = location.zone or "Unknown"
                                 zoneData[zone] = (zoneData[zone] or 0) + 1
+
+                                if isVictimLevel15To25 and zone == "Redridge Mountains" then
+                                    redridgeLevel15To25Kills = redridgeLevel15To25Kills + 1
+                                end
 
                                 if location.timestamp then
                                     local hourStr = date("%H", location.timestamp)
@@ -2876,7 +2883,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills
 end
 
 function PSC_CalculateHourlyStatistics(charactersToProcess)

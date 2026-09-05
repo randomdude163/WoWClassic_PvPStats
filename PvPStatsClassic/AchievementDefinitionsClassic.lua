@@ -928,6 +928,26 @@ AchievementSystem.achievementsClassic = {
             return PSC_GetZoneKills(stats, PSC_ZONE_TRANSLATIONS_CLASSIC, "Redridge Mountains")
         end,
     },
+    {
+        id = "bonus_next_redridgeguy",
+        title = "The next Redridgeguy",
+        description = function(a) return ("Eliminate %d level 15-25 players in Redridge Mountains"):format(a.targetValue) end,
+        iconID = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236452",
+        achievementPoints = 0,
+        targetValue = 15000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d leveling Alliance sent back to Lakeshire in tears. Wall-jumps into unreachable ledges, safe spots requiring a physics degree, and a wardrobe of vanity items nobody asked for—all for the stream. Somewhere out there, a dozen streamsnipers are still circling Redridge, and you're still one step ahead of them.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.redridgeLevel15To25Kills or 0
+        end,
+    },
         {
         id = "bonus_points_2000",
         title = "Point Collector",
