@@ -1,3 +1,12 @@
+v4.7:
+- Pet kills using Eyes of the Beast are now tracked correctly
+- New achievements
+- Cleaned up the settings menu
+- All popups, sounds and emotes can now be turned off or on in the settings
+- Leaderboard now handles more than 100 entries properly
+- Added lots of new stats to the statistics window
+- Fixed non-party assist kills being incorrectly awarded in a specific scenario
+
 v4.6:
 - Replaced K/D by Class chart with Win Rate by Class (kills / (kills + deaths)) for more meaningful class matchup data
 - Kills by Guild list now capped at top 50 entries for performance improvements
