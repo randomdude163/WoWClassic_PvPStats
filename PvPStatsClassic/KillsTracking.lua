@@ -3,6 +3,11 @@ local addonName, PVPSC = ...
 PSC_RecentPlayerDamage = {}
 PSC_ASSIST_DAMAGE_WINDOW = 60.0  -- 45 second window for kill assist credit
 
+-- An enemy can die and be resurrected (e.g. Soulstone) within the same assist window; without this,
+-- a leftover/incidental action recorded against their GUID could credit a second assist for a kill
+-- the player did nothing for. Requires a fresh qualifying action after each assist is credited.
+PSC_LastAssistCreditTime = {}
+
 PSC_RecentlyCountedKills = {}
 PSC_KILL_TRACKING_WINDOW = 2.0
 
@@ -13,6 +18,15 @@ PSC_MultiKillCount = 0
 function PSC_WasKillRecentlyCounted(destGUID)
     local countedAt = PSC_RecentlyCountedKills[destGUID]
     return countedAt ~= nil and (GetTime() - countedAt) < PSC_KILL_TRACKING_WINDOW
+end
+
+function PSC_CleanupLastAssistCreditTimes()
+    local cutoff = GetTime() - PSC_ASSIST_DAMAGE_WINDOW
+    for guid, timestamp in pairs(PSC_LastAssistCreditTime) do
+        if timestamp < cutoff then
+            PSC_LastAssistCreditTime[guid] = nil
+        end
+    end
 end
 
 -- Helper function to update spawn camper max kills after a new level 1 kill

@@ -1138,7 +1138,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.ShowExtendedTooltipInfo = true
     PSC_DB.ShowAccountWideStats = false
     PSC_DB.ShowOwnAltsOnLeaderboard = true
-    PSC_DB.CapAchievementProgress = false
+    PSC_DB.CapAchievementProgress = true
 
     PSC_DB.KillAnnounceMessage = "Enemyplayername killed! x#"
     PSC_DB.KillStreakEndedMessage = "My kill streak of STREAKCOUNT has ended!"

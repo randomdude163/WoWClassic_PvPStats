@@ -107,7 +107,7 @@ local function CreatePlayerRow(parent, playerData, yOffset, isAlternate)
 
     local nameText = rowButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     nameText:SetPoint("TOPLEFT", 5, -2)
-    nameText:SetText(playerData.name)
+    nameText:SetText(playerData.name:match("^([^-]+)") or playerData.name)
     nameText:SetWidth(80)
     nameText:SetJustifyH("LEFT")
 
