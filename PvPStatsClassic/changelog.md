@@ -1,10 +1,10 @@
 v4.7:
-- Pet kills using Eyes of the Beast are now tracked correctly
+- Pet kills using Eyes of the Beast are now tracked correctly when the pet is far away from the hunter
 - New achievements
 - Cleaned up the settings menu
 - All popups, sounds and emotes can now be turned off or on in the settings
 - Leaderboard now handles more than 100 entries properly
-- Added lots of new stats to the statistics window
+- Added new stats to the statistics window
 - Fixed non-party assist kills being incorrectly awarded in a specific scenario
 
 v4.6:

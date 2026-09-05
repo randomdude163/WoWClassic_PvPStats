@@ -1916,7 +1916,7 @@ end
 
 function PSC_ShowWhatsNewPopup(titleText, messageText, onCloseCallback, linkUrl)
     local frame = CreateFrame("Frame", "PSC_WhatsNewPopup", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    frame:SetSize(700, 280)
+    frame:SetSize(700, 300)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     frame:SetFrameStrata("DIALOG")
     frame:SetMovable(true)

@@ -929,7 +929,7 @@ local function HandlePlayerEnteringWorld()
     local currentVersion = PSC_GetAddonVersion()
     if PSC_DB.WhatsNewPopupVersion ~= currentVersion then
         local title = "PvP Stats v" .. currentVersion .. " - What's new:"
-        local message = "-K/D by Class replaced with Win Rate by Class for more meaningful class matchup data\n-Small performance improvements in the Statistics window\n\nEnjoy!"
+        local message = "- Pet kills using Eyes of the Beast are now tracked correctly when the pet is far\n   away from the hunter.\n\n- New achievements\n\n- Cleaned up the settings menu\n\n- Added new stats to the statistics window\n\n- All popups, sounds and emotes can now be turned off or on in the settings\n\nEnjoy!"
         local discordUrl = "https://discord.gg/ZBaN2xk5h3"
         PSC_ShowWhatsNewPopup(title, message, function()
             PSC_DB.WhatsNewPopupShown = true
