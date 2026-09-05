@@ -198,7 +198,7 @@ local function CreateDropdown(parent, labelText, options, initialValue, onSelect
     return container, dropdown
 end
 
-local function CreateAnnouncementSection(parent, yOffset)
+local function CreatePartyAnnouncementSection(parent, yOffset)
     local announcementSettingsHeader = CreateSectionHeader(parent, "Party Chat Announcements", 20, yOffset)
 
     local enableKillAnnounceCheckbox, _ = CreateCheckbox(parent, "Announce kills", PSC_DB.EnableKillAnnounceMessages,
@@ -339,7 +339,27 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -195)
+    local enableHighLevelDeathWarningCheckbox, _ = CreateCheckbox(parent, "Announce kills by high-level players",
+        PSC_DB.EnableHighLevelDeathWarning, function(checked)
+            PSC_DB.EnableHighLevelDeathWarning = checked
+        end)
+    enableHighLevelDeathWarningCheckbox:SetPoint("TOPLEFT", enableRecordAnnounceCheckbox, "BOTTOMLEFT", 0, -CHECKBOX_SPACING)
+    parent.enableHighLevelDeathWarningCheckbox = enableHighLevelDeathWarningCheckbox
+
+    enableHighLevelDeathWarningCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Announce kills by high-level players")
+        GameTooltip:AddLine("When checked, announce in party chat when you are killed by a ?? player.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableHighLevelDeathWarningCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
+local function CreateAnnouncementSection(parent, yOffset)
+
+    local battlegroundModeHeader = CreateSectionHeader(parent, "Battleground Mode", 20, -160)
 
     local autoBGModeCheckbox, _ = CreateCheckbox(parent, "Auto Battleground Mode", PSC_DB.AutoBattlegroundMode,
         function(checked)
@@ -430,7 +450,7 @@ local function CreateAnnouncementSection(parent, yOffset)
         GameTooltip:Hide()
     end)
 
-    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -350)
+    local killMilestonesHeader = CreateSectionHeader(parent, "Kill Milestones", 20, -315)
 
     local showKillMilestonesCheckbox, _ = CreateCheckbox(parent, "Show kill milestones", PSC_DB.ShowKillMilestones,
         function(checked)
@@ -562,7 +582,7 @@ local function CreateAnnouncementSection(parent, yOffset)
     testButton:SetPoint("TOPLEFT", milestoneAutoHideTimeSlider, "BOTTOMLEFT", -2, -20)
     parent.milestoneTestButton = testButton
 
-    local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -510)
+    local generalSectionHeader = CreateSectionHeader(parent, "General", 20, -10)
 
     local tooltipKillInfoCheckbox, _ = CreateCheckbox(parent, "Show kills in mouseover tooltips",
         PSC_DB.ShowScoreInPlayerTooltip, function(checked)
@@ -687,7 +707,7 @@ local function CreateSoundsSection(parent, yOffset)
         PSC_DB.SoundPack or "LoL", function(selectedValue)
             PSC_DB.SoundPack = selectedValue
         end)
-    soundPackContainer:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 40, -20)
+    soundPackContainer:SetPoint("TOPLEFT", enableMultiKillSoundsCheckbox, "BOTTOMLEFT", 40, -10)
     parent.soundPackDropdown = soundPackDropdown
 
     if not PSC_DB.EnableMultiKillSounds and soundPackDropdown:GetName() then
@@ -750,6 +770,27 @@ local function CreateSoundsSection(parent, yOffset)
     descriptionText:SetText("League of Legends: Classic structured announcements (Double Kill, Triple Kill, Quadra Kill, Penta Kill, Hexa Kill, Legendary Kill) with iconic LoL sounds for single kills and deaths.\n\nUnreal Tournament: Chaotic variety with multiple random sound options per kill count, offering unpredictable and diverse audio experiences.")
     descriptionText:SetJustifyH("LEFT")
     descriptionText:SetWidth(450)
+
+    local killStreakSoundsHeader = CreateSectionHeader(parent, "Kill Streak Sounds", 0, 0)
+    killStreakSoundsHeader:ClearAllPoints()
+    killStreakSoundsHeader:SetPoint("TOPLEFT", descriptionText, "BOTTOMLEFT", -40, -30)
+
+    local enableKillStreakSoundsCheckbox, _ = CreateCheckbox(parent, "Enable Kill Streak Sounds and Emotes",
+        PSC_DB.EnableKillStreakSoundsAndEmotes, function(checked)
+            PSC_DB.EnableKillStreakSoundsAndEmotes = checked
+        end)
+    enableKillStreakSoundsCheckbox:SetPoint("TOPLEFT", killStreakSoundsHeader, "BOTTOMLEFT", 0, -CHECKBOX_SPACING - 10)
+    parent.enableKillStreakSoundsCheckbox = enableKillStreakSoundsCheckbox
+
+    enableKillStreakSoundsCheckbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Enable Kill Streak Sounds and Emotes")
+        GameTooltip:AddLine("Play a sound, cheer emote, and show the kill streak notification when you reach a kill streak milestone (25, 50, 75, ...). When unchecked, none of these will happen.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    enableKillStreakSoundsCheckbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     return 320
 end
@@ -888,6 +929,7 @@ function PSC_UpdateConfigUI()
     end
 
     configFrame.autoBGModeCheckbox:SetChecked(PSC_DB.AutoBattlegroundMode)
+    configFrame.enableHighLevelDeathWarningCheckbox:SetChecked(PSC_DB.EnableHighLevelDeathWarning)
     configFrame.assistsInBGCheckbox:SetChecked(PSC_DB.CountAssistsInBattlegrounds)
     configFrame.manualBGModeCheckbox:SetChecked(PSC_DB.ForceBattlegroundMode)
     configFrame.tooltipKillInfoCheckbox:SetChecked(PSC_DB.ShowScoreInPlayerTooltip)
@@ -919,6 +961,10 @@ function PSC_UpdateConfigUI()
 
     if configFrame.enableSingleKillSoundsCheckbox then
         configFrame.enableSingleKillSoundsCheckbox:SetChecked(PSC_DB.EnableSingleKillSounds)
+    end
+
+    if configFrame.enableKillStreakSoundsCheckbox then
+        configFrame.enableKillStreakSoundsCheckbox:SetChecked(PSC_DB.EnableKillStreakSoundsAndEmotes)
     end
 
     if configFrame.soundPackDropdown and configFrame.soundPackDropdown:GetName() then
@@ -1181,36 +1227,39 @@ function PSC_CreateConfigFrame()
     local tabFrames = CreateTabSystem(configFrame)
 
     local currentY = -10
-    local announcementHeight = CreateAnnouncementSection(tabFrames[1], currentY)
+    CreateAnnouncementSection(tabFrames[1], currentY)
+    CreatePartyAnnouncementSection(tabFrames[2], currentY)
 
     configFrame.autoBGModeCheckbox = tabFrames[1].autoBGModeCheckbox
+    configFrame.enableHighLevelDeathWarningCheckbox = tabFrames[2].enableHighLevelDeathWarningCheckbox
     configFrame.assistsInBGCheckbox = tabFrames[1].assistsInBGCheckbox
     configFrame.manualBGModeCheckbox = tabFrames[1].manualBGModeCheckbox
     configFrame.tooltipKillInfoCheckbox = tabFrames[1].tooltipKillInfoCheckbox
     configFrame.showKillMilestonesCheckbox = tabFrames[1].showKillMilestonesCheckbox
     configFrame.killMilestoneSoundsCheckbox = tabFrames[1].killMilestoneSoundsCheckbox
     configFrame.showMilestoneForFirstKillCheckbox = tabFrames[1].showMilestoneForFirstKillCheckbox
-    configFrame.enableKillAnnounceCheckbox = tabFrames[1].enableKillAnnounceCheckbox
-    configFrame.includePlayerDetailsCheckbox = tabFrames[1].includePlayerDetailsCheckbox
-    configFrame.includeGuildDetailsCheckbox = tabFrames[1].includeGuildDetailsCheckbox
-    configFrame.enableRecordAnnounceCheckbox = tabFrames[1].enableRecordAnnounceCheckbox
-    configFrame.enableMultiKillAnnounceCheckbox = tabFrames[1].enableMultiKillAnnounceCheckbox
+    configFrame.enableKillAnnounceCheckbox = tabFrames[2].enableKillAnnounceCheckbox
+    configFrame.includePlayerDetailsCheckbox = tabFrames[2].includePlayerDetailsCheckbox
+    configFrame.includeGuildDetailsCheckbox = tabFrames[2].includeGuildDetailsCheckbox
+    configFrame.enableRecordAnnounceCheckbox = tabFrames[2].enableRecordAnnounceCheckbox
+    configFrame.enableMultiKillAnnounceCheckbox = tabFrames[2].enableMultiKillAnnounceCheckbox
     configFrame.showAccountWideStatsCheckbox = tabFrames[1].showAccountWideStatsCheckbox
     configFrame.autoOpenKillStreakCheckbox = tabFrames[1].autoOpenKillStreakCheckbox
     configFrame.trackBGKillsCheckbox = tabFrames[1].trackBGKillsCheckbox
     configFrame.trackBGDeathsCheckbox = tabFrames[1].trackBGDeathsCheckbox
     configFrame.milestoneIntervalSlider = tabFrames[1].milestoneIntervalSlider
     configFrame.milestoneAutoHideTimeSlider = tabFrames[1].milestoneAutoHideTimeSlider
-    configFrame.multiKillSlider = tabFrames[1].multiKillSlider
+    configFrame.multiKillSlider = tabFrames[2].multiKillSlider
     configFrame.tooltipExtendedInfoCheckbox = tabFrames[1].tooltipExtendedInfoCheckbox
-    configFrame.announceChannelDropdown = tabFrames[1].announceChannelDropdown
+    configFrame.announceChannelDropdown = tabFrames[2].announceChannelDropdown
 
-    configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -10)
+    configFrame.editBoxes = CreateMessageTemplatesSection(tabFrames[2], -240)
 
     CreateSoundsSection(tabFrames[3], -10)
     configFrame.enableMultiKillSoundsCheckbox = tabFrames[3].enableMultiKillSoundsCheckbox
     configFrame.enableDeathSoundsCheckbox = tabFrames[3].enableDeathSoundsCheckbox
     configFrame.enableSingleKillSoundsCheckbox = tabFrames[3].enableSingleKillSoundsCheckbox
+    configFrame.enableKillStreakSoundsCheckbox = tabFrames[3].enableKillStreakSoundsCheckbox
     configFrame.soundPackDropdown = tabFrames[3].soundPackDropdown
 
     local resetButtons = CreateActionButtons(tabFrames[4])

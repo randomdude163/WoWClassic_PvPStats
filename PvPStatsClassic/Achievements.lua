@@ -248,7 +248,7 @@ function PSC_GetStatsForAchievements()
     local charactersToProcess = {}
     local currentCharacterKey = PSC_GetCharacterKey()
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData = PSC_CalculateBarChartStatistics(charactersToProcess)
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills = PSC_CalculateBarChartStatistics(charactersToProcess)
     local summaryStats = PSC_CalculateSummaryStatistics(charactersToProcess)
 
     -- Calculate guild achievement stats
@@ -266,6 +266,8 @@ function PSC_GetStatsForAchievements()
         maxSameGuildKills = maxSameGuildKills,
         uniqueGuildsKilled = uniqueGuildsKilled,
         hourlyData = hourlyData,
+        redridgeLevel15To25Kills = redridgeLevel15To25Kills,
+        redridgeLevel60To70Kills = redridgeLevel60To70Kills,
         totalKills = summaryStats.totalKills,
         uniqueKills = summaryStats.uniqueKills,
         highestKillStreak = summaryStats.highestKillStreak,

@@ -410,7 +410,7 @@ local function calculateChartHeight(data, includeZeroKeys)
     return 30 + (entries * (UI.BAR.HEIGHT + UI.BAR.SPACING)) + 15
 end
 
-local function createContainerWithTitle(parent, title, x, y, width, height)
+local function createContainerWithTitle(parent, title, x, y, width, height, lineWidth)
     local container = CreateFrame("Frame", nil, parent)
     container:SetSize(width, height)
     container:SetPoint("TOPLEFT", x, y)
@@ -418,13 +418,98 @@ local function createContainerWithTitle(parent, title, x, y, width, height)
     local titleText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     titleText:SetPoint("TOPLEFT", 0, 0)
     titleText:SetText(title)
+    container.titleText = titleText
 
     local line = container:CreateTexture(nil, "ARTWORK")
     line:SetPoint("TOPLEFT", 0, -15)
-    line:SetSize(width, 1)
+    line:SetSize(lineWidth or width, 1)
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
 
     return container
+end
+
+local function AddSummaryStatsTitleMeta(container, info)
+    if not container or not container.titleText then
+        return
+    end
+
+    local titleText = container.titleText
+    local lastAnchor = titleText
+    local titleInfo = info or {}
+    local allowLocalFallback = titleInfo.allowLocalFallback ~= false
+
+    if allowLocalFallback and not titleInfo.class and not titleInfo.race and not titleInfo.guild then
+        local playerInfo = PSC_GetPlayerInfo(UnitName("player"))
+        titleInfo.class = playerInfo and playerInfo.class or nil
+        titleInfo.race = playerInfo and playerInfo.race or nil
+        titleInfo.gender = playerInfo and playerInfo.gender or nil
+        titleInfo.guild = playerInfo and playerInfo.guild or GetGuildInfo("player") or nil
+    end
+
+    if allowLocalFallback and titleInfo.guild == nil then
+        titleInfo.guild = GetGuildInfo("player") or nil
+    end
+
+    if titleInfo.race and titleInfo.race ~= "Unknown" and titleInfo.gender and titleInfo.gender ~= "Unknown" then
+        local raceIcon = container:CreateTexture(nil, "ARTWORK")
+        raceIcon:SetSize(15, 15)
+        raceIcon:SetPoint("LEFT", lastAnchor, "RIGHT", 6, 0)
+
+        local raceKey = titleInfo.race:gsub(" ", ""):upper() .. "_" .. titleInfo.gender:upper()
+        local raceIconID = RACE_ICON_IDS[raceKey]
+        if raceIconID then
+            raceIcon:SetTexture(raceIconID)
+            raceIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        else
+            raceIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            raceIcon:SetTexCoord(0, 1, 0, 1)
+        end
+
+        if raceIconID and type(raceIconID) == "string" then
+            local raceBorder = container:CreateTexture(nil, "OVERLAY")
+            raceBorder:SetSize(26, 26)
+            raceBorder:SetPoint("CENTER", raceIcon, "CENTER")
+            raceBorder:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+        end
+
+        lastAnchor = raceIcon
+    end
+
+    if titleInfo.class and titleInfo.class ~= "Unknown" then
+        local classIcon = container:CreateTexture(nil, "ARTWORK")
+        classIcon:SetSize(16, 16)
+        classIcon:SetPoint("LEFT", lastAnchor, "RIGHT", 4, 0)
+
+        local classTexture = "Interface\\TargetingFrame\\UI-Classes-Circles"
+        local coords = CLASS_ICON_TCOORDS[titleInfo.class:upper()]
+        if coords then
+            classIcon:SetTexture(classTexture)
+            classIcon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
+        else
+            classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+        end
+
+        local classBorder = container:CreateTexture(nil, "BORDER")
+        classBorder:SetSize(16, 16)
+        classBorder:SetPoint("CENTER", classIcon, "CENTER")
+        classBorder:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+        classBorder:SetColorTexture(0.83, 0.69, 0.22)
+
+        local maskTexture = container:CreateMaskTexture()
+        maskTexture:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        maskTexture:SetSize(16, 16)
+        maskTexture:SetPoint("CENTER", classIcon, "CENTER")
+        classBorder:AddMaskTexture(maskTexture)
+
+        lastAnchor = classIcon
+    end
+
+    if titleInfo.guild and titleInfo.guild ~= "" then
+        local guildText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        guildText:SetPoint("LEFT", lastAnchor, "RIGHT", 6, 0)
+        guildText:SetText("(" .. titleInfo.guild .. ")")
+        guildText:SetTextColor(0.7, 0.7, 0.7)
+    end
 end
 
 local function NormalizeMonthKey(key)
@@ -734,7 +819,7 @@ local function createBar(container, entry, index, maxValue, total, titleType, di
     valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
 
     local percentage = (total > 0) and (entry.value / total * 100) or 0
-    local valueText = entry.value .. " (" .. string.format("%.1f", percentage) .. "%)"
+    local valueText = entry.value .. " (" .. PSC_FormatPercent(percentage, 1) .. ")"
     valueLabel:SetText(valueText)
 
     local estimatedTextWidth = string.len(valueText) * 6
@@ -889,6 +974,15 @@ function PSC_GetWinPercentageColor(pct)
     end
 end
 
+function PSC_FormatPercent(pct, decimals)
+    decimals = decimals or 2
+    if math.abs(pct - 100) < 1e-6 then
+        return "100%"
+    end
+    local fmt = "%." .. tostring(decimals) .. "f%%"
+    return string.format(fmt, pct)
+end
+
 local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
     if not kdData then
         local container = createContainerWithTitle(parent, "Win Rate by Class", x, y, width, 45)
@@ -955,7 +1049,7 @@ local function createKDByClassBarChart(parent, x, y, width, kdData, rawData)
 
         local valueLabel = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         valueLabel:SetPoint("LEFT", bar, "RIGHT", UI.BAR.TEXT_OFFSET, 0)
-        valueLabel:SetText(string.format("%.2f%%", entry.value * 100))
+        valueLabel:SetText(PSC_FormatPercent(entry.value * 100, 2))
     end
 
     return container, height
@@ -1237,7 +1331,7 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
 
         local yLabel = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         yLabel:SetPoint("RIGHT", container, "TOPLEFT", chartLeft - 8, yPos)
-        yLabel:SetText(string.format("%.0f%%", percent))
+        yLabel:SetText(PSC_FormatPercent(percent, 1))
     end
 
     local xStep = (monthCount > 1) and (chartWidth / (monthCount - 1)) or 0
@@ -1336,17 +1430,17 @@ local function createMonthlyClassPercentageChart(parent, x, y, width, disableCli
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                         GameTooltip:SetText(className, color.r, color.g, color.b)
                         GameTooltip:AddLine(PSC_FormatMonthBucketLabel(monthBucket), 1, 1, 1)
-                        GameTooltip:AddLine(string.format("Share: %.1f%%", value), 1, 1, 1)
+                        GameTooltip:AddLine("Share: " .. PSC_FormatPercent(value, 2), 1, 1, 1)
                         GameTooltip:AddLine("Kills: " .. classMonthKills .. " / " .. totalMonthKills, 1, 1, 1)
 
                         if previousValue ~= nil then
                             local delta = value - previousValue
                             local deltaAbs = math.abs(delta)
-                            local deltaText = string.format("%.1f", deltaAbs):gsub("%.0$", "")
+                            local deltaText = PSC_FormatPercent(deltaAbs, 2)
                             if delta > 0 then
-                                GameTooltip:AddLine(string.format("Delta vs %s: %s%% increase", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 0.3, 1, 0.3, true)
+                                GameTooltip:AddLine(string.format("Delta vs %s: %s increase", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 0.3, 1, 0.3, true)
                             elseif delta < 0 then
-                                GameTooltip:AddLine(string.format("Delta vs %s: %s%% decrease", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 1, 0.3, 0.3, true)
+                                GameTooltip:AddLine(string.format("Delta vs %s: %s decrease", PSC_FormatMonthBucketLabel(previousMonthBucket), deltaText), 1, 0.3, 0.3, true)
                             else
                                 GameTooltip:AddLine(string.format("Delta vs %s: no change", PSC_FormatMonthBucketLabel(previousMonthBucket)), 0.85, 0.85, 0.85, true)
                             end
@@ -1565,6 +1659,11 @@ local function PSC_SummaryStats_CreateState(charactersToProcess)
         currentKillStreak = 0,
         highestMultiKill = 0,
         highestMultiKillCharacter = "",
+        doubleKills = 0,
+        tripleKills = 0,
+        quadraKills = 0,
+        pentaKills = 0,
+        hexaPlusKills = 0,
         weekdayKills = {0, 0, 0, 0, 0, 0, 0},
         hourlyKills = {},
         monthlyKills = {},
@@ -1581,6 +1680,13 @@ local function PSC_SummaryStats_CreateState(charactersToProcess)
         busiestHourKills = 0,
         busiestMonth = "None",
         busiestMonthKills = 0,
+        mostKillsInDay = 0,
+        mostKillsInWeek = 0,
+        mostKillsInDayDate = nil,
+        mostKillsInWeekDate = nil,
+        dailyKills = {},
+        weeklyKills = {},
+        weeklyKillDates = {},
         avgKillsPerDay = 0,
         nemesisName = "None",
         nemesisScore = 0,
@@ -1601,9 +1707,29 @@ local function PSC_SummaryStats_CreateState(charactersToProcess)
     return state
 end
 
+local function PSC_SummaryStats_GetDayNumber(year, month, day)
+    if month <= 2 then
+        year = year - 1
+        month = month + 12
+    end
+
+    local era = math.floor(year / 400)
+    local yearOfEra = year - era * 400
+    local dayOfYear = math.floor((153 * (month - 3) + 2) / 5) + day - 1
+    local dayOfEra = yearOfEra * 365 + math.floor(yearOfEra / 4) - math.floor(yearOfEra / 100) + dayOfYear
+    return era * 146097 + dayOfEra
+end
+
 local function PSC_SummaryStats_ProcessCharacterHeader(state, characterKey, characterData)
     local PSC_GetCharacterKey = PSC_GetCharacterKey
     local PSC_DB = PSC_DB
+    local multiKillCounts = characterData.MultiKillCounts or {}
+
+    state.doubleKills = state.doubleKills + (multiKillCounts[2] or 0)
+    state.tripleKills = state.tripleKills + (multiKillCounts[3] or 0)
+    state.quadraKills = state.quadraKills + (multiKillCounts[4] or 0)
+    state.pentaKills = state.pentaKills + (multiKillCounts[5] or 0)
+    state.hexaPlusKills = state.hexaPlusKills + (multiKillCounts[6] or 0)
 
     if characterKey == PSC_GetCharacterKey() then
         state.currentKillStreak = characterData.CurrentKillStreak
@@ -1724,6 +1850,21 @@ local function PSC_SummaryStats_ProcessKillLocation(state, location, levelNum)
         if month then
             state.monthlyKills[month] = state.monthlyKills[month] + 1
         end
+
+        local dateInfo = date("*t", timestamp)
+        if dateInfo then
+            local dayKey = date("%d/%m/%y", timestamp)
+            state.dailyKills[dayKey] = (state.dailyKills[dayKey] or 0) + 1
+
+            -- Wednesday is the start of the WoW statistics week.
+            local dayNumber = PSC_SummaryStats_GetDayNumber(dateInfo.year, dateInfo.month, dateInfo.day)
+            local daysFromWednesday = (dateInfo.wday + 3) % 7
+            local weekKey = dayNumber - daysFromWednesday
+            state.weeklyKills[weekKey] = (state.weeklyKills[weekKey] or 0) + 1
+            if not state.weeklyKillDates[weekKey] then
+                state.weeklyKillDates[weekKey] = date("%d/%m/%y", timestamp - (daysFromWednesday * 86400))
+            end
+        end
     end
 
     if targetLevel > 0 and playerLevel > 0 then
@@ -1797,6 +1938,28 @@ local function PSC_SummaryStats_FinalizeKillDerivedFields(state)
         if kills > state.busiestMonthKills then
             state.busiestMonthKills = kills
             state.busiestMonth = monthNames[i]
+        end
+    end
+
+    state.mostKillsInDay = 0
+    for _, kills in pairs(state.dailyKills) do
+        if kills > state.mostKillsInDay then
+            state.mostKillsInDay = kills
+        end
+    end
+
+    for day, kills in pairs(state.dailyKills) do
+        if kills == state.mostKillsInDay then
+            state.mostKillsInDayDate = day
+            break
+        end
+    end
+
+    state.mostKillsInWeek = 0
+    for weekKey, kills in pairs(state.weeklyKills) do
+        if kills > state.mostKillsInWeek then
+            state.mostKillsInWeek = kills
+            state.mostKillsInWeekDate = state.weeklyKillDates[weekKey]
         end
     end
 
@@ -1899,12 +2062,21 @@ local function PSC_SummaryStats_BuildResult(state)
         highestMultiKill = state.highestMultiKill,
         highestKillStreakCharacter = state.highestKillStreakCharacter,
         highestMultiKillCharacter = state.highestMultiKillCharacter,
+        doubleKills = state.doubleKills,
+        tripleKills = state.tripleKills,
+        quadraKills = state.quadraKills,
+        pentaKills = state.pentaKills,
+        hexaPlusKills = state.hexaPlusKills,
         busiestWeekday = state.busiestWeekday,
         busiestWeekdayKills = state.busiestWeekdayKills,
         busiestHour = state.busiestHour,
         busiestHourKills = state.busiestHourKills,
         busiestMonth = state.busiestMonth,
         busiestMonthKills = state.busiestMonthKills,
+        mostKillsInDay = state.mostKillsInDay,
+        mostKillsInWeek = state.mostKillsInWeek,
+        mostKillsInDayDate = state.mostKillsInDayDate,
+        mostKillsInWeekDate = state.mostKillsInWeekDate,
         avgKillsPerDay = state.avgKillsPerDay,
         killsToday = state.killsToday,
         killsThisWeek = state.killsThisWeek,
@@ -1942,8 +2114,9 @@ local function PSC_CalculateWinRateByClass(killsByClass, deathsByClass)
     for _, class in ipairs(ALL_CLASSES) do
         local kills = killsByClass[class] or 0
         local deaths = deathsByClass[class] or 0
-        if deaths > 0 then
-            winRateData[class] = kills / (kills + deaths)
+        local total = kills + deaths
+        if total > 0 then
+            winRateData[class] = kills / total
             rawData[class] = {kills = kills, deaths = deaths}
         end
     end
@@ -2263,7 +2436,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
     local totalEncounters = totalKills + totalDeaths
     if totalEncounters > 0 then
         local winPct = (totalKills / totalEncounters) * 100
-        local winText = string.format("%.2f%%", winPct)
+        local winText = PSC_FormatPercent(winPct, 2)
         local winColor = PSC_GetWinPercentageColor(winPct)
         local winTooltip = isLocalPlayer and "Win percentage: kills divided by total encounters (kills + deaths)." or "Win percentage: kills divided by total encounters (kills + deaths)."
         statY = addSummaryStatLine(container, "Win percentage:", winText, statY, winTooltip, false, isLocalPlayer, winColor)
@@ -2390,6 +2563,23 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         statY = addSummaryStatLine(container, "Kills this year:", tostring(stats.killsThisYear or 0), statY, "Total player kills this year.", false, isLocalPlayer)
     end
 
+    if stats.mostKillsInDay or (isLocalPlayer and stats.mostKillsInDay ~= nil) then
+        local dayText = tostring(stats.mostKillsInDay or 0)
+        if stats.mostKillsInDayDate then
+            dayText = dayText .. " (" .. stats.mostKillsInDayDate .. ")"
+        end
+        statY = addSummaryStatLine(container, "Most kills in one day:", dayText, statY,
+            isLocalPlayer and "Your highest number of player kills recorded on a local calendar day." or "Highest number of player kills recorded on a calendar day.", false, isLocalPlayer)
+    end
+    if stats.mostKillsInWeek or (isLocalPlayer and stats.mostKillsInWeek ~= nil) then
+        local weekText = tostring(stats.mostKillsInWeek or 0)
+        if stats.mostKillsInWeekDate then
+            weekText = weekText .. " (week of " .. stats.mostKillsInWeekDate .. ")"
+        end
+        statY = addSummaryStatLine(container, "Most kills in one week:", weekText, statY,
+            isLocalPlayer and "Your highest number of player kills recorded during a Wednesday-to-Tuesday statistics week." or "Highest number of player kills recorded during a Wednesday-to-Tuesday statistics week.", false, isLocalPlayer)
+    end
+
     statY = statY - spacing_between_sections
 
     -- 6. Busiest & Activity
@@ -2413,6 +2603,11 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         statY = addSummaryStatLine(container, "Average kills per day:", string.format("%.1f", stats.avgKillsPerDay), statY, tip, false, isLocalPlayer)
     end
 
+    if stats.uniqueGuildsKilled ~= nil then
+        statY = addSummaryStatLine(container, "Unique guilds killed:", stats.uniqueGuildsKilled, statY,
+            "Number of guilds whose members you have killed.", false, isLocalPlayer)
+    end
+
     -- 7. Achievements
     if extraData and extraData.achievementsUnlocked and extraData.totalAchievements then
         statY = statY - spacing_between_sections
@@ -2421,7 +2616,7 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
             percentage = (extraData.achievementsUnlocked / extraData.totalAchievements) * 100
         end
 
-        local achieveText = extraData.achievementsUnlocked .. " / " .. extraData.totalAchievements .. " (" .. string.format("%.1f%%", percentage) .. ")"
+        local achieveText = extraData.achievementsUnlocked .. " / " .. extraData.totalAchievements .. " (" .. PSC_FormatPercent(percentage, 2) .. ")"
 
         if isLocalPlayer then
             local labelText = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -2459,6 +2654,18 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         end
     end
 
+    statY = statY - spacing_between_sections
+    statY = addSummaryStatLine(container, "Double kills:", stats.doubleKills or 0, statY,
+        "Double kills recorded since version 4.7.", false, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Triple kills:", stats.tripleKills or 0, statY,
+        "Triple kills recorded since version 4.7.", false, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Quadra kills:", stats.quadraKills or 0, statY,
+        "Quadra kills recorded since version 4.7.", false, isLocalPlayer)
+    statY = addSummaryStatLine(container, "Penta kills:", stats.pentaKills or 0, statY,
+        "Penta kills recorded since version 4.7.", false, isLocalPlayer)
+    statY = addSummaryStatLine(container, ">= Hexa kills:", stats.hexaPlusKills or 0, statY,
+        "Multi-kills of 6 or more, recorded since version 4.7.", false, isLocalPlayer)
+
     -- 8. Footer Note
     if not isLocalPlayer then
         local noteText = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -2466,19 +2673,38 @@ local function PSC_PopulateSummaryStatsContainer(container, stats, isLocalPlayer
         noteText:SetText("Viewing " .. (playerName or "Unknown") .. "'s statistics")
         noteText:SetTextColor(0.7, 0.7, 0.7)
     end
+
+    return -statY + 10
 end
 
 local function createSummaryStatsForExternalPlayer(parent, x, y, width, height, stats, playerName, extraData)
-    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
-    PSC_PopulateSummaryStatsContainer(container, stats, false, extraData, playerName)
+    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height, width - 20)
+    AddSummaryStatsTitleMeta(container, {
+        class = extraData and (extraData.class or extraData.playerClass),
+        race = extraData and (extraData.race or extraData.playerRace),
+        gender = extraData and (extraData.gender or extraData.playerGender),
+        guild = extraData and extraData.guild,
+        allowLocalFallback = false
+    })
+    local contentHeight = PSC_PopulateSummaryStatsContainer(container, stats, false, extraData, playerName)
+    container:SetHeight(math.max(height, contentHeight))
     return container
 end
 
-local function createSummaryStats(parent, x, y, width, height)
-    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height)
+local function createSummaryStats(parent, x, y, width, height, stats, guildData)
+    local container = createContainerWithTitle(parent, "Summary Statistics", x, y, width, height, width - 20)
+    AddSummaryStatsTitleMeta(container)
 
-    local charactersToProcess = GetCharactersToProcessForStatistics()
-    local stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+    if not stats then
+        local charactersToProcess = GetCharactersToProcessForStatistics()
+        stats = PSC_CalculateSummaryStatistics(charactersToProcess)
+        guildData = PSC_CalculateGuildKills(charactersToProcess)
+    end
+
+    if guildData then
+        local _, uniqueGuildsKilled = PSC_CalculateGuildStats(guildData)
+        stats.uniqueGuildsKilled = uniqueGuildsKilled
+    end
 
     local extraData = {}
     if PVPSC.AchievementSystem and PVPSC.AchievementSystem.achievements then
@@ -2500,7 +2726,8 @@ local function createSummaryStats(parent, x, y, width, height)
         extraData.totalPossiblePoints = PVPSC.AchievementSystem:GetTotalPossiblePoints()
     end
 
-    PSC_PopulateSummaryStatsContainer(container, stats, true, extraData)
+    local contentHeight = PSC_PopulateSummaryStatsContainer(container, stats, true, extraData)
+    container:SetHeight(math.max(height, contentHeight))
     return container
 end
 
@@ -2537,6 +2764,8 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     for hour = 0, 23 do
         hourlyData[hour] = 0
     end
+    local redridgeLevel15To25Kills = 0 -- Feeds the "bonus_next_redridgeguy" achievement without a separate full-table scan
+    local redridgeLevel60To70Kills = 0 -- Feeds the "bonus_redridge_revenge" achievement without a separate full-table scan
 
     -- Ensure all classes, races, genders are present with at least 0
     local allRaces = {"Human", "Dwarf", "Night Elf", "Gnome", "Orc", "Undead", "Troll", "Tauren"}
@@ -2554,7 +2783,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     if not db.PlayerKillCounts.Characters then
-        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData
+        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills
     end
 
     for _, characterData in pairs(charactersToProcess) do
@@ -2619,10 +2848,21 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                             genderData[gender] = (genderData[gender] or 0) + kills
                         end
 
+                        local isVictimLevel15To25 = levelNum >= 15 and levelNum <= 25
+                        local isVictimLevel60To70 = levelNum >= 60 and levelNum <= 70
+
                         if killData.killLocations and #killData.killLocations > 0 then
                             for _, location in ipairs(killData.killLocations) do
                                 local zone = location.zone or "Unknown"
                                 zoneData[zone] = (zoneData[zone] or 0) + 1
+
+                                if zone == "Redridge Mountains" then
+                                    if isVictimLevel15To25 then
+                                        redridgeLevel15To25Kills = redridgeLevel15To25Kills + 1
+                                    elseif isVictimLevel60To70 then
+                                        redridgeLevel60To70Kills = redridgeLevel60To70Kills + 1
+                                    end
+                                end
 
                                 if location.timestamp then
                                     local hourStr = date("%H", location.timestamp)
@@ -2649,7 +2889,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills
 end
 
 function PSC_CalculateHourlyStatistics(charactersToProcess)
@@ -2838,6 +3078,42 @@ local function createScrollableLeftPanel(parent)
     return content, scrollFrame
 end
 
+local function createScrollableRightPanel(parent, hasFixedButtons)
+    local containerFrame = CreateFrame("Frame", nil, parent)
+    containerFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 440, -UI.TOP_PADDING)
+    containerFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, hasFixedButtons and 110 or 10)
+
+    local scrollFrame = CreateFrame("ScrollFrame", nil, containerFrame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetAllPoints(containerFrame)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetWidth(380)
+    content:SetHeight(1)
+    scrollFrame:SetScrollChild(content)
+
+    local scrollBar = scrollFrame.ScrollBar or scrollFrame.scrollBar
+    local scrollBarName = scrollFrame:GetName() and scrollFrame:GetName() .. "ScrollBar" or nil
+    scrollBar = scrollBar or (scrollBarName and _G[scrollBarName] or nil)
+
+    if not scrollBar then
+        local children = {scrollFrame:GetChildren()}
+        for _, child in ipairs(children) do
+            if child:GetObjectType() == "Slider" then
+                scrollBar = child
+                break
+            end
+        end
+    end
+
+    if scrollBar then
+        scrollBar:ClearAllPoints()
+        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", -26, -16)
+        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", -26, 16)
+    end
+
+    return content, scrollFrame
+end
+
 function GetFrameTitleTextWithCharacterText(titleText)
     if PSC_DB.ShowAccountWideStats then
         titleText = titleText .. " |cFFFFFFFF(account-wide stats)|r"
@@ -2988,6 +3264,17 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
     if frame.summaryStats then
         frame.summaryStats:SetParent(nil)
         frame.summaryStats = nil
+    end
+
+    if frame.rightScrollFrame then
+        frame.rightScrollFrame:SetParent(nil)
+        frame.rightScrollFrame = nil
+        frame.rightScrollContent = nil
+    end
+
+    if frame.buttonSeparatorLine then
+        frame.buttonSeparatorLine:SetTexture(nil)
+        frame.buttonSeparatorLine = nil
     end
 
     if frame.buttonContainer then
@@ -3241,13 +3528,17 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
 
     local summaryStatsWidth = 380
     local summaryStatsHeight = 500
+    local rightScrollContent, rightScrollFrame = createScrollableRightPanel(frame, not isExternalPlayer)
+    frame.rightScrollContent = rightScrollContent
+    frame.rightScrollFrame = rightScrollFrame
 
     -- Summary Statistics at top right (pass stats if external player)
     if isExternalPlayer then
-        frame.summaryStats = createSummaryStatsForExternalPlayer(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight, stats, playerDisplayName, externalPlayerData)
+        frame.summaryStats = createSummaryStatsForExternalPlayer(rightScrollContent, 0, 0, summaryStatsWidth, summaryStatsHeight, stats, playerDisplayName, externalPlayerData)
     else
-        frame.summaryStats = createSummaryStats(frame, 440, -UI.TOP_PADDING, summaryStatsWidth, summaryStatsHeight)
+        frame.summaryStats = createSummaryStats(rightScrollContent, 0, 0, summaryStatsWidth, summaryStatsHeight, stats, guildData)
     end
+    rightScrollContent:SetHeight(frame.summaryStats:GetHeight() + (isExternalPlayer and 68 or 0))
 
     if not isExternalPlayer then
         local buttonSeparatorLine = frame:CreateTexture(nil, "ARTWORK")
@@ -3255,6 +3546,7 @@ function PSC_UpdateStatisticsFrame(frame, externalPlayerData)
         buttonSeparatorLine:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 105)
         buttonSeparatorLine:SetHeight(1)
         buttonSeparatorLine:SetColorTexture(0.5, 0.5, 0.5, 0.5)
+        frame.buttonSeparatorLine = buttonSeparatorLine
 
         local buttonContainer = CreateFrame("Frame", nil, frame)
         local buttonWidth = 140

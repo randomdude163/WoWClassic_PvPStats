@@ -35,7 +35,7 @@ local PVP_RANK_ICONS = {
     [14] = "Interface\\PvPRankBadges\\PvPRank14"
 }
 
-local RACE_ICON_IDS = {
+RACE_ICON_IDS = RACE_ICON_IDS or {
     ["HUMAN_MALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236448",
     ["HUMAN_FEMALE"] = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236447",
     ["DWARF_MALE"] = 236444,
@@ -82,53 +82,6 @@ function PSC_FormatTimestamp(timestamp)
     return string.format("%02d/%02d/%02d %02d:%02d:%02d",
         dateInfo.day, dateInfo.month, dateInfo.year % 100,
         dateInfo.hour, dateInfo.min, dateInfo.sec)
-end
-
-
-local function CreateKillHistoryHeaderRow(content, yOffset)
-    local headerBg = content:CreateTexture(nil, "BACKGROUND")
-    headerBg:SetPoint("TOPLEFT", 15, yOffset)
-    headerBg:SetPoint("TOPRIGHT", content, "TOPRIGHT", -15, 0)
-    headerBg:SetHeight(20)
-    headerBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
-
-    local levelHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    levelHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.LEVEL, yOffset - 3)
-    levelHeader:SetText("Level")
-    levelHeader:SetTextColor(1, 0.82, 0)
-
-    local zoneHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    zoneHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.ZONE, yOffset - 3)
-    zoneHeader:SetText("Zone")
-    zoneHeader:SetTextColor(1, 0.82, 0)
-    zoneHeader:SetWidth(PSC_COLUMN_WIDTHS.ZONE)
-    zoneHeader:SetJustifyH("LEFT")
-
-    local killsHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    killsHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.KILLS, yOffset - 3)
-    killsHeader:SetText("Kills")
-    killsHeader:SetTextColor(1, 0.82, 0)
-    killsHeader:SetWidth(PSC_COLUMN_WIDTHS.KILLS)
-    killsHeader:SetJustifyH("LEFT")
-
-    local timeHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    timeHeader:SetPoint("TOPLEFT", PSC_COLUMN_POSITIONS.TIME, yOffset - 3)
-    timeHeader:SetText("Time")
-    timeHeader:SetTextColor(1, 0.82, 0)
-
-    return yOffset - 20
-end
-
-local function SortKillHistoryByTimestamp(killHistory)
-    table.sort(killHistory, function(a, b)
-        local timestampA = a.timestamp or 0
-        local timestampB = b.timestamp or 0
-
-        -- Primary sort by timestamp (most recent first)
-        return timestampA > timestampB
-    end)
-
-    return killHistory
 end
 
 local function SortDeathHistoryByTimestamp(deathHistory)
@@ -673,6 +626,17 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
             rankIcon:SetSize(32, 32)
             rankIcon:SetPoint("LEFT", classIcon, "RIGHT", 10, 0)
             rankIcon:SetTexture(PVP_RANK_ICONS[playerDetail.rank])
+
+            local rankName = PSC_GetRankName(playerDetail.rank)
+            rankIcon:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText(rankName or ("Rank " .. playerDetail.rank), 1, 0.82, 0)
+                GameTooltip:AddLine("Rank " .. tostring(playerDetail.rank), 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            rankIcon:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
         end
     end
 
@@ -699,7 +663,38 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         yOffset = CreateDetailRow(content, "Realm:", playerRealm, yOffset)
     end
 
-    yOffset = CreateDetailRow(content, "PvP Rank:", playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0", yOffset)
+    local rankLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    rankLabel:SetPoint("TOPLEFT", 25, yOffset)
+    rankLabel:SetText("PvP Rank:")
+    rankLabel:SetTextColor(1, 1, 1)
+
+    local rankValue = playerDetail.rank and playerDetail.rank > 0 and tostring(playerDetail.rank) or "0"
+    local rankValueText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    rankValueText:SetPoint("TOPLEFT", 120, yOffset)
+    rankValueText:SetText(rankValue)
+    rankValueText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+
+    local rankTooltipFrame = CreateFrame("Frame", nil, content)
+    rankTooltipFrame:SetPoint("TOPLEFT", rankLabel, "TOPLEFT", 0, 0)
+    rankTooltipFrame:SetPoint("BOTTOMRIGHT", rankValueText, "BOTTOMRIGHT", 0, 0)
+    rankTooltipFrame:SetScript("OnEnter", function(self)
+        local rankNumber = playerDetail.rank or 0
+        local rankName = PSC_GetRankName(rankNumber)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        if rankNumber > 0 and rankName then
+            GameTooltip:SetText(rankName, 1, 0.82, 0)
+            GameTooltip:AddLine("Rank " .. tostring(rankNumber), 1, 1, 1, true)
+        else
+            GameTooltip:SetText("Rank 0", 1, 0.82, 0)
+            GameTooltip:AddLine("No PvP rank earned yet", 1, 1, 1, true)
+        end
+        GameTooltip:Show()
+    end)
+    rankTooltipFrame:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    yOffset = yOffset - 20
 
     local killsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     killsLabel:SetPoint("TOPLEFT", 25, yOffset)
@@ -734,7 +729,7 @@ local function DisplayPlayerSummarySection(content, playerDetail, yOffset)
         winLabel:SetTextColor(1, 1, 1)
         local winValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         winValue:SetPoint("TOPLEFT", 120, yOffset)
-        winValue:SetText(string.format("%.1f%%", winPct))
+        winValue:SetText(PSC_FormatPercent(winPct, 2))
         local winPercentageColor = PSC_GetWinPercentageColor(winPct)
         winValue:SetTextColor(winPercentageColor.r, winPercentageColor.g, winPercentageColor.b)
         -- Also set K/D ratio to the same color

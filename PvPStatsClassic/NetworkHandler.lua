@@ -22,10 +22,12 @@ Network.MIN_BROADCAST_INTERVAL = 15
 local recentMessages = {}
 local RECENT_TTL = 300  -- 5 minutes
 
+local debugNetworkHandler = false
 
-local function D(...)
-    if PSC_Debug then
-        print("|cFFFFD700[PVPSC Network]|r", ...)
+
+local function DebugPrint(...)
+    if PSC_Debug and debugNetworkHandler then
+        print("|cFFFFD700[PVPSC Network]|r ", ...)
     end
 end
 
@@ -77,6 +79,8 @@ local KEY_MAP = {
     level = "l",
     class = "c",
     race = "r",
+    gender = "ge",
+    guild = "g",
     faction = "f",
     timestamp = "t",
     addonVersion = "av",
@@ -160,6 +164,12 @@ local SUB_KEY_MAPS = {
         highestMultiKill = "hmk",
         highestKillStreakCharacter = "hksc",
         highestMultiKillCharacter = "hmkc",
+        doubleKills = "dk",
+        tripleKills = "trk",
+        quadraKills = "qk",
+        pentaKills = "pk",
+        hexaPlusKills = "hpk",
+        uniqueGuildsKilled = "ugk",
         busiestWeekday = "bw",
         busiestWeekdayKills = "bwk",
         busiestHour = "bh",
@@ -171,6 +181,10 @@ local SUB_KEY_MAPS = {
         killsThisWeek = "ktw",
         killsThisMonth = "ktm",
         killsThisYear = "kty",
+        mostKillsInDay = "mkd",
+        mostKillsInWeek = "mkw",
+        mostKillsInDayDate = "mkdd",
+        mostKillsInWeekDate = "mkwd",
         nemesisName = "nn",
         nemesisScore = "ns",
         mostKilledRace = "mkr",
@@ -290,7 +304,7 @@ local function DeserializeDetailedStats(payload)
     -- Check for EOM marker to ensure message is complete
     if not string.find(payload, "EOM:1") then
         if PSC_Debug then
-            print("|cFFFFD700[PVPSC Network]|r Incomplete payload received (EOM missing). Discarding.")
+            DebugPrint("Incomplete payload received (EOM missing). Discarding.")
         end
         return nil
     end
@@ -311,14 +325,14 @@ local function DeserializeDetailedStats(payload)
         unknownLevelClassData = {},
         deathsByClassData = {}
     }
-    
+
     -- Initialize class charts with 0 to prevent missing chart data
     for class, _ in pairs(CLASS_KEY_MAP) do
         data.classData[class] = 0
         data.unknownLevelClassData[class] = 0
         data.deathsByClassData[class] = 0
     end
-    
+
     for field in string.gmatch(payload, "([^;]+)") do
         local keyStr, values = string.match(field, "([^:]+):(.*)")
         if keyStr and values then
@@ -389,7 +403,7 @@ function Network:SendCommMessageWithDebug(prefix, payload, channel, target, prio
         if #msgPreview > 120 then
             msgPreview = msgPreview:sub(1, 120) .. "..." -- Truncate for readability
         end
-        print("|cFFFFD700[PVPSC Network]|r Sending message to ", channel, "(size:", #payload, "bytes):", msgPreview)
+        DebugPrint("Sending message to ", channel, "(size:", #payload, "bytes):", msgPreview)
     end
     self:SendCommMessage(prefix, payload, channel, target, priority)
 end
@@ -532,8 +546,10 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
     self:ApplyPlayerProfile(stats, "mostKilledPlayer", "mostKilledRace", "mostKilledGender", "mostKilledClass", charactersToProcess)
     self:ApplyPlayerProfile(stats, "nemesisName", "nemesisRace", "nemesisGender", "nemesisClass", charactersToProcess)
 
-    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, _, npcKillsData =
+    local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData =
         PSC_CalculateBarChartStatistics(charactersToProcess)
+    local _, uniqueGuildsKilled = PSC_CalculateGuildStats(guildData)
+    stats.uniqueGuildsKilled = uniqueGuildsKilled
     local hourlyData = PSC_CalculateHourlyStatistics(charactersToProcess)
     local weekdayData = PSC_CalculateWeekdayStatistics(charactersToProcess)
     local monthlyData = PSC_CalculateMonthlyStatistics(charactersToProcess)
@@ -541,7 +557,7 @@ local function BuildDetailedStatsFromCharacters(self, charactersToProcess, enabl
     local deathsByClassData = PSC_CalculateDeathsByClass(charactersToProcess)
 
     if enableDebugLog then
-        D("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
+        DebugPrint("Building detailed stats - currentKillStreak:", stats.currentKillStreak, "mostKilledPlayer:", stats.mostKilledPlayer)
     end
 
     local result = self:ConstructPayload({
@@ -593,6 +609,8 @@ function Network:BuildDetailedStatsForCharacter(characterKey, characterData)
     result.level = tonumber(charInfo.level) or result.level or 0
     result.class = charInfo.class or result.class or "Unknown"
     result.race = charInfo.race or result.race or "Unknown"
+    result.gender = charInfo.gender or result.gender or "Unknown"
+    result.guild = charInfo.guild or result.guild or ""
 
     local unlockedCount, achievementPoints = GetCharacterAchievementStats(characterKey)
     result.achievementsUnlocked = unlockedCount
@@ -631,7 +649,7 @@ function Network:BuildDetailedStats()
     if self.lastPlayerStats then
         if PSC_Debug then
             -- D() is local, but print is fine
-            print("|cFFFFD700[PVPSC Network]|r Using cached player stats.")
+            DebugPrint("Using cached player stats.")
         end
         return self.lastPlayerStats
     end
@@ -687,6 +705,8 @@ function Network:ConstructPayload(components)
         level = UnitLevel("player"),
         class = PSC_ConvertClassToEnglish(UnitClass("player")),
         race = PSC_ConvertRaceToEnglish(UnitRace("player")),
+        gender = PSC_ConvertGenderToString(UnitSex("player")),
+        guild = GetGuildInfo("player") or "",
         faction = UnitFactionGroup("player") or "",
         timestamp = GetServerTime(),
         realm = PSC_RealmName,
@@ -731,7 +751,7 @@ function Network:BroadcastStats(providedStats)
     if PSC_InCombat then
         self.pendingCombatBroadcast = true
         if PSC_Debug then
-            print("|cFFFFD700[PVPSC Network]|r In combat - deferring broadcast until out of combat.")
+            DebugPrint("In combat - deferring broadcast until out of combat.")
         end
         return
     end
@@ -751,7 +771,7 @@ function Network:BroadcastStats(providedStats)
             if delay < 0.1 then delay = 0.1 end
 
             if PSC_Debug then
-                print("|cFFFFD700[PVPSC Network]|r Too many updates. Deferring broadcast by " .. string.format("%.1f", delay) .. "s")
+                DebugPrint("Too many updates. Deferring broadcast by " .. string.format("%.1f", delay) .. "s")
             end
 
             self.deferredBroadcastTimer = C_Timer.NewTimer(delay, function()
@@ -766,7 +786,7 @@ function Network:BroadcastStats(providedStats)
     -- If we are throttled by the game client/library (bandwidth limit), defer this update
     if self:IsThrottled() then
         if PSC_Debug then
-            print("|cFFFFD700[PVPSC Network]|r Network throttled (BULK queue full), deferring broadcast...")
+            DebugPrint("Network throttled (BULK queue full), deferring broadcast...")
         end
 
         -- Schedule a retry if not already scheduled
@@ -792,7 +812,7 @@ function Network:BroadcastStats(providedStats)
     if PSC_Debug then
         local payloadSize = #payload
         local channelCount = #distributionList
-        print(string.format("|cFFFFD700[PVPSC Network]|r Stats Size: %dB x %d chans. Interval: %.1fs",
+        DebugPrint(string.format("Stats Size: %dB x %d chans. Interval: %.1fs",
             payloadSize, channelCount, self.MIN_BROADCAST_INTERVAL))
     end
 
@@ -877,7 +897,7 @@ function Network:ValidateLeaderboardCache()
     end
 
     if fixedCount > 0 and PSC_Debug then
-        print("|cFFFFD700[PVPSC Network]|r Fixed " .. fixedCount .. " corrupted cache entries.")
+        DebugPrint("Fixed " .. fixedCount .. " corrupted cache entries.")
     end
 end
 
@@ -956,7 +976,7 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
     -- Ignore messages from ourselves (even if sent across channels like YELL/GUILD)
     if senderName == UnitName("player") and senderRealm == PSC_RealmName then return end
 
-    if PSC_Debug then
+    if PSC_Debug and debugNetworkHandler then
         print("|cFFFFD700[PVPSC RX]|r From:", sender, "Len:", #message)
         print(message)
     end
@@ -969,7 +989,7 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
         local statsData = DeserializeDetailedStats(data)
 
         if not statsData then
-            D("Failed to deserialize message (" .. msgType .. ") from", sender)
+            DebugPrint("Failed to deserialize message (" .. msgType .. ") from", sender)
             return
         end
 
@@ -983,7 +1003,7 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
 
         -- Validate data
         if not statsData.playerName or statsData.playerName == "" then
-            D("Invalid data: missing player name")
+            DebugPrint("Invalid data: missing player name")
             return
         end
 
@@ -1009,7 +1029,7 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
 
         -- Check for duplicates (using unique key)
         if IsDuplicate(uniqueName, statsData.timestamp) then
-            D("Duplicate message from", uniqueName)
+            DebugPrint("Duplicate message from", uniqueName)
             return
         end
 
@@ -1021,7 +1041,7 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
             PSC_Print("[PvPStats]: " .. uniqueName .. " sent you their stats, open the Leaderboard to view them.")
         end
 
-        D("Received detailed stats from", uniqueName, "via", distribution, "- Kills:", statsData.totalKills)
+        DebugPrint("Received detailed stats from", uniqueName, "via", distribution, "- Kills:", statsData.totalKills)
 
         -- Refresh leaderboard if it's open
         if PSC_LeaderboardFrame and PSC_LeaderboardFrame:IsShown() then
@@ -1030,11 +1050,11 @@ function Network:OnCommReceived(prefix, message, distribution, sender)
 
     elseif msgType == "SYNC" then
         -- Sync request - broadcast our stats immediately
-        D("Received sync request from", sender, "via", distribution)
+        DebugPrint("Received sync request from", sender, "via", distribution)
 
         -- Prevent multiple responses to the same sync event (e.g. receiving via GUILD and PARTY)
         if self.syncResponsePending then
-            D("Ignoring duplicate SYNC request from", sender, "via", distribution, "- response already pending")
+            DebugPrint("Ignoring duplicate SYNC request from", sender, "via", distribution, "- response already pending")
             return
         end
 
@@ -1134,7 +1154,7 @@ function Network:CleanupDeduplicationCache()
     end
 
     if removedDuplicates > 0 then
-        D("Cleaned up", removedDuplicates, "expired entries from duplicate cache")
+        DebugPrint("Cleaned up", removedDuplicates, "expired entries from duplicate cache")
     end
 end
 
@@ -1180,7 +1200,7 @@ function Network:Initialize()
         local initialBroadcastDelay = #distributionList * SYNC_STAGGER + 1.0
         C_Timer.After(initialBroadcastDelay, function()
             Network:BroadcastStats()
-            D("Sent initial broadcast on login")
+            DebugPrint("Sent initial broadcast on login")
         end)
 
         self.initialized = true

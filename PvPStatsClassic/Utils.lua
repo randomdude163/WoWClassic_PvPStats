@@ -85,7 +85,7 @@ function PSC_StartIncrementalAchievementsCalculation()
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
 
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, deathsByClassData
-    local hourlyData, weekdayData, monthlyData, yearlyData
+    local hourlyData, weekdayData, monthlyData, yearlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills
     local summaryStats = nil
     local achievementStats = nil
 
@@ -113,7 +113,7 @@ function PSC_StartIncrementalAchievementsCalculation()
         end,
         TaskQueueDelayFrame(1),
         function()
-            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData =
+            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills =
                 PSC_CalculateBarChartStatistics(charactersToProcess)
         end,
         TaskQueueDelayFrame(1),
@@ -175,6 +175,8 @@ function PSC_StartIncrementalAchievementsCalculation()
                 maxSameGuildKills = maxSameGuildKills,
                 uniqueGuildsKilled = uniqueGuildsKilled,
                 hourlyData = hourlyData,
+                redridgeLevel15To25Kills = redridgeLevel15To25Kills,
+                redridgeLevel60To70Kills = redridgeLevel60To70Kills,
                 totalKills = summaryStats.totalKills,
                 uniqueKills = summaryStats.uniqueKills,
                 highestKillStreak = summaryStats.highestKillStreak,
@@ -438,7 +440,7 @@ function PSC_IsSamePlayerName(candidateName, targetName)
 end
 
 function PSC_GetAddonVersion()
-    return "4.6"
+    return "4.7 DEBUG"
 end
 
 -- Returns true if versionStr >= minVersion (both in "major.minor.patch" format)
@@ -782,6 +784,8 @@ local TimeBasedAchievementConfig = {
         {22, 7, "july_22_test"}, -- July 22nd Test Date
         {1, 5, "may_day"},
         {23, 11, "wow_anniversary"}, -- WoW Vanilla Release Date
+        {26, 8, "severussnipe_birthday"}, -- Severussnipe's birthday
+        {12, 6, "hkfarmer_birthday"}, -- Hkfarmer's birthday
         -- Add more special dates here as needed
     },
 

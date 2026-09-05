@@ -4,9 +4,16 @@ PSC_RecentPlayerDamage = {}
 PSC_ASSIST_DAMAGE_WINDOW = 60.0  -- 45 second window for kill assist credit
 
 PSC_RecentlyCountedKills = {}
-PSC_KILL_TRACKING_WINDOW = 1.0
+PSC_KILL_TRACKING_WINDOW = 2.0
 
 PSC_MultiKillCount = 0
+
+-- Shared guard so the same kill can't be registered twice by different detection paths
+-- (combat log PARTY_KILL/UNIT_DIED vs. the Eyes of the Beast out-of-range watcher)
+function PSC_WasKillRecentlyCounted(destGUID)
+    local countedAt = PSC_RecentlyCountedKills[destGUID]
+    return countedAt ~= nil and (GetTime() - countedAt) < PSC_KILL_TRACKING_WINDOW
+end
 
 -- Helper function to update spawn camper max kills after a new level 1 kill
 local function UpdateSpawnCamperCounter(newKillTimestamp)
@@ -96,8 +103,23 @@ local function UpdateKillCountEntry(nameWithLevel, playerLevel)
     table.insert(killData.killLocations, newKillLocation)
 end
 
+-- Records the highest multi-kill reached in the current combat; call right before PSC_MultiKillCount resets to 0
+function PSC_FinalizeMultiKillTally()
+    if PSC_MultiKillCount < 2 then return end
+
+    local characterKey = PSC_GetCharacterKey()
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+    if not characterData then return end
+
+    characterData.MultiKillCounts = characterData.MultiKillCounts or {}
+    -- Bucket 6 represents "Hexa or higher" (multi-kills of 6+ are not split further)
+    local finalMultiKillCount = math.min(PSC_MultiKillCount, 6)
+    characterData.MultiKillCounts[finalMultiKillCount] = (characterData.MultiKillCounts[finalMultiKillCount] or 0) + 1
+end
+
 local function UpdateMultiKill()
     if not PSC_InCombat then
+        PSC_FinalizeMultiKillTally()
         PSC_MultiKillCount = 0
         return
     end
@@ -165,7 +187,8 @@ local function UpdateMultiKill()
     end
 
     local characterKey = PSC_GetCharacterKey()
-    local highestMultiKillAlias = PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill
+    local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+    local highestMultiKillAlias = characterData.HighestMultiKill
 
     if PSC_MultiKillCount > highestMultiKillAlias then
         PSC_DB.PlayerKillCounts.Characters[characterKey].HighestMultiKill = PSC_MultiKillCount
@@ -265,6 +288,7 @@ function PSC_RegisterPlayerKill(playerName, killerName, killerGUID)
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
             HighestMultiKill = 0,
+            MultiKillCounts = {},
             GrayKillsCount = 0
         }
     end

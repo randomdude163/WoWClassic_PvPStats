@@ -144,7 +144,7 @@ local function GetHonorRank(unit)
     return 0
 end
 
-local function ConvertGenderToString(genderCode)
+function PSC_ConvertGenderToString(genderCode)
     if genderCode == 2 then
         return "Male"
     elseif genderCode == 3 then
@@ -179,7 +179,7 @@ local function GetPlayerInfoFromUnit(unit)
         class, _ = UnitClass(unit)
         class = class:sub(1, 1):upper() .. class:sub(2):lower()
         race, _ = UnitRace(unit)
-        gender = ConvertGenderToString(UnitSex(unit))
+        gender = PSC_ConvertGenderToString(UnitSex(unit))
         guildName, guildRankName, _ = GetGuildInfo(unit)
         if not guildName then guildName = "" end
         if not guildRankName then guildRankName = "" end
@@ -1099,6 +1099,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.IncludeGuildDetailsInAnnounce = false
     PSC_DB.EnableRecordAnnounceMessages = true
     PSC_DB.EnableMultiKillAnnounceMessages = true
+    PSC_DB.EnableHighLevelDeathWarning = true
     PSC_DB.MultiKillThreshold = 3
     PSC_DB.AnnounceChannel = "GROUP"
 
@@ -1132,6 +1133,7 @@ function PSC_LoadDefaultSettings()
     PSC_DB.SoundPack = "LoL"
     PSC_DB.EnableDeathSounds = false
     PSC_DB.EnableSingleKillSounds = false
+    PSC_DB.EnableKillStreakSoundsAndEmotes = true
     PSC_DB.ShowScoreInPlayerTooltip = true
     PSC_DB.ShowExtendedTooltipInfo = true
     PSC_DB.ShowAccountWideStats = false
@@ -1165,6 +1167,7 @@ function PSC_InitializePlayerKillCounts()
     for key, data in pairs(PSC_DB.PlayerKillCounts.Characters) do
         if data.HighestKillStreak == nil then data.HighestKillStreak = 0 end
         if data.HighestMultiKill == nil then data.HighestMultiKill = 0 end
+        if data.MultiKillCounts == nil then data.MultiKillCounts = {} end
         if data.CurrentKillStreak == nil then data.CurrentKillStreak = 0 end
         if data.Kills == nil then data.Kills = {} end
     end
@@ -1176,6 +1179,7 @@ function PSC_InitializePlayerKillCounts()
             CurrentKillStreak = 0,
             HighestKillStreak = 0,
             HighestMultiKill = 0,
+            MultiKillCounts = {},
             GrayKillsCount = nil, -- We'll set this to nil initially to detect first run
             SpawnCamperMaxKills = nil, -- Pre-calculated spawn camper achievement value
             Level1KillTimestamps = {}, -- Cached list of all level 1 kill timestamps for efficient sliding window
@@ -1213,6 +1217,9 @@ function PSC_InitializePlayerKillCounts()
     end
     if PSC_DB.ShowOwnAltsOnLeaderboard == nil then
         PSC_DB.ShowOwnAltsOnLeaderboard = true
+    end
+    if PSC_DB.EnableKillStreakSoundsAndEmotes == nil then
+        PSC_DB.EnableKillStreakSoundsAndEmotes = true
     end
 end
 

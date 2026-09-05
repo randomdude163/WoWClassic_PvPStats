@@ -13,6 +13,7 @@ local PSC_LeaderboardDataCache = nil
 local PSC_LeaderboardRowDropDown = nil
 local PSC_FilterRecentSyncOnly = false
 local PSC_ShowOwnAlts = true
+local PSC_LeaderboardShowAll = false
 local LEADERBOARD_RECENT_SYNC_WINDOW_SECONDS = 1800 -- 30 minutes
 
 local function GetLeaderboardEntryUniqueName(entry)
@@ -233,7 +234,8 @@ if not StaticPopupDialogs["PSC_SEND_STATS_TO_PLAYER"] then
 end
 
 local colWidths = {
-    playerName = 210,
+    position = 32,
+    playerName = 202,
     level = 30,
     class = 65,
     race = 75,
@@ -247,7 +249,6 @@ local colWidths = {
     achievements = 70,
     achievementPoints = 55,
     addonVersion = 60,
-    -- Add column width for Last Seen
     lastSeen = 130
 }
 
@@ -397,7 +398,8 @@ local function CreateColumnHeaders(content)
     headerRowBg:SetHeight(24)
     headerRowBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
 
-    local playerNameButton = CreateColumnHeader(content, "Name", colWidths.playerName, nil, 10, 0, "playerName")
+    local positionButton = CreateColumnHeader(content, "#", colWidths.position, nil, 10, 0, "position")
+    local playerNameButton = CreateColumnHeader(content, "Name", colWidths.playerName, positionButton, 0, 0, "playerName")
     -- Realm column removed
     local levelButton = CreateColumnHeader(content, "Lvl", colWidths.level, playerNameButton, 0, 0, "level")
     local raceButton = CreateColumnHeader(content, "Race", colWidths.race, levelButton, 0, 0, "race")
@@ -417,9 +419,24 @@ local function CreateColumnHeaders(content)
     return -30
 end
 
-local function CreatePlayerNameCell(content, playerName, width)
+local function CreatePlacementCell(content, position, width)
+    local positionText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    positionText:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+    positionText:SetText(position and tostring(position) .. "." or "?.")
+    positionText:SetWidth(width)
+    positionText:SetJustifyH("LEFT")
+    return positionText
+end
+
+local function CreatePlayerNameCell(content, playerName, width, anchorTo, positionOffset)
     local nameText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    nameText:SetPoint("LEFT", content, "LEFT", 4, 0)
+    if anchorTo and positionOffset then
+        nameText:SetPoint("TOPLEFT", content, "TOPLEFT", positionOffset, 0)
+    elseif anchorTo then
+        nameText:SetPoint("LEFT", anchorTo, "RIGHT", 0, 0)
+    else
+        nameText:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+    end
 
     -- Show full name (Name-Realm)
     local displayText = playerName
@@ -599,8 +616,8 @@ local function CreateEntryRow(content, entry, yOffset, colWidths, isAlternate)
         local highlightTexture = PSC_CreateGoldHighlight(rowContainer, 16)
     end
 
-    local playerNameCell = CreatePlayerNameCell(rowContainer, entry.playerName, colWidths.playerName)
-    -- Realm cell removed
+    local positionCell = CreatePlacementCell(rowContainer, entry.position or 0, colWidths.position)
+    local playerNameCell = CreatePlayerNameCell(rowContainer, entry.playerName, colWidths.playerName, positionCell, colWidths.position + 3)
     local levelCell = CreateLevelCell(rowContainer, playerNameCell, entry.level, colWidths.level)
     local raceCell = CreateRaceCell(rowContainer, levelCell, entry.race, colWidths.race)
     local classCell = CreateClassCell(rowContainer, raceCell, entry.class, colWidths.class)
@@ -942,12 +959,16 @@ local function SortLeaderboardData(data)
         end
     end)
 
+    for index, entry in ipairs(sortedData) do
+        entry.position = index
+    end
+
     return sortedData
 end
 
 local function DisplayEntries(content, sortedEntries, yOffset)
     local count = 0
-    local maxEntries = 100
+    local maxEntries = PSC_LeaderboardShowAll and math.huge or 100
 
     if #sortedEntries == 0 then
         local noDataText = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -972,12 +993,38 @@ local function DisplayEntries(content, sortedEntries, yOffset)
         count = count + 1
     end
 
-    if count < #sortedEntries then
+    if #sortedEntries > 100 then
         local moreText = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         moreText:SetPoint("TOPLEFT", 10, yOffset - 10)
-        moreText:SetText("Showing " .. count .. " of " .. #sortedEntries .. " entries.")
+
+        if PSC_LeaderboardShowAll then
+            moreText:SetText("Showing all " .. #sortedEntries .. " entries.")
+        else
+            moreText:SetText("Showing " .. count .. " of " .. #sortedEntries .. " entries.")
+        end
+
         moreText:SetTextColor(1, 0.7, 0)
         yOffset = yOffset - 20
+
+        local actionButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+        actionButton:SetSize(110, 22)
+        actionButton:SetPoint("TOPLEFT", moreText, "BOTTOMLEFT", 0, -6)
+
+        if PSC_LeaderboardShowAll then
+            actionButton:SetText("Show top 100")
+            actionButton:SetScript("OnClick", function()
+                PSC_LeaderboardShowAll = false
+                RefreshLeaderboardFrame(true)
+            end)
+        else
+            actionButton:SetText("Show all")
+            actionButton:SetScript("OnClick", function()
+                PSC_LeaderboardShowAll = true
+                RefreshLeaderboardFrame(true)
+            end)
+        end
+
+        yOffset = yOffset - 28
     end
 
     return yOffset, count
