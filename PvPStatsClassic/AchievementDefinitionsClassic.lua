@@ -3221,6 +3221,44 @@ AchievementSystem.achievementsClassic = {
         end,
     },
     {
+        id = "kills_grey_level_3",
+        title = "Teach the Whole Kindergarten",
+        description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
+        iconID = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\236702",
+        achievementPoints = 250,
+        targetValue = 1000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a) return ("%d grey corpses and counting. You've stopped calling it 'ganking' and started calling it 'curriculum.'"):format(a.targetValue) end,
+        progress = function(achievement, stats)
+            local characterKey = PSC_GetCharacterKey()
+            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+            return characterData.GrayKillsCount or 0
+        end,
+    },
+    {
+        id = "kills_grey_level_4",
+        title = "This Should Be Illegal",
+        description = function(a) return ("Eliminate %d grey-level players"):format(a.targetValue) end,
+        iconID = 134326,
+        achievementPoints = 500,
+        targetValue = 10000,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a) return ("%d grey-level players sent to the graveyard. Somewhere, a Blizzard GM is drafting a new EULA clause just for you."):format(a.targetValue) end,
+        progress = function(achievement, stats)
+            local characterKey = PSC_GetCharacterKey()
+            local characterData = PSC_DB.PlayerKillCounts.Characters[characterKey]
+            return characterData.GrayKillsCount or 0
+        end,
+    },
+    {
         id = "kills_spawn_camper",
         title = "Spawn Camper",
         description = function(a) return "Slay 10 level 1 players in under 1 minute" end,
