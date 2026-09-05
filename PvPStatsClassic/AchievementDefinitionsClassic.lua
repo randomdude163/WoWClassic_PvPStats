@@ -948,6 +948,26 @@ AchievementSystem.achievementsClassic = {
             return stats.redridgeLevel15To25Kills or 0
         end,
     },
+    {
+        id = "bonus_redridge_revenge",
+        title = "Every Alt Has a Main",
+        description = function(a) return ("Eliminate %d level 60-70 players in Redridge Mountains"):format(a.targetValue) end,
+        iconID = "Interface\\AddOns\\PvPStatsClassic\\img\\icons\\237555",
+        achievementPoints = 0,
+        targetValue = 250,
+        condition = function(achievement, stats)
+            return achievement.progress(achievement, stats) >= achievement.targetValue
+        end,
+        unlocked = false,
+        completedDate = nil,
+        subText = function(a)
+            return ("%d max-level corpses in Redridge. Statistically, at least a few of them are the mains of low-level alts you ganked years ago, finally back to settle the score—and losing again. No proof required, only vibes.")
+                :format(a.targetValue)
+        end,
+        progress = function(achievement, stats)
+            return stats.redridgeLevel60To70Kills or 0
+        end,
+    },
         {
         id = "bonus_points_2000",
         title = "Point Collector",

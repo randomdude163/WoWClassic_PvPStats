@@ -85,7 +85,7 @@ function PSC_StartIncrementalAchievementsCalculation()
     charactersToProcess[currentCharacterKey] = PSC_DB.PlayerKillCounts.Characters[currentCharacterKey]
 
     local classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, deathsByClassData
-    local hourlyData, weekdayData, monthlyData, yearlyData, redridgeLevel15To25Kills
+    local hourlyData, weekdayData, monthlyData, yearlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills
     local summaryStats = nil
     local achievementStats = nil
 
@@ -113,7 +113,7 @@ function PSC_StartIncrementalAchievementsCalculation()
         end,
         TaskQueueDelayFrame(1),
         function()
-            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills =
+            classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills =
                 PSC_CalculateBarChartStatistics(charactersToProcess)
         end,
         TaskQueueDelayFrame(1),
@@ -176,6 +176,7 @@ function PSC_StartIncrementalAchievementsCalculation()
                 uniqueGuildsKilled = uniqueGuildsKilled,
                 hourlyData = hourlyData,
                 redridgeLevel15To25Kills = redridgeLevel15To25Kills,
+                redridgeLevel60To70Kills = redridgeLevel60To70Kills,
                 totalKills = summaryStats.totalKills,
                 uniqueKills = summaryStats.uniqueKills,
                 highestKillStreak = summaryStats.highestKillStreak,

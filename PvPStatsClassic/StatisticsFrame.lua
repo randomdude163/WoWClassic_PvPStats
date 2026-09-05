@@ -2765,6 +2765,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         hourlyData[hour] = 0
     end
     local redridgeLevel15To25Kills = 0 -- Feeds the "bonus_next_redridgeguy" achievement without a separate full-table scan
+    local redridgeLevel60To70Kills = 0 -- Feeds the "bonus_redridge_revenge" achievement without a separate full-table scan
 
     -- Ensure all classes, races, genders are present with at least 0
     local allRaces = {"Human", "Dwarf", "Night Elf", "Gnome", "Orc", "Undead", "Troll", "Tauren"}
@@ -2782,7 +2783,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
     end
 
     if not db.PlayerKillCounts.Characters then
-        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills
+        return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills
     end
 
     for _, characterData in pairs(charactersToProcess) do
@@ -2848,14 +2849,19 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
                         end
 
                         local isVictimLevel15To25 = levelNum >= 15 and levelNum <= 25
+                        local isVictimLevel60To70 = levelNum >= 60 and levelNum <= 70
 
                         if killData.killLocations and #killData.killLocations > 0 then
                             for _, location in ipairs(killData.killLocations) do
                                 local zone = location.zone or "Unknown"
                                 zoneData[zone] = (zoneData[zone] or 0) + 1
 
-                                if isVictimLevel15To25 and zone == "Redridge Mountains" then
-                                    redridgeLevel15To25Kills = redridgeLevel15To25Kills + 1
+                                if zone == "Redridge Mountains" then
+                                    if isVictimLevel15To25 then
+                                        redridgeLevel15To25Kills = redridgeLevel15To25Kills + 1
+                                    elseif isVictimLevel60To70 then
+                                        redridgeLevel60To70Kills = redridgeLevel60To70Kills + 1
+                                    end
                                 end
 
                                 if location.timestamp then
@@ -2883,7 +2889,7 @@ function PSC_CalculateBarChartStatistics(charactersToProcess)
         end
     end
 
-    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills
+    return classData, raceData, genderData, unknownLevelClassData, zoneData, levelData, guildStatusData, guildData, npcKillsData, hourlyData, redridgeLevel15To25Kills, redridgeLevel60To70Kills
 end
 
 function PSC_CalculateHourlyStatistics(charactersToProcess)
