@@ -189,10 +189,10 @@ PSC_TrackedNPCs = {
     [349] = "Corporal Keeshan",
     [467] = "The Defias Traitor",
     [550] = "Defias Messenger",
-    [442] = "Tarantula",
-    [116] = "Defias Bandit",
-    [732] = "Murloc Lurker",
-    [43] = "Murloc Forager"
+    -- [442] = "Tarantula",
+    -- [116] = "Defias Bandit",
+    -- [732] = "Murloc Lurker",
+    -- [43] = "Murloc Forager"
 }
 
 function PSC_IsValidTarget(destFlags, destGUID)
